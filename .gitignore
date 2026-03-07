@@ -1,0 +1,6 @@
+# runtime plaintext env
+runtime.env
+
+# other standard ignores
+*.log
+*.tmp
