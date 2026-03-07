@@ -1,12 +1,9 @@
 # -------------------------
-# Bind Settings
+# Server Connection
 # -------------------------
 
-bindAddr = "0.0.0.0"
-bindPort = {{ .Envs.FRP_BIND_PORT }}
-
-# HTTP vhost listener for Apache to reverse proxy into
-vhostHTTPPort = {{ .Envs.FRP_VHOST_HTTP_PORT }}
+serverAddr = "{{ .Envs.FRP_SERVER_ADDR }}"
+serverPort = {{ .Envs.FRP_SERVER_PORT }}
 
 # -------------------------
 # Authentication
@@ -27,3 +24,18 @@ transport.tls.enable = {{ .Envs.FRP_TLS_ENABLE }}
 
 log.to = "console"
 log.level = "{{ .Envs.FRP_LOG_LEVEL }}"
+
+# -------------------------
+# HTTP Proxy
+# -------------------------
+
+[[proxies]]
+name = "{{ .Envs.FRP_PROXY_NAME }}"
+type = "http"
+
+# Local service target
+localIP = "{{ .Envs.FRP_LOCAL_IP }}"
+localPort = {{ .Envs.FRP_LOCAL_PORT }}
+
+# Domain exposed by FRPS
+customDomains = ["{{ .Envs.FRP_DOMAIN }}"]

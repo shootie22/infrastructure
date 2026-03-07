@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
 
   plantuml:
@@ -12,8 +10,6 @@ services:
 
     expose:
       - "${PLANTUML_PORT}"
-    ports:
-      - "${PLANTUML_HOST_PORT}:${PLANTUML_PORT}"
 
     read_only: true
     security_opt:
@@ -29,7 +25,7 @@ services:
       - plantuml
 
     volumes:
-      - ../../utils/frp/frpc/frpc-https.toml:/etc/frp/frpc.toml:ro
+      - ../../../utils/frp/frpc/frpc-http.toml:/etc/frp/frpc.toml:ro
 
     env_file:
       - runtime.env
