@@ -19,7 +19,7 @@ auth.token = "{{ .Envs.FRP_TOKEN }}"
 # TLS Settings
 # -------------------------
 
-transport.tls.enable = {{ .Envs.FRP_TLS_ENABLE }}
+transport.tls.force = {{ .Envs.FRP_TLS_FORCE }}
 
 # -------------------------
 # Logging
