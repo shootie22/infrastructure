@@ -1,0 +1,48 @@
+# -------------------------
+# Server Connection
+# -------------------------
+
+serverAddr = "{{ .Envs.FRP_SERVER_ADDR }}"
+serverPort = {{ .Envs.FRP_SERVER_PORT }}
+
+# -------------------------
+# Authentication
+# -------------------------
+
+auth.method = "token"
+auth.token = "{{ .Envs.FRP_TOKEN }}"
+
+# -------------------------
+# TLS Settings
+# -------------------------
+
+transport.tls.enable = {{ .Envs.FRP_TLS_ENABLE }}
+
+# -------------------------
+# Logging
+# -------------------------
+
+log.to = "console"
+log.level = "{{ .Envs.FRP_LOG_LEVEL }}"
+
+# -------------------------
+# TCP Proxy
+# -------------------------
+
+[[proxies]]
+name = "{{ .Envs.FRP_PROXY_NAME }}"
+type = "tcp"
+
+# Local service target
+localIP = "{{ .Envs.FRP_LOCAL_IP }}"
+localPort = {{ .Envs.FRP_LOCAL_PORT }}
+
+# Port exposed on FRP server
+remotePort = {{ .Envs.FRP_REMOTE_PORT }}
+
+# Forward connection IP
+transport.proxyProtocolVersion = "v2"
+
+# Optional transport improvements
+transport.useEncryption = {{ .Envs.FRP_USE_ENCRYPTION }}
+transport.useCompression = {{ .Envs.FRP_USE_COMPRESSION }}
