@@ -12,6 +12,8 @@ services:
       - "${PLANTUML_PORT}"
 
     read_only: true
+    tmpfs:
+      - /tmp/jetty
     security_opt:
       - no-new-privileges:true
 
