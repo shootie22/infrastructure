@@ -40,3 +40,6 @@ remotePort = {{ .Envs.FRP_REMOTE_PORT }}
 
 transport.useEncryption = {{ .Envs.FRP_USE_ENCRYPTION }}
 transport.useCompression = {{ .Envs.FRP_USE_COMPRESSION }}
+
+# Forward connection IP
+transport.proxyProtocolVersion = "v2"
