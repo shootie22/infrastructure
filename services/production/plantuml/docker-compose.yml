@@ -32,7 +32,7 @@ services:
       - ../../utils/frp/frpc/frpc-https.toml:/etc/frp/frpc.toml:ro
 
     env_file:
-      - .env
+      - runtime.env
 
     networks:
       - internal
