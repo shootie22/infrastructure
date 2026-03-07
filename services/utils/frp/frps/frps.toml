@@ -1,11 +1,11 @@
 # -------------------------
-# Bind settings
+# Bind Settings
 # -------------------------
 
 bindAddr = "0.0.0.0"
 bindPort = {{ .Envs.FRP_BIND_PORT }}
 
-# optional QUIC support
+# Optional QUIC support
 quicBindPort = {{ .Envs.FRP_QUIC_PORT }}
 
 # -------------------------
@@ -16,7 +16,7 @@ auth.method = "token"
 auth.token = "{{ .Envs.FRP_TOKEN }}"
 
 # -------------------------
-# TLS settings
+# TLS Settings
 # -------------------------
 
 transport.tls.enable = {{ .Envs.FRP_TLS_ENABLE }}
@@ -26,10 +26,10 @@ transport.tls.keyFile = "{{ .Envs.FRP_TLS_KEY }}"
 transport.tls.trustedCaFile = "{{ .Envs.FRP_TLS_CA }}"
 
 # -------------------------
-# Dashboard (optional)
+# Dashboard
 # -------------------------
 
-webServer.addr = "127.0.0.1"
+webServer.addr = "0.0.0.0"
 webServer.port = {{ .Envs.FRP_DASHBOARD_PORT }}
 
 webServer.user = "{{ .Envs.FRP_DASHBOARD_USER }}"
@@ -44,7 +44,12 @@ log.level = "{{ .Envs.FRP_LOG_LEVEL }}"
 log.maxDays = 7
 
 # -------------------------
-# Limits
+# Limits / Security
 # -------------------------
 
 maxPortsPerClient = {{ .Envs.FRP_MAX_PORTS }}
+
+# Optional allowlist
+allowPorts = [
+  {{ .Envs.FRP_ALLOWED_PORTS }}
+]

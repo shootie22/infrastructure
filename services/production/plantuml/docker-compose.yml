@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+
+  plantuml:
+    image: plantuml/plantuml-server:jetty
+    container_name: ${PLANTUML_NAME}
+    restart: unless-stopped
+
+    networks:
+      - internal
+
+    expose:
+      - "${PLANTUML_PORT}"
+    ports:
+      - "${PLANTUML_HOST_PORT}:${PLANTUML_PORT}"
+
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+
+  frpc:
+    image: snowdreamtech/frpc
+    container_name: frpc-${PLANTUML_NAME}
+    restart: unless-stopped
+
+    depends_on:
+      - plantuml
+
+    volumes:
+      - ../../utils/frp/frpc/frpc-https.toml:/etc/frp/frpc.toml:ro
+
+    env_file:
+      - .env
+
+    networks:
+      - internal
+      - outbound
+
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+
+networks:
+
+  internal:
+    driver: bridge
+    internal: true
+
+  outbound:
+    driver: bridge
