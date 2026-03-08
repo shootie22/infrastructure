@@ -11,6 +11,7 @@ services:
 
     volumes:
       - ../../../utils/frp/frps/frps.toml:/etc/frp/frps.toml:ro
+      - ../../../utils/frp/frps/res:/etc/frp/res:ro
 
     env_file:
       - runtime.env
