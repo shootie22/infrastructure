@@ -40,5 +40,7 @@ localPort = {{ .Envs.FRP_LOCAL_PORT }}
 # Domain exposed by FRPS
 customDomains = ["{{ .Envs.FRP_DOMAIN }}"]
 
+{{- if .Envs.FRP_PROXY_PROTOCOL_VERSION }}
 # Forward IPs of clients
-transport.proxyProtocolVersion = "v2"
+transport.proxyProtocolVersion = "{{ .Envs.FRP_PROXY_PROTOCOL_VERSION }}"
+{{- end }}

@@ -40,8 +40,10 @@ localPort = {{ .Envs.FRP_LOCAL_PORT }}
 # Port exposed on FRP server
 remotePort = {{ .Envs.FRP_REMOTE_PORT }}
 
+{{- if .Envs.FRP_PROXY_PROTOCOL_VERSION }}
 # Forward connection IP
-transport.proxyProtocolVersion = "v2"
+transport.proxyProtocolVersion = "{{ .Envs.FRP_PROXY_PROTOCOL_VERSION }}"
+{{- end }}
 
 # Optional transport improvements
 transport.useEncryption = {{ .Envs.FRP_USE_ENCRYPTION }}
