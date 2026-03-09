@@ -5,11 +5,13 @@
 bindAddr = "0.0.0.0"
 bindPort = {{ .Envs.FRP_BIND_PORT }}
 
+{{- if .Envs.FRP_VHOST_HTTP_PORT }}
 # HTTP vhost listener for Apache to reverse proxy into
 vhostHTTPPort = {{ .Envs.FRP_VHOST_HTTP_PORT }}
 
 # Custom page returned by FRPS when no HTTP route matches.
 custom404Page = "/etc/frp/res/service-temporarily-unavailable.html"
+{{- end }}
 
 # -------------------------
 # Authentication

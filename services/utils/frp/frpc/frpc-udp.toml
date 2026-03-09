@@ -29,6 +29,20 @@ log.level = "{{ .Envs.FRP_LOG_LEVEL }}"
 # UDP Proxy
 # -------------------------
 
+{{- if and .Envs.FRP_LOCAL_PORT_RANGE .Envs.FRP_REMOTE_PORT_RANGE }}
+{{- range $_, $v := parseNumberRangePair .Envs.FRP_LOCAL_PORT_RANGE .Envs.FRP_REMOTE_PORT_RANGE }}
+[[proxies]]
+name = "{{ $.Envs.FRP_PROXY_NAME }}-{{ $v.Second }}"
+type = "udp"
+
+# Local service target
+localIP = "{{ $.Envs.FRP_LOCAL_IP }}"
+localPort = {{ $v.First }}
+
+# Port exposed on FRPS
+remotePort = {{ $v.Second }}
+{{- end }}
+{{- else }}
 [[proxies]]
 name = "{{ .Envs.FRP_PROXY_NAME }}"
 type = "udp"
@@ -39,3 +53,4 @@ localPort = {{ .Envs.FRP_LOCAL_PORT }}
 
 # Port exposed on FRPS
 remotePort = {{ .Envs.FRP_REMOTE_PORT }}
+{{- end }}
