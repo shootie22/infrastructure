@@ -5,3 +5,4 @@ runtime.env
 *.log
 *.tmp
 *.kate-swp
+*.sh

@@ -29,6 +29,33 @@ log.level = "{{ .Envs.FRP_LOG_LEVEL }}"
 # TCP Proxy
 # -------------------------
 
+{{- if and .Envs.FRP_LOCAL_PORT_RANGE .Envs.FRP_REMOTE_PORT_RANGE }}
+{{- range $_, $v := parseNumberRangePair .Envs.FRP_LOCAL_PORT_RANGE .Envs.FRP_REMOTE_PORT_RANGE }}
+[[proxies]]
+name = "{{ $.Envs.FRP_PROXY_NAME }}-{{ $v.Second }}"
+type = "tcp"
+
+# Local service target
+localIP = "{{ $.Envs.FRP_LOCAL_IP }}"
+localPort = {{ $v.First }}
+
+# Port exposed on FRP server
+remotePort = {{ $v.Second }}
+
+{{- if .Envs.FRP_PROXY_PROTOCOL_VERSION }}
+# Forward connection IP
+transport.proxyProtocolVersion = "{{ .Envs.FRP_PROXY_PROTOCOL_VERSION }}"
+{{- end }}
+
+# Optional transport improvements
+{{- if .Envs.FRP_USE_ENCRYPTION }}
+transport.useEncryption = {{ .Envs.FRP_USE_ENCRYPTION }}
+{{- end }}
+{{- if .Envs.FRP_USE_COMPRESSION }}
+transport.useCompression = {{ .Envs.FRP_USE_COMPRESSION }}
+{{- end }}
+{{- end }}
+{{- else }}
 [[proxies]]
 name = "{{ .Envs.FRP_PROXY_NAME }}"
 type = "tcp"
@@ -46,5 +73,10 @@ transport.proxyProtocolVersion = "{{ .Envs.FRP_PROXY_PROTOCOL_VERSION }}"
 {{- end }}
 
 # Optional transport improvements
+{{- if .Envs.FRP_USE_ENCRYPTION }}
 transport.useEncryption = {{ .Envs.FRP_USE_ENCRYPTION }}
+{{- end }}
+{{- if .Envs.FRP_USE_COMPRESSION }}
 transport.useCompression = {{ .Envs.FRP_USE_COMPRESSION }}
+{{- end }}
+{{- end }}
