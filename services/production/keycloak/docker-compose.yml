@@ -40,9 +40,11 @@ services:
       KC_DB_USERNAME: ${KC_DB_USERNAME}
       KC_DB_PASSWORD: ${KC_DB_PASSWORD}
 
-      # hostname + proxy
+      # external URL
       KC_HOSTNAME: ${KC_HOSTNAME}
-      KC_PROXY: ${KC_PROXY}
+      # behind webserver TLS termination, run Keycloak HTTP-only and trust proxy headers
+      KC_HTTP_ENABLED: ${KC_HTTP_ENABLED:-true}
+      KC_PROXY_HEADERS: ${KC_PROXY_HEADERS:-xforwarded}
 
       # observability
       KC_HEALTH_ENABLED: ${KC_HEALTH_ENABLED}
