@@ -23,7 +23,6 @@ services:
     container_name: keycloak
     command:
       - start
-      - --optimized
     restart: unless-stopped
     depends_on:
       postgres:
