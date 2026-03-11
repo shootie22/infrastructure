@@ -6,7 +6,3 @@ runtime.env
 *.tmp
 *.kate-swp
 *.sh
-
-# keep repo scripts versioned
-!create-compose.sh
-!scripts/*.sh
