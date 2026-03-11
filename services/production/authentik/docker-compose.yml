@@ -39,6 +39,7 @@ services:
     shm_size: 512mb
     volumes:
     - ${SERVICE_ROOT}/data:/data
+    - ${SERVICE_MEDIA}/media:/data/media
     - ${SERVICE_ROOT}/custom-templates:/templates
   worker:
     command: worker
@@ -60,6 +61,7 @@ services:
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock
     - ${SERVICE_ROOT}/data:/data
+    - ${SERVICE_MEDIA}/media:/data/media
     - ${SERVICE_ROOT}/certs:/certs
     - ${SERVICE_ROOT}/custom-templates:/templates
 volumes:
