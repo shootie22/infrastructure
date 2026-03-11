@@ -12,17 +12,6 @@ This model will change, grow and adapt over time.
 - `services/testing/<stack>/` is the testing playground.
 - `services/utils/` contains shared configurations used across services.
 
-## Generator
-
-`./create-compose.sh` generates docker compose stacks under `services/` and can optionally add FRP tunnels.
-
-- Modes:
-  - `new`: create a new stack from prompts
-  - `import`: best-effort prefill prompts from an existing compose
-  - `attach-frp`: add `frpc` + a matching `frps` to an existing stack (either as a sidecar override compose, or as standalone `frpc`/`frps` composes)
-
-Secrets are written to plaintext `runtime.env` (intended to be gitignored) and encrypted into `.env` using `sops` + `age`. Decrypt `.env` to `runtime.env` on the deploy host and run `docker compose` with `--env-file runtime.env`.
-
 ## Security
 
 #### Secrets
