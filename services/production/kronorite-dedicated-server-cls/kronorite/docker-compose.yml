@@ -11,6 +11,9 @@ services:
 
   frpc:
     image: ghcr.io/fatedier/frpc:v0.65.0
+    command:
+      - -c
+      - /etc/frp/frpc.toml
     restart: unless-stopped
     depends_on:
       - kronorite-server

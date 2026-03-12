@@ -16,6 +16,9 @@ services:
 
   frpc:
     image: ghcr.io/fatedier/frpc:v0.65.0
+    command:
+      - -c
+      - /etc/frp/frpc.toml
     container_name: frpc-openwebui
     volumes:
       - ../../../utils/frp/frpc/frpc-http.toml:/etc/frp/frpc.toml:ro
