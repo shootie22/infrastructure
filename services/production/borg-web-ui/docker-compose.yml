@@ -4,11 +4,11 @@ services:
     container_name: borg-web-ui
     restart: unless-stopped
     ports:
-      - "8081:8081"
+      - "${BORG_WEB_UI_HOST_PORT}:8081"
     volumes:
-      - /home/main/services/borg-web-ui/data:/data
-      - /home/main/services/borg-web-ui/cache:/home/borg/.cache/borg
-      - /home/main:/local:ro
+      - ${BORG_WEB_UI_ROOT}/data:/data
+      - ${BORG_WEB_UI_ROOT}/cache:/home/borg/.cache/borg
+      - ${BORG_WEB_UI_LOCAL_DIR}:/local:ro
     environment:
       - TZ=${TZ}
       - PUID=${PUID}

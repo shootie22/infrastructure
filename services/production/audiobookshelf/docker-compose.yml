@@ -8,15 +8,7 @@ networks:
 services:
   audiobookshelf:
 
-    command:
-      - "node"
-      - "index.js"
-
     container_name: "audiobookshelf"
-
-    entrypoint:
-      - "tini"
-      - "--"
 
     environment:
       - "TZ=${TZ}"
@@ -64,16 +56,17 @@ services:
     tty: true
 
     volumes:
-      - "/home/main/services/audiobookshelf/audiobooks:/audiobooks"
-      - "/home/main/services/audiobookshelf/config:/config"
-      - "/home/main/services/audiobookshelf/metadata:/metadata"
-      - "/home/main/services/audiobookshelf/podcasts:/podcasts"
+      - "${AUDIOBOOKSHELF_ROOT}/audiobooks:/audiobooks"
+      - "${AUDIOBOOKSHELF_ROOT}/config:/config"
+      - "${AUDIOBOOKSHELF_ROOT}/metadata:/metadata"
+      - "${AUDIOBOOKSHELF_ROOT}/podcasts:/podcasts"
 
     working_dir: "/app"
 
   rathole:
     image: rapiz1/rathole
     container_name: ratholec-audiobookshelf
+    user: "0:0"
     volumes:
       - ./rathole.toml:/etc/rathole.toml:ro
     command: /etc/rathole.toml

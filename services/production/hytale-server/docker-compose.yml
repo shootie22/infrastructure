@@ -13,11 +13,11 @@ services:
     container_name: hytale
     stop_grace_period: 30s
     ports:
-      - 5520:5520/udp
+      - ${HYTALE_HOST_PORT}:5520/udp
     env_file:
       - runtime.env
     volumes:
-      - /home/main/game_servers/hytale:/home/hytale/server-files
+      - ${HYTALE_DATA_DIR}:/home/hytale/server-files
     stdin_open: true
     tty: true
     network_mode: host
