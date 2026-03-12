@@ -100,6 +100,12 @@ note() {
   echo "==> $*" >&2
 }
 
+is_sops_env() {
+  local path="$1"
+  [[ -f "$path" ]] || return 1
+  grep -q '^sops_' "$path"
+}
+
 resolve_key
 SOPS_BIN="$(resolve_sops)"
 
@@ -110,8 +116,20 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-note "Decrypting .env -> runtime.env"
-"$SOPS_BIN" --decrypt .env > runtime.env
+if is_sops_env ".env"; then
+  note "Detected sops-encrypted .env"
+  cp .env .env.sops
+  note "Decrypting .env -> runtime.env"
+  "$SOPS_BIN" --decrypt .env > runtime.env
+  note "Writing plaintext .env for compose interpolation"
+  cp runtime.env .env
+else
+  note "Detected plaintext .env"
+  cp .env runtime.env
+fi
+
+chmod 600 .env runtime.env 2>/dev/null || true
+chmod 600 .env.sops 2>/dev/null || true
 
 if [[ -f .rathole.toml ]]; then
   note "Decrypting .rathole.toml -> rathole.toml"
