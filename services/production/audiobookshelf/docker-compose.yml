@@ -1,0 +1,84 @@
+networks:
+  audiobookshelf_internal-net:
+    internal: true
+  outbound-net:
+    driver: bridge
+
+
+services:
+  audiobookshelf:
+
+    command:
+      - "node"
+      - "index.js"
+
+    container_name: "audiobookshelf"
+
+    entrypoint:
+      - "tini"
+      - "--"
+
+    environment:
+      - "TZ=${TZ}"
+      - "PATH=${PATH}"
+      - "NODE_VERSION=${NODE_VERSION}"
+      - "YARN_VERSION=${YARN_VERSION}"
+      - "PORT=${PORT}"
+      - "NODE_ENV=${NODE_ENV}"
+      - "CONFIG_PATH=${CONFIG_PATH}"
+      - "METADATA_PATH=${METADATA_PATH}"
+      - "SOURCE=${SOURCE}"
+      - "NUSQLITE3_DIR=${NUSQLITE3_DIR}"
+      - "NUSQLITE3_PATH=${NUSQLITE3_PATH}"
+
+    expose:
+      - "80/tcp"
+
+    hostname: "39792cf4f552"
+
+    image: "ghcr.io/advplyr/audiobookshelf"
+
+    ipc: "private"
+
+    labels:
+      org.opencontainers.image.created: "2025-10-08T15:58:02.623Z"
+      org.opencontainers.image.description: "Self-hosted audiobook and podcast server"
+      org.opencontainers.image.licenses: "GPL-3.0"
+      org.opencontainers.image.revision: "29752798f3d1eed348746830a879f0699ff48993"
+      org.opencontainers.image.source: "https://github.com/advplyr/audiobookshelf"
+      org.opencontainers.image.title: "audiobookshelf"
+      org.opencontainers.image.url: "https://github.com/advplyr/audiobookshelf"
+      org.opencontainers.image.version: "2.30.0"
+
+    logging:
+      driver: "json-file"
+      options: {}
+
+    networks:
+      - audiobookshelf_internal-net
+
+    restart: "unless-stopped"
+
+    stdin_open: true
+
+    tty: true
+
+    volumes:
+      - "/home/main/services/audiobookshelf/audiobooks:/audiobooks"
+      - "/home/main/services/audiobookshelf/config:/config"
+      - "/home/main/services/audiobookshelf/metadata:/metadata"
+      - "/home/main/services/audiobookshelf/podcasts:/podcasts"
+
+    working_dir: "/app"
+
+  rathole:
+    image: rapiz1/rathole
+    container_name: ratholec-audiobookshelf
+    volumes:
+      - ./rathole.toml:/etc/rathole.toml:ro
+    command: /etc/rathole.toml
+    restart: unless-stopped
+
+    networks:
+      - audiobookshelf_internal-net
+      - outbound-net

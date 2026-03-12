@@ -1,0 +1,22 @@
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    network_mode: tunnel_net
+    restart: unless-stopped
+    environment:
+      DOMAIN: "${DOMAIN}"
+    volumes:
+      - /home/main/services/vaultwarden/:/data/
+#    ports:
+#      - "8000:80"
+
+  ratholec:
+    image: rapiz1/rathole:latest
+    container_name: ratholec-vaultwarden
+    restart: unless-stopped
+    network_mode: tunnel_net
+    volumes:
+      - ./rathole.toml:/etc/rathole.toml:ro
+    command: /etc/rathole.toml
+    working_dir: /app

@@ -2,23 +2,57 @@
 # Bind Settings
 # -------------------------
 
+{{- if .Envs.FRP_BIND_ADDR }}
+bindAddr = "{{ .Envs.FRP_BIND_ADDR }}"
+{{- else }}
 bindAddr = "0.0.0.0"
+{{- end }}
 bindPort = {{ .Envs.FRP_BIND_PORT }}
 
 {{- if .Envs.FRP_VHOST_HTTP_PORT }}
 # HTTP vhost listener for Apache to reverse proxy into
 vhostHTTPPort = {{ .Envs.FRP_VHOST_HTTP_PORT }}
+{{- if .Envs.FRP_VHOST_HTTP_BIND_ADDR }}
+vhostHTTPBindAddr = "{{ .Envs.FRP_VHOST_HTTP_BIND_ADDR }}"
+{{- end }}
 
 # Custom page returned by FRPS when no HTTP route matches.
 custom404Page = "/etc/frp/res/service-temporarily-unavailable.html"
+{{- end }}
+
+{{- if .Envs.FRP_VHOST_HTTPS_PORT }}
+# HTTPS vhost listener (optional)
+vhostHTTPSPort = {{ .Envs.FRP_VHOST_HTTPS_PORT }}
+{{- if .Envs.FRP_VHOST_HTTPS_BIND_ADDR }}
+vhostHTTPSBindAddr = "{{ .Envs.FRP_VHOST_HTTPS_BIND_ADDR }}"
+{{- end }}
+{{- end }}
+
+{{- if .Envs.FRP_ALLOW_WEBSOCKET_UPGRADE }}
+# Allow WebSocket upgrades for HTTP/HTTPS proxies
+allowWebsocketUpgrade = {{ .Envs.FRP_ALLOW_WEBSOCKET_UPGRADE }}
+{{- end }}
+
+{{- if .Envs.FRP_ALLOW_PORTS }}
+# Optional port allowlist
+allowPorts = [
+  {{ .Envs.FRP_ALLOW_PORTS }}
+]
+{{- end }}
+
+{{- if .Envs.FRP_PROXY_BIND_ADDR }}
+# Proxy listeners bind address
+proxyBindAddr = "{{ .Envs.FRP_PROXY_BIND_ADDR }}"
 {{- end }}
 
 # -------------------------
 # Authentication
 # -------------------------
 
+{{- if .Envs.FRP_TOKEN }}
 auth.method = "token"
 auth.token = "{{ .Envs.FRP_TOKEN }}"
+{{- end }}
 
 # -------------------------
 # TLS Settings
@@ -32,3 +66,6 @@ transport.tls.force = {{ .Envs.FRP_TLS_FORCE }}
 
 log.to = "console"
 log.level = "{{ .Envs.FRP_LOG_LEVEL }}"
+{{- if .Envs.FRP_LOG_MAX_DAYS }}
+log.maxDays = {{ .Envs.FRP_LOG_MAX_DAYS }}
+{{- end }}
