@@ -16,7 +16,7 @@ services:
 
 
   frpc:
-    image: snowdreamtech/frpc
+    image: ghcr.io/fatedier/frpc:v0.65.0
     container_name: frpc-${PLANTUML_NAME}
     restart: unless-stopped
 

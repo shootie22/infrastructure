@@ -13,7 +13,7 @@ services:
       - LT_API_KEYS=${LT_API_KEYS}
 
   frpc:
-    image: snowdreamtech/frpc
+    image: ghcr.io/fatedier/frpc:v0.65.0
     container_name: frpc-libretranslate
     restart: unless-stopped
     networks:

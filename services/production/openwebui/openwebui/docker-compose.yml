@@ -15,7 +15,7 @@ services:
       - OLLAMA_API_KEY=${OLLAMA_API_KEY}
 
   frpc:
-    image: snowdreamtech/frpc
+    image: ghcr.io/fatedier/frpc:v0.65.0
     container_name: frpc-openwebui
     volumes:
       - ../../../utils/frp/frpc/frpc-http.toml:/etc/frp/frpc.toml:ro

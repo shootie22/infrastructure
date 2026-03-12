@@ -23,7 +23,7 @@ services:
     network_mode: host
   
   frpc-hytale:
-    image: snowdreamtech/frpc
+    image: ghcr.io/fatedier/frpc:v0.65.0
     container_name: frpc-hytale
     restart: always
 

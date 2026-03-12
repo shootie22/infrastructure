@@ -1,7 +1,7 @@
 services:
 
   frps:
-    image: snowdreamtech/frps
+    image: ghcr.io/fatedier/frps:v0.65.0
     container_name: ${FRPS_NAME}
     restart: unless-stopped
 
