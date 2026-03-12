@@ -21,12 +21,12 @@ services:
       - gitea_internal-net
       - outbound-net
     volumes:
-      - /home/main/services/gitea:/data
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      - ${GITEA_ROOT}:/data
+      - ${HOST_TIMEZONE_FILE}:/etc/timezone:ro
+      - ${HOST_LOCALTIME_FILE}:/etc/localtime:ro
     ports:
-      - "3000:3000"
-      - "222:22"
+      - "${GITEA_HTTP_PORT}:3000"
+      - "${GITEA_SSH_PORT}:22"
     depends_on:
       - db
 
@@ -41,11 +41,12 @@ services:
     networks:
       - gitea_internal-net
     volumes:
-      - /home/main/services/gitea/postgres:/var/lib/postgresql/data
+      - ${GITEA_ROOT}/postgres:/var/lib/postgresql/data
 
   rathole:
     image: rapiz1/rathole
     container_name: ratholec-gitea
+    user: "0:0"
     volumes:
       - ./rathole.toml:/etc/rathole.toml:ro
     command: /etc/rathole.toml

@@ -9,7 +9,7 @@ services:
       GITEA_RUNNER_NAME: "${RUNNER_NAME}"
       GITEA_RUNNER_LABELS: "${RUNNER_LABELS}"
     volumes:
-      - /Users/radu/Desktop/services/gitea-act-runner-yipi/config.yaml/:/config.yaml
-      - /Users/radu/Desktop/services/gitea-act-runner-yipi/data:/data
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ${GITEA_ACT_RUNNER_YIPI_ROOT}/config.yaml:/config.yaml
+      - ${GITEA_ACT_RUNNER_YIPI_ROOT}/data:/data
+      - ${DOCKER_SOCK_PATH}:/var/run/docker.sock
     restart: unless-stopped

@@ -59,7 +59,7 @@ services:
     shm_size: 512mb
     user: root
     volumes:
-    - /var/run/docker.sock:/var/run/docker.sock
+    - ${DOCKER_SOCK_PATH}:/var/run/docker.sock
     - ${SERVICE_ROOT}/data:/data
     - ${SERVICE_MEDIA}/media:/data/media
     - ${SERVICE_ROOT}/certs:/certs

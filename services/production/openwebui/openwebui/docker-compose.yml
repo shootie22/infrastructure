@@ -5,7 +5,7 @@ services:
     networks:
       - internalnet_openwebui
     volumes:
-      - /Users/radu/Desktop/services/openwebui/open-webui:/app/backend/data
+      - ${OPENWEBUI_DATA_DIR}:/app/backend/data
     restart: always
     extra_hosts:
       - "host.docker.internal:host-gateway"

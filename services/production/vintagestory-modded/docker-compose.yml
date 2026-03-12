@@ -6,16 +6,17 @@ services:
       UID: ${UID}
       GID: ${GID}
     volumes:
-      - /home/main/game_servers/vintage_story/modded_1.21.4:/data
+      - ${VINTAGESTORY_DATA_DIR}:/data
     ports:
-      - "42420:42420/tcp"
-      - "42420:42420/udp"
+      - "${VINTAGESTORY_HOST_PORT}:42420/tcp"
+      - "${VINTAGESTORY_HOST_PORT}:42420/udp"
     restart: unless-stopped
     stop_signal: SIGTERM
 
   rathole:
     image: rapiz1/rathole
     container_name: ratholec-vintagestory
+    user: "0:0"
     volumes:
       - ./rathole.toml:/etc/rathole.toml:ro
     command: /etc/rathole.toml

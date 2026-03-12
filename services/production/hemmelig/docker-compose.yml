@@ -42,16 +42,17 @@ services:
       - "tunnel-net_hemmelig"
       - "outbound-net"
     ports:
-      - "3069:3000/tcp"
+      - "${HEMMELIG_HOST_PORT}:3000/tcp"
     restart: "unless-stopped"
     volumes:
-      - "/home/main/services/hemmelig/database:/app/database"
-      - "/home/main/services/hemmelig/uploads:/app/uploads"
+      - "${HEMMELIG_ROOT}/database:/app/database"
+      - "${HEMMELIG_ROOT}/uploads:/app/uploads"
     working_dir: "/app"
 
   ratholec-hemmelig:
     container_name: "rathole-hemmelig"
     image: "rapiz1/rathole:latest"
+    user: "0:0"
     networks:
       - "tunnel-net_hemmelig"
       - "outbound-net"

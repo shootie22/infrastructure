@@ -4,9 +4,9 @@ services:
     pull_policy: always
     restart: unless-stopped
     ports:
-      - "127.0.0.1:5757:5757"
+      - "127.0.0.1:${DEV_RADUNENU_HOST_PORT}:5757"
     environment:
       CONTENT_ROOT: ${CONTENT_ROOT}
       ASSETS_ROOT: ${ASSETS_ROOT}
     volumes:
-      - /home/ubuntu/services/radunenu.com:/mnt/site:ro
+      - ${DEV_RADUNENU_SITE_DIR}:/mnt/site:ro
