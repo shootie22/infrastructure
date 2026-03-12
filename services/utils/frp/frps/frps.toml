@@ -28,11 +28,6 @@ vhostHTTPSBindAddr = "{{ .Envs.FRP_VHOST_HTTPS_BIND_ADDR }}"
 {{- end }}
 {{- end }}
 
-{{- if .Envs.FRP_ALLOW_WEBSOCKET_UPGRADE }}
-# Allow WebSocket upgrades for HTTP/HTTPS proxies
-allowWebsocketUpgrade = {{ .Envs.FRP_ALLOW_WEBSOCKET_UPGRADE }}
-{{- end }}
-
 {{- if .Envs.FRP_ALLOW_PORTS }}
 # Optional port allowlist
 allowPorts = [

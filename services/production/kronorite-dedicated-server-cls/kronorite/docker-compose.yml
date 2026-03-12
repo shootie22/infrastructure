@@ -10,7 +10,7 @@ services:
       SERVER_SETTINGS: ${SERVER_SETTINGS:-EU-CLS#1}
 
   frpc:
-    image: snowdreamtech/frpc
+    image: ghcr.io/fatedier/frpc:v0.65.0
     restart: unless-stopped
     depends_on:
       - kronorite-server
