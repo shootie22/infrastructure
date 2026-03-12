@@ -5,7 +5,7 @@ services:
     container_name: github-commit-sync
     restart: unless-stopped
     ports:
-      - "6424:6424"
+      - "${GITHUB_COMMIT_SYNC_HOST_PORT}:6424"
     environment:
       GITEA_BASE_URL: "${GITEA_BASE_URL}"
       GITEA_TOKEN: "${GITEA_TOKEN}"

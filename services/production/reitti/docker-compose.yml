@@ -2,7 +2,7 @@ services:
   reitti:
     image: dedicatedcode/reitti:latest
     ports:
-      - 8080:8080
+      - ${REITTI_HOST_PORT}:8080
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -14,7 +14,7 @@ services:
       tile-cache:
         condition: service_healthy
     volumes:
-     - /home/main/storage/reitti-storage/reitti-data:/data/
+     - ${REITTI_STORAGE_DIR}/reitti-data:/data/
     environment:
       PHOTON_BASE_URL: ${PHOTON_BASE_URL}
       POSTGIS_USER: ${POSTGIS_USER}
@@ -28,7 +28,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - /home/main/storage/reitti-storage/postgis-data:/var/lib/postgresql/data
+      - ${REITTI_STORAGE_DIR}/postgis-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U reitti -d reitti"]
       interval: 10s
@@ -40,7 +40,7 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
     volumes:
-      - /home/main/storage/reitti-storage/rabbitmq-data:/var/lib/rabbitmq
+      - ${REITTI_STORAGE_DIR}/rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 30s
@@ -49,7 +49,7 @@ services:
   redis:
     image: redis:7-alpine
     volumes:
-      - /home/main/storage/reitti-storage/redis-data:/data
+      - ${REITTI_STORAGE_DIR}/redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -61,7 +61,7 @@ services:
       - UPDATE_STRATEGY=${UPDATE_STRATEGY}
       - REGION=${REGION}
     volumes:
-      - /home/main/storage/reitti-storage/photon-data:/photon/data
+      - ${REITTI_STORAGE_DIR}/photon-data:/photon/data
 
   tile-cache:
     image: nginx:alpine

@@ -14,7 +14,7 @@ services:
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - /home/main/services/joplin/db:/var/lib/postgresql/data
+      - ${JOPLIN_ROOT}/db:/var/lib/postgresql/data
 
   server:
     image: joplin/server:latest
@@ -39,6 +39,7 @@ services:
   ratholec:
     image: rapiz1/rathole:latest
     container_name: ratholec-joplin
+    user: "0:0"
     restart: unless-stopped
     networks:
       - tunnel_net

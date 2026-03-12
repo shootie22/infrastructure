@@ -7,8 +7,8 @@ services:
       - internal
       - external
     volumes:
-      - /Users/radu/Desktop/services/libretranslate/lt-data:/home/libretranslate/.local/share
-      - /Users/radu/Desktop/services/libretranslate/lt-cache:/home/libretranslate/.local/cache
+      - ${LIBRETRANSLATE_ROOT}/lt-data:/home/libretranslate/.local/share
+      - ${LIBRETRANSLATE_ROOT}/lt-cache:/home/libretranslate/.local/cache
     environment:
       - LT_API_KEYS=${LT_API_KEYS}
 

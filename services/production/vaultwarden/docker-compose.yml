@@ -7,13 +7,14 @@ services:
     environment:
       DOMAIN: "${DOMAIN}"
     volumes:
-      - /home/main/services/vaultwarden/:/data/
+      - ${VAULTWARDEN_ROOT}:/data/
 #    ports:
 #      - "8000:80"
 
   ratholec:
     image: rapiz1/rathole:latest
     container_name: ratholec-vaultwarden
+    user: "0:0"
     restart: unless-stopped
     network_mode: tunnel_net
     volumes:
