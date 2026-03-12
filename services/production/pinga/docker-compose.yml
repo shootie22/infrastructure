@@ -1,0 +1,21 @@
+services:
+  pinga:
+    image: git.radunenu.com/radu/pinga:latest
+    container_name: pinga
+    ports:
+      - "127.0.0.1:2026:8080"
+    environment:
+      PINGA_BOOTSTRAP_SECRET: "${PINGA_BOOTSTRAP_SECRET}"
+    volumes:
+      - /home/ubuntu/services/pinga:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    cap_add:
+      - NET_RAW
+    restart: unless-stopped
+    #command: ["--webpanel=false"]
+    networks:
+      - pinga_net
+networks:
+  pinga_net:
+    external: true
+    name: pinga_net

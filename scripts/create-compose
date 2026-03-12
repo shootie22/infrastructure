@@ -1,0 +1,1346 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+umask 077
+
+die() {
+  echo "error: $*" >&2
+  exit 1
+}
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+ROOT_DIR=""
+
+if command -v git >/dev/null 2>&1; then
+  ROOT_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || true)"
+fi
+
+if [[ -z "$ROOT_DIR" ]]; then
+  ROOT_DIR="$SCRIPT_DIR"
+  while [[ "$ROOT_DIR" != "/" && ! -e "$ROOT_DIR/.git" && ! -d "$ROOT_DIR/services" ]]; do
+    ROOT_DIR="$(dirname -- "$ROOT_DIR")"
+  done
+  if [[ ! -d "$ROOT_DIR/services" ]]; then
+    ROOT_DIR="$SCRIPT_DIR"
+    while [[ "$ROOT_DIR" != "/" && ! -d "$ROOT_DIR/services" ]]; do
+      ROOT_DIR="$(dirname -- "$ROOT_DIR")"
+    done
+  fi
+fi
+[[ -d "$ROOT_DIR/services" ]] || die "could not locate repo root (expected to find 'services/' above ${SCRIPT_DIR})"
+cd "$ROOT_DIR"
+
+note() {
+  echo "==> $*" >&2
+}
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "missing dependency: $1"
+}
+
+trim() {
+  local s="$1"
+  s="${s#"${s%%[![:space:]]*}"}"
+  s="${s%"${s##*[![:space:]]}"}"
+  printf '%s' "$s"
+}
+
+prompt() {
+  local label="$1"
+  local default="${2-}"
+  local answer=""
+
+  if [[ -n "${default}" ]]; then
+    read -r -p "${label} [${default}]: " answer || exit 1
+    answer="$(trim "$answer")"
+    if [[ -z "$answer" ]]; then
+      answer="$default"
+    fi
+  else
+    read -r -p "${label}: " answer || exit 1
+    answer="$(trim "$answer")"
+  fi
+
+  printf '%s' "$answer"
+}
+
+prompt_yn() {
+  local label="$1"
+  local default="${2:-y}" # y|n
+  local answer=""
+
+  while true; do
+    if [[ "$default" == "y" ]]; then
+      read -r -p "${label} [Y/n]: " answer || exit 1
+      answer="$(trim "${answer:-Y}")"
+    else
+      read -r -p "${label} [y/N]: " answer || exit 1
+      answer="$(trim "${answer:-N}")"
+    fi
+
+    case "${answer,,}" in
+      y|yes) return 0 ;;
+      n|no) return 1 ;;
+    esac
+  done
+}
+
+validate_slug() {
+  local what="$1"
+  local s="$2"
+  [[ -n "$s" ]] || die "${what} cannot be empty"
+  [[ "$s" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]*$ ]] || die "${what} must match [a-zA-Z0-9][a-zA-Z0-9._-]*"
+}
+
+upper_snake() {
+  local s="$1"
+  s="${s//[^a-zA-Z0-9]/_}"
+  s="${s^^}"
+  printf '%s' "$s"
+}
+
+split_csv() {
+  # Splits on commas, trims, drops empties.
+  local input="$1"
+  local -a items=()
+  local raw=""
+
+  IFS=',' read -r -a items <<<"$input"
+  for raw in "${items[@]}"; do
+    raw="$(trim "$raw")"
+    [[ -n "$raw" ]] && printf '%s\n' "$raw"
+  done
+}
+
+rand_u32() {
+  # Portable-ish u32 random from /dev/urandom.
+  od -An -N4 -tu4 /dev/urandom 2>/dev/null | tr -d ' '
+}
+
+rand_range() {
+  local min="$1"
+  local max="$2"
+  local span=$((max - min + 1))
+  local n
+  n="$(rand_u32)"
+  printf '%s' $((min + (n % span)))
+}
+
+gen_token() {
+  # 48 chars, safe for env files.
+  if command -v openssl >/dev/null 2>&1; then
+    openssl rand -hex 24
+    return 0
+  fi
+
+  # Fallback: ignore SIGPIPE from `tr` when `head` exits.
+  tr -dc 'A-Za-z0-9' </dev/urandom 2>/dev/null | head -c 48 || true
+}
+
+detect_ipv4_addrs() {
+  if command -v ip >/dev/null 2>&1; then
+    ip -o -4 addr show 2>/dev/null | awk '{print $2 " " $4}' | sed 's#/.*##' | sort -u
+  fi
+}
+
+extract_internal_port_from_mapping() {
+  # Accepts "ext:int", "addr:ext:int", optional "/proto". Prints internal int if found.
+  local mapping="$1"
+  mapping="${mapping%\"}"
+  mapping="${mapping#\"}"
+  mapping="${mapping%%/*}"
+  local last="${mapping##*:}"
+  if [[ "$last" =~ ^[0-9]+$ ]]; then
+    printf '%s' "$last"
+    return 0
+  fi
+  return 1
+}
+
+choose_unused_port() {
+  local min="$1"
+  local max="$2"
+  shift 2
+  local -a avoid_list=("$@")
+  local tries=0
+  local p=""
+
+  while (( tries < 200 )); do
+    p="$(rand_range "$min" "$max")"
+    local ok=1
+    local a=""
+    for a in "${avoid_list[@]}"; do
+      [[ "$p" == "$a" ]] && ok=0
+    done
+    if [[ "$ok" == 1 ]]; then
+      printf '%s' "$p"
+      return 0
+    fi
+    tries=$((tries + 1))
+  done
+
+  die "failed to find unused port in ${min}-${max}"
+}
+
+encrypt_runtime_env_to_dotenv() {
+  local runtime_env_path="$1"
+  local out_env_path="$2"
+  local recipient="$3"
+
+  sops \
+    --encrypt \
+    --age "$recipient" \
+    --input-type dotenv \
+    --output-type dotenv \
+    "$runtime_env_path" >"$out_env_path"
+}
+
+extract_sops_age_recipient() {
+  local env_path="$1"
+  [[ -f "$env_path" ]] || return 1
+  awk -F= '/^sops_age__list_[0-9]+__map_recipient=/{print $2; exit}' "$env_path" 2>/dev/null
+}
+
+detect_compose_services() {
+  local compose_path="$1"
+  awk '
+    /^[[:space:]]*services:[[:space:]]*$/ {in_services=1; next}
+    in_services && /^[[:space:]]{2}[A-Za-z0-9._-]+:[[:space:]]*$/ {
+      line=$0
+      sub(/^[[:space:]]{2}/, "", line)
+      sub(/:.*/, "", line)
+      print line
+      next
+    }
+    in_services && /^[^[:space:]]/ {exit}
+  ' "$compose_path" 2>/dev/null || true
+}
+
+detect_service_networks() {
+  local compose_path="$1"
+  local svc_key="$2"
+  awk -v svc="$svc_key" '
+    /^[[:space:]]*services:[[:space:]]*$/ {in_services=1; next}
+    in_services && match($0, /^[[:space:]]{2}([A-Za-z0-9._-]+):[[:space:]]*$/, m) {
+      if (m[1] == svc) {
+        in_target=1
+        in_networks=0
+        next
+      }
+      if (in_target) {exit}
+      next
+    }
+    in_target && /^[[:space:]]{4}networks:[[:space:]]*$/ {in_networks=1; next}
+    in_target && in_networks && match($0, /^[[:space:]]{6}-[[:space:]]*([A-Za-z0-9._-]+)[[:space:]]*$/, m) {print m[1]; next}
+    in_target && in_networks && !/^[[:space:]]{6}-/ {in_networks=0}
+  ' "$compose_path" 2>/dev/null || true
+}
+
+network_is_internal() {
+  local compose_path="$1"
+  local network_key="$2"
+  awk -v net="$network_key" '
+    /^[[:space:]]*networks:[[:space:]]*$/ {in_networks=1; next}
+    in_networks && match($0, /^[[:space:]]{2}([A-Za-z0-9._-]+):[[:space:]]*$/, m) {
+      in_target = (m[1] == net)
+      next
+    }
+    in_networks && in_target && /^[[:space:]]{4}internal:[[:space:]]*true[[:space:]]*$/ {print "true"; exit}
+    in_networks && /^[^[:space:]]/ {exit}
+  ' "$compose_path" 2>/dev/null | head -n1
+}
+
+attach_frp_flow() {
+  local compose_src
+  compose_src="$(prompt "Path to existing docker-compose.yml" "")"
+  [[ -f "$compose_src" ]] || die "file not found: $compose_src"
+
+  local compose_dir
+  compose_dir="$(cd -- "$(dirname -- "$compose_src")" && pwd -P)"
+
+  local rel_dir
+  rel_dir="$(realpath --relative-to="$ROOT_DIR" "$compose_dir" 2>/dev/null || true)"
+  [[ "$rel_dir" == services/* ]] || die "compose must live under ${ROOT_DIR}/services (got: ${compose_dir})"
+
+  local env_kind=""
+  local stack_name=""
+  if [[ "$rel_dir" =~ ^services/(production|testing)/([^/]+) ]]; then
+    env_kind="${BASH_REMATCH[1]}"
+    stack_name="${BASH_REMATCH[2]}"
+  else
+    die "could not infer environment + stack name from path: $rel_dir"
+  fi
+
+  local stack_dir="${ROOT_DIR}/services/${env_kind}/${stack_name}"
+  local frps_dir="${stack_dir}/frps"
+
+  echo
+  note "Attach FRP tunnel to an existing compose."
+  note "Detected stack: services/${env_kind}/${stack_name}"
+
+  local placement
+  placement="$(prompt "Add FRPC as (sidecar/standalone)" "sidecar")"
+  placement="${placement,,}"
+  case "$placement" in
+    sidecar|s) placement="sidecar" ;;
+    standalone|st) placement="standalone" ;;
+    *) die "invalid choice: $placement (expected 'sidecar' or 'standalone')" ;;
+  esac
+
+  mapfile -t detected_services < <(detect_compose_services "$compose_src")
+  ((${#detected_services[@]} > 0)) || die "could not detect any services in: $compose_src"
+
+  local target_service=""
+  local service_label=""
+  if [[ "$placement" == "sidecar" ]]; then
+    echo
+    note "Services detected in compose:"
+    printf '  - %s\n' "${detected_services[@]}" >&2
+    default_target="$stack_name"
+    if ((${#detected_services[@]} == 1)); then
+      default_target="${detected_services[0]}"
+    fi
+    target_service="$(prompt "Service key to expose via FRP" "$default_target")"
+    validate_slug "service key" "$target_service"
+    local found="n"
+    for s in "${detected_services[@]}"; do
+      [[ "$s" == "$target_service" ]] && found="y"
+    done
+    [[ "$found" == "y" ]] || die "service not found in compose: $target_service"
+    service_label="$target_service"
+  else
+    service_label="$(prompt "Service name label (for frpc/frps container names)" "$stack_name")"
+    validate_slug "service label" "$service_label"
+  fi
+
+  local frp_type
+  frp_type="$(prompt "FRP proxy type (http/udp/tcp)" "http")"
+  frp_type="${frp_type,,}"
+  case "$frp_type" in
+    http|udp|tcp) ;;
+    *) die "invalid FRP proxy type: $frp_type" ;;
+  esac
+
+  local frp_token
+  frp_token="$(prompt "FRP token (blank=generate)" "")"
+  if [[ -z "$frp_token" ]]; then
+    frp_token="$(gen_token)"
+    note "Generated token."
+  fi
+
+  local frp_server_addr
+  frp_server_addr="$(prompt "FRP server address (edge node IP/DNS)" "141.95.67.178")"
+
+  mapfile -t existing_bind_ports < <(grep -RhoE '^FRP_BIND_PORT=[0-9]+' services 2>/dev/null | sed 's/^FRP_BIND_PORT=//' | sort -u || true)
+  mapfile -t existing_vhost_ports < <(grep -RhoE '^FRP_VHOST_HTTP_PORT=[0-9]+' services 2>/dev/null | sed 's/^FRP_VHOST_HTTP_PORT=//' | sort -u || true)
+
+  local frp_bind_port
+  frp_bind_port="$(choose_unused_port 2000 65530 "${existing_bind_ports[@]}")"
+  note "Selected FRP bind port: $frp_bind_port"
+
+  local frp_proxy_name
+  frp_proxy_name="$(prompt "FRP proxy name" "$service_label")"
+
+  local frp_domain=""
+  local frp_vhost_http_port=""
+  local frp_local_port=""
+  local frp_remote_port=""
+  local frp_local_port_range=""
+  local frp_remote_port_range=""
+  local frp_proxy_protocol_version=""
+
+  local frp_local_ip_default=""
+  if [[ "$placement" == "sidecar" ]]; then
+    frp_local_ip_default="$target_service"
+  else
+    frp_local_ip_default="127.0.0.1"
+  fi
+  local frp_local_ip
+  frp_local_ip="$(prompt "FRPC local target IP/host" "$frp_local_ip_default")"
+  [[ -n "$frp_local_ip" ]] || die "local target IP/host cannot be empty"
+
+  if [[ "$frp_type" == "http" ]]; then
+    frp_domain="$(prompt "Domain to expose on FRPS (e.g. app.example.com)" "")"
+    [[ -n "$frp_domain" ]] || die "domain cannot be empty for http proxy"
+
+    frp_vhost_http_port="$(choose_unused_port 2000 65530 "$frp_bind_port" "${existing_vhost_ports[@]}")"
+    note "Selected FRP vhost HTTP port: $frp_vhost_http_port (bound to 127.0.0.1 on the FRPS host)"
+
+    frp_local_port="$(prompt "Local port to proxy (HTTP)" "8080")"
+    [[ "$frp_local_port" =~ ^[0-9]+$ ]] || die "local port must be a number"
+
+    frp_proxy_protocol_version="$(prompt "Proxy Protocol version to enable (v1/v2 or blank)" "")"
+    if [[ -n "$frp_proxy_protocol_version" ]]; then
+      case "$frp_proxy_protocol_version" in
+        v1|v2) ;;
+        *) die "invalid Proxy Protocol version: $frp_proxy_protocol_version" ;;
+      esac
+    fi
+  else
+    if [[ "$frp_type" == "udp" ]]; then
+      if prompt_yn "Proxy a UDP port range?" "n"; then
+        frp_local_port_range="$(prompt "Local UDP port range (e.g. 7771-7772)" "")"
+        frp_remote_port_range="$(prompt "Remote UDP port range on FRPS (e.g. 7771-7772)" "$frp_local_port_range")"
+        [[ "$frp_local_port_range" =~ ^[0-9]+-[0-9]+$ ]] || die "invalid local port range: $frp_local_port_range"
+        [[ "$frp_remote_port_range" =~ ^[0-9]+-[0-9]+$ ]] || die "invalid remote port range: $frp_remote_port_range"
+      else
+        frp_local_port="$(prompt "Local UDP port" "7777")"
+        [[ "$frp_local_port" =~ ^[0-9]+$ ]] || die "local port must be a number"
+        frp_remote_port="$(prompt "Remote UDP port on FRPS" "$frp_local_port")"
+        [[ "$frp_remote_port" =~ ^[0-9]+$ ]] || die "remote port must be a number"
+      fi
+    else
+      if prompt_yn "Proxy a TCP port range?" "n"; then
+        frp_local_port_range="$(prompt "Local TCP port range (e.g. 25565-25567)" "")"
+        frp_remote_port_range="$(prompt "Remote TCP port range on FRPS (e.g. 25565-25567)" "$frp_local_port_range")"
+        [[ "$frp_local_port_range" =~ ^[0-9]+-[0-9]+$ ]] || die "invalid local port range: $frp_local_port_range"
+        [[ "$frp_remote_port_range" =~ ^[0-9]+-[0-9]+$ ]] || die "invalid remote port range: $frp_remote_port_range"
+      else
+        frp_local_port="$(prompt "Local TCP port" "25565")"
+        [[ "$frp_local_port" =~ ^[0-9]+$ ]] || die "local port must be a number"
+        frp_remote_port="$(prompt "Remote TCP port on FRPS" "$frp_local_port")"
+        [[ "$frp_remote_port" =~ ^[0-9]+$ ]] || die "remote port must be a number"
+      fi
+    fi
+  fi
+
+  local frps_compose_path="${frps_dir}/docker-compose.yml"
+  local frps_runtime_env_path="${frps_dir}/runtime.env"
+  [[ ! -e "$frps_dir" ]] || die "frps folder already exists: $frps_dir"
+  mkdir -p "$frps_dir"
+
+  local frpc_override_path=""
+  local frpc_compose_path=""
+  local frpc_dir=""
+  local frpc_runtime_env_path=""
+
+  if [[ "$placement" == "sidecar" ]]; then
+    frpc_override_path="${compose_dir}/docker-compose.frpc.yml"
+    [[ ! -e "$frpc_override_path" ]] || die "override compose already exists: $frpc_override_path"
+    frpc_dir="${compose_dir}/frpc"
+    [[ ! -e "$frpc_dir" ]] || die "frpc folder already exists: $frpc_dir"
+    mkdir -p "$frpc_dir"
+    frpc_runtime_env_path="${frpc_dir}/runtime.env"
+  else
+    frpc_dir="${stack_dir}/frpc"
+    [[ ! -e "$frpc_dir" ]] || die "frpc folder already exists: $frpc_dir"
+    mkdir -p "$frpc_dir"
+    frpc_compose_path="${frpc_dir}/docker-compose.yml"
+    frpc_runtime_env_path="${frpc_dir}/runtime.env"
+  fi
+
+  local frpc_cfg_rel
+  local frps_cfg_rel
+  local frps_res_rel
+  frps_cfg_rel="$(realpath --relative-to="$frps_dir" "${ROOT_DIR}/services/utils/frp/frps/frps.toml")"
+  frps_res_rel="$(realpath --relative-to="$frps_dir" "${ROOT_DIR}/services/utils/frp/frps/res")"
+
+  if [[ "$placement" == "sidecar" ]]; then
+    frpc_cfg_rel="$(realpath --relative-to="$compose_dir" "${ROOT_DIR}/services/utils/frp/frpc/frpc-${frp_type}.toml")"
+  else
+    frpc_cfg_rel="$(realpath --relative-to="$frpc_dir" "${ROOT_DIR}/services/utils/frp/frpc/frpc-${frp_type}.toml")"
+  fi
+
+  local frps_ports_yaml="    ports:\n"
+  frps_ports_yaml+="      - \"\${FRP_BIND_PORT}:\${FRP_BIND_PORT}/tcp\"\n"
+  if [[ "$frp_type" == "http" ]]; then
+    frps_ports_yaml+="      # Only needed for HTTP/HTTPS proxy types.\n"
+    frps_ports_yaml+="      - \"127.0.0.1:\${FRP_VHOST_HTTP_PORT}:\${FRP_VHOST_HTTP_PORT}/tcp\"\n"
+  else
+    if [[ "$frp_type" == "udp" ]]; then
+      if [[ -n "$frp_remote_port_range" ]]; then
+        frps_ports_yaml+="      # Exposes the UDP proxy ports configured on the matching frpc side.\n"
+        frps_ports_yaml+="      - \"\${FRP_REMOTE_PORT_RANGE}:\${FRP_REMOTE_PORT_RANGE}/udp\"\n"
+      else
+        frps_ports_yaml+="      # Exposes the UDP proxy port configured on the matching frpc side.\n"
+        frps_ports_yaml+="      - \"\${FRP_REMOTE_PORT}:\${FRP_REMOTE_PORT}/udp\"\n"
+      fi
+    else
+      if [[ -n "$frp_remote_port_range" ]]; then
+        frps_ports_yaml+="      # Exposes the TCP proxy ports configured on the matching frpc side.\n"
+        frps_ports_yaml+="      - \"\${FRP_REMOTE_PORT_RANGE}:\${FRP_REMOTE_PORT_RANGE}/tcp\"\n"
+      else
+        frps_ports_yaml+="      # Exposes the TCP proxy port configured on the matching frpc side.\n"
+        frps_ports_yaml+="      - \"\${FRP_REMOTE_PORT}:\${FRP_REMOTE_PORT}/tcp\"\n"
+      fi
+    fi
+  fi
+
+  local frps_compose="services:\n\n"
+  frps_compose+="  frps:\n"
+  frps_compose+="    image: snowdreamtech/frps\n"
+  frps_compose+="    container_name: \${FRPS_NAME}\n"
+  frps_compose+="    restart: unless-stopped\n\n"
+  frps_compose+="$(printf '%b' "$frps_ports_yaml")\n"
+  frps_compose+="    volumes:\n"
+  frps_compose+="      - ${frps_cfg_rel}:/etc/frp/frps.toml:ro\n"
+  frps_compose+="      - ${frps_res_rel}:/etc/frp/res:ro\n\n"
+  frps_compose+="    env_file:\n"
+  frps_compose+="      - runtime.env\n\n"
+  frps_compose+="    read_only: true\n"
+  frps_compose+="    tmpfs:\n"
+  frps_compose+="      - /tmp\n"
+  frps_compose+="    security_opt:\n"
+  frps_compose+="      - no-new-privileges:true\n"
+  printf '%b' "$frps_compose" >"$frps_compose_path"
+
+  local frps_env="# -------------------------\n# FRPS container\n# -------------------------\n"
+  frps_env+="FRPS_NAME=frps-${service_label}\n\n"
+  frps_env+="# -------------------------\n# Bind settings\n# -------------------------\n"
+  frps_env+="FRP_BIND_PORT=${frp_bind_port}\n"
+  if [[ "$frp_type" == "http" ]]; then
+    frps_env+="FRP_VHOST_HTTP_PORT=${frp_vhost_http_port}\n"
+  else
+    if [[ -n "$frp_remote_port_range" ]]; then
+      frps_env+="FRP_REMOTE_PORT_RANGE=${frp_remote_port_range}\n"
+    else
+      frps_env+="FRP_REMOTE_PORT=${frp_remote_port}\n"
+    fi
+  fi
+  frps_env+="\n"
+  frps_env+="# -------------------------\n# Authentication\n# -------------------------\n"
+  frps_env+="FRP_TOKEN=${frp_token}\n\n"
+  frps_env+="# -------------------------\n# TLS settings\n# -------------------------\n"
+  frps_env+="FRP_TLS_FORCE=true\n\n"
+  frps_env+="# -------------------------\n# Logging\n# -------------------------\n"
+  frps_env+="FRP_LOG_LEVEL=info\n"
+  printf '%b' "$frps_env" >"$frps_runtime_env_path"
+
+  local frpc_env="# -------------------------\n# FRP client connection\n# -------------------------\n"
+  frpc_env+="FRP_SERVER_ADDR=${frp_server_addr}\n"
+  frpc_env+="FRP_SERVER_PORT=${frp_bind_port}\n\n"
+  frpc_env+="# -------------------------\n# Authentication\n# -------------------------\n"
+  frpc_env+="FRP_TOKEN=${frp_token}\n\n"
+  frpc_env+="# -------------------------\n# Proxy configuration\n# -------------------------\n"
+  frpc_env+="FRP_PROXY_NAME=${frp_proxy_name}\n"
+  frpc_env+="FRP_LOCAL_IP=${frp_local_ip}\n"
+  if [[ "$frp_type" == "http" ]]; then
+    frpc_env+="FRP_LOCAL_PORT=${frp_local_port}\n\n"
+    frpc_env+="# -------------------------\n# Domain exposed by FRPS\n# -------------------------\n"
+    frpc_env+="FRP_DOMAIN=${frp_domain}\n"
+  else
+    if [[ -n "$frp_local_port_range" ]]; then
+      frpc_env+="FRP_LOCAL_PORT_RANGE=${frp_local_port_range}\n"
+      frpc_env+="FRP_REMOTE_PORT_RANGE=${frp_remote_port_range}\n"
+    else
+      frpc_env+="FRP_LOCAL_PORT=${frp_local_port}\n"
+      frpc_env+="FRP_REMOTE_PORT=${frp_remote_port}\n"
+    fi
+  fi
+  frpc_env+="\n"
+  frpc_env+="# -------------------------\n# Transport settings\n# -------------------------\n"
+  frpc_env+="FRP_TLS_ENABLE=true\n"
+  if [[ "$frp_type" == "http" ]]; then
+    frpc_env+="# Set to v1 or v2 to enable Proxy Protocol. Leave empty to disable.\n"
+    frpc_env+="FRP_PROXY_PROTOCOL_VERSION=${frp_proxy_protocol_version}\n"
+  fi
+  frpc_env+="\n"
+  frpc_env+="# -------------------------\n# Logging\n# -------------------------\n"
+  frpc_env+="FRP_LOG_LEVEL=info\n"
+  printf '%b' "$frpc_env" >"$frpc_runtime_env_path"
+
+  if [[ "$placement" == "sidecar" ]]; then
+    mapfile -t svc_networks < <(detect_service_networks "$compose_src" "$target_service")
+
+    need_outbound_network="n"
+    if ((${#svc_networks[@]} > 0)); then
+      only_internal="y"
+      for n in "${svc_networks[@]}"; do
+        if [[ "$(network_is_internal "$compose_src" "$n")" != "true" ]]; then
+          only_internal="n"
+        fi
+      done
+      if [[ "$only_internal" == "y" ]]; then
+        need_outbound_network="y"
+      fi
+    fi
+
+    local frpc_compose="services:\n\n"
+    frpc_compose+="  frpc:\n"
+    frpc_compose+="    image: snowdreamtech/frpc\n"
+    frpc_compose+="    container_name: frpc-${service_label}\n"
+    frpc_compose+="    restart: unless-stopped\n\n"
+    frpc_compose+="    depends_on:\n"
+    frpc_compose+="      - ${target_service}\n\n"
+    frpc_compose+="    volumes:\n"
+    frpc_compose+="      - ${frpc_cfg_rel}:/etc/frp/frpc.toml:ro\n\n"
+    frpc_compose+="    env_file:\n"
+    frpc_compose+="      - frpc/runtime.env\n\n"
+
+    if ((${#svc_networks[@]} > 0)); then
+      frpc_compose+="    networks:\n"
+      for n in "${svc_networks[@]}"; do
+        frpc_compose+="      - ${n}\n"
+      done
+      if [[ "$need_outbound_network" == "y" ]]; then
+        frpc_compose+="      - outbound\n"
+      fi
+      frpc_compose+="\n"
+    fi
+
+    frpc_compose+="    read_only: true\n"
+    frpc_compose+="    security_opt:\n"
+    frpc_compose+="      - no-new-privileges:true\n"
+
+    printf '%b' "$frpc_compose" >"$frpc_override_path"
+  else
+    local frpc_compose="services:\n\n"
+    frpc_compose+="  frpc:\n"
+    frpc_compose+="    image: snowdreamtech/frpc\n"
+    frpc_compose+="    container_name: frpc-${service_label}\n"
+    frpc_compose+="    restart: unless-stopped\n\n"
+    frpc_compose+="    network_mode: host\n\n"
+    frpc_compose+="    volumes:\n"
+    frpc_compose+="      - ${frpc_cfg_rel}:/etc/frp/frpc.toml:ro\n\n"
+    frpc_compose+="    env_file:\n"
+    frpc_compose+="      - runtime.env\n\n"
+    frpc_compose+="    read_only: true\n"
+    frpc_compose+="    security_opt:\n"
+    frpc_compose+="      - no-new-privileges:true\n"
+
+    printf '%b' "$frpc_compose" >"$frpc_compose_path"
+  fi
+
+  local recipient=""
+  local existing_recipient=""
+  existing_recipient="$(extract_sops_age_recipient "${compose_dir}/.env" || true)"
+  if [[ -n "$existing_recipient" ]]; then
+    if prompt_yn "Reuse existing AGE recipient from ${compose_dir}/.env?" "y"; then
+      recipient="$existing_recipient"
+      note "Reusing recipient: $recipient"
+    fi
+  fi
+  if [[ -z "$recipient" ]]; then
+    echo
+    note "Generating AGE key (store the secret key safely)."
+    age_out="$(age-keygen)"
+    echo "$age_out"
+    recipient="$(printf '%s\n' "$age_out" | awk '/^# public key: /{print $4; exit}')"
+    [[ -n "$recipient" ]] || die "failed to parse age public key from age-keygen output"
+  fi
+
+  note "Encrypting runtime.env -> .env with sops (recipient: $recipient)"
+  encrypt_runtime_env_to_dotenv "$frpc_runtime_env_path" "${frpc_dir}/.env" "$recipient"
+  encrypt_runtime_env_to_dotenv "$frps_runtime_env_path" "${frps_dir}/.env" "$recipient"
+
+  echo
+  note "Wrote:"
+  if [[ "$placement" == "sidecar" ]]; then
+    echo "  - ${frpc_override_path}"
+  else
+    echo "  - ${frpc_compose_path}"
+  fi
+  echo "  - ${frpc_runtime_env_path} (gitignored)"
+  echo "  - ${frpc_dir}/.env (sops+age encrypted)"
+  echo "  - ${frps_compose_path}"
+  echo "  - ${frps_runtime_env_path} (gitignored)"
+  echo "  - ${frps_dir}/.env (sops+age encrypted)"
+
+  echo
+  if [[ "$placement" == "sidecar" ]]; then
+    note "Next (service host): decrypt frpc/.env -> frpc/runtime.env and run compose with the override file."
+    echo "  cd ${compose_dir}"
+    echo "  docker compose -f docker-compose.yml -f docker-compose.frpc.yml --env-file runtime.env up -d"
+  else
+    note "Next (service host): decrypt frpc/.env -> frpc/runtime.env and bring up frpc."
+    echo "  cd ${frpc_dir}"
+    echo "  docker compose --env-file runtime.env up -d"
+  fi
+  echo
+  note "Next (edge host): decrypt frps/.env -> frps/runtime.env and bring up frps."
+  echo "  cd ${frps_dir}"
+  echo "  docker compose --env-file runtime.env up -d"
+}
+
+# ---------- Main flow ----------
+
+require_cmd sops
+require_cmd age-keygen
+require_cmd od
+require_cmd realpath
+
+note "Compose stack generator (writes under services/...)"
+echo
+
+mode="$(prompt "Mode (new/import/attach-frp)" "new")"
+mode="${mode,,}"
+case "$mode" in
+  new|n) ;;
+  import|i) ;;
+  attach-frp|attach|a)
+    attach_frp_flow
+    exit 0
+    ;;
+  *) die "unknown mode: $mode (expected 'new', 'import' or 'attach-frp')" ;;
+esac
+
+compose_src=""
+prefill_image=""
+prefill_container_name=""
+prefill_ports=""
+prefill_volumes=""
+if [[ "$mode" == "import" || "$mode" == "i" ]]; then
+  compose_src="$(prompt "Path to existing docker-compose.yml" "")"
+  [[ -f "$compose_src" ]] || die "file not found: $compose_src"
+  prefill_image="$(awk '/^[[:space:]]*image:[[:space:]]*/{print $2; exit}' "$compose_src" 2>/dev/null | sed 's/^"//; s/"$//' || true)"
+  prefill_container_name="$(awk '/^[[:space:]]*container_name:[[:space:]]*/{print $2; exit}' "$compose_src" 2>/dev/null | sed 's/^"//; s/"$//' || true)"
+  prefill_ports="$(
+    awk '
+      /^[[:space:]]*ports:[[:space:]]*$/ {in=1; next}
+      in && /^[[:space:]]*-[[:space:]]*/ {
+        line=$0
+        sub(/^[[:space:]]*-[[:space:]]*/, "", line)
+        gsub(/^"|"$/, "", line)
+        if (out != "") out = out ", "
+        out = out line
+        next
+      }
+      in {exit}
+      END {print out}
+    ' "$compose_src" 2>/dev/null || true
+  )"
+  prefill_volumes="$(
+    awk '
+      /^[[:space:]]*volumes:[[:space:]]*$/ {in=1; next}
+      in && /^[[:space:]]*-[[:space:]]*/ {
+        line=$0
+        sub(/^[[:space:]]*-[[:space:]]*/, "", line)
+        gsub(/^"|"$/, "", line)
+        if (out != "") out = out ", "
+        out = out line
+        next
+      }
+      in {exit}
+      END {print out}
+    ' "$compose_src" 2>/dev/null || true
+  )"
+  echo
+  note "Import mode is best-effort: it only pre-fills a few prompts."
+  [[ -n "$prefill_image" ]] && note "Detected image: $prefill_image"
+  [[ -n "$prefill_container_name" ]] && note "Detected container_name: $prefill_container_name"
+  [[ -n "$prefill_ports" ]] && note "Detected ports: $prefill_ports"
+  [[ -n "$prefill_volumes" ]] && note "Detected volumes: $prefill_volumes"
+  echo
+fi
+
+env_kind="$(prompt "Environment (production/testing)" "production")"
+env_kind="${env_kind,,}"
+case "$env_kind" in
+  production|testing) ;;
+  *) die "invalid environment: $env_kind" ;;
+esac
+
+stack_name="$(prompt "Stack folder name (under services/${env_kind}/)" "")"
+validate_slug "stack name" "$stack_name"
+
+primary_service_name="$(prompt "Primary service name (folder + compose key)" "$stack_name")"
+validate_slug "service name" "$primary_service_name"
+
+stack_dir="services/${env_kind}/${stack_name}"
+svc_dir="${stack_dir}/${primary_service_name}"
+frps_dir="${stack_dir}/frps"
+
+if [[ -e "$stack_dir" ]]; then
+  die "target already exists: $stack_dir"
+fi
+
+mkdir -p "$svc_dir"
+
+primary_image_default="${prefill_image:-}"
+primary_image="$(prompt "Image for ${primary_service_name}" "${primary_image_default:-}")"
+[[ -n "$primary_image" ]] || die "image cannot be empty"
+
+primary_container_default="${prefill_container_name:-$primary_service_name}"
+primary_container_name="$(prompt "Container name for ${primary_service_name}" "$primary_container_default")"
+validate_slug "container name" "$primary_container_name"
+
+primary_prefix="$(upper_snake "$primary_service_name")"
+
+note "Volume binds: enter as host_path:container_path[:ro], comma-separated (blank for none)"
+primary_volumes_raw="$(prompt "Volume binds" "${prefill_volumes:-}")"
+mapfile -t primary_volumes < <(split_csv "$primary_volumes_raw" || true)
+
+note "Published ports: enter as external:internal[/proto], comma-separated (blank for none)"
+primary_ports_raw="$(prompt "Published ports" "${prefill_ports:-}")"
+mapfile -t primary_ports < <(split_csv "$primary_ports_raw" || true)
+
+bind_addr=""
+if ((${#primary_ports[@]} > 0)); then
+  echo
+  note "Detected local IPv4 addresses (for bind address hints):"
+  detect_ipv4_addrs || true
+  echo
+  bind_addr="$(prompt "Bind address for published ports (blank=0.0.0.0)" "")"
+  bind_addr="$(trim "$bind_addr")"
+fi
+
+primary_needs_outbound="y"
+if prompt_yn "Does ${primary_service_name} need outbound internet access?" "y"; then
+  primary_needs_outbound="y"
+else
+  primary_needs_outbound="n"
+fi
+
+declare -a primary_env_names=()
+runtime_env_content=""
+
+runtime_env_content+="# -------------------------\n"
+runtime_env_content+="# ${primary_service_name} container\n"
+runtime_env_content+="# -------------------------\n"
+runtime_env_content+="${primary_prefix}_NAME=${primary_container_name}\n"
+
+echo
+note "Add environment variables for ${primary_service_name} (KEY=VALUE). Leave blank to finish."
+while true; do
+  kv="$(prompt "Env var" "")"
+  [[ -z "$kv" ]] && break
+  if [[ "$kv" != *"="* ]]; then
+    die "expected KEY=VALUE, got: $kv"
+  fi
+  key="${kv%%=*}"
+  val="${kv#*=}"
+  key="$(trim "$key")"
+  [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || die "invalid env var name: $key"
+  runtime_env_content+="${key}=${val}\n"
+  primary_env_names+=("$key")
+done
+
+declare -a extra_services=()
+declare -a extra_images=()
+declare -a extra_container_names=()
+declare -a extra_needs_outbound=()
+declare -a extra_volumes_raw=()
+declare -a extra_ports_raw=()
+declare -a extra_env_names_joined=()
+
+while prompt_yn "Attach another service to the same stack?" "n"; do
+  svc_name="$(prompt "Service name (folder + compose key)" "")"
+  validate_slug "service name" "$svc_name"
+  svc_image="$(prompt "Image for ${svc_name}" "")"
+  [[ -n "$svc_image" ]] || die "image cannot be empty"
+  svc_container_name="$(prompt "Container name for ${svc_name}" "$svc_name")"
+  validate_slug "container name" "$svc_container_name"
+
+  svc_prefix="$(upper_snake "$svc_name")"
+  runtime_env_content+="\n# -------------------------\n# ${svc_name} container\n# -------------------------\n"
+  runtime_env_content+="${svc_prefix}_NAME=${svc_container_name}\n"
+
+  note "Volume binds for ${svc_name} (comma-separated, blank for none)"
+  svc_vols="$(prompt "Volume binds" "")"
+
+  note "Published ports for ${svc_name} (comma-separated, blank for none)"
+  svc_ports="$(prompt "Published ports" "")"
+
+  svc_needs_outbound="y"
+  if prompt_yn "Does ${svc_name} need outbound internet access?" "y"; then
+    svc_needs_outbound="y"
+  else
+    svc_needs_outbound="n"
+  fi
+
+  echo
+  note "Add environment variables for ${svc_name} (KEY=VALUE). Leave blank to finish."
+  declare -a svc_env_names=()
+  while true; do
+    kv="$(prompt "Env var" "")"
+    [[ -z "$kv" ]] && break
+    if [[ "$kv" != *"="* ]]; then
+      die "expected KEY=VALUE, got: $kv"
+    fi
+    key="${kv%%=*}"
+    val="${kv#*=}"
+    key="$(trim "$key")"
+    [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || die "invalid env var name: $key"
+    runtime_env_content+="${key}=${val}\n"
+    svc_env_names+=("$key")
+  done
+
+  extra_services+=("$svc_name")
+  extra_images+=("$svc_image")
+  extra_container_names+=("$svc_container_name")
+  extra_needs_outbound+=("$svc_needs_outbound")
+  extra_volumes_raw+=("$svc_vols")
+  extra_ports_raw+=("$svc_ports")
+  extra_env_names_joined+=("$(printf '%s\n' "${svc_env_names[@]}")")
+done
+
+attach_frpc="n"
+if prompt_yn "Attach an FRP client (frpc) to ${primary_service_name}?" "n"; then
+  attach_frpc="y"
+fi
+
+frp_type=""
+frp_token=""
+frp_server_addr=""
+frp_bind_port=""
+frp_vhost_http_port=""
+frp_domain=""
+frp_proxy_name=""
+frp_local_port=""
+frp_local_port_range=""
+frp_remote_port=""
+frp_remote_port_range=""
+frp_proxy_protocol_version=""
+
+need_internal_network="n"
+need_outbound_network="n"
+
+# Internal network is required if any service should not have outbound access,
+# or if we attach frpc (private service network + outbound for frpc).
+if [[ "$primary_needs_outbound" == "n" ]]; then
+  need_internal_network="y"
+fi
+for flag in "${extra_needs_outbound[@]}"; do
+  if [[ "$flag" == "n" ]]; then
+    need_internal_network="y"
+  fi
+done
+
+if [[ "$primary_needs_outbound" == "y" ]]; then
+  need_outbound_network="y"
+fi
+for flag in "${extra_needs_outbound[@]}"; do
+  if [[ "$flag" == "y" ]]; then
+    need_outbound_network="y"
+  fi
+done
+
+if [[ "$attach_frpc" == "y" ]]; then
+  need_internal_network="y"
+  need_outbound_network="y"
+
+  echo
+  frp_type="$(prompt "FRP proxy type (http/udp/tcp)" "http")"
+  frp_type="${frp_type,,}"
+  case "$frp_type" in
+    http|udp|tcp) ;;
+    *) die "unsupported FRP proxy type: $frp_type (expected http, udp, or tcp)" ;;
+  esac
+
+  [[ -f "services/utils/frp/frpc/frpc-${frp_type}.toml" ]] || die "missing template: services/utils/frp/frpc/frpc-${frp_type}.toml"
+  [[ -f "services/utils/frp/frps/frps.toml" ]] || die "missing template: services/utils/frp/frps/frps.toml"
+  [[ -d "services/utils/frp/frps/res" ]] || die "missing template dir: services/utils/frp/frps/res"
+
+  frp_token="$(prompt "FRP token (blank to generate)" "")"
+  if [[ -z "$frp_token" ]]; then
+    frp_token="$(gen_token)"
+    note "Generated token."
+  fi
+
+  frp_server_addr="$(prompt "FRP server address (edge node IP/DNS)" "141.95.67.178")"
+
+  # Avoid obvious collisions with existing runtime.env ports (best-effort).
+  mapfile -t existing_bind_ports < <(grep -RhoE '^FRP_BIND_PORT=[0-9]+' services 2>/dev/null | sed 's/^FRP_BIND_PORT=//' | sort -u || true)
+  mapfile -t existing_vhost_ports < <(grep -RhoE '^FRP_VHOST_HTTP_PORT=[0-9]+' services 2>/dev/null | sed 's/^FRP_VHOST_HTTP_PORT=//' | sort -u || true)
+
+  frp_bind_port="$(choose_unused_port 2000 65530 "${existing_bind_ports[@]}")"
+  note "Selected FRP bind port: $frp_bind_port"
+
+  frp_proxy_name="$(prompt "FRP proxy name" "$primary_service_name")"
+
+  if [[ "$frp_type" == "http" ]]; then
+    frp_domain="$(prompt "Domain to expose on FRPS (e.g. app.example.com)" "")"
+    [[ -n "$frp_domain" ]] || die "domain cannot be empty for http proxy"
+
+    # Use a distinct local-only vhost port on the FRPS host.
+    frp_vhost_http_port="$(choose_unused_port 2000 65530 "$frp_bind_port" "${existing_vhost_ports[@]}")"
+    note "Selected FRP vhost HTTP port: $frp_vhost_http_port (bound to 127.0.0.1 on the FRPS host)"
+
+    default_local_port=""
+    if ((${#primary_ports[@]} > 0)); then
+      default_local_port="$(extract_internal_port_from_mapping "${primary_ports[0]}" || true)"
+    fi
+    frp_local_port="$(prompt "Local container port to proxy (HTTP)" "${default_local_port:-8080}")"
+    [[ "$frp_local_port" =~ ^[0-9]+$ ]] || die "local port must be a number"
+
+    frp_proxy_protocol_version="$(prompt "Proxy Protocol version to enable (v1/v2 or blank)" "")"
+    if [[ -n "$frp_proxy_protocol_version" ]]; then
+      case "$frp_proxy_protocol_version" in
+        v1|v2) ;;
+        *) die "invalid Proxy Protocol version: $frp_proxy_protocol_version" ;;
+      esac
+    fi
+  else
+    if [[ "$frp_type" == "udp" ]]; then
+      if prompt_yn "Proxy a UDP port range?" "n"; then
+        frp_local_port_range="$(prompt "Local UDP port range (e.g. 7771-7772)" "")"
+        frp_remote_port_range="$(prompt "Remote UDP port range on FRPS (e.g. 7771-7772)" "$frp_local_port_range")"
+        [[ "$frp_local_port_range" =~ ^[0-9]+-[0-9]+$ ]] || die "invalid local port range: $frp_local_port_range"
+        [[ "$frp_remote_port_range" =~ ^[0-9]+-[0-9]+$ ]] || die "invalid remote port range: $frp_remote_port_range"
+      else
+        default_local_port=""
+        if ((${#primary_ports[@]} > 0)); then
+          default_local_port="$(extract_internal_port_from_mapping "${primary_ports[0]}" || true)"
+        fi
+        frp_local_port="$(prompt "Local UDP port" "${default_local_port:-7777}")"
+        [[ "$frp_local_port" =~ ^[0-9]+$ ]] || die "local port must be a number"
+        frp_remote_port="$(prompt "Remote UDP port on FRPS" "$frp_local_port")"
+        [[ "$frp_remote_port" =~ ^[0-9]+$ ]] || die "remote port must be a number"
+      fi
+    else
+      if prompt_yn "Proxy a TCP port range?" "n"; then
+        frp_local_port_range="$(prompt "Local TCP port range (e.g. 25565-25567)" "")"
+        frp_remote_port_range="$(prompt "Remote TCP port range on FRPS (e.g. 25565-25567)" "$frp_local_port_range")"
+        [[ "$frp_local_port_range" =~ ^[0-9]+-[0-9]+$ ]] || die "invalid local port range: $frp_local_port_range"
+        [[ "$frp_remote_port_range" =~ ^[0-9]+-[0-9]+$ ]] || die "invalid remote port range: $frp_remote_port_range"
+      else
+        default_local_port=""
+        if ((${#primary_ports[@]} > 0)); then
+          default_local_port="$(extract_internal_port_from_mapping "${primary_ports[0]}" || true)"
+        fi
+        frp_local_port="$(prompt "Local TCP port" "${default_local_port:-25565}")"
+        [[ "$frp_local_port" =~ ^[0-9]+$ ]] || die "local port must be a number"
+        frp_remote_port="$(prompt "Remote TCP port on FRPS" "$frp_local_port")"
+        [[ "$frp_remote_port" =~ ^[0-9]+$ ]] || die "remote port must be a number"
+      fi
+    fi
+  fi
+fi
+
+# Normalize published ports with optional bind address.
+normalize_port_mapping() {
+  local mapping="$1"
+  local addr="$2"
+  local m
+  m="$(trim "$mapping")"
+  [[ -n "$m" ]] || return 0
+
+  # If it already has 2+ ':' segments, assume the user included an address.
+  local colons=${m//[^:]/}
+  if ((${#colons} >= 2)); then
+    printf '%s' "$m"
+    return 0
+  fi
+
+  if [[ -n "$addr" ]]; then
+    printf '%s' "${addr}:${m}"
+  else
+    printf '%s' "$m"
+  fi
+}
+
+declare -a primary_ports_norm=()
+for p in "${primary_ports[@]}"; do
+  primary_ports_norm+=("$(normalize_port_mapping "$p" "$bind_addr")")
+done
+
+declare -a extra_ports_norm=()
+for i in "${!extra_services[@]}"; do
+  mapfile -t ports_tmp < <(split_csv "${extra_ports_raw[$i]}" || true)
+  for p in "${ports_tmp[@]}"; do
+    extra_ports_norm+=("${extra_services[$i]}|$(normalize_port_mapping "$p" "$bind_addr")")
+  done
+done
+
+# Ensure we have the primary name var in runtime.env; append FRP variables if needed.
+if [[ "$attach_frpc" == "y" ]]; then
+  runtime_env_content+="\n"
+  runtime_env_content+="# -------------------------\n"
+  runtime_env_content+="# FRP server connection\n"
+  runtime_env_content+="# -------------------------\n"
+  runtime_env_content+="FRP_SERVER_ADDR=${frp_server_addr}\n"
+  runtime_env_content+="FRP_SERVER_PORT=${frp_bind_port}\n"
+  runtime_env_content+="\n"
+  runtime_env_content+="# -------------------------\n"
+  runtime_env_content+="# Authentication\n"
+  runtime_env_content+="# -------------------------\n"
+  runtime_env_content+="FRP_TOKEN=${frp_token}\n"
+  runtime_env_content+="\n"
+  runtime_env_content+="# -------------------------\n"
+  runtime_env_content+="# Proxy configuration\n"
+  runtime_env_content+="# -------------------------\n"
+  runtime_env_content+="FRP_PROXY_NAME=${frp_proxy_name}\n"
+  runtime_env_content+="FRP_LOCAL_IP=${primary_container_name}\n"
+
+  if [[ "$frp_type" == "http" ]]; then
+    runtime_env_content+="FRP_LOCAL_PORT=${frp_local_port}\n"
+    runtime_env_content+="\n"
+    runtime_env_content+="# -------------------------\n"
+    runtime_env_content+="# Domain exposed by FRPS\n"
+    runtime_env_content+="# -------------------------\n"
+    runtime_env_content+="FRP_DOMAIN=${frp_domain}\n"
+  else
+    if [[ -n "$frp_local_port_range" ]]; then
+      runtime_env_content+="FRP_LOCAL_PORT_RANGE=${frp_local_port_range}\n"
+      runtime_env_content+="FRP_REMOTE_PORT_RANGE=${frp_remote_port_range}\n"
+    else
+      runtime_env_content+="FRP_LOCAL_PORT=${frp_local_port}\n"
+      runtime_env_content+="FRP_REMOTE_PORT=${frp_remote_port}\n"
+    fi
+  fi
+
+  runtime_env_content+="\n"
+  runtime_env_content+="# -------------------------\n"
+  runtime_env_content+="# Transport settings\n"
+  runtime_env_content+="# -------------------------\n"
+  runtime_env_content+="FRP_TLS_ENABLE=true\n"
+  if [[ "$frp_type" == "http" ]]; then
+    runtime_env_content+="# Set to v1 or v2 to enable Proxy Protocol. Leave empty to disable.\n"
+    runtime_env_content+="FRP_PROXY_PROTOCOL_VERSION=${frp_proxy_protocol_version}\n"
+  fi
+  runtime_env_content+="\n"
+  runtime_env_content+="# -------------------------\n"
+  runtime_env_content+="# Logging\n"
+  runtime_env_content+="# -------------------------\n"
+  runtime_env_content+="FRP_LOG_LEVEL=info\n"
+fi
+
+# Compose YAML generation
+compose_path="${svc_dir}/docker-compose.yml"
+runtime_env_path="${svc_dir}/runtime.env"
+
+compose_yaml="services:\n\n"
+
+render_one_service() {
+  local svc_key="$1"
+  local svc_image="$2"
+  local svc_prefix="$3"
+  local svc_container="$4"
+  local svc_needs_outbound="$5" # y|n
+  local svc_volumes_raw="$6"
+  local svc_ports_block="$7" # newline-separated mappings
+  local svc_env_names="$8" # newline-separated
+
+  compose_yaml+="  ${svc_key}:\n"
+  compose_yaml+="    image: ${svc_image}\n"
+  compose_yaml+="    container_name: \${${svc_prefix}_NAME}\n"
+  compose_yaml+="    restart: unless-stopped\n"
+
+  if [[ "$need_internal_network" == "y" || "$need_outbound_network" == "y" ]]; then
+    compose_yaml+="\n"
+    compose_yaml+="    networks:\n"
+    if [[ "$need_internal_network" == "y" ]]; then
+      compose_yaml+="      - internal\n"
+    fi
+    if [[ "$svc_needs_outbound" == "y" && "$need_outbound_network" == "y" ]]; then
+      compose_yaml+="      - outbound\n"
+    fi
+  fi
+
+  mapfile -t vols_tmp < <(split_csv "$svc_volumes_raw" || true)
+  if ((${#vols_tmp[@]} > 0)); then
+    compose_yaml+="\n"
+    compose_yaml+="    volumes:\n"
+    local v=""
+    for v in "${vols_tmp[@]}"; do
+      compose_yaml+="      - ${v}\n"
+    done
+  fi
+
+  if [[ -n "$svc_ports_block" ]]; then
+    compose_yaml+="\n"
+    compose_yaml+="    ports:\n"
+    while IFS= read -r line; do
+      [[ -z "$line" ]] && continue
+      compose_yaml+="      - \"${line}\"\n"
+    done <<<"$svc_ports_block"
+  fi
+
+  if [[ -n "$svc_env_names" ]]; then
+    compose_yaml+="\n"
+    compose_yaml+="    environment:\n"
+    while IFS= read -r e; do
+      e="$(trim "$e")"
+      [[ -z "$e" ]] && continue
+      compose_yaml+="      - ${e}\n"
+    done <<<"$svc_env_names"
+  fi
+
+  if [[ "$attach_frpc" == "y" && "$svc_key" == "$primary_service_name" ]]; then
+    if [[ "$frp_type" == "http" ]]; then
+      compose_yaml+="\n"
+      compose_yaml+="    expose:\n"
+      compose_yaml+="      - \"${frp_local_port}\"\n"
+    fi
+  fi
+
+  compose_yaml+="\n"
+  compose_yaml+="    security_opt:\n"
+  compose_yaml+="      - no-new-privileges:true\n"
+  compose_yaml+="\n\n"
+}
+
+primary_ports_block=""
+if ((${#primary_ports_norm[@]} > 0)); then
+  primary_ports_block="$(printf '%s\n' "${primary_ports_norm[@]}")"
+fi
+
+render_one_service \
+  "$primary_service_name" \
+  "$primary_image" \
+  "$primary_prefix" \
+  "$primary_container_name" \
+  "$primary_needs_outbound" \
+  "$primary_volumes_raw" \
+  "$primary_ports_block" \
+  "$(printf '%s\n' "${primary_env_names[@]}")"
+
+for i in "${!extra_services[@]}"; do
+  svc="${extra_services[$i]}"
+  img="${extra_images[$i]}"
+  cn="${extra_container_names[$i]}"
+  pref="$(upper_snake "$svc")"
+  needs_out="${extra_needs_outbound[$i]}"
+  vols="${extra_volumes_raw[$i]}"
+  env_names="${extra_env_names_joined[$i]}"
+
+  # Collect normalized published ports for this extra service.
+  ports_block=""
+  for entry in "${extra_ports_norm[@]}"; do
+    svc_key="${entry%%|*}"
+    mapping="${entry#*|}"
+    if [[ "$svc_key" == "$svc" ]]; then
+      ports_block+="${mapping}\n"
+    fi
+  done
+  ports_block="$(printf '%b' "$ports_block")"
+
+  render_one_service \
+    "$svc" \
+    "$img" \
+    "$pref" \
+    "$cn" \
+    "$needs_out" \
+    "$vols" \
+    "$ports_block" \
+    "$env_names"
+done
+
+if [[ "$attach_frpc" == "y" ]]; then
+  frpc_cfg="../../../utils/frp/frpc/frpc-${frp_type}.toml"
+
+  compose_yaml+="  frpc:\n"
+  compose_yaml+="    image: snowdreamtech/frpc\n"
+  compose_yaml+="    container_name: frpc-\${${primary_prefix}_NAME}\n"
+  compose_yaml+="    restart: unless-stopped\n\n"
+  compose_yaml+="    depends_on:\n"
+  compose_yaml+="      - ${primary_service_name}\n\n"
+  compose_yaml+="    volumes:\n"
+  compose_yaml+="      - ${frpc_cfg}:/etc/frp/frpc.toml:ro\n\n"
+  compose_yaml+="    env_file:\n"
+  compose_yaml+="      - runtime.env\n\n"
+  compose_yaml+="    networks:\n"
+  compose_yaml+="      - internal\n"
+  compose_yaml+="      - outbound\n\n"
+  compose_yaml+="    read_only: true\n"
+  compose_yaml+="    security_opt:\n"
+  compose_yaml+="      - no-new-privileges:true\n"
+  compose_yaml+="\n"
+fi
+
+if [[ "$need_internal_network" == "y" || "$need_outbound_network" == "y" ]]; then
+  compose_yaml+="networks:\n\n"
+  if [[ "$need_internal_network" == "y" ]]; then
+    compose_yaml+="  internal:\n"
+    compose_yaml+="    driver: bridge\n"
+    compose_yaml+="    internal: true\n\n"
+  fi
+  if [[ "$need_outbound_network" == "y" ]]; then
+    compose_yaml+="  outbound:\n"
+    compose_yaml+="    driver: bridge\n"
+  fi
+fi
+
+printf '%b' "$compose_yaml" >"$compose_path"
+printf '%b' "$runtime_env_content" >"$runtime_env_path"
+
+frps_runtime_env_path=""
+if [[ "$attach_frpc" == "y" ]]; then
+  mkdir -p "$frps_dir"
+  frps_compose_path="${frps_dir}/docker-compose.yml"
+  frps_runtime_env_path="${frps_dir}/runtime.env"
+
+  frps_ports_yaml="    ports:\n"
+  frps_ports_yaml+="      - \"\${FRP_BIND_PORT}:\${FRP_BIND_PORT}/tcp\"\n"
+  if [[ "$frp_type" == "http" ]]; then
+    frps_ports_yaml+="      # Only needed for HTTP/HTTPS proxy types.\n"
+    frps_ports_yaml+="      - \"127.0.0.1:\${FRP_VHOST_HTTP_PORT}:\${FRP_VHOST_HTTP_PORT}/tcp\"\n"
+  else
+    if [[ "$frp_type" == "udp" ]]; then
+      if [[ -n "$frp_remote_port_range" ]]; then
+        frps_ports_yaml+="      # Exposes the UDP proxy ports configured on the matching frpc side.\n"
+        frps_ports_yaml+="      - \"\${FRP_REMOTE_PORT_RANGE}:\${FRP_REMOTE_PORT_RANGE}/udp\"\n"
+      else
+        frps_ports_yaml+="      # Exposes the UDP proxy port configured on the matching frpc side.\n"
+        frps_ports_yaml+="      - \"\${FRP_REMOTE_PORT}:\${FRP_REMOTE_PORT}/udp\"\n"
+      fi
+    else
+      if [[ -n "$frp_remote_port_range" ]]; then
+        frps_ports_yaml+="      # Exposes the TCP proxy ports configured on the matching frpc side.\n"
+        frps_ports_yaml+="      - \"\${FRP_REMOTE_PORT_RANGE}:\${FRP_REMOTE_PORT_RANGE}/tcp\"\n"
+      else
+        frps_ports_yaml+="      # Exposes the TCP proxy port configured on the matching frpc side.\n"
+        frps_ports_yaml+="      - \"\${FRP_REMOTE_PORT}:\${FRP_REMOTE_PORT}/tcp\"\n"
+      fi
+    fi
+  fi
+
+  frps_compose="services:\n\n"
+  frps_compose+="  frps:\n"
+  frps_compose+="    image: snowdreamtech/frps\n"
+  frps_compose+="    container_name: \${FRPS_NAME}\n"
+  frps_compose+="    restart: unless-stopped\n\n"
+  frps_compose+="$(printf '%b' "$frps_ports_yaml")\n"
+  frps_compose+="    volumes:\n"
+  frps_compose+="      - ../../../utils/frp/frps/frps.toml:/etc/frp/frps.toml:ro\n"
+  frps_compose+="      - ../../../utils/frp/frps/res:/etc/frp/res:ro\n\n"
+  frps_compose+="    env_file:\n"
+  frps_compose+="      - runtime.env\n\n"
+  frps_compose+="    read_only: true\n"
+  frps_compose+="    tmpfs:\n"
+  frps_compose+="      - /tmp\n"
+  frps_compose+="    security_opt:\n"
+  frps_compose+="      - no-new-privileges:true\n"
+
+  printf '%b' "$frps_compose" >"$frps_compose_path"
+
+  frps_env="# -------------------------\n# FRPS container\n# -------------------------\n"
+  frps_env+="FRPS_NAME=frps-${primary_container_name}\n\n"
+  frps_env+="# -------------------------\n# Bind settings\n# -------------------------\n"
+  frps_env+="FRP_BIND_PORT=${frp_bind_port}\n"
+  if [[ "$frp_type" == "http" ]]; then
+    frps_env+="FRP_VHOST_HTTP_PORT=${frp_vhost_http_port}\n"
+  else
+    if [[ -n "$frp_remote_port_range" ]]; then
+      frps_env+="FRP_REMOTE_PORT_RANGE=${frp_remote_port_range}\n"
+    else
+      frps_env+="FRP_REMOTE_PORT=${frp_remote_port}\n"
+    fi
+  fi
+  frps_env+="\n"
+  frps_env+="# -------------------------\n# Authentication\n# -------------------------\n"
+  frps_env+="FRP_TOKEN=${frp_token}\n\n"
+  frps_env+="# -------------------------\n# TLS settings\n# -------------------------\n"
+  frps_env+="FRP_TLS_FORCE=true\n\n"
+  frps_env+="# -------------------------\n# Logging\n# -------------------------\n"
+  frps_env+="FRP_LOG_LEVEL=info\n"
+
+  printf '%b' "$frps_env" >"$frps_runtime_env_path"
+fi
+
+echo
+note "Generating AGE key (store the secret key safely)."
+age_out="$(age-keygen)"
+echo "$age_out"
+recipient="$(printf '%s\n' "$age_out" | awk '/^# public key: /{print $4; exit}')"
+[[ -n "$recipient" ]] || die "failed to parse age public key from age-keygen output"
+
+note "Encrypting runtime.env -> .env with sops (recipient: $recipient)"
+encrypt_runtime_env_to_dotenv "$runtime_env_path" "${svc_dir}/.env" "$recipient"
+if [[ -n "$frps_runtime_env_path" ]]; then
+  encrypt_runtime_env_to_dotenv "$frps_runtime_env_path" "${frps_dir}/.env" "$recipient"
+fi
+
+echo
+note "Wrote:"
+echo "  - $compose_path"
+echo "  - $runtime_env_path (gitignored)"
+echo "  - ${svc_dir}/.env (sops+age encrypted)"
+if [[ -n "$frps_runtime_env_path" ]]; then
+  echo "  - ${frps_dir}/docker-compose.yml"
+  echo "  - ${frps_runtime_env_path} (gitignored)"
+  echo "  - ${frps_dir}/.env (sops+age encrypted)"
+fi
+
+echo
+note "Next: decrypt .env to runtime.env on the deploy host and run docker compose with '--env-file runtime.env'."

@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+SERVICES_DIR="$ROOT_DIR/services"
+REF_DIR="$ROOT_DIR/reference"
+KEY_FILE="age.pub"
+
+mkdir -p "$REF_DIR"
+
+note() {
+  echo "==> $*" >&2
+}
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "error: missing dependency: $1" >&2
+    exit 1
+  }
+}
+
+require_cmd age-keygen
+require_cmd awk
+
+for env in production testing; do
+  env_dir="$SERVICES_DIR/$env"
+  [[ -d "$env_dir" ]] || continue
+
+  for stack_dir in "$env_dir"/*; do
+    [[ -d "$stack_dir" ]] || continue
+
+    stack_name="$(basename -- "$stack_dir")"
+
+    compose_dirs=()
+    if [[ -f "$stack_dir/docker-compose.yml" ]]; then
+      compose_dirs+=("$stack_dir")
+    else
+      while IFS= read -r -d '' dir; do
+        compose_dirs+=("$dir")
+      done < <(find "$stack_dir" -mindepth 1 -maxdepth 1 -type d -print0 | while IFS= read -r -d '' d; do
+        [[ -f "$d/docker-compose.yml" ]] && printf '%s\0' "$d"
+      done)
+    fi
+
+    [[ ${#compose_dirs[@]} -gt 0 ]] || continue
+
+    existing_key=""
+    for d in "${compose_dirs[@]}"; do
+      if [[ -f "$d/$KEY_FILE" ]]; then
+        existing_key="$d/$KEY_FILE"
+        break
+      fi
+    done
+
+    if [[ -n "$existing_key" ]]; then
+      pub_key="$(cat "$existing_key")"
+      for d in "${compose_dirs[@]}"; do
+        if [[ ! -f "$d/$KEY_FILE" ]]; then
+          printf '%s\n' "$pub_key" >"$d/$KEY_FILE"
+        fi
+      done
+      if [[ ! -f "$REF_DIR/$stack_name" ]]; then
+        echo "warning: missing private key for $stack_name (public key exists)" >&2
+      fi
+      continue
+    fi
+
+    note "Generating AGE key for $stack_name"
+    age_out="$(age-keygen)"
+    pub_key="$(printf '%s\n' "$age_out" | awk '/^# public key: /{print $4; exit}')"
+    priv_key="$(printf '%s\n' "$age_out" | awk '/^AGE-SECRET-KEY-/{print $1; exit}')"
+
+    if [[ -z "$pub_key" || -z "$priv_key" ]]; then
+      echo "error: failed to parse age-keygen output for $stack_name" >&2
+      exit 1
+    fi
+
+    printf '%s\n' "$priv_key" >"$REF_DIR/$stack_name"
+    chmod 600 "$REF_DIR/$stack_name" 2>/dev/null || true
+
+    for d in "${compose_dirs[@]}"; do
+      printf '%s\n' "$pub_key" >"$d/$KEY_FILE"
+    done
+  done
+ done

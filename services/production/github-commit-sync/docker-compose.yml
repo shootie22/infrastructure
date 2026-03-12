@@ -1,0 +1,34 @@
+services:
+  github-commit-sync:
+    image: git.radunenu.com/radu/github-commit-sync:latest
+    pull_policy: always
+    container_name: github-commit-sync
+    restart: unless-stopped
+    ports:
+      - "6424:6424"
+    environment:
+      GITEA_BASE_URL: "${GITEA_BASE_URL}"
+      GITEA_TOKEN: "${GITEA_TOKEN}"
+      GITEA_ACCOUNT: "${GITEA_ACCOUNT}"
+      #GITEA_REPOS: "radu/pinga,radu/radunenu.com,radu/github-commit-sync,radu/test-repo"
+      GITEA_AUTHORS: "${GITEA_AUTHORS}"
+      #GITEA_AUTHORS: "radu,Radu,Radu N,Radu Nenu, RaduN"
+      GITHUB_TOKEN: "${GITHUB_TOKEN}"
+      GITHUB_REPO: "${GITHUB_REPO}"
+      GITHUB_EMAIL: "${GITHUB_EMAIL}"
+      LISTEN_ADDR: "${LISTEN_ADDR}"
+      SYNC_INTERVAL: "${SYNC_INTERVAL}"
+      STARTUP_SYNC: "${STARTUP_SYNC}"
+      INCLUDE_REPO: "${INCLUDE_REPO}"
+      INCLUDE_MESSAGE: "${INCLUDE_MESSAGE}"
+      GITEA_ACCOUNT_TYPE: "${GITEA_ACCOUNT_TYPE}"
+      GITEA_SKIP_ARCHIVED: "${GITEA_SKIP_ARCHIVED}"
+      MAX_COMMITS_PER_RUN: "${MAX_COMMITS_PER_RUN}"
+      DRY_RUN: "${DRY_RUN}"
+      API_TOKEN: "${API_TOKEN}"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:6424/healthz | grep -q '^ok$'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
