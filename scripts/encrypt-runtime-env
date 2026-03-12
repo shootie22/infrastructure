@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+KEY_FILE="age.pub"
+
+note() {
+  echo "==> $*" >&2
+}
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "error: missing dependency: $1" >&2
+    exit 1
+  }
+}
+
+require_cmd sops
+require_cmd age-keygen
+
+# Ensure AGE keys exist for any services missing them.
+"$ROOT_DIR/scripts/gen-age-keys"
+
+find "$ROOT_DIR/services" -type f -name runtime.env -print0 | while IFS= read -r -d '' runtime_env; do
+  service_dir="$(dirname -- "$runtime_env")"
+  key_path="$service_dir/$KEY_FILE"
+
+  if [[ ! -f "$key_path" ]]; then
+    echo "error: missing $KEY_FILE in $service_dir" >&2
+    exit 1
+  fi
+
+  recipient="$(cat "$key_path")"
+  [[ -n "$recipient" ]] || {
+    echo "error: empty $KEY_FILE in $service_dir" >&2
+    exit 1
+  }
+
+  out_env="$service_dir/.env"
+  note "Encrypting $runtime_env -> $out_env"
+  sops \
+    --encrypt \
+    --age "$recipient" \
+    --input-type dotenv \
+    --output-type dotenv \
+    "$runtime_env" >"$out_env"
+
+  rathole_plain="$service_dir/rathole.toml"
+  if [[ -f "$rathole_plain" ]]; then
+    rathole_out="$service_dir/.rathole.toml"
+    note "Encrypting $rathole_plain -> $rathole_out"
+    sops \
+      --encrypt \
+      --age "$recipient" \
+      --input-type toml \
+      --output-type toml \
+      "$rathole_plain" >"$rathole_out"
+  fi
+ done

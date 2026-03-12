@@ -1,0 +1,26 @@
+services:
+  vintagestory:
+    image: xurxomf/vsds:stable
+    container_name: vintagestory_v1.21.4_modded
+    environment:
+      UID: ${UID}
+      GID: ${GID}
+    volumes:
+      - /home/main/game_servers/vintage_story/modded_1.21.4:/data
+    ports:
+      - "42420:42420/tcp"
+      - "42420:42420/udp"
+    restart: unless-stopped
+    stop_signal: SIGTERM
+
+  rathole:
+    image: rapiz1/rathole
+    container_name: ratholec-vintagestory
+    volumes:
+      - ./rathole.toml:/etc/rathole.toml:ro
+    command: /etc/rathole.toml
+    restart: unless-stopped
+    working_dir: /app
+
+    depends_on:
+      - vintagestory

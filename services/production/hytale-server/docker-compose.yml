@@ -1,0 +1,40 @@
+#networks:
+#  hytale_internal-net:
+#    internal: true
+#  outbound-net:
+#    driver: bridge
+#
+# disabled as I want to be able to connect through LAN
+
+services:
+  hytale:
+    image: indifferentbroccoli/hytale-server-docker
+    restart: unless-stopped
+    container_name: hytale
+    stop_grace_period: 30s
+    ports:
+      - 5520:5520/udp
+    env_file:
+      - runtime.env
+    volumes:
+      - /home/main/game_servers/hytale:/home/hytale/server-files
+    stdin_open: true
+    tty: true
+    network_mode: host
+  
+  frpc-hytale:
+    image: snowdreamtech/frpc
+    container_name: frpc-hytale
+    restart: always
+
+    network_mode: host
+
+    volumes:
+      - ../../utils/frp/frpc/frpc-udp.toml:/etc/frp/frpc.toml:ro
+
+    env_file:
+      - runtime.env
+
+    read_only: true
+    security_opt:
+      - no-new-privileges:true

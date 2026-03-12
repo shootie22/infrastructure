@@ -1,0 +1,12 @@
+services:
+  website:
+    image: git.radunenu.com/radu/radunenu.com:latest
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5757:5757"
+    environment:
+      CONTENT_ROOT: ${CONTENT_ROOT}
+      ASSETS_ROOT: ${ASSETS_ROOT}
+    volumes:
+      - /home/ubuntu/services/radunenu.com:/mnt/site:ro

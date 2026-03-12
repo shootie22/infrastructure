@@ -1,0 +1,43 @@
+services:
+  borg-ui:
+    image: ainullcode/borg-ui:latest
+    container_name: borg-web-ui
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    volumes:
+      - /home/main/services/borg-web-ui/data:/data
+      - /home/main/services/borg-web-ui/cache:/home/borg/.cache/borg
+      - /home/main:/local:ro
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+    # Optional: Remove these 3 lines if you don't want Redis
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - borg_network
+
+  # Optional: Redis speeds up archive browsing 600x
+  # Remove this entire section if you don't need it
+  redis:
+    image: redis:7-alpine
+    container_name: borg-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 2gb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - borg_network
+
+networks:
+  borg_network:
+
+volumes:
+  borg_data:
+  borg_cache:

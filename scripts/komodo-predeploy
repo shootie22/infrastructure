@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+umask 077
+
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+TARGET_DIR="${1:-.}"
+
+if [[ "$TARGET_DIR" != /* ]]; then
+  TARGET_DIR="$PWD/$TARGET_DIR"
+fi
+
+if [[ ! -d "$TARGET_DIR" ]]; then
+  echo "error: directory not found: $TARGET_DIR" >&2
+  exit 1
+fi
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "error: missing dependency: $1" >&2
+    exit 1
+  }
+}
+
+resolve_key() {
+  if [[ -n "${KEY_NAME:-}" ]]; then
+    if [[ ! "$KEY_NAME" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+      echo "error: KEY_NAME is not a valid env var name: $KEY_NAME" >&2
+      exit 1
+    fi
+    key_value="${!KEY_NAME:-}"
+    if [[ -z "$key_value" ]]; then
+      echo "error: $KEY_NAME is not set" >&2
+      exit 1
+    fi
+    export SOPS_AGE_KEY="$key_value"
+    return
+  fi
+
+  if [[ -n "${SOPS_AGE_KEY:-}" ]]; then
+    return
+  fi
+
+  if [[ -n "${SOPS_AGE_KEY_FILE:-}" && -f "${SOPS_AGE_KEY_FILE}" ]]; then
+    export SOPS_AGE_KEY="$(cat "${SOPS_AGE_KEY_FILE}")"
+    return
+  fi
+
+  echo "error: set KEY_NAME, SOPS_AGE_KEY, or SOPS_AGE_KEY_FILE" >&2
+  exit 1
+}
+
+resolve_sops() {
+  if [[ -n "${SOPS_BIN:-}" ]]; then
+    if [[ ! -x "$SOPS_BIN" ]]; then
+      echo "error: SOPS_BIN is not executable: $SOPS_BIN" >&2
+      exit 1
+    fi
+    echo "$SOPS_BIN"
+    return
+  fi
+
+  if command -v sops >/dev/null 2>&1; then
+    command -v sops
+    return
+  fi
+
+  require_cmd curl
+
+  local arch
+  arch="$(uname -m)"
+  case "$arch" in
+    x86_64|amd64)
+      arch="amd64"
+      ;;
+    aarch64|arm64)
+      arch="arm64"
+      ;;
+    *)
+      echo "error: unsupported architecture: $arch" >&2
+      exit 1
+      ;;
+  esac
+
+  local version url bin
+  version="${SOPS_VERSION:-v3.12.1}"
+  url="https://github.com/getsops/sops/releases/download/${version}/sops-${version}.linux.${arch}"
+  bin="/tmp/sops"
+
+  if [[ ! -x "$bin" ]]; then
+    curl -fsSL -o "$bin" "$url"
+    chmod +x "$bin"
+  fi
+
+  echo "$bin"
+}
+
+note() {
+  echo "==> $*" >&2
+}
+
+resolve_key
+SOPS_BIN="$(resolve_sops)"
+
+cd "$TARGET_DIR"
+
+if [[ ! -f .env ]]; then
+  echo "error: missing .env in $TARGET_DIR" >&2
+  exit 1
+fi
+
+note "Decrypting .env -> runtime.env"
+"$SOPS_BIN" --decrypt .env > runtime.env
+
+if [[ -f .rathole.toml ]]; then
+  note "Decrypting .rathole.toml -> rathole.toml"
+  "$SOPS_BIN" --decrypt .rathole.toml > rathole.toml
+fi

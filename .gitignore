@@ -1,8 +1,12 @@
 # runtime plaintext env
 runtime.env
+rathole.toml
 
 # other standard ignores
 *.log
 *.tmp
 *.kate-swp
 *.sh
+
+# reference symlinks
+reference/*

@@ -1,0 +1,62 @@
+networks:
+  tunnel-net_hemmelig:
+    driver: bridge
+    internal: true
+  outbound-net:
+    driver: bridge
+
+services:
+  hemmelig:
+    container_name: "hemmelig"
+    entrypoint:
+      - "/app/docker-entrypoint.sh"
+    environment:
+      - "HEMMELIG_BASE_URL=${HEMMELIG_BASE_URL}"
+      - "DATABASE_URL=${DATABASE_URL}"
+      - "BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}"
+      - "BETTER_AUTH_URL=${BETTER_AUTH_URL}"
+      - "NODE_ENV=${NODE_ENV}"
+      - "PATH=${PATH}"
+      - "NODE_VERSION=${NODE_VERSION}"
+      - "YARN_VERSION=${YARN_VERSION}"
+      - "PORT=${PORT}"
+    hostname: "c14735c246d2"
+    image: "hemmeligapp/hemmelig:v7"
+    ipc: "private"
+    labels:
+      com.docker.compose.config-hash: "231e70e2553e4021bec46a9fa438096af16df04032c44982d4c444894ba8bb42"
+      com.docker.compose.container-number: "1"
+      com.docker.compose.depends_on: ""
+      com.docker.compose.image: "sha256:66bdd433ce9d9b5eacb82895c5387ab28f657ef26feb294a8d72495ed76701b1"
+      com.docker.compose.oneoff: "False"
+      com.docker.compose.project: "hemmelig"
+      com.docker.compose.project.config_files: "/home/main/services/dockge/stacks/hemmelig/compose.yaml"
+      com.docker.compose.project.working_dir: "/home/main/services/dockge/stacks/hemmelig"
+      com.docker.compose.replace: "79452a88fb64ad5dd752da1bdc46276663383c9345190a65d8dcd15645d7360b"
+      com.docker.compose.service: "hemmelig"
+      com.docker.compose.version: "2.34.0"
+    logging:
+      driver: "json-file"
+      options: {}
+    networks:
+      - "tunnel-net_hemmelig"
+      - "outbound-net"
+    ports:
+      - "3069:3000/tcp"
+    restart: "unless-stopped"
+    volumes:
+      - "/home/main/services/hemmelig/database:/app/database"
+      - "/home/main/services/hemmelig/uploads:/app/uploads"
+    working_dir: "/app"
+
+  ratholec-hemmelig:
+    container_name: "rathole-hemmelig"
+    image: "rapiz1/rathole:latest"
+    networks:
+      - "tunnel-net_hemmelig"
+      - "outbound-net"
+    restart: "unless-stopped"
+    volumes:
+      - "./rathole.toml:/etc/rathole.toml:ro"
+    command: /etc/rathole.toml
+    working_dir: "/app"

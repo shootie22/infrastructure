@@ -1,0 +1,36 @@
+services:
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: openwebui
+    networks:
+      - internalnet_openwebui
+    volumes:
+      - /Users/radu/Desktop/services/openwebui/open-webui:/app/backend/data
+    restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    #network_mode: "host"
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
+      - OLLAMA_API_KEY=${OLLAMA_API_KEY}
+
+  frpc:
+    image: snowdreamtech/frpc
+    container_name: frpc-openwebui
+    volumes:
+      - ../../../utils/frp/frpc/frpc-http.toml:/etc/frp/frpc.toml:ro
+    env_file:
+      - runtime.env
+    depends_on:
+      - openwebui
+    restart: unless-stopped
+    networks: 
+      - internalnet_openwebui
+
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  internalnet_openwebui:
+    driver: bridge

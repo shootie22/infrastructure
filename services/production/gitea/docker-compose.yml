@@ -1,0 +1,56 @@
+networks:
+  gitea_internal-net:
+    internal: true
+  outbound-net:
+    driver: bridge
+
+services:
+  server:
+    image: docker.gitea.com/gitea:latest
+    container_name: gitea-server
+    environment:
+      - USER_UID=${USER_UID}
+      - USER_GID=${USER_GID}
+      - GITEA__database__DB_TYPE=${GITEA__database__DB_TYPE}
+      - GITEA__database__HOST=${GITEA__database__HOST}
+      - GITEA__database__NAME=${GITEA__database__NAME}
+      - GITEA__database__USER=${GITEA__database__USER}
+      - GITEA__database__PASSWD=${GITEA__database__PASSWD}
+    restart: always
+    networks:
+      - gitea_internal-net
+      - outbound-net
+    volumes:
+      - /home/main/services/gitea:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "3000:3000"
+      - "222:22"
+    depends_on:
+      - db
+
+  db:
+    image: docker.io/library/postgres:14
+    container_name: gitea-postgres-db
+    restart: always
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    networks:
+      - gitea_internal-net
+    volumes:
+      - /home/main/services/gitea/postgres:/var/lib/postgresql/data
+
+  rathole:
+    image: rapiz1/rathole
+    container_name: ratholec-gitea
+    volumes:
+      - ./rathole.toml:/etc/rathole.toml:ro
+    command: /etc/rathole.toml
+    restart: unless-stopped
+
+    networks:
+      - gitea_internal-net
+      - outbound-net

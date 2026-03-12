@@ -1,0 +1,42 @@
+services:
+  libretranslate:
+    image: libretranslate/libretranslate:latest
+    container_name: libretranslate
+    restart: unless-stopped
+    networks:
+      - internal
+      - external
+    volumes:
+      - /Users/radu/Desktop/services/libretranslate/lt-data:/home/libretranslate/.local/share
+      - /Users/radu/Desktop/services/libretranslate/lt-cache:/home/libretranslate/.local/cache
+    environment:
+      - LT_API_KEYS=${LT_API_KEYS}
+
+  frpc:
+    image: snowdreamtech/frpc
+    container_name: frpc-libretranslate
+    restart: unless-stopped
+    networks:
+      - internal   # can reach libretranslate
+      - external   # can reach the VPS
+    volumes:
+      - ../../../utils/frp/frpc/frpc-tcp.toml:/etc/frp/frpc.toml:ro
+    env_file:
+      - runtime.env
+    depends_on:
+      - libretranslate
+
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  internal:
+    driver: bridge
+    internal: true
+  external:
+    driver: bridge
+
+volumes:
+  lt-data:
+  lt-cache:

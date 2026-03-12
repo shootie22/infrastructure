@@ -1,0 +1,48 @@
+networks:
+  tunnel_net:
+    external: true
+
+services:
+  db:
+    image: postgres:15
+    container_name: joplin-db
+    restart: unless-stopped
+    networks:
+      - tunnel_net
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - /home/main/services/joplin/db:/var/lib/postgresql/data
+
+  server:
+    image: joplin/server:latest
+    container_name: joplin-server
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      APP_BASE_URL: "${APP_BASE_URL}"
+      DB_CLIENT: ${DB_CLIENT}
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DATABASE: ${POSTGRES_DATABASE}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      MAILER_ENABLED: "${MAILER_ENABLED}"
+    networks:
+      - tunnel_net
+    expose:
+      - "22300"   # makes the port visible inside docker only (not to host)
+
+  ratholec:
+    image: rapiz1/rathole:latest
+    container_name: ratholec-joplin
+    restart: unless-stopped
+    networks:
+      - tunnel_net
+    volumes:
+      - ./rathole.toml:/etc/rathole.toml:ro
+    command: /etc/rathole.toml
+    working_dir: /app

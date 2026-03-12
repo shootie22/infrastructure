@@ -1,0 +1,24 @@
+services:
+  probe:
+    image: alpine/socat:1.8.0.3
+    command: ["-d", "-d", "TCP-LISTEN:9100,reuseaddr,fork", "EXEC:/bin/cat"]
+    restart: unless-stopped
+
+
+  frpc:
+    image: snowdreamtech/frpc
+    container_name: frpc-macminim1-health-status
+    restart: unless-stopped
+
+    volumes:
+      - ../../../utils/frp/frpc/frpc-tcp.toml:/etc/frp/frpc.toml:ro
+
+    env_file:
+      - runtime.env
+
+    depends_on:
+      - probe
+
+    read_only: true
+    security_opt:
+      - no-new-privileges:true

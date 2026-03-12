@@ -9,8 +9,10 @@ serverPort = {{ .Envs.FRP_SERVER_PORT }}
 # Authentication
 # -------------------------
 
+{{- if .Envs.FRP_TOKEN }}
 auth.method = "token"
 auth.token = "{{ .Envs.FRP_TOKEN }}"
+{{- end }}
 
 # -------------------------
 # TLS Settings
@@ -24,6 +26,9 @@ transport.tls.enable = {{ .Envs.FRP_TLS_ENABLE }}
 
 log.to = "console"
 log.level = "{{ .Envs.FRP_LOG_LEVEL }}"
+{{- if .Envs.FRP_LOG_MAX_DAYS }}
+log.maxDays = {{ .Envs.FRP_LOG_MAX_DAYS }}
+{{- end }}
 
 # -------------------------
 # UDP Proxy
