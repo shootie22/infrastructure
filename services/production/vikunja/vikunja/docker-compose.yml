@@ -42,7 +42,7 @@ services:
     networks:
       - vikunja_internal
   frpc:
-    image: snowdreamtech/frpc
+    image: ghcr.io/fatedier/frpc:v0.65.0
     container_name: frpc-vikunja
     restart: unless-stopped
 
