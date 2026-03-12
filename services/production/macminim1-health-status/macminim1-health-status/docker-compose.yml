@@ -7,6 +7,9 @@ services:
 
   frpc:
     image: ghcr.io/fatedier/frpc:v0.65.0
+    command:
+      - -c
+      - /etc/frp/frpc.toml
     container_name: frpc-macminim1-health-status
     restart: unless-stopped
 

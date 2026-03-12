@@ -2,6 +2,9 @@ services:
 
   frps:
     image: ghcr.io/fatedier/frps:v0.65.0
+    command:
+      - -c
+      - /etc/frp/frps.toml
     container_name: ${FRPS_NAME}
     restart: unless-stopped
 
