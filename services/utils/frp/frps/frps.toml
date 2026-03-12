@@ -12,9 +12,6 @@ bindPort = {{ .Envs.FRP_BIND_PORT }}
 {{- if .Envs.FRP_VHOST_HTTP_PORT }}
 # HTTP vhost listener for Apache to reverse proxy into
 vhostHTTPPort = {{ .Envs.FRP_VHOST_HTTP_PORT }}
-{{- if .Envs.FRP_VHOST_HTTP_BIND_ADDR }}
-vhostHTTPBindAddr = "{{ .Envs.FRP_VHOST_HTTP_BIND_ADDR }}"
-{{- end }}
 
 # Custom page returned by FRPS when no HTTP route matches.
 custom404Page = "/etc/frp/res/service-temporarily-unavailable.html"
@@ -23,9 +20,6 @@ custom404Page = "/etc/frp/res/service-temporarily-unavailable.html"
 {{- if .Envs.FRP_VHOST_HTTPS_PORT }}
 # HTTPS vhost listener (optional)
 vhostHTTPSPort = {{ .Envs.FRP_VHOST_HTTPS_PORT }}
-{{- if .Envs.FRP_VHOST_HTTPS_BIND_ADDR }}
-vhostHTTPSBindAddr = "{{ .Envs.FRP_VHOST_HTTPS_BIND_ADDR }}"
-{{- end }}
 {{- end }}
 
 {{- if .Envs.FRP_ALLOW_PORTS }}
