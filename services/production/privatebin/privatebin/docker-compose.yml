@@ -1,0 +1,57 @@
+services:
+
+  privatebin:
+    image: privatebin/unit-pdo:stable
+    container_name: ${PRIVATEBIN_NAME}
+    restart: unless-stopped
+
+    networks:
+      - internal
+
+    volumes:
+      - /data:/srv/data
+
+    ports:
+      - "127.0.0.1:8172:8080"
+
+    environment:
+      - TZ
+
+    security_opt:
+      - no-new-privileges:true
+
+
+  frpc:
+    image: ghcr.io/fatedier/frpc:v0.65.0
+    command:
+      - -c
+      - /etc/frp/frpc.toml
+    container_name: frpc-${PRIVATEBIN_NAME}
+    restart: unless-stopped
+
+    depends_on:
+      - privatebin
+
+    volumes:
+      - ../../../utils/frp/frpc/frpc-http.toml:/etc/frp/frpc.toml:ro
+
+    env_file:
+      - runtime.env
+
+    networks:
+      - internal
+      - outbound
+
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+
+networks:
+
+  internal:
+    driver: bridge
+    internal: true
+
+  outbound:
+    driver: bridge
