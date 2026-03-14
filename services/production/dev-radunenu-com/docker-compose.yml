@@ -9,4 +9,4 @@ services:
       CONTENT_ROOT: ${CONTENT_ROOT}
       ASSETS_ROOT: ${ASSETS_ROOT}
     volumes:
-      - ${DEV_RADUNENU_SITE_DIR}:/mnt/site:ro
+      - ${DEV_RADUNENU_SITE_DIR}:/mnt/site
