@@ -1,0 +1,58 @@
+services:
+
+  picshare:
+    image: git.radunenu.com/radu/picshare:latest
+    container_name: ${PICSHARE_NAME}
+    restart: unless-stopped
+
+    networks:
+      - internal
+
+    expose:
+      - "${PICSHARE_PORT}"
+
+    volumes:
+      - ${PICSHARE_ROOT}/data:/data
+      - ${PICSHARE_ROOT}/config.yaml:/config/config.yaml:ro
+
+    environment:
+      - PICSHARE_CONFIG=${PICSHARE_CONFIG}
+
+    security_opt:
+      - no-new-privileges:true
+
+
+  frpc:
+    image: ghcr.io/fatedier/frpc:v0.65.0
+    command:
+      - -c
+      - /etc/frp/frpc.toml
+    container_name: frpc-${PICSHARE_NAME}
+    restart: unless-stopped
+
+    depends_on:
+      - picshare
+
+    volumes:
+      - ../../../utils/frp/frpc/frpc-http.toml:/etc/frp/frpc.toml:ro
+
+    env_file:
+      - runtime.env
+
+    networks:
+      - internal
+      - outbound
+
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+
+networks:
+
+  internal:
+    driver: bridge
+    internal: true
+
+  outbound:
+    driver: bridge
