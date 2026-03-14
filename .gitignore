@@ -6,7 +6,6 @@ rathole.toml
 *.log
 *.tmp
 *.kate-swp
-*.sh
 
 # reference symlinks
 reference/*
