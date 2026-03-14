@@ -33,7 +33,7 @@ services:
     network_mode: host
 
     volumes:
-      - ../../utils/frp/frpc/frpc-udp.toml:/etc/frp/frpc.toml:ro
+      - ../../../utils/frp/frpc/frpc-udp.toml:/etc/frp/frpc.toml:ro
 
     env_file:
       - runtime.env
