@@ -9,7 +9,7 @@ services:
       - internal
 
     volumes:
-      - /data:/srv/data
+      - ${PRIVATEBIN_ROOT}/data:/srv/data
 
     ports:
       - "127.0.0.1:8172:8080"
