@@ -1,0 +1,129 @@
+services:
+  plausible_db:
+    image: postgres:16-alpine
+    container_name: ${PLAUSIBLE_DB_CONTAINER_NAME}
+    restart: unless-stopped
+
+    volumes:
+      - ${PLAUSIBLE_ROOT}/postgres:/var/lib/postgresql/data
+
+    environment:
+      POSTGRES_DB: ${PLAUSIBLE_DB_NAME}
+      POSTGRES_USER: ${PLAUSIBLE_DB_USER}
+      POSTGRES_PASSWORD: "${PLAUSIBLE_DB_PASSWORD}"
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+
+    networks:
+      - plausible_internal
+
+  plausible_events_db:
+    image: clickhouse/clickhouse-server:24.12-alpine
+    container_name: ${PLAUSIBLE_EVENTS_DB_CONTAINER_NAME}
+    restart: unless-stopped
+
+    volumes:
+      - ${PLAUSIBLE_ROOT}/clickhouse/data:/var/lib/clickhouse
+      - ${PLAUSIBLE_ROOT}/clickhouse/logs:/var/log/clickhouse-server
+      - ./clickhouse/logs.xml:/etc/clickhouse-server/config.d/logs.xml:ro
+      - ./clickhouse/ipv4-only.xml:/etc/clickhouse-server/config.d/ipv4-only.xml:ro
+      - ./clickhouse/low-resources.xml:/etc/clickhouse-server/config.d/low-resources.xml:ro
+      - ./clickhouse/default-profile-low-resources-overrides.xml:/etc/clickhouse-server/users.d/default-profile-low-resources-overrides.xml:ro
+
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
+    environment:
+      CLICKHOUSE_SKIP_USER_SETUP: "1"
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 -O - http://127.0.0.1:8123/ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+    networks:
+      - plausible_internal
+
+  plausible:
+    image: ghcr.io/plausible/community-edition:v3.2.0
+    container_name: ${PLAUSIBLE_CONTAINER_NAME}
+    restart: unless-stopped
+
+    command: sh -c "/entrypoint.sh db createdb && /entrypoint.sh db migrate && /entrypoint.sh run"
+
+    depends_on:
+      plausible_db:
+        condition: service_healthy
+      plausible_events_db:
+        condition: service_healthy
+
+    volumes:
+      - ${PLAUSIBLE_ROOT}/data:/var/lib/plausible
+
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+
+    environment:
+      TMPDIR: /var/lib/plausible/tmp
+      BASE_URL: ${BASE_URL}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      TOTP_VAULT_KEY: ${TOTP_VAULT_KEY}
+      DISABLE_REGISTRATION: ${DISABLE_REGISTRATION}
+      ENABLE_EMAIL_VERIFICATION: ${ENABLE_EMAIL_VERIFICATION}
+      HTTP_PORT: ${HTTP_PORT}
+      DATABASE_URL: ecto://${PLAUSIBLE_DB_USER}:${PLAUSIBLE_DB_PASSWORD}@plausible_db:5432/${PLAUSIBLE_DB_NAME}
+      CLICKHOUSE_DATABASE_URL: http://plausible_events_db:8123/${PLAUSIBLE_EVENTS_DB_NAME}
+
+    expose:
+      - "${HTTP_PORT}"
+
+    networks:
+      - plausible_internal
+      - outbound
+
+    security_opt:
+      - no-new-privileges:true
+
+  frpc:
+    image: ghcr.io/fatedier/frpc:v0.65.0
+    command:
+      - -c
+      - /etc/frp/frpc.toml
+    container_name: frpc-${PLAUSIBLE_CONTAINER_NAME}
+    restart: unless-stopped
+
+    depends_on:
+      - plausible
+
+    volumes:
+      - ../../../utils/frp/frpc/frpc-http.toml:/etc/frp/frpc.toml:ro
+
+    env_file:
+      - runtime.env
+
+    networks:
+      - plausible_internal
+      - outbound
+
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  plausible_internal:
+    driver: bridge
+    internal: true
+
+  outbound:
+    driver: bridge
