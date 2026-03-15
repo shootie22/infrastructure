@@ -55,9 +55,12 @@ services:
       - rybbit_internal
 
   backend:
-    image: ghcr.io/rybbit-io/rybbit-backend:${IMAGE_TAG}
     container_name: ${RYBBIT_BACKEND_CONTAINER_NAME}
     restart: unless-stopped
+
+    build:
+      context: https://github.com/rybbit-io/rybbit.git#${RYBBIT_SOURCE_REF}
+      dockerfile: server/Dockerfile
 
     environment:
       NODE_ENV: production
@@ -71,6 +74,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BASE_URL: ${BASE_URL}
+      DOMAIN_NAME: ${DOMAIN_NAME}
       DISABLE_SIGNUP: ${DISABLE_SIGNUP}
       DISABLE_TELEMETRY: ${DISABLE_TELEMETRY}
       MAPBOX_TOKEN: ${MAPBOX_TOKEN}
@@ -95,14 +99,21 @@ services:
       - no-new-privileges:true
 
   client:
-    image: ghcr.io/rybbit-io/rybbit-client:${IMAGE_TAG}
     container_name: ${RYBBIT_CLIENT_CONTAINER_NAME}
     restart: unless-stopped
+
+    build:
+      context: https://github.com/rybbit-io/rybbit.git#${RYBBIT_SOURCE_REF}
+      dockerfile: client/Dockerfile
+      args:
+        NEXT_PUBLIC_BACKEND_URL: ${BASE_URL}
+        NEXT_PUBLIC_DISABLE_SIGNUP: ${DISABLE_SIGNUP}
 
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_BACKEND_URL: ${BASE_URL}
       NEXT_PUBLIC_DISABLE_SIGNUP: ${DISABLE_SIGNUP}
+      DOMAIN_NAME: ${DOMAIN_NAME}
 
     depends_on:
       backend:
