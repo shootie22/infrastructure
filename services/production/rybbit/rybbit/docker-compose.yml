@@ -94,6 +94,7 @@ services:
 
     networks:
       - rybbit_internal
+      - outbound
 
     security_opt:
       - no-new-privileges:true
