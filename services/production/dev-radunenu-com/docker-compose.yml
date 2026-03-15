@@ -5,8 +5,7 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:${DEV_RADUNENU_HOST_PORT}:5757"
-    environment:
-      CONTENT_ROOT: ${CONTENT_ROOT}
-      ASSETS_ROOT: ${ASSETS_ROOT}
+    env_file:
+      - runtime.env
     volumes:
       - ${DEV_RADUNENU_SITE_DIR}:/mnt/site
