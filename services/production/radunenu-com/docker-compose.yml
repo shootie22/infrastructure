@@ -1,0 +1,21 @@
+services:
+  website:
+    image: git.radunenu.com/radu/radunenu.com-minimal:latest
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${RADUNENU_HOST_PORT}:1310"
+    volumes:
+      - stats_live:/srv/live
+
+  stats-updater:
+    image: git.radunenu.com/radu/radunenu.com-minimal-stats-updater:latest
+    pull_policy: always
+    restart: unless-stopped
+    env_file:
+      - runtime.env
+    volumes:
+      - stats_live:/data
+
+volumes:
+  stats_live:
