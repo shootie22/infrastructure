@@ -7,5 +7,23 @@ services:
       - "127.0.0.1:${DEV_RADUNENU_HOST_PORT}:5757"
     env_file:
       - runtime.env
+    environment:
+      SNAPSHOT_DIR: ${SNAPSHOT_DIR}
+    volumes:
+      - ${DEV_RADUNENU_SITE_DIR}:/mnt/site
+
+  snapshot-poller:
+    image: git.radunenu.com/radu/radunenu.com:snapshot-poller-latest
+    pull_policy: always
+    restart: unless-stopped
+    env_file:
+      - runtime.env
+    environment:
+      CONTENT_ROOT: ${CONTENT_ROOT}
+      CONTENT_REPO_ROOT: /mnt/site
+      SNAPSHOT_DIR: ${SNAPSHOT_DIR}
+      SNAPSHOT_INTERVAL: ${SNAPSHOT_INTERVAL}
+      SERVICE_STATUS_API_BASE: ${SERVICE_STATUS_API_BASE}
+      SERVICE_STATUS_API_TOKEN: ${SERVICE_STATUS_API_TOKEN}
     volumes:
       - ${DEV_RADUNENU_SITE_DIR}:/mnt/site
