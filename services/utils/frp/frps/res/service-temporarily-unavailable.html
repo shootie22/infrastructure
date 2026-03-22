@@ -3,294 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Service temporarily unavailable.</title>
-    <meta name="description" content="Service temporarily unavailable. Check the service status for more info.">
-    <meta name="theme-color" content="#080f1a">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="darkreader-lock">
+    <meta name="color-scheme" content="light dark">
+    <title>503 Service temporarily unavailable.</title>
     <style>
         :root {
-            --color-bg-1: #080f1a;
-            --color-bg-2: #142439;
-            --color-text: #ffffff;
-            --color-muted: #8b949e;
-            --color-link: #58a6ff;
-            --color-link-hover: #1f6feb;
-            --color-card-border: rgba(255, 255, 255, 0.08);
-            --color-post-bg: rgba(47, 67, 95, 0.31);
-            --color-panel-glow: rgba(88, 166, 255, 0.16);
-            --gradient-body: linear-gradient(45deg, var(--color-bg-1) 0%, var(--color-bg-2) 100%);
-            --shadow-post: 0 2px 6px rgba(0, 0, 0, 0.4);
-            --radius-sm: 4px;
-            --radius-md: 12px;
-            --radius-lg: 18px;
-            --space-xs: 6px;
-            --space-sm: 8px;
-            --space-md: 10px;
-            --space-lg: 20px;
-            --space-xl: 30px;
-            --page-width: 760px;
-            --grid-line-color: rgba(255, 255, 255, 0.04);
-            --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --page-bg: #eceae4;
+            --sheet-bg: rgba(255, 255, 255, 0.88);
+            --text-color: #111111;
+            --muted-text: #333333;
+            --rule-color: rgba(0, 0, 0, 0.2);
+            --sheet-border: rgba(0, 0, 0, 0.08);
+            --link-color: #3c5f50;
+            --font-body: "Segoe UI", Arial, sans-serif;
+            --font-display: Georgia, serif;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --page-bg: #171717;
+                --sheet-bg: rgba(24, 24, 24, 0.86);
+                --text-color: #efefef;
+                --muted-text: #c8c8c8;
+                --rule-color: rgba(255, 255, 255, 0.25);
+                --sheet-border: rgba(255, 255, 255, 0.16);
+                --link-color: #72c3a0;
+            }
+        }
+
+        html {
+            color-scheme: light dark;
+            font-size: 18px;
         }
 
         * {
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        html {
-            background: var(--gradient-body);
-            background-color: var(--color-bg-1);
         }
 
         body {
+            margin: 0;
             min-height: 100vh;
+            padding: 2rem 1rem;
+            background: var(--page-bg);
+            color: var(--text-color);
             font-family: var(--font-body);
-            color: var(--color-text);
-            background:
-                linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px),
-                linear-gradient(0deg, var(--grid-line-color) 1px, transparent 1px),
-                var(--gradient-body);
-            background-size: 48px 48px, 48px 48px, cover;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
+            line-height: 1.72;
         }
 
         main {
-            width: min(100%, var(--page-width));
-            position: relative;
-            z-index: 1;
-            isolation: isolate;
+            width: min(100%, 50rem);
+            margin: 0 auto;
+            padding: 2rem;
+            background: var(--sheet-bg);
+            border: 1px solid var(--sheet-border);
         }
 
-        main::before {
-            content: "";
-            position: absolute;
-            left: 50%;
-            top: 58%;
-            width: min(84%, 640px);
-            aspect-ratio: 1 / 1;
-            transform: translate(-50%, -50%);
-            border-radius: 50%;
-            background: radial-gradient(circle, var(--color-panel-glow) 0%, rgba(88, 166, 255, 0.06) 36%, rgba(88, 166, 255, 0) 72%);
-            filter: blur(20px);
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        .frame {
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-lg);
-        }
-
-        .section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: var(--space-md);
-        }
-
-        .section-header-main {
-            font-size: clamp(1.8rem, 3vw, 2.35rem);
-            font-weight: 800;
-            line-height: 1.08;
-            letter-spacing: -0.03em;
-        }
-
-        .section-header-secondary {
-            color: var(--color-muted);
-            font-size: 0.9rem;
-            white-space: nowrap;
-        }
-
-        .panel {
-            position: relative;
-            overflow: hidden;
-            background: var(--color-post-bg);
-            border: 1px solid var(--color-card-border);
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-post);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: var(--space-lg);
-        }
-
-        .panel::before {
-            content: "";
-            position: absolute;
-            inset: 0 0 auto 0;
-            height: 1px;
-            background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
-        }
-
-        .panel-header {
-            display: flex;
-            align-items: center;
-            gap: var(--space-md);
-            padding-bottom: var(--space-sm);
-            margin-bottom: var(--space-md);
-            border-bottom: 1px solid var(--color-card-border);
-        }
-
-        .panel-body {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .action-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-            width: 100%;
-        }
-
-        .status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            width: fit-content;
-            padding: 0;
-            border: 0;
-            background: transparent;
-            color: #dbeafe;
-            font-size: 0.8rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-
-        .status-dot {
-            position: relative;
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: #ffd84d;
-            box-shadow: 0 0 0 4px rgba(255, 216, 77, 0.16);
-        }
-
-        .status-dot::after {
-            content: "";
-            position: absolute;
-            inset: -7px;
-            border-radius: 50%;
-            border: 1px solid rgba(255, 216, 77, 0.52);
-            animation: outage-pulse 1.9s ease-out infinite;
-        }
-
-        @keyframes outage-pulse {
-            0% {
-                transform: scale(0.55);
-                opacity: 0.9;
-            }
-
-            70% {
-                transform: scale(1.35);
-                opacity: 0;
-            }
-
-            100% {
-                transform: scale(1.35);
-                opacity: 0;
-            }
+        h1 {
+            margin: 0 0 0.7rem;
+            font-family: var(--font-display);
+            font-size: 1.72rem;
+            font-weight: 600;
+            line-height: 1.2;
         }
 
         p {
-            max-width: 58ch;
-            color: var(--color-muted);
-            font-size: 1rem;
-            line-height: 1.7;
+            margin: 0 0 1rem;
+            font-size: 0.9rem;
         }
 
-        .btn-glass {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: fit-content;
-            margin-top: 4px;
-            padding: 10px 16px;
-            line-height: 1.2;
-            border-radius: var(--radius-lg);
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--color-card-border);
-            color: var(--color-text);
+        a {
+            color: var(--link-color);
+        }
+
+        .error-code {
+            margin-bottom: 0.2rem;
+            color: var(--muted-text);
+            font-size: 0.84rem;
+        }
+
+        .button-row {
+            margin-top: 1.15rem;
+            margin-bottom: 0;
+        }
+
+        .button-link {
+            display: inline-block;
+            padding: 0.5rem 0.85rem;
+            border: 1px solid var(--sheet-border);
             text-decoration: none;
-            font-size: 0.95rem;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
         }
 
-        .btn-glass:hover {
-            background: rgba(255, 255, 255, 0.14);
-            border-color: rgba(255, 255, 255, 0.14);
-            transform: translateY(-1px);
-        }
-
-        .btn-glass:focus-visible {
-            outline: 2px solid var(--color-link);
-            outline-offset: 3px;
-        }
-
-        .btn-home {
-            margin-left: auto;
-        }
-
-        @media (max-width: 640px) {
-            body {
-                padding: 18px;
-                align-items: stretch;
-            }
-
-            main {
-                display: flex;
-                align-items: center;
-            }
-
-            .section-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .section-header-secondary {
-                white-space: normal;
-            }
-
-            .panel-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
+        .button-link:hover {
+            border-color: currentColor;
+            text-decoration: none;
         }
     </style>
 </head>
 <body>
     <main>
-        <div class="frame">
-            <header class="section-header">
-                <h1 class="section-header-main">Service temporarily unavailable.</h1>
-                <div class="section-header-secondary">503</div>
-            </header>
-
-            <section class="panel" aria-labelledby="status-title">
-                <div class="panel-header">
-                    <div class="status-pill" id="status-title">
-                        <span class="status-dot"></span>
-                        Service outage
-                    </div>
-                </div>
-
-                <div class="panel-body">
-                    <p>Check the service status page for more info.</p>
-                    <div class="action-row">
-                        <a class="btn-glass" href="https://radunenu.com/service-status/">Open service status</a>
-                        <a class="btn-glass btn-home" href="https://radunenu.com">Home</a>
-                    </div>
-                </div>
-            </section>
-        </div>
+        <article>
+            <p class="error-code">503</p>
+            <h1>Service temporarily unavailable.</h1>
+            <p>This service is temporarily unavailable right now.</p>
+            <p>If this keeps happening, check the <a href="https://radunenu.com/status/">status page</a>.</p>
+            <p class="button-row"><a class="button-link" href="https://radunenu.com/">Back to home</a></p>
+        </article>
     </main>
 </body>
 </html>
