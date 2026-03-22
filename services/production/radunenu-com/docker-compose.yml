@@ -6,7 +6,11 @@ services:
     ports:
       - "127.0.0.1:${RADUNENU_HOST_PORT}:1310"
     volumes:
-      - stats_live:/srv/live
+      - type: bind
+        source: ${RADUNENU_DEPLOY_DIR}/live
+        target: /srv/live
+        bind:
+          create_host_path: true
 
   stats-updater:
     image: git.radunenu.com/radu/radunenu.com-minimal-stats-updater:latest
@@ -15,7 +19,8 @@ services:
     env_file:
       - runtime.env
     volumes:
-      - stats_live:/data
-
-volumes:
-  stats_live:
+      - type: bind
+        source: ${RADUNENU_DEPLOY_DIR}/live
+        target: /data
+        bind:
+          create_host_path: true
