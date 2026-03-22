@@ -1,6 +1,6 @@
 services:
   website:
-    image: git.radunenu.com/radu/radunenu.com-minimal:v0.1.24
+    image: git.radunenu.com/radu/radunenu.com-minimal:latest
     pull_policy: always
     restart: unless-stopped
     ports:
@@ -9,7 +9,7 @@ services:
       - stats_live:/srv/live
 
   stats-updater:
-    image: git.radunenu.com/radu/radunenu.com-minimal-stats-updater:v0.1.24
+    image: git.radunenu.com/radu/radunenu.com-minimal-stats-updater:latest
     pull_policy: always
     restart: unless-stopped
     env_file:
