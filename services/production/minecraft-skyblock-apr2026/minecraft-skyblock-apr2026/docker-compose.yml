@@ -12,6 +12,7 @@ services:
       - ${MINECRAFT_DATA_DIR}:/server
     networks:
       - internal
+      - external
 
   frpc:
     image: ghcr.io/fatedier/frpc:v0.65.0
