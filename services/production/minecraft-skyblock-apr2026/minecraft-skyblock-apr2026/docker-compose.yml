@@ -1,0 +1,41 @@
+services:
+  minecraft-skyblock-apr2026:
+    image: git.radunenu.com/radu/spigotmc-docker:server-latest
+    container_name: minecraft-skyblock-apr2026
+    pull_policy: always
+    restart: unless-stopped
+    env_file:
+      - runtime.env
+    environment:
+      EULA: "true"
+    volumes:
+      - ${MINECRAFT_DATA_DIR}:/server
+    networks:
+      - internal
+
+  frpc:
+    image: ghcr.io/fatedier/frpc:v0.65.0
+    command:
+      - -c
+      - /etc/frp/frpc.toml
+    container_name: frpc-minecraft-skyblock-apr2026
+    restart: unless-stopped
+    env_file:
+      - runtime.env
+    volumes:
+      - ../../../utils/frp/frpc/frpc-tcp.toml:/etc/frp/frpc.toml:ro
+    depends_on:
+      - minecraft-skyblock-apr2026
+    networks:
+      - internal
+      - external
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  internal:
+    driver: bridge
+    internal: true
+  external:
+    driver: bridge
