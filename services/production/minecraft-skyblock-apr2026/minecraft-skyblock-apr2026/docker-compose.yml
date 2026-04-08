@@ -4,6 +4,8 @@ services:
     container_name: minecraft-skyblock-apr2026
     pull_policy: always
     restart: unless-stopped
+    stdin_open: true
+    tty: true
     env_file:
       - runtime.env
     environment:
