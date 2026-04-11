@@ -27,11 +27,11 @@ services:
 
     networks:
       default: {}
-      pinga_net:
+      monitoring_net:
         aliases:
           - thinkcentre-frps
 
 networks:
-  pinga_net:
+  monitoring_net:
     external: true
-    name: pinga_net
+    name: monitoring_net
