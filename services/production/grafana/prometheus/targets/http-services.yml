@@ -1,5 +1,5 @@
 - targets:
-    - apache-exporter:9117
+    - host.docker.internal:9117
   labels:
     host: edge-grafana
     site: edge
