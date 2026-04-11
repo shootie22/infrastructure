@@ -9,7 +9,7 @@
     webserver: apache
 
 - targets:
-    - 127.0.0.1:5993
+    - host.docker.internal:5993
   labels:
     host: hetzner
     site: hetzner
