@@ -13,6 +13,32 @@ services:
       - /sys:/host/sys:ro
       - /:/rootfs:ro
 
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.53.0
+    container_name: cadvisor
+    restart: unless-stopped
+    command:
+      - --port=9101
+      - --housekeeping_interval=30s
+      - --store_container_labels=false
+      - --docker_only=true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+
+  apache-exporter:
+    image: lusotycoon/apache-exporter:v1.0.8
+    container_name: apache-exporter
+    restart: unless-stopped
+    command:
+      - --scrape_uri=http://host.docker.internal/server-status?auto
+      - --telemetry.endpoint=/metrics
+      - --web.listen-address=:9117
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   prometheus:
     image: ${PROMETHEUS_IMAGE}:${PROMETHEUS_TAG}
     container_name: ${PROMETHEUS_CONTAINER_NAME}
@@ -26,6 +52,7 @@ services:
       - "127.0.0.1:${PROMETHEUS_HOST_PORT}:9090"
     volumes:
       - ${PROMETHEUS_DATA_DIR}:/prometheus
+      - ./prometheus/targets:/etc/prometheus/targets:ro
     configs:
       - source: prometheus-config
         target: /etc/prometheus/prometheus.yml
@@ -36,6 +63,8 @@ services:
     restart: unless-stopped
     depends_on:
       - node-exporter
+      - cadvisor
+      - apache-exporter
       - prometheus
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
@@ -70,6 +99,8 @@ services:
       - "127.0.0.1:${GRAFANA_HOST_PORT}:3000"
     volumes:
       - ${GRAFANA_DATA_DIR}:/var/lib/grafana
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     configs:
       - source: grafana-prometheus-datasource
         target: /etc/grafana/provisioning/datasources/prometheus.yml

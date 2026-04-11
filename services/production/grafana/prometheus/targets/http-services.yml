@@ -1,0 +1,19 @@
+- targets:
+    - apache-exporter:9117
+  labels:
+    host: edge-grafana
+    site: edge
+    role: edge
+    os: linux
+    service: apache
+    webserver: apache
+
+- targets:
+    - 127.0.0.1:5993
+  labels:
+    host: hetzner
+    site: hetzner
+    role: app-host
+    os: linux
+    service: nginx
+    webserver: nginx
