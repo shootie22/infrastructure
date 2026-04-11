@@ -47,17 +47,17 @@ localPort = {{ $v.First }}
 # Port exposed on FRP server
 remotePort = {{ $v.Second }}
 
-{{- if .Envs.FRP_PROXY_PROTOCOL_VERSION }}
+{{- if $.Envs.FRP_PROXY_PROTOCOL_VERSION }}
 # Forward connection IP
-transport.proxyProtocolVersion = "{{ .Envs.FRP_PROXY_PROTOCOL_VERSION }}"
+transport.proxyProtocolVersion = "{{ $.Envs.FRP_PROXY_PROTOCOL_VERSION }}"
 {{- end }}
 
 # Optional transport improvements
-{{- if .Envs.FRP_USE_ENCRYPTION }}
-transport.useEncryption = {{ .Envs.FRP_USE_ENCRYPTION }}
+{{- if $.Envs.FRP_USE_ENCRYPTION }}
+transport.useEncryption = {{ $.Envs.FRP_USE_ENCRYPTION }}
 {{- end }}
-{{- if .Envs.FRP_USE_COMPRESSION }}
-transport.useCompression = {{ .Envs.FRP_USE_COMPRESSION }}
+{{- if $.Envs.FRP_USE_COMPRESSION }}
+transport.useCompression = {{ $.Envs.FRP_USE_COMPRESSION }}
 {{- end }}
 {{- end }}
 {{- else }}
