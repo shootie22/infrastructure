@@ -18,9 +18,13 @@ This stack now assumes centralized Prometheus scraping with per-host exporters e
   - `127.0.0.1:5991` node exporter
   - `127.0.0.1:5992` cAdvisor
   - `127.0.0.1:5993` Nginx exporter
+- `hetzner-synapse-metrics` provides a dedicated FRP path for the native Synapse metrics endpoint:
+  - `synapse-frps:5996` from Prometheus on `monitoring_net`
+  - local Synapse metrics endpoint expected on the Hetzner host at `127.0.0.1:8008/_synapse/metrics`
 
 ## Grafana Assets
 
 - Prometheus target inventories live under `prometheus/targets/`.
+- Prometheus recording rules live under `prometheus/rules/`.
 - The starter dashboard JSON is stored under `grafana/dashboards/`.
 - Grafana dashboard provisioning is enabled through `grafana/provisioning/dashboards/default.yml`.

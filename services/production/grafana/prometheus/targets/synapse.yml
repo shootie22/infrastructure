@@ -1,0 +1,9 @@
+- targets:
+    - synapse-frps:5996
+  labels:
+    host: hetzner
+    site: hetzner
+    role: matrix
+    service: synapse
+    stack: matrix
+    os: linux
