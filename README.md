@@ -12,6 +12,10 @@ This model will change, grow and adapt over time.
 - `services/testing/<stack>/` is the testing playground.
 - `services/utils/` contains shared configurations used across services.
 
+## Documentation
+
+- [docs/infrastructure-topology.md](/home/krator/GitRepos/infrastructure/docs/infrastructure-topology.md) explains the edge and remote host model, monitoring flow, and deployment conventions.
+
 ## Security
 
 #### Secrets

@@ -54,6 +54,7 @@ services:
     volumes:
       - ${PROMETHEUS_DATA_DIR}:/prometheus
       - ./prometheus/targets:/etc/prometheus/targets:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
     configs:
       - source: prometheus-config
         target: /etc/prometheus/prometheus.yml
