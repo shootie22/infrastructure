@@ -1,0 +1,25 @@
+services:
+  frps:
+    image: ghcr.io/fatedier/frps:v0.65.0
+    command:
+      - -c
+      - /etc/frp/frps.toml
+    container_name: ${FRPS_NAME}
+    restart: unless-stopped
+
+    ports:
+      - "${FRP_BIND_PORT}:${FRP_BIND_PORT}/tcp"
+      - "127.0.0.1:${FRP_REMOTE_PORT_RANGE}:${FRP_REMOTE_PORT_RANGE}/tcp"
+
+    volumes:
+      - ../../../utils/frp/frps/frps.toml:/etc/frp/frps.toml:ro
+      - ../../../utils/frp/frps/res:/etc/frp/res:ro
+
+    env_file:
+      - runtime.env
+
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true

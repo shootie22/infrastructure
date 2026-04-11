@@ -1,27 +1,53 @@
 services:
-  probe:
-    image: alpine/socat:1.8.0.3
-    command: ["-d", "-d", "TCP-LISTEN:9100,reuseaddr,fork", "EXEC:/bin/cat"]
+  node-exporter:
+    image: prom/node-exporter:v1.10.2
+    container_name: node-exporter-thinkcentre
     restart: unless-stopped
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($|/)
+      - --web.listen-address=:9100
+    network_mode: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
 
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.53.0
+    container_name: cadvisor-thinkcentre
+    restart: unless-stopped
+    command:
+      - --port=9101
+      - --housekeeping_interval=30s
+      - --store_container_labels=false
+      - --docker_only=true
+    network_mode: host
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
 
   frpc:
     image: ghcr.io/fatedier/frpc:v0.65.0
     command:
       - -c
       - /etc/frp/frpc.toml
-    container_name: frpc-thinkcentre-health-status
+    container_name: frpc-thinkcentre-monitoring
     restart: unless-stopped
-
+    network_mode: host
     depends_on:
-      - probe
-
+      - node-exporter
+      - cadvisor
     volumes:
       - ../../../utils/frp/frpc/frpc-tcp.toml:/etc/frp/frpc.toml:ro
-
     env_file:
       - runtime.env
-
     read_only: true
+    tmpfs:
+      - /tmp
     security_opt:
       - no-new-privileges:true

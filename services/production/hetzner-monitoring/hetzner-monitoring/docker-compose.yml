@@ -1,0 +1,66 @@
+services:
+  node-exporter:
+    image: prom/node-exporter:v1.10.2
+    container_name: node-exporter-hetzner
+    restart: unless-stopped
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($|/)
+      - --web.listen-address=:9100
+    network_mode: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.53.0
+    container_name: cadvisor-hetzner
+    restart: unless-stopped
+    command:
+      - --port=9101
+      - --housekeeping_interval=30s
+      - --store_container_labels=false
+      - --docker_only=true
+    network_mode: host
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:1.4.2
+    container_name: nginx-exporter-hetzner
+    restart: unless-stopped
+    command:
+      - --nginx.scrape-uri=http://127.0.0.1:9113/nginx_status
+      - --web.listen-address=:9102
+    network_mode: host
+    depends_on:
+      - node-exporter
+      - cadvisor
+
+  frpc:
+    image: ghcr.io/fatedier/frpc:v0.65.0
+    command:
+      - -c
+      - /etc/frp/frpc.toml
+    container_name: frpc-hetzner-monitoring
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      - node-exporter
+      - cadvisor
+      - nginx-exporter
+    volumes:
+      - ../../../utils/frp/frpc/frpc-tcp.toml:/etc/frp/frpc.toml:ro
+    env_file:
+      - runtime.env
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true

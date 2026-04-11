@@ -1,0 +1,23 @@
+- targets:
+    - cadvisor:9101
+  labels:
+    host: edge-grafana
+    site: edge
+    role: edge
+    os: linux
+
+- targets:
+    - 127.0.0.1:5989
+  labels:
+    host: thinkcentre
+    site: homelab
+    role: workstation
+    os: linux
+
+- targets:
+    - 127.0.0.1:5992
+  labels:
+    host: hetzner
+    site: hetzner
+    role: app-host
+    os: linux

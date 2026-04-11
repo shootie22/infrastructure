@@ -15,6 +15,16 @@ scrape_configs:
           - grafana:3000
 
   - job_name: node-exporter
-    static_configs:
-      - targets:
-          - node-exporter:9100
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/linux-node-exporters.yml
+
+  - job_name: cadvisor
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/cadvisor.yml
+
+  - job_name: http-servers
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/http-services.yml

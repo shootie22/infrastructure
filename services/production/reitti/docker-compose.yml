@@ -65,6 +65,8 @@ services:
 
   tile-cache:
     image: nginx:alpine
+    ports:
+      - "127.0.0.1:9113:9113"
     environment:
       NGINX_CACHE_SIZE: ${NGINX_CACHE_SIZE}
     command: |
@@ -86,6 +88,14 @@ services:
             proxy_cache tiles;
             proxy_cache_valid 200 30d;
             proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+          }
+        }
+
+        server {
+          listen 9113;
+          location /nginx_status {
+            stub_status on;
+            access_log off;
           }
         }
       }
