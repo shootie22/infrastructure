@@ -12,8 +12,8 @@ This stack now assumes centralized Prometheus scraping with per-host exporters e
 ## Remote Linux Hosts
 
 - `thinkcentre-health-status` is upgraded into a real Linux monitoring bundle:
-  - `127.0.0.1:5988` on the edge host maps to the ThinkCentre node exporter.
-  - `127.0.0.1:5989` on the edge host maps to the ThinkCentre cAdvisor exporter.
+  - `127.0.0.1:5994` on the edge host maps to the ThinkCentre node exporter.
+  - `127.0.0.1:5995` on the edge host maps to the ThinkCentre cAdvisor exporter.
 - `hetzner-monitoring` provides the same host metrics plus a remote Nginx exporter:
   - `127.0.0.1:5991` node exporter
   - `127.0.0.1:5992` cAdvisor
