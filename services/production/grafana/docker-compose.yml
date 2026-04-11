@@ -57,7 +57,7 @@ services:
         target: /etc/prometheus/prometheus.yml
     networks:
       - default
-      - pinga_net
+      - monitoring_net
 
   grafana:
     image: ${GRAFANA_IMAGE}:${GRAFANA_TAG}
@@ -114,6 +114,6 @@ configs:
     file: ./grafana/provisioning/datasources/prometheus.yml
 
 networks:
-  pinga_net:
+  monitoring_net:
     external: true
-    name: pinga_net
+    name: monitoring_net
