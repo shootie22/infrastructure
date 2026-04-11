@@ -7,7 +7,7 @@
     os: linux
 
 - targets:
-    - 127.0.0.1:5995
+    - host.docker.internal:5995
   labels:
     host: thinkcentre
     site: homelab
@@ -15,7 +15,7 @@
     os: linux
 
 - targets:
-    - 127.0.0.1:5992
+    - host.docker.internal:5992
   labels:
     host: hetzner
     site: hetzner

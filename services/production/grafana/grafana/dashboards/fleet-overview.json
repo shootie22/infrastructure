@@ -70,7 +70,7 @@
       },
       "targets": [
         {
-          "expr": "count(up{job=\"linux-node\"} == 1)",
+          "expr": "count(up{job=\"node-exporter\"} == 1)",
           "refId": "A"
         }
       ],
@@ -130,7 +130,7 @@
       },
       "targets": [
         {
-          "expr": "count(up{job=~\"linux-node|cadvisor|http-servers\"} == 0)",
+          "expr": "count(up{job=~\"node-exporter|cadvisor|http-servers\"} == 0)",
           "refId": "A"
         }
       ],
@@ -279,7 +279,7 @@
       },
       "targets": [
         {
-          "expr": "100 - (avg by (host) (rate(node_cpu_seconds_total{job=\"linux-node\",mode=\"idle\",host=~\"$host\"}[5m])) * 100)",
+          "expr": "100 - (avg by (host) (rate(node_cpu_seconds_total{job=\"node-exporter\",mode=\"idle\",host=~\"$host\"}[5m])) * 100)",
           "legendFormat": "{{host}}",
           "refId": "A"
         }
@@ -317,7 +317,7 @@
       },
       "targets": [
         {
-          "expr": "100 * (1 - (node_memory_MemAvailable_bytes{job=\"linux-node\",host=~\"$host\"} / node_memory_MemTotal_bytes{job=\"linux-node\",host=~\"$host\"}))",
+          "expr": "100 * (1 - (node_memory_MemAvailable_bytes{job=\"node-exporter\",host=~\"$host\"} / node_memory_MemTotal_bytes{job=\"node-exporter\",host=~\"$host\"}))",
           "legendFormat": "{{host}}",
           "refId": "A"
         }
@@ -355,12 +355,12 @@
       },
       "targets": [
         {
-          "expr": "sum by (host) (rate(node_network_receive_bytes_total{job=\"linux-node\",device!~\"lo|docker.*|veth.*\",host=~\"$host\"}[5m]))",
+          "expr": "sum by (host) (rate(node_network_receive_bytes_total{job=\"node-exporter\",device!~\"lo|docker.*|veth.*\",host=~\"$host\"}[5m]))",
           "legendFormat": "{{host}} rx",
           "refId": "A"
         },
         {
-          "expr": "sum by (host) (rate(node_network_transmit_bytes_total{job=\"linux-node\",device!~\"lo|docker.*|veth.*\",host=~\"$host\"}[5m]))",
+          "expr": "sum by (host) (rate(node_network_transmit_bytes_total{job=\"node-exporter\",device!~\"lo|docker.*|veth.*\",host=~\"$host\"}[5m]))",
           "legendFormat": "{{host}} tx",
           "refId": "B"
         }
@@ -398,7 +398,7 @@
       },
       "targets": [
         {
-          "expr": "100 * (1 - (node_filesystem_avail_bytes{job=\"linux-node\",mountpoint=\"/\",fstype!=\"\",host=~\"$host\"} / node_filesystem_size_bytes{job=\"linux-node\",mountpoint=\"/\",fstype!=\"\",host=~\"$host\"}))",
+          "expr": "100 * (1 - (node_filesystem_avail_bytes{job=\"node-exporter\",mountpoint=\"/\",fstype!=\"\",host=~\"$host\"} / node_filesystem_size_bytes{job=\"node-exporter\",mountpoint=\"/\",fstype!=\"\",host=~\"$host\"}))",
           "legendFormat": "{{host}} /",
           "refId": "A"
         }
@@ -436,7 +436,7 @@
       },
       "targets": [
         {
-          "expr": "node_load1{job=\"linux-node\",host=~\"$host\"}",
+          "expr": "node_load1{job=\"node-exporter\",host=~\"$host\"}",
           "legendFormat": "{{host}}",
           "refId": "A"
         }
@@ -467,7 +467,7 @@
       },
       "targets": [
         {
-          "expr": "up{job=~\"linux-node|cadvisor|http-servers\",host=~\"$host\"}",
+          "expr": "up{job=~\"node-exporter|cadvisor|http-servers\",host=~\"$host\"}",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -659,7 +659,7 @@
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "definition": "label_values(up{job=~\"linux-node|cadvisor|http-servers\"}, host)",
+        "definition": "label_values(up{job=~\"node-exporter|cadvisor|http-servers\"}, host)",
         "includeAll": true,
         "label": "Host",
         "multi": false,
@@ -667,7 +667,7 @@
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(up{job=~\"linux-node|cadvisor|http-servers\"}, host)",
+          "query": "label_values(up{job=~\"node-exporter|cadvisor|http-servers\"}, host)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
