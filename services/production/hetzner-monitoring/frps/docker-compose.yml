@@ -23,3 +23,14 @@ services:
       - /tmp
     security_opt:
       - no-new-privileges:true
+
+    networks:
+      default: {}
+      pinga_net:
+        aliases:
+          - hetzner-frps
+
+networks:
+  pinga_net:
+    external: true
+    name: pinga_net

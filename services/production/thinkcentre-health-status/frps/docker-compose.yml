@@ -26,8 +26,10 @@ services:
       - no-new-privileges:true
 
     networks:
-      - default
-      - pinga_net
+      default: {}
+      pinga_net:
+        aliases:
+          - thinkcentre-frps
 
 networks:
   pinga_net:

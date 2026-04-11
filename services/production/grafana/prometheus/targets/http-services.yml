@@ -9,7 +9,7 @@
     webserver: apache
 
 - targets:
-    - host.docker.internal:5993
+    - hetzner-frps:5993
   labels:
     host: hetzner
     site: hetzner
