@@ -84,11 +84,11 @@
       },
       "targets": [
         {
-          "expr": "sum(sum by (host, name) ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\"}[1h])) < bool 120))",
+          "expr": "sum(sum by (host, name) ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",name!=\"\"}[1h])) < bool 120))",
           "refId": "A"
         }
       ],
-      "title": "Compose Containers Up",
+      "title": "Containers Up",
       "type": "stat"
     },
     {
@@ -141,7 +141,7 @@
       },
       "targets": [
         {
-          "expr": "sum(sum by (host, name) ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",container_label_com_docker_compose_project=~\"audiobookshelf|authentik|borg-web-ui|dev-radunenu-com|gitea|hemmelig|hytale-server|joplin|keycloak|kronorite-dedicated-server-cls|libretranslate|minecraft-skyblock-apr2026|openwebui|picshare|pinga|plantuml|privatebin|radunenu-com|reitti|rybbit|uptime-kuma|vaultwarden|vikunja|vintagestory-modded\",container_label_com_docker_compose_service!~\"postgres|postgis|redis|rabbitmq|photon|clickhouse|db|worker|rathole.*|frpc.*|frps.*|apache-exporter|nginx-exporter|node-exporter|cadvisor|prometheus|grafana|stats-updater|snapshot-poller|.*runner.*|socat\"}[1h])) < bool 120))",
+          "expr": "sum(sum by (host, name) ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"audiobookshelf|borg-web-ui|gitea-server|hemmelig|joplin-server|keycloak|libretranslate|openwebui|pinga|vaultwarden|hytale|minecraft-skyblock-apr2026|vintagestory.*|privatebin.*|picshare.*|plantuml.*|kronorite.*|vikunja.*|reitti.*|rybbit-backend|rybbit-client|rybbit-caddy|authentik.*|dev-radunenu-com.*|radunenu-com.*|uptime-kuma.*\"}[1h])) < bool 120))",
           "refId": "A"
         }
       ],
@@ -198,7 +198,7 @@
       },
       "targets": [
         {
-          "expr": "sum(sum by (host, name) (((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",container_label_com_docker_compose_project=~\"grafana|thinkcentre-health-status|hetzner-monitoring|hetzner-synapse-metrics|macminim.*-health-status|gitea-act-runner-.*|github-commit-sync\"}[1h])) < bool 120) or ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service=~\"postgres|postgis|redis|rabbitmq|photon|clickhouse|db|worker|rathole.*|frpc.*|frps.*|apache-exporter|nginx-exporter|node-exporter|cadvisor|prometheus|grafana|stats-updater|snapshot-poller|.*runner.*|socat\"}[1h])) < bool 120)))",
+          "expr": "sum(sum by (host, name) ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\".*postgres.*|joplin-db|borg-redis|.*redis.*|rabbitmq|postgis|photon|.*clickhouse.*|rathole.*|frpc-.*|frps.*|apache-exporter|nginx-exporter.*|node-exporter.*|cadvisor.*|prometheus|grafana|github-commit-sync|.*runner.*|frpc-hetzner-synapse-metrics|frpc-thinkcentre-monitoring|frpc-hetzner-monitoring\"}[1h])) < bool 120))",
           "refId": "A"
         }
       ],
@@ -435,7 +435,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (host, name) ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\"}[1h])) < bool 120)",
+          "expr": "sum by (host, name) ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",name!=\"\"}[1h])) < bool 120)",
           "legendFormat": "{{name}} @ {{host}}",
           "refId": "A"
         }
@@ -473,7 +473,7 @@
       },
       "targets": [
         {
-          "expr": "topk(12, sum by (host, name) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\"}[$__rate_interval])) * 100)",
+          "expr": "topk(12, sum by (host, name) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",name!=\"\"}[$__rate_interval])) * 100)",
           "legendFormat": "{{name}} @ {{host}}",
           "refId": "A"
         }
@@ -511,7 +511,7 @@
       },
       "targets": [
         {
-          "expr": "topk(12, max by (host, name) (container_memory_working_set_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service!=\"\"}))",
+          "expr": "topk(12, max by (host, name) (container_memory_working_set_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",name!=\"\"}))",
           "legendFormat": "{{name}} @ {{host}}",
           "refId": "A"
         }
@@ -582,7 +582,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (host, name) ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",container_label_com_docker_compose_project=~\"audiobookshelf|authentik|borg-web-ui|dev-radunenu-com|gitea|hemmelig|hytale-server|joplin|keycloak|kronorite-dedicated-server-cls|libretranslate|minecraft-skyblock-apr2026|openwebui|picshare|pinga|plantuml|privatebin|radunenu-com|reitti|rybbit|uptime-kuma|vaultwarden|vikunja|vintagestory-modded\",container_label_com_docker_compose_service!~\"postgres|postgis|redis|rabbitmq|photon|clickhouse|db|worker|rathole.*|frpc.*|frps.*|apache-exporter|nginx-exporter|node-exporter|cadvisor|prometheus|grafana|stats-updater|snapshot-poller|.*runner.*|socat\"}[1h])) < bool 120)",
+          "expr": "sum by (host, name) ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"audiobookshelf|borg-web-ui|gitea-server|hemmelig|joplin-server|keycloak|libretranslate|openwebui|pinga|vaultwarden|hytale|minecraft-skyblock-apr2026|vintagestory.*|privatebin.*|picshare.*|plantuml.*|kronorite.*|vikunja.*|reitti.*|rybbit-backend|rybbit-client|rybbit-caddy|authentik.*|dev-radunenu-com.*|radunenu-com.*|uptime-kuma.*\"}[1h])) < bool 120)",
           "legendFormat": "{{name}} @ {{host}}",
           "refId": "A"
         }
@@ -668,7 +668,7 @@
       },
       "targets": [
         {
-          "expr": "topk(12, sum by (host, name) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",container_label_com_docker_compose_project=~\"audiobookshelf|authentik|borg-web-ui|dev-radunenu-com|gitea|hemmelig|hytale-server|joplin|keycloak|kronorite-dedicated-server-cls|libretranslate|minecraft-skyblock-apr2026|openwebui|picshare|pinga|plantuml|privatebin|radunenu-com|reitti|rybbit|uptime-kuma|vaultwarden|vikunja|vintagestory-modded\",container_label_com_docker_compose_service!~\"postgres|postgis|redis|rabbitmq|photon|clickhouse|db|worker|rathole.*|frpc.*|frps.*|apache-exporter|nginx-exporter|node-exporter|cadvisor|prometheus|grafana|stats-updater|snapshot-poller|.*runner.*|socat\"}[$__rate_interval])) * 100)",
+          "expr": "topk(12, sum by (host, name) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"audiobookshelf|borg-web-ui|gitea-server|hemmelig|joplin-server|keycloak|libretranslate|openwebui|pinga|vaultwarden|hytale|minecraft-skyblock-apr2026|vintagestory.*|privatebin.*|picshare.*|plantuml.*|kronorite.*|vikunja.*|reitti.*|rybbit-backend|rybbit-client|rybbit-caddy|authentik.*|dev-radunenu-com.*|radunenu-com.*|uptime-kuma.*\"}[$__rate_interval])) * 100)",
           "legendFormat": "{{name}} @ {{host}}",
           "refId": "A"
         }
@@ -706,7 +706,7 @@
       },
       "targets": [
         {
-          "expr": "topk(12, max by (host, name) (container_memory_working_set_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",container_label_com_docker_compose_project=~\"audiobookshelf|authentik|borg-web-ui|dev-radunenu-com|gitea|hemmelig|hytale-server|joplin|keycloak|kronorite-dedicated-server-cls|libretranslate|minecraft-skyblock-apr2026|openwebui|picshare|pinga|plantuml|privatebin|radunenu-com|reitti|rybbit|uptime-kuma|vaultwarden|vikunja|vintagestory-modded\",container_label_com_docker_compose_service!~\"postgres|postgis|redis|rabbitmq|photon|clickhouse|db|worker|rathole.*|frpc.*|frps.*|apache-exporter|nginx-exporter|node-exporter|cadvisor|prometheus|grafana|stats-updater|snapshot-poller|.*runner.*|socat\"}))",
+          "expr": "topk(12, max by (host, name) (container_memory_working_set_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"audiobookshelf|borg-web-ui|gitea-server|hemmelig|joplin-server|keycloak|libretranslate|openwebui|pinga|vaultwarden|hytale|minecraft-skyblock-apr2026|vintagestory.*|privatebin.*|picshare.*|plantuml.*|kronorite.*|vikunja.*|reitti.*|rybbit-backend|rybbit-client|rybbit-caddy|authentik.*|dev-radunenu-com.*|radunenu-com.*|uptime-kuma.*\"}))",
           "legendFormat": "{{name}} @ {{host}}",
           "refId": "A"
         }
@@ -777,7 +777,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (host, name) (((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",container_label_com_docker_compose_project=~\"grafana|thinkcentre-health-status|hetzner-monitoring|hetzner-synapse-metrics|macminim.*-health-status|gitea-act-runner-.*|github-commit-sync\"}[1h])) < bool 120) or ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service=~\"postgres|postgis|redis|rabbitmq|photon|clickhouse|db|worker|rathole.*|frpc.*|frps.*|apache-exporter|nginx-exporter|node-exporter|cadvisor|prometheus|grafana|stats-updater|snapshot-poller|.*runner.*|socat\"}[1h])) < bool 120))",
+          "expr": "sum by (host, name) ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\".*postgres.*|joplin-db|borg-redis|.*redis.*|rabbitmq|postgis|photon|.*clickhouse.*|rathole.*|frpc-.*|frps.*|apache-exporter|nginx-exporter.*|node-exporter.*|cadvisor.*|prometheus|grafana|github-commit-sync|.*runner.*|frpc-hetzner-synapse-metrics|frpc-thinkcentre-monitoring|frpc-hetzner-monitoring\"}[1h])) < bool 120)",
           "legendFormat": "{{name}} @ {{host}}",
           "refId": "A"
         }
@@ -815,7 +815,7 @@
       },
       "targets": [
         {
-          "expr": "topk(12, (sum by (host, name) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",container_label_com_docker_compose_project=~\"grafana|thinkcentre-health-status|hetzner-monitoring|hetzner-synapse-metrics|macminim.*-health-status|gitea-act-runner-.*|github-commit-sync\"}[$__rate_interval])) or sum by (host, name) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service=~\"postgres|postgis|redis|rabbitmq|photon|clickhouse|db|worker|rathole.*|frpc.*|frps.*|apache-exporter|nginx-exporter|node-exporter|cadvisor|prometheus|grafana|stats-updater|snapshot-poller|.*runner.*|socat\"}[$__rate_interval]))) * 100)",
+          "expr": "topk(12, sum by (host, name) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\".*postgres.*|joplin-db|borg-redis|.*redis.*|rabbitmq|postgis|photon|.*clickhouse.*|rathole.*|frpc-.*|frps.*|apache-exporter|nginx-exporter.*|node-exporter.*|cadvisor.*|prometheus|grafana|github-commit-sync|.*runner.*|frpc-hetzner-synapse-metrics|frpc-thinkcentre-monitoring|frpc-hetzner-monitoring\"}[$__rate_interval])) * 100)",
           "legendFormat": "{{name}} @ {{host}}",
           "refId": "A"
         }
@@ -853,7 +853,7 @@
       },
       "targets": [
         {
-          "expr": "topk(12, max by (host, name) ((container_memory_working_set_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",container_label_com_docker_compose_project=~\"grafana|thinkcentre-health-status|hetzner-monitoring|hetzner-synapse-metrics|macminim.*-health-status|gitea-act-runner-.*|github-commit-sync\"}) or (container_memory_working_set_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",container_label_com_docker_compose_project!=\"\",container_label_com_docker_compose_service=~\"postgres|postgis|redis|rabbitmq|photon|clickhouse|db|worker|rathole.*|frpc.*|frps.*|apache-exporter|nginx-exporter|node-exporter|cadvisor|prometheus|grafana|stats-updater|snapshot-poller|.*runner.*|socat\"})))",
+          "expr": "topk(12, max by (host, name) (container_memory_working_set_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\".*postgres.*|joplin-db|borg-redis|.*redis.*|rabbitmq|postgis|photon|.*clickhouse.*|rathole.*|frpc-.*|frps.*|apache-exporter|nginx-exporter.*|node-exporter.*|cadvisor.*|prometheus|grafana|github-commit-sync|.*runner.*|frpc-hetzner-synapse-metrics|frpc-thinkcentre-monitoring|frpc-hetzner-monitoring\"}))",
           "legendFormat": "{{name}} @ {{host}}",
           "refId": "A"
         }
