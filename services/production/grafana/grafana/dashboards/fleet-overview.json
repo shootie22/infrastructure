@@ -413,7 +413,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "s"
         },
         "overrides": []
       },
@@ -436,12 +436,12 @@
       },
       "targets": [
         {
-          "expr": "node_load1{job=\"node-exporter\",host=~\"$host\"}",
+          "expr": "time() - max by (host) (timestamp(node_cpu_seconds_total{job=\"node-exporter\",host=~\"$host\",cpu=\"0\",mode=\"idle\"}))",
           "legendFormat": "{{host}}",
           "refId": "A"
         }
       ],
-      "title": "Load Average (1m)",
+      "title": "Host Metrics Freshness",
       "type": "timeseries"
     },
     {
