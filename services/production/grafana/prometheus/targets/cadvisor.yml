@@ -7,7 +7,7 @@
     os: linux
 
 - targets:
-    - host.docker.internal:5995
+    - thinkcentre-frps:5995
   labels:
     host: thinkcentre
     site: homelab
@@ -15,7 +15,7 @@
     os: linux
 
 - targets:
-    - host.docker.internal:5992
+    - hetzner-frps:5992
   labels:
     host: hetzner
     site: hetzner

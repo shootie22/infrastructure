@@ -32,12 +32,11 @@ services:
     image: lusotycoon/apache-exporter:v1.0.8
     container_name: apache-exporter
     restart: unless-stopped
+    network_mode: host
     command:
-      - --scrape_uri=http://host.docker.internal/server-status?auto
+      - --scrape_uri=http://127.0.0.1/server-status?auto
       - --telemetry.endpoint=/metrics
       - --web.listen-address=:9117
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   prometheus:
     image: ${PROMETHEUS_IMAGE}:${PROMETHEUS_TAG}
@@ -50,14 +49,15 @@ services:
       - --web.listen-address=0.0.0.0:9090
     ports:
       - "127.0.0.1:${PROMETHEUS_HOST_PORT}:9090"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
       - ${PROMETHEUS_DATA_DIR}:/prometheus
       - ./prometheus/targets:/etc/prometheus/targets:ro
     configs:
       - source: prometheus-config
         target: /etc/prometheus/prometheus.yml
+    networks:
+      - default
+      - pinga_net
 
   grafana:
     image: ${GRAFANA_IMAGE}:${GRAFANA_TAG}
@@ -112,3 +112,8 @@ configs:
     file: ./prometheus/prometheus.yml
   grafana-prometheus-datasource:
     file: ./grafana/provisioning/datasources/prometheus.yml
+
+networks:
+  pinga_net:
+    external: true
+    name: pinga_net
