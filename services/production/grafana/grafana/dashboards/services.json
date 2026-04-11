@@ -63,7 +63,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
+        "w": 6,
         "x": 0,
         "y": 1
       },
@@ -120,8 +120,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 4,
+        "w": 6,
+        "x": 6,
         "y": 1
       },
       "id": 3,
@@ -141,11 +141,11 @@
       },
       "targets": [
         {
-          "expr": "sum(sum by (host, name) ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"audiobookshelf|borg-web-ui|gitea-server|hemmelig|joplin-server|keycloak|libretranslate|openwebui|pinga|vaultwarden|hytale|minecraft-skyblock-apr2026|vintagestory.*|privatebin.*|picshare.*|plantuml.*|kronorite.*|vikunja.*|reitti.*|rybbit-backend|rybbit-client|rybbit-caddy|authentik.*|dev-radunenu-com.*|radunenu-com.*|uptime-kuma.*\"}[1h])) < bool 120))",
+          "expr": "count(count by (host) (container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",name!=\"\"}))",
           "refId": "A"
         }
       ],
-      "title": "User-Facing Up",
+      "title": "Hosts With Containers",
       "type": "stat"
     },
     {
@@ -162,12 +162,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
-                "value": null
-              },
-              {
                 "color": "green",
-                "value": 1
+                "value": null
               }
             ]
           },
@@ -177,8 +173,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 8,
+        "w": 6,
+        "x": 12,
         "y": 1
       },
       "id": 4,
@@ -198,11 +194,11 @@
       },
       "targets": [
         {
-          "expr": "sum(sum by (host, name) ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\".*postgres.*|joplin-db|borg-redis|.*redis.*|rabbitmq|postgis|photon|.*clickhouse.*|rathole.*|frpc-.*|frps.*|apache-exporter|nginx-exporter.*|node-exporter.*|cadvisor.*|prometheus|grafana|github-commit-sync|.*runner.*|frpc-hetzner-synapse-metrics|frpc-thinkcentre-monitoring|frpc-hetzner-monitoring\"}[1h])) < bool 120))",
+          "expr": "count(up{job=\"cadvisor\",host=~\"$host\"} == 1)",
           "refId": "A"
         }
       ],
-      "title": "Backend / Platform Up",
+      "title": "cAdvisor Targets Up",
       "type": "stat"
     },
     {
@@ -212,36 +208,20 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
           "unit": "none"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 12,
+        "w": 6,
+        "x": 18,
         "y": 1
       },
       "id": 5,
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
+        "colorMode": "value",
+        "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
@@ -255,121 +235,11 @@
       },
       "targets": [
         {
-          "expr": "count(up{job=\"http-servers\",host=~\"$host\"} == 1)",
+          "expr": "count(count by (host, name) (container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",name!=\"\"}))",
           "refId": "A"
         }
       ],
-      "title": "HTTP Targets Up",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "reqps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 16,
-        "y": 1
-      },
-      "id": 6,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "expr": "sum(rate(apache_accesses_total{host=~\"$host\"}[$__rate_interval])) + sum(rate(nginx_http_requests_total{host=~\"$host\"}[$__rate_interval]))",
-          "refId": "A"
-        }
-      ],
-      "title": "Web Requests/s",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 20,
-        "y": 1
-      },
-      "id": 7,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "expr": "max(up{job=\"synapse\",host=~\"$host\"})",
-          "refId": "A"
-        }
-      ],
-      "title": "Synapse Up",
+      "title": "Tracked Containers",
       "type": "stat"
     },
     {
@@ -380,9 +250,9 @@
         "x": 0,
         "y": 5
       },
-      "id": 8,
+      "id": 6,
       "panels": [],
-      "title": "All Containers",
+      "title": "Container Health",
       "type": "row"
     },
     {
@@ -415,12 +285,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
+        "h": 12,
         "w": 24,
         "x": 0,
         "y": 6
       },
-      "id": 9,
+      "id": 7,
       "options": {
         "displayMode": "basic",
         "orientation": "horizontal",
@@ -440,8 +310,21 @@
           "refId": "A"
         }
       ],
-      "title": "Container Health",
+      "title": "All Container Health",
       "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "id": 8,
+      "panels": [],
+      "title": "Resource Usage",
+      "type": "row"
     },
     {
       "datasource": {
@@ -458,7 +341,45 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 16
+        "y": 19
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "topk(15, sum by (host, name) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",name!=\"\"}[$__rate_interval])) * 100)",
+          "legendFormat": "{{name}} @ {{host}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Top CPU",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
       },
       "id": 10,
       "options": {
@@ -473,12 +394,12 @@
       },
       "targets": [
         {
-          "expr": "topk(12, sum by (host, name) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",name!=\"\"}[$__rate_interval])) * 100)",
+          "expr": "topk(15, max by (host, name) (container_memory_working_set_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",name!=\"\"}))",
           "legendFormat": "{{name}} @ {{host}}",
           "refId": "A"
         }
       ],
-      "title": "Top CPU",
+      "title": "Top Working Set",
       "type": "timeseries"
     },
     {
@@ -495,8 +416,8 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 16
+        "x": 0,
+        "y": 27
       },
       "id": 11,
       "options": {
@@ -511,26 +432,13 @@
       },
       "targets": [
         {
-          "expr": "topk(12, max by (host, name) (container_memory_working_set_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",name!=\"\"}))",
+          "expr": "topk(15, max by (host, name) (container_memory_rss{job=\"cadvisor\",image!=\"\",host=~\"$host\",name!=\"\"}))",
           "legendFormat": "{{name}} @ {{host}}",
           "refId": "A"
         }
       ],
-      "title": "Top Memory",
+      "title": "Top RSS",
       "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 24
-      },
-      "id": 12,
-      "panels": [],
-      "title": "User-Facing",
-      "type": "row"
     },
     {
       "datasource": {
@@ -539,56 +447,36 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "max": 1,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "none"
+          "unit": "bytes"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 25
+        "w": 12,
+        "x": 12,
+        "y": 27
       },
-      "id": 13,
+      "id": 12,
       "options": {
-        "displayMode": "basic",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
         },
-        "showUnfilled": true
+        "tooltip": {
+          "mode": "multi"
+        }
       },
       "targets": [
         {
-          "expr": "sum by (host, name) ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"audiobookshelf|borg-web-ui|gitea-server|hemmelig|joplin-server|keycloak|libretranslate|openwebui|pinga|vaultwarden|hytale|minecraft-skyblock-apr2026|vintagestory.*|privatebin.*|picshare.*|plantuml.*|kronorite.*|vikunja.*|reitti.*|rybbit-backend|rybbit-client|rybbit-caddy|authentik.*|dev-radunenu-com.*|radunenu-com.*|uptime-kuma.*\"}[1h])) < bool 120)",
-          "legendFormat": "{{name}} @ {{host}}",
+          "expr": "sum by (host) (container_memory_working_set_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",name!=\"\"})",
+          "legendFormat": "{{host}}",
           "refId": "A"
         }
       ],
-      "title": "User-Facing Health",
-      "type": "bargauge"
+      "title": "Working Set by Host",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -597,7 +485,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "reqps"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -605,7 +493,45 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 33
+        "y": 35
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (host) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",name!=\"\"}[$__rate_interval])) * 100",
+          "legendFormat": "{{host}}",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU by Host",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 35
       },
       "id": 14,
       "options": {
@@ -620,245 +546,12 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(apache_accesses_total{host=~\"$host\"}[$__rate_interval]))",
-          "legendFormat": "Apache",
-          "refId": "A"
-        },
-        {
-          "expr": "sum(rate(nginx_http_requests_total{host=~\"$host\"}[$__rate_interval]))",
-          "legendFormat": "Nginx",
-          "refId": "B"
-        },
-        {
-          "expr": "sum(rate(synapse_http_server_response_time_seconds_count{host=~\"$host\"}[$__rate_interval]))",
-          "legendFormat": "Synapse",
-          "refId": "C"
-        }
-      ],
-      "title": "Requests by Service",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 12,
-        "y": 33
-      },
-      "id": 15,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi"
-        }
-      },
-      "targets": [
-        {
-          "expr": "topk(12, sum by (host, name) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"audiobookshelf|borg-web-ui|gitea-server|hemmelig|joplin-server|keycloak|libretranslate|openwebui|pinga|vaultwarden|hytale|minecraft-skyblock-apr2026|vintagestory.*|privatebin.*|picshare.*|plantuml.*|kronorite.*|vikunja.*|reitti.*|rybbit-backend|rybbit-client|rybbit-caddy|authentik.*|dev-radunenu-com.*|radunenu-com.*|uptime-kuma.*\"}[$__rate_interval])) * 100)",
-          "legendFormat": "{{name}} @ {{host}}",
+          "expr": "sum by (host) (container_memory_rss{job=\"cadvisor\",image!=\"\",host=~\"$host\",name!=\"\"})",
+          "legendFormat": "{{host}}",
           "refId": "A"
         }
       ],
-      "title": "Top CPU",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 18,
-        "y": 33
-      },
-      "id": 16,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi"
-        }
-      },
-      "targets": [
-        {
-          "expr": "topk(12, max by (host, name) (container_memory_working_set_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"audiobookshelf|borg-web-ui|gitea-server|hemmelig|joplin-server|keycloak|libretranslate|openwebui|pinga|vaultwarden|hytale|minecraft-skyblock-apr2026|vintagestory.*|privatebin.*|picshare.*|plantuml.*|kronorite.*|vikunja.*|reitti.*|rybbit-backend|rybbit-client|rybbit-caddy|authentik.*|dev-radunenu-com.*|radunenu-com.*|uptime-kuma.*\"}))",
-          "legendFormat": "{{name}} @ {{host}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Top Memory",
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 41
-      },
-      "id": 17,
-      "panels": [],
-      "title": "Backend / Platform",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "max": 1,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 24,
-        "x": 0,
-        "y": 42
-      },
-      "id": 18,
-      "options": {
-        "displayMode": "basic",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showUnfilled": true
-      },
-      "targets": [
-        {
-          "expr": "sum by (host, name) ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\".*postgres.*|joplin-db|borg-redis|.*redis.*|rabbitmq|postgis|photon|.*clickhouse.*|rathole.*|frpc-.*|frps.*|apache-exporter|nginx-exporter.*|node-exporter.*|cadvisor.*|prometheus|grafana|github-commit-sync|.*runner.*|frpc-hetzner-synapse-metrics|frpc-thinkcentre-monitoring|frpc-hetzner-monitoring\"}[1h])) < bool 120)",
-          "legendFormat": "{{name}} @ {{host}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Backend / Platform Health",
-      "type": "bargauge"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 52
-      },
-      "id": 19,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi"
-        }
-      },
-      "targets": [
-        {
-          "expr": "topk(12, sum by (host, name) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\".*postgres.*|joplin-db|borg-redis|.*redis.*|rabbitmq|postgis|photon|.*clickhouse.*|rathole.*|frpc-.*|frps.*|apache-exporter|nginx-exporter.*|node-exporter.*|cadvisor.*|prometheus|grafana|github-commit-sync|.*runner.*|frpc-hetzner-synapse-metrics|frpc-thinkcentre-monitoring|frpc-hetzner-monitoring\"}[$__rate_interval])) * 100)",
-          "legendFormat": "{{name}} @ {{host}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Top CPU",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 52
-      },
-      "id": 20,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi"
-        }
-      },
-      "targets": [
-        {
-          "expr": "topk(12, max by (host, name) (container_memory_working_set_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\".*postgres.*|joplin-db|borg-redis|.*redis.*|rabbitmq|postgis|photon|.*clickhouse.*|rathole.*|frpc-.*|frps.*|apache-exporter|nginx-exporter.*|node-exporter.*|cadvisor.*|prometheus|grafana|github-commit-sync|.*runner.*|frpc-hetzner-synapse-metrics|frpc-thinkcentre-monitoring|frpc-hetzner-monitoring\"}))",
-          "legendFormat": "{{name}} @ {{host}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Top Memory",
+      "title": "RSS by Host",
       "type": "timeseries"
     }
   ],
@@ -879,7 +572,7 @@
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "definition": "label_values(up{job=\"cadvisor\"}, host)",
+        "definition": "label_values(container_last_seen{job=\"cadvisor\"}, host)",
         "includeAll": true,
         "label": "Host",
         "multi": false,
@@ -887,7 +580,7 @@
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(up{job=\"cadvisor\"}, host)",
+          "query": "label_values(container_last_seen{job=\"cadvisor\"}, host)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
@@ -902,8 +595,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Services",
+  "title": "Containers",
   "uid": "services",
-  "version": 2,
+  "version": 4,
   "weekStart": ""
 }
