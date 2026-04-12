@@ -436,7 +436,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{job=\"auth\",host=~\"$host\"} |~ \"Accepted (publickey|password|keyboard-interactive/pam)|Failed (publickey|password|keyboard-interactive/pam)\" | regexp `.*sshd\\[[0-9]+\\]: (?P<event>Accepted|Failed) (?P<method>publickey|password|keyboard-interactive/pam) for (invalid user )?(?P<username>[^ ]+) from (?P<ip>[^ ]+) port [0-9]+.*` | label_format status=`{{ if eq .event \"Accepted\" }}success{{ else }}failed{{ end }}` | line_format \"Status={{.status}} IP={{.ip}} Username={{.username}}\"",
+          "expr": "{job=\"auth\",host=~\"$host\"} |~ \"Accepted (publickey|password|keyboard-interactive/pam)|Failed (publickey|password|keyboard-interactive/pam)\" | regexp `.*sshd\\[[0-9]+\\]: (?P<event>Accepted|Failed) (?P<method>publickey|password|keyboard-interactive/pam) for (invalid user )?(?P<username>[^ ]+) from (?P<ip>[^ ]+) port [0-9]+.*` | label_format status=`{{ if eq .event \"Accepted\" }}success{{ else }}failed{{ end }}` | line_format `{\"Server\":\"{{.host}}\",\"Status\":\"{{.status}}\",\"IP\":\"{{.ip}}\",\"Username\":\"{{.username}}\"}`",
           "maxLines": 100,
           "queryType": "range",
           "refId": "A"
@@ -447,9 +447,8 @@
         {
           "id": "extractFields",
           "options": {
-            "format": "regexp",
+            "format": "json",
             "keepTime": true,
-            "regexp": "Status=(?<Status>\\S+) IP=(?<IP>\\S+) Username=(?<Username>\\S+)",
             "replace": true,
             "source": "Line"
           }
@@ -457,12 +456,16 @@
         {
           "id": "organize",
           "options": {
-            "excludeByName": {},
+            "excludeByName": {
+              "Line": true,
+              "labels": true
+            },
             "indexByName": {
               "Time": 0,
-              "IP": 1,
-              "Username": 2,
-              "Status": 3
+              "Server": 1,
+              "IP": 2,
+              "Username": 3,
+              "Status": 4
             },
             "renameByName": {
               "Time": "Timestamp"
