@@ -215,7 +215,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\"",
+          "expr": "{job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | regexp \"^(?:\\S+\\s+)?(?P<ip>\\S+) \\S+ \\S+ \\[[^\\]]+\\] \\\"(?P<method>\\S+) (?P<path>\\S+)(?: \\S+)?\\\" (?P<status>\\d{3}) (?P<bytes>\\S+)(?: \\\"[^\\\"]*\\\" \\\"(?P<user_agent>[^\\\"]*)\\\")?.*$\" | ip=~\"$apache_ip\" | status=~\"$apache_status\"",
           "maxLines": 200,
           "queryType": "range",
           "refId": "A"
@@ -450,7 +450,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "sum by (status) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [5m]))",
+          "expr": "sum by (status) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | regexp \"^(?:\\S+\\s+)?(?P<ip>\\S+) \\S+ \\S+ \\[[^\\]]+\\] \\\"(?P<method>\\S+) (?P<path>\\S+)(?: \\S+)?\\\" (?P<status>\\d{3}) (?P<bytes>\\S+)(?: \\\"[^\\\"]*\\\" \\\"(?P<user_agent>[^\\\"]*)\\\")?.*$\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [5m]))",
           "legendFormat": "{{status}}",
           "queryType": "range",
           "refId": "A"
@@ -490,16 +490,17 @@
       },
       "id": 15,
       "options": {
-        "displayMode": "basic",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
         },
-        "showUnfilled": true
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Value"
+          }
+        ]
       },
       "targets": [
         {
@@ -508,14 +509,14 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "topk(12, sum by (path) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])))",
+          "expr": "topk(20, sum by (path) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | regexp \"^(?:\\S+\\s+)?(?P<ip>\\S+) \\S+ \\S+ \\[[^\\]]+\\] \\\"(?P<method>\\S+) (?P<path>\\S+)(?: \\S+)?\\\" (?P<status>\\d{3}) (?P<bytes>\\S+)(?: \\\"[^\\\"]*\\\" \\\"(?P<user_agent>[^\\\"]*)\\\")?.*$\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])))",
           "legendFormat": "{{path}}",
           "queryType": "instant",
           "refId": "A"
         }
       ],
       "title": "Top Apache Paths",
-      "type": "bargauge"
+      "type": "table"
     },
     {
       "datasource": {
@@ -548,16 +549,17 @@
       },
       "id": 16,
       "options": {
-        "displayMode": "basic",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
         },
-        "showUnfilled": true
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Value"
+          }
+        ]
       },
       "targets": [
         {
@@ -566,14 +568,14 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "topk(12, sum by (ip) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])))",
+          "expr": "topk(20, sum by (ip) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | regexp \"^(?:\\S+\\s+)?(?P<ip>\\S+) \\S+ \\S+ \\[[^\\]]+\\] \\\"(?P<method>\\S+) (?P<path>\\S+)(?: \\S+)?\\\" (?P<status>\\d{3}) (?P<bytes>\\S+)(?: \\\"[^\\\"]*\\\" \\\"(?P<user_agent>[^\\\"]*)\\\")?.*$\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])))",
           "legendFormat": "{{ip}}",
           "queryType": "instant",
           "refId": "A"
         }
       ],
       "title": "Top Apache Client IPs",
-      "type": "bargauge"
+      "type": "table"
     },
     {
       "datasource": {
@@ -606,16 +608,17 @@
       },
       "id": 17,
       "options": {
-        "displayMode": "basic",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
         },
-        "showUnfilled": true
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Value"
+          }
+        ]
       },
       "targets": [
         {
@@ -624,14 +627,14 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "topk(10, sum by (user_agent) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])))",
+          "expr": "topk(20, sum by (user_agent) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | regexp \"^(?:\\S+\\s+)?(?P<ip>\\S+) \\S+ \\S+ \\[[^\\]]+\\] \\\"(?P<method>\\S+) (?P<path>\\S+)(?: \\S+)?\\\" (?P<status>\\d{3}) (?P<bytes>\\S+)(?: \\\"[^\\\"]*\\\" \\\"(?P<user_agent>[^\\\"]*)\\\")?.*$\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])))",
           "legendFormat": "{{user_agent}}",
           "queryType": "instant",
           "refId": "A"
         }
       ],
       "title": "Top Apache User Agents",
-      "type": "bargauge"
+      "type": "table"
     },
     {
       "collapsed": false,
@@ -681,7 +684,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "sum by (host) (count_over_time({job=\"auth\",host=~\"$host\"} |~ \"Accepted (publickey|password|keyboard-interactive/pam)\" [5m]))",
+          "expr": "sum by (host) (count_over_time({job=\"auth\",host=~\"$host\"} |~ \"Accepted (publickey|password|keyboard-interactive/pam)|session opened for user\" [5m]))",
           "legendFormat": "{{host}}",
           "queryType": "range",
           "refId": "A"
@@ -719,7 +722,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{job=\"auth\",host=~\"$host\"} |~ \"Accepted (publickey|password|keyboard-interactive/pam)\"",
+          "expr": "{job=\"auth\",host=~\"$host\"} |~ \"Accepted (publickey|password|keyboard-interactive/pam)|session opened for user\"",
           "maxLines": 200,
           "queryType": "range",
           "refId": "A"
@@ -825,6 +828,6 @@
   "timezone": "",
   "title": "Logs",
   "uid": "logs",
-  "version": 5,
+  "version": 6,
   "weekStart": ""
 }
