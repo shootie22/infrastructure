@@ -51,3 +51,18 @@ services:
       - /tmp
     security_opt:
       - no-new-privileges:true
+
+  promtail:
+    image: grafana/promtail:2.9.8
+    container_name: promtail-thinkcentre
+    restart: unless-stopped
+    command:
+      - -config.file=/etc/promtail/promtail.yml
+    network_mode: host
+    volumes:
+      - ./promtail.yml:/etc/promtail/promtail.yml:ro
+      - /var/log:/var/log:ro
+      - promtail_positions:/var/lib/promtail
+
+volumes:
+  promtail_positions:

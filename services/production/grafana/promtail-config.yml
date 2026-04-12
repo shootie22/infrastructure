@@ -1,0 +1,37 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /var/lib/promtail/positions.yml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: auth
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: auth
+          host: ovh
+          __path__: /var/log/auth.log
+
+  - job_name: apache_access
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: apache_access
+          host: ovh
+          __path__: /var/log/apache2/*access.log
+
+  - job_name: apache_error
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: apache_error
+          host: ovh
+          __path__: /var/log/apache2/*error.log

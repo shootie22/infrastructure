@@ -52,6 +52,35 @@ services:
       - ./mtail/programs:/etc/mtail:ro
       - /var/log/apache2:/logs:ro
 
+  loki:
+    image: grafana/loki:2.9.8
+    container_name: loki
+    restart: unless-stopped
+    command:
+      - -config.file=/etc/loki/config.yml
+    ports:
+      - "127.0.0.1:3100:3100"
+    volumes:
+      - loki_data:/loki
+    configs:
+      - source: loki-config
+        target: /etc/loki/config.yml
+
+  promtail:
+    image: grafana/promtail:2.9.8
+    container_name: promtail-ovh
+    restart: unless-stopped
+    command:
+      - -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    volumes:
+      - /var/log:/var/log:ro
+      - promtail_positions:/var/lib/promtail
+    configs:
+      - source: promtail-config
+        target: /etc/promtail/config.yml
+
   prometheus:
     image: ${PROMETHEUS_IMAGE}:${PROMETHEUS_TAG}
     container_name: ${PROMETHEUS_CONTAINER_NAME}
@@ -84,6 +113,7 @@ services:
       - node-exporter
       - cadvisor
       - apache-exporter
+      - loki
       - prometheus
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
@@ -123,12 +153,24 @@ services:
     configs:
       - source: grafana-prometheus-datasource
         target: /etc/grafana/provisioning/datasources/prometheus.yml
+      - source: grafana-loki-datasource
+        target: /etc/grafana/provisioning/datasources/loki.yml
 
 configs:
   prometheus-config:
     file: ./prometheus/prometheus.yml
   grafana-prometheus-datasource:
     file: ./grafana/provisioning/datasources/prometheus.yml
+  grafana-loki-datasource:
+    file: ./grafana/provisioning/datasources/loki.yml
+  loki-config:
+    file: ./loki-config.yml
+  promtail-config:
+    file: ./promtail-config.yml
+
+volumes:
+  loki_data:
+  promtail_positions:
 
 networks:
   monitoring_net:
