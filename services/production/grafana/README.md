@@ -12,7 +12,7 @@ This stack now assumes centralized Prometheus scraping with per-host exporters e
 - `promtail` on the edge host ships Apache and auth logs into Loki.
 - Install [apache/server-status.conf](/home/krator/GitRepos/infrastructure/services/production/grafana/apache/server-status.conf) on the Grafana/edge host and reload Apache before enabling the exporter.
 - Add the proxy rules from [apache/loki-proxy-snippet.conf](/home/krator/GitRepos/infrastructure/services/production/grafana/apache/loki-proxy-snippet.conf) to the real `mon.radunenu.com` Apache vhost before the catch-all `/` proxy so remote promtail agents can push to `https://mon.radunenu.com/loki/api/v1/push`.
-- Treat the `/loki/` push path as sensitive and lock it down in Apache before wider rollout.
+- The remote promtail agents expect `LOKI_PUSH_USERNAME` and `LOKI_PUSH_PASSWORD` in their stack env.
 
 ## Remote Linux Hosts
 
