@@ -498,7 +498,7 @@
         "sortBy": [
           {
             "desc": true,
-            "displayName": "Value"
+            "displayName": "Count"
           }
         ]
       },
@@ -509,14 +509,25 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "topk(20, sum by (path) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])))",
+          "expr": "topk by (path) 20, sum by (path) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])) > 0",
           "legendFormat": "{{path}}",
           "queryType": "instant",
           "refId": "A"
         }
       ],
       "title": "Top Apache Paths",
-      "type": "table"
+      "type": "table",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": {},
+            "renameByName": {
+              "Value": "Count"
+            }
+          }
+        }
+      ]
     },
     {
       "datasource": {
@@ -557,7 +568,7 @@
         "sortBy": [
           {
             "desc": true,
-            "displayName": "Value"
+            "displayName": "Count"
           }
         ]
       },
@@ -568,14 +579,25 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "topk(20, sum by (ip) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])))",
+          "expr": "topk by (ip) 20, sum by (ip) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])) > 0",
           "legendFormat": "{{ip}}",
           "queryType": "instant",
           "refId": "A"
         }
       ],
       "title": "Top Apache Client IPs",
-      "type": "table"
+      "type": "table",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": {},
+            "renameByName": {
+              "Value": "Count"
+            }
+          }
+        }
+      ]
     },
     {
       "datasource": {
@@ -616,7 +638,7 @@
         "sortBy": [
           {
             "desc": true,
-            "displayName": "Value"
+            "displayName": "Count"
           }
         ]
       },
@@ -627,14 +649,25 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "topk(20, sum by (user_agent) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])))",
+          "expr": "topk by (user_agent) 20, sum by (user_agent) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])) > 0",
           "legendFormat": "{{user_agent}}",
           "queryType": "instant",
           "refId": "A"
         }
       ],
       "title": "Top Apache User Agents",
-      "type": "table"
+      "type": "table",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": {},
+            "renameByName": {
+              "Value": "Count"
+            }
+          }
+        }
+      ]
     },
     {
       "collapsed": false,
