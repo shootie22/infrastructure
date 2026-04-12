@@ -150,6 +150,9 @@ services:
       - ${GRAFANA_DATA_DIR}:/var/lib/grafana
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - default
+      - monitoring_net
     configs:
       - source: grafana-prometheus-datasource
         target: /etc/grafana/provisioning/datasources/prometheus.yml
