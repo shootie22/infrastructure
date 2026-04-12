@@ -8,8 +8,8 @@ positions:
 clients:
   - url: https://mon.radunenu.com/loki/api/v1/push
     basic_auth:
-      username: ${LOKI_PUSH_USERNAME}
-      password: ${LOKI_PUSH_PASSWORD}
+      username: "${LOKI_PUSH_USERNAME}"
+      password: "${LOKI_PUSH_PASSWORD}"
 
 scrape_configs:
   - job_name: auth
