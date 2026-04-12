@@ -58,7 +58,10 @@ services:
     restart: unless-stopped
     command:
       - -config.file=/etc/promtail/promtail.yml
+      - -config.expand-env=true
     network_mode: host
+    env_file:
+      - runtime.env
     volumes:
       - ./promtail.yml:/etc/promtail/promtail.yml:ro
       - /var/log:/var/log:ro
