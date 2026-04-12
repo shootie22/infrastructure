@@ -509,13 +509,13 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "topk by (path) 20, sum by (path) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])) > 0",
+          "expr": "topk(20, sum by (path) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [15m])))",
           "legendFormat": "{{path}}",
           "queryType": "instant",
           "refId": "A"
         }
       ],
-      "title": "Top Apache Paths",
+      "title": "Top Apache Paths (15m)",
       "type": "table",
       "transformations": [
         {
@@ -579,13 +579,13 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "topk by (ip) 20, sum by (ip) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])) > 0",
+          "expr": "topk(20, sum by (ip) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [15m])))",
           "legendFormat": "{{ip}}",
           "queryType": "instant",
           "refId": "A"
         }
       ],
-      "title": "Top Apache Client IPs",
+      "title": "Top Apache Client IPs (15m)",
       "type": "table",
       "transformations": [
         {
@@ -649,13 +649,13 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "topk by (user_agent) 20, sum by (user_agent) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])) > 0",
+          "expr": "topk(20, sum by (user_agent) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [15m])))",
           "legendFormat": "{{user_agent}}",
           "queryType": "instant",
           "refId": "A"
         }
       ],
-      "title": "Top Apache User Agents",
+      "title": "Top Apache User Agents (15m)",
       "type": "table",
       "transformations": [
         {
