@@ -19,7 +19,14 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": null,
-  "links": [],
+  "links": [
+    {
+      "targetBlank": false,
+      "title": "Logs",
+      "type": "link",
+      "url": "/d/logs/logs"
+    }
+  ],
   "panels": [
     {
       "collapsed": false,
@@ -790,6 +797,6 @@
   "timezone": "",
   "title": "Edge",
   "uid": "edge",
-  "version": 2,
+  "version": 3,
   "weekStart": ""
 }
