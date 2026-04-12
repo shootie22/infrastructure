@@ -1,7 +1,7 @@
 routes:
   - name: grafana
     path: /hooks/grafana
-    room_id: "!replace-me:example.com"
+    room_id: "!jiIGBoKjsbcuuRAOtS:nuke.zip"
     messages:
       - |
         Grafana alert: {{ .body.status }}
