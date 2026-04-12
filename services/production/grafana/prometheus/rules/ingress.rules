@@ -1,0 +1,23 @@
+groups:
+  - name: ingress
+    rules:
+      - record: apache_ingress:requests:rate5m
+        expr: sum by (host, vhost) (rate(apache_ingress_requests_total{job="apache-ingress"}[5m]))
+
+      - record: apache_ingress:requests_4xx:rate5m
+        expr: sum by (host, vhost) (rate(apache_ingress_requests_total{job="apache-ingress",status=~"4.."}[5m]))
+
+      - record: apache_ingress:requests_5xx:rate5m
+        expr: sum by (host, vhost) (rate(apache_ingress_requests_total{job="apache-ingress",status=~"5.."}[5m]))
+
+      - record: apache_ingress:response_bytes:rate5m
+        expr: sum by (host, vhost) (rate(apache_ingress_response_bytes_total{job="apache-ingress"}[5m]))
+
+      - record: apache_ingress:request_duration_seconds:p50_5m
+        expr: histogram_quantile(0.50, sum by (host, vhost, le) (rate(apache_ingress_request_duration_seconds_bucket{job="apache-ingress"}[5m])))
+
+      - record: apache_ingress:request_duration_seconds:p95_5m
+        expr: histogram_quantile(0.95, sum by (host, vhost, le) (rate(apache_ingress_request_duration_seconds_bucket{job="apache-ingress"}[5m])))
+
+      - record: apache_ingress:request_duration_seconds:p99_5m
+        expr: histogram_quantile(0.99, sum by (host, vhost, le) (rate(apache_ingress_request_duration_seconds_bucket{job="apache-ingress"}[5m])))

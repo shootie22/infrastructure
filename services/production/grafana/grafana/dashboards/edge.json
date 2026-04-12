@@ -41,29 +41,13 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
           "unit": "none"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
+        "w": 4,
         "x": 0,
         "y": 1
       },
@@ -84,11 +68,11 @@
       },
       "targets": [
         {
-          "expr": "sum(sum by (host, name) ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\"}[1h])) < bool 120))",
+          "expr": "count(up{job=\"apache-ingress\",host=~\"$host\"} == 1)",
           "refId": "A"
         }
       ],
-      "title": "Containers Up",
+      "title": "Ingress Exporter Up",
       "type": "stat"
     },
     {
@@ -98,30 +82,14 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
           "unit": "none"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 6,
+        "w": 4,
+        "x": 4,
         "y": 1
       },
       "id": 3,
@@ -141,11 +109,11 @@
       },
       "targets": [
         {
-          "expr": "count(count by (host) (container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\"}))",
+          "expr": "count(up{job=\"http-servers\",service=\"apache\",host=~\"$host\"} == 1)",
           "refId": "A"
         }
       ],
-      "title": "Hosts With Containers",
+      "title": "Apache Exporter Up",
       "type": "stat"
     },
     {
@@ -155,32 +123,20 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "none"
+          "unit": "reqps"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 12,
+        "w": 4,
+        "x": 8,
         "y": 1
       },
       "id": 4,
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
+        "colorMode": "value",
+        "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
@@ -194,11 +150,11 @@
       },
       "targets": [
         {
-          "expr": "count(up{job=\"cadvisor\",host=~\"$host\"} == 1)",
+          "expr": "sum(apache_ingress:requests:rate5m{host=~\"$host\",vhost=~\"$vhost\"})",
           "refId": "A"
         }
       ],
-      "title": "cAdvisor Targets Up",
+      "title": "Requests/sec",
       "type": "stat"
     },
     {
@@ -208,14 +164,14 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none"
+          "unit": "percentunit"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 18,
+        "w": 4,
+        "x": 12,
         "y": 1
       },
       "id": 5,
@@ -235,11 +191,93 @@
       },
       "targets": [
         {
-          "expr": "count(count by (host, name) (container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\"}))",
+          "expr": "sum(apache_ingress:requests_5xx:rate5m{host=~\"$host\",vhost=~\"$vhost\"}) / clamp_min(sum(apache_ingress:requests:rate5m{host=~\"$host\",vhost=~\"$vhost\"}), 0.000001)",
           "refId": "A"
         }
       ],
-      "title": "Tracked Containers",
+      "title": "5xx Ratio",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(apache_ingress_request_duration_seconds_bucket{job=\"apache-ingress\",host=~\"$host\",vhost=~\"$vhost\"}[5m])))",
+          "refId": "A"
+        }
+      ],
+      "title": "p95 Latency",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "sum(apache_workers{job=\"http-servers\",service=\"apache\",host=~\"$host\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Apache Workers",
       "type": "stat"
     },
     {
@@ -250,80 +288,9 @@
         "x": 0,
         "y": 5
       },
-      "id": 6,
-      "panels": [],
-      "title": "Container Health",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "max": 1,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 12,
-        "w": 24,
-        "x": 0,
-        "y": 6
-      },
-      "id": 7,
-      "options": {
-        "displayMode": "basic",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showUnfilled": true
-      },
-      "targets": [
-        {
-          "expr": "sum by (host, name) ((time() - max_over_time(container_last_seen{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\"}[1h])) < bool 120)",
-          "legendFormat": "{{name}} @ {{host}}",
-          "refId": "A"
-        }
-      ],
-      "title": "All Container Health",
-      "type": "bargauge"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 18
-      },
       "id": 8,
       "panels": [],
-      "title": "Resource Usage",
+      "title": "Traffic",
       "type": "row"
     },
     {
@@ -333,7 +300,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percentunit"
+          "unit": "reqps"
         },
         "overrides": []
       },
@@ -341,7 +308,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 19
+        "y": 6
       },
       "id": 9,
       "options": {
@@ -356,12 +323,12 @@
       },
       "targets": [
         {
-          "expr": "topk(15, sum by (host, name) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\"}[$__rate_interval])) / on(host) group_left max by (host) (machine_cpu_cores{job=\"cadvisor\",host=~\"$host\"}))",
-          "legendFormat": "{{name}} @ {{host}}",
+          "expr": "sum by (vhost) (rate(apache_ingress_requests_total{job=\"apache-ingress\",host=~\"$host\",vhost=~\"$vhost\"}[5m]))",
+          "legendFormat": "{{vhost}}",
           "refId": "A"
         }
       ],
-      "title": "Top CPU Share",
+      "title": "Request Rate by Vhost",
       "type": "timeseries"
     },
     {
@@ -371,7 +338,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "bytes"
+          "unit": "Bps"
         },
         "overrides": []
       },
@@ -379,7 +346,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 19
+        "y": 6
       },
       "id": 10,
       "options": {
@@ -394,51 +361,26 @@
       },
       "targets": [
         {
-          "expr": "topk(15, max by (host, name) (container_memory_working_set_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\"}))",
-          "legendFormat": "{{name}} @ {{host}}",
+          "expr": "sum by (vhost) (rate(apache_ingress_response_bytes_total{job=\"apache-ingress\",host=~\"$host\",vhost=~\"$vhost\"}[5m]))",
+          "legendFormat": "{{vhost}}",
           "refId": "A"
         }
       ],
-      "title": "Top Working Set",
+      "title": "Response Bytes by Vhost",
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes"
-        },
-        "overrides": []
-      },
+      "collapsed": false,
       "gridPos": {
-        "h": 8,
-        "w": 12,
+        "h": 1,
+        "w": 24,
         "x": 0,
-        "y": 27
+        "y": 14
       },
       "id": 11,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi"
-        }
-      },
-      "targets": [
-        {
-          "expr": "topk(15, max by (host, name) (container_memory_rss{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\"}))",
-          "legendFormat": "{{name}} @ {{host}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Top RSS",
-      "type": "timeseries"
+      "panels": [],
+      "title": "Failures",
+      "type": "row"
     },
     {
       "datasource": {
@@ -447,15 +389,15 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "bytes"
+          "unit": "reqps"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 27
+        "w": 8,
+        "x": 0,
+        "y": 15
       },
       "id": 12,
       "options": {
@@ -470,12 +412,12 @@
       },
       "targets": [
         {
-          "expr": "sum by (host) (container_memory_working_set_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\"})",
-          "legendFormat": "{{host}}",
+          "expr": "sum by (vhost) (rate(apache_ingress_requests_total{job=\"apache-ingress\",host=~\"$host\",vhost=~\"$vhost\",status=~\"4..\"}[5m]))",
+          "legendFormat": "{{vhost}}",
           "refId": "A"
         }
       ],
-      "title": "Working Set by Host",
+      "title": "4xx Rate by Vhost",
       "type": "timeseries"
     },
     {
@@ -485,15 +427,15 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percentunit"
+          "unit": "reqps"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 35
+        "w": 8,
+        "x": 8,
+        "y": 15
       },
       "id": 13,
       "options": {
@@ -508,12 +450,12 @@
       },
       "targets": [
         {
-          "expr": "sum by (host) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\"}[$__rate_interval])) / on(host) max by (host) (machine_cpu_cores{job=\"cadvisor\",host=~\"$host\"})",
-          "legendFormat": "{{host}}",
+          "expr": "sum by (vhost) (rate(apache_ingress_requests_total{job=\"apache-ingress\",host=~\"$host\",vhost=~\"$vhost\",status=~\"5..\"}[5m]))",
+          "legendFormat": "{{vhost}}",
           "refId": "A"
         }
       ],
-      "title": "CPU Share by Host",
+      "title": "5xx Rate by Vhost",
       "type": "timeseries"
     },
     {
@@ -523,15 +465,15 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "bytes"
+          "unit": "reqps"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 35
+        "w": 8,
+        "x": 16,
+        "y": 15
       },
       "id": 14,
       "options": {
@@ -546,12 +488,12 @@
       },
       "targets": [
         {
-          "expr": "sum by (host) (container_memory_rss{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\"})",
-          "legendFormat": "{{host}}",
+          "expr": "sum by (status) (rate(apache_ingress_requests_total{job=\"apache-ingress\",host=~\"$host\",vhost=~\"$vhost\"}[5m]))",
+          "legendFormat": "{{status}}",
           "refId": "A"
         }
       ],
-      "title": "RSS by Host",
+      "title": "Status Code Mix",
       "type": "timeseries"
     },
     {
@@ -560,11 +502,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 43
+        "y": 23
       },
       "id": 15,
       "panels": [],
-      "title": "Attention",
+      "title": "Latency",
       "type": "row"
     },
     {
@@ -574,27 +516,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 1
-              },
-              {
-                "color": "red",
-                "value": 3
-              }
-            ]
-          },
-          "unit": "none"
+          "unit": "s"
         },
         "overrides": []
       },
@@ -602,30 +524,38 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 44
+        "y": 24
       },
       "id": 16,
       "options": {
-        "displayMode": "basic",
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
         },
-        "showUnfilled": true
+        "tooltip": {
+          "mode": "multi"
+        }
       },
       "targets": [
         {
-          "expr": "topk(15, sum by (host, name) (changes(container_start_time_seconds{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\"}[$__range])))",
-          "legendFormat": "{{name}} @ {{host}}",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(apache_ingress_request_duration_seconds_bucket{job=\"apache-ingress\",host=~\"$host\",vhost=~\"$vhost\"}[5m])))",
+          "legendFormat": "p50",
           "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(apache_ingress_request_duration_seconds_bucket{job=\"apache-ingress\",host=~\"$host\",vhost=~\"$vhost\"}[5m])))",
+          "legendFormat": "p95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(apache_ingress_request_duration_seconds_bucket{job=\"apache-ingress\",host=~\"$host\",vhost=~\"$vhost\"}[5m])))",
+          "legendFormat": "p99",
+          "refId": "C"
         }
       ],
-      "title": "Restarts In Range",
-      "type": "bargauge"
+      "title": "Overall Latency",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -634,7 +564,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percentunit"
+          "unit": "s"
         },
         "overrides": []
       },
@@ -642,7 +572,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 44
+        "y": 24
       },
       "id": 17,
       "options": {
@@ -657,12 +587,63 @@
       },
       "targets": [
         {
-          "expr": "topk(15, sum by (host, name) (rate(container_cpu_cfs_throttled_periods_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\"}[$__rate_interval])) / clamp_min(sum by (host, name) (rate(container_cpu_cfs_periods_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\"}[$__rate_interval])), 1))",
-          "legendFormat": "{{name}} @ {{host}}",
+          "expr": "topk(10, apache_ingress:request_duration_seconds:p95_5m{host=~\"$host\",vhost=~\"$vhost\"})",
+          "legendFormat": "{{vhost}}",
           "refId": "A"
         }
       ],
-      "title": "Top CPU Throttling",
+      "title": "p95 by Vhost",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 32
+      },
+      "id": 18,
+      "panels": [],
+      "title": "Capacity",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 33
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(apache_workers{job=\"http-servers\",service=\"apache\",host=~\"$host\"})",
+          "legendFormat": "workers",
+          "refId": "A"
+        }
+      ],
+      "title": "Apache Workers",
       "type": "timeseries"
     },
     {
@@ -678,85 +659,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 52
-      },
-      "id": 18,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi"
-        }
-      },
-      "targets": [
-        {
-          "expr": "topk(15, max by (host, name) (container_memory_working_set_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\"} / container_spec_memory_limit_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\"}))",
-          "legendFormat": "{{name}} @ {{host}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Top Memory vs Configured Limit",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 52
-      },
-      "id": 19,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi"
-        }
-      },
-      "targets": [
-        {
-          "expr": "topk(15, max by (host, name) (container_fs_usage_bytes{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\"}))",
-          "legendFormat": "{{name}} @ {{host}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Top Filesystem Usage",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "Bps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 60
+        "w": 8,
+        "x": 8,
+        "y": 33
       },
       "id": 20,
       "options": {
@@ -771,12 +676,12 @@
       },
       "targets": [
         {
-          "expr": "topk(15, sum by (host, name) (rate(container_network_receive_bytes_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\",interface!=\"lo\"}[$__rate_interval])))",
-          "legendFormat": "{{name}} @ {{host}}",
+          "expr": "1 - avg by (host) (rate(node_cpu_seconds_total{job=\"node-exporter\",host=~\"$host\",mode=\"idle\"}[5m]))",
+          "legendFormat": "{{host}}",
           "refId": "A"
         }
       ],
-      "title": "Top Network Receive",
+      "title": "Host CPU Busy",
       "type": "timeseries"
     },
     {
@@ -786,15 +691,15 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "Bps"
+          "unit": "percentunit"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 60
+        "w": 8,
+        "x": 16,
+        "y": 33
       },
       "id": 21,
       "options": {
@@ -809,12 +714,12 @@
       },
       "targets": [
         {
-          "expr": "topk(15, sum by (host, name) (rate(container_network_transmit_bytes_total{job=\"cadvisor\",image!=\"\",host=~\"$host\",name=~\"$container\",name!=\"\",interface!=\"lo\"}[$__rate_interval])))",
-          "legendFormat": "{{name}} @ {{host}}",
+          "expr": "1 - (node_memory_MemAvailable_bytes{job=\"node-exporter\",host=~\"$host\"} / node_memory_MemTotal_bytes{job=\"node-exporter\",host=~\"$host\"})",
+          "legendFormat": "{{host}}",
           "refId": "A"
         }
       ],
-      "title": "Top Network Transmit",
+      "title": "Host Memory Used",
       "type": "timeseries"
     }
   ],
@@ -828,22 +733,22 @@
       {
         "current": {
           "selected": true,
-          "text": "All",
-          "value": "$__all"
+          "text": "ovh",
+          "value": "ovh"
         },
         "datasource": {
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "definition": "label_values(container_last_seen{job=\"cadvisor\"}, host)",
-        "includeAll": true,
+        "definition": "label_values(up{job=\"apache-ingress\"}, host)",
+        "includeAll": false,
         "label": "Host",
         "multi": false,
         "name": "host",
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(container_last_seen{job=\"cadvisor\"}, host)",
+          "query": "label_values(up{job=\"apache-ingress\"}, host)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
@@ -860,15 +765,15 @@
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "definition": "label_values(container_last_seen{job=\"cadvisor\",host=~\"$host\",image!=\"\",name!=\"\"}, name)",
+        "definition": "label_values(apache_ingress_requests_total{job=\"apache-ingress\",host=~\"$host\"}, vhost)",
         "includeAll": true,
-        "label": "Container",
+        "label": "Vhost",
         "multi": true,
-        "name": "container",
+        "name": "vhost",
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(container_last_seen{job=\"cadvisor\",host=~\"$host\",image!=\"\",name!=\"\"}, name)",
+          "query": "label_values(apache_ingress_requests_total{job=\"apache-ingress\",host=~\"$host\"}, vhost)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
@@ -883,8 +788,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Containers",
-  "uid": "services",
-  "version": 5,
+  "title": "Edge",
+  "uid": "edge",
+  "version": 1,
   "weekStart": ""
 }

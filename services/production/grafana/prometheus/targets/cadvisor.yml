@@ -1,7 +1,7 @@
 - targets:
     - cadvisor:9101
   labels:
-    host: edge-grafana
+    host: ovh
     site: edge
     role: edge
     os: linux

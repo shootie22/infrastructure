@@ -1,0 +1,9 @@
+- targets:
+    - apache-ingress-exporter:3903
+  labels:
+    host: ovh
+    site: edge
+    role: edge
+    os: linux
+    service: apache
+    component: ingress

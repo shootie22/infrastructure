@@ -7,6 +7,7 @@ This stack now assumes centralized Prometheus scraping with per-host exporters e
 - `node-exporter` exposes host metrics to Prometheus on the internal Docker network.
 - `cadvisor` exposes Docker/container metrics on `cadvisor:9101`.
 - `apache-exporter` scrapes the local Apache `mod_status` endpoint from `http://host.docker.internal/server-status?auto`.
+- `apache-ingress-exporter` tails `/var/log/apache2/ingress-metrics.log` and exposes per-vhost request, byte, and latency metrics from Apache access logs.
 - Install [apache/server-status.conf](/home/krator/GitRepos/infrastructure/services/production/grafana/apache/server-status.conf) on the Grafana/edge host and reload Apache before enabling the exporter.
 
 ## Remote Linux Hosts
