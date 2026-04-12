@@ -352,12 +352,133 @@
       "type": "logs"
     },
     {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Timestamp"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Status"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "failed": {
+                        "color": "red",
+                        "text": "Failed"
+                      },
+                      "success": {
+                        "color": "green",
+                        "text": "Success"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 33
+      },
+      "id": 21,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Timestamp"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "{job=\"auth\",host=~\"$host\"} |~ \"Accepted (publickey|password|keyboard-interactive/pam)|Failed (publickey|password|keyboard-interactive/pam)\" | regexp `.*sshd\\[[0-9]+\\]: (?P<event>Accepted|Failed) (?P<method>publickey|password|keyboard-interactive/pam) for (invalid user )?(?P<username>[^ ]+) from (?P<ip>[^ ]+) port [0-9]+.*` | label_format status=`{{ if eq .event \"Accepted\" }}success{{ else }}failed{{ end }}` | line_format \"Status={{.status}} IP={{.ip}} Username={{.username}}\"",
+          "maxLines": 100,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent SSH Attempts",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "regexp",
+            "keepTime": true,
+            "regexp": "Status=(?<Status>\\S+) IP=(?<IP>\\S+) Username=(?<Username>\\S+)",
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "Time": 0,
+              "IP": 1,
+              "Username": 2,
+              "Status": 3
+            },
+            "renameByName": {
+              "Time": "Timestamp"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 33
+        "y": 45
       },
       "id": 11,
       "panels": [],
@@ -373,7 +494,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 34
+        "y": 46
       },
       "id": 12,
       "options": {
@@ -408,7 +529,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 45
+        "y": 57
       },
       "id": 13,
       "panels": [],
@@ -430,7 +551,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 46
+        "y": 58
       },
       "id": 14,
       "options": {
@@ -511,7 +632,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 46
+        "y": 58
       },
       "id": 15,
       "options": {
@@ -607,7 +728,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 46
+        "y": 58
       },
       "id": 16,
       "options": {
@@ -703,7 +824,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 54
+        "y": 66
       },
       "id": 17,
       "options": {
@@ -753,7 +874,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 62
+        "y": 74
       },
       "id": 18,
       "panels": [],
@@ -775,7 +896,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 63
+        "y": 75
       },
       "id": 19,
       "options": {
@@ -813,7 +934,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 71
+        "y": 83
       },
       "id": 20,
       "options": {
@@ -841,127 +962,6 @@
       ],
       "title": "Recent Successful SSH Logins",
       "type": "logs"
-    },
-    {
-      "datasource": {
-        "type": "loki",
-        "uid": "loki"
-      },
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Timestamp"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Status"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Status"
-              },
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "options": {
-                      "failed": {
-                        "color": "red",
-                        "text": "Failed"
-                      },
-                      "success": {
-                        "color": "green",
-                        "text": "Success"
-                      }
-                    },
-                    "type": "value"
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-text"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 12,
-        "w": 24,
-        "x": 0,
-        "y": 82
-      },
-      "id": 21,
-      "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "show": false
-        },
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Timestamp"
-          }
-        ]
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "loki"
-          },
-          "editorMode": "code",
-          "expr": "{job=\"auth\",host=~\"$host\"} |~ \"Accepted (publickey|password|keyboard-interactive/pam)|Failed (publickey|password|keyboard-interactive/pam)\" | regexp \".*sshd\\[[0-9]+\\]: (?P<event>Accepted|Failed) (?P<method>publickey|password|keyboard-interactive/pam) for (invalid user )?(?P<username>\\S+) from (?P<ip>\\S+) port \\d+.*\" | label_format status=`{{ if eq .event \"Accepted\" }}success{{ else }}failed{{ end }}` | line_format \"Status={{.status}} IP={{.ip}} Username={{.username}}\"",
-          "maxLines": 100,
-          "queryType": "range",
-          "refId": "A"
-        }
-      ],
-      "title": "Recent SSH Attempts",
-      "transformations": [
-        {
-          "id": "extractFields",
-          "options": {
-            "format": "regexp",
-            "keepTime": true,
-            "regexp": "Status=(?<Status>\\S+) IP=(?<IP>\\S+) Username=(?<Username>\\S+)",
-            "replace": true,
-            "source": "Line"
-          }
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "indexByName": {
-              "Time": 0,
-              "IP": 1,
-              "Username": 2,
-              "Status": 3
-            },
-            "renameByName": {
-              "Time": "Timestamp"
-            }
-          }
-        }
-      ],
-      "type": "table"
     }
   ],
   "refresh": "30s",
