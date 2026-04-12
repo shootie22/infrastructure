@@ -38,6 +38,20 @@ services:
       - --telemetry.endpoint=/metrics
       - --web.listen-address=:9117
 
+  apache-ingress-exporter:
+    build:
+      context: ./mtail
+    container_name: apache-ingress-exporter
+    restart: unless-stopped
+    command:
+      - --progs=/etc/mtail
+      - --logs=/logs/ingress-metrics.log
+      - --port=3903
+      - --logtostderr
+    volumes:
+      - ./mtail/programs:/etc/mtail:ro
+      - /var/log/apache2:/logs:ro
+
   prometheus:
     image: ${PROMETHEUS_IMAGE}:${PROMETHEUS_TAG}
     container_name: ${PROMETHEUS_CONTAINER_NAME}

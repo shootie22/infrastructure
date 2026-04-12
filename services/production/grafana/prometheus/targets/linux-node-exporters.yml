@@ -1,7 +1,7 @@
 - targets:
     - node-exporter:9100
   labels:
-    host: edge-grafana
+    host: ovh
     site: edge
     role: edge
     os: linux

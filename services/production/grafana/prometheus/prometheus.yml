@@ -3,6 +3,7 @@ global:
   evaluation_interval: 15s
 
 rule_files:
+  - /etc/prometheus/rules/ingress.rules
   - /etc/prometheus/rules/synapse-v2.rules
 
 scrape_configs:
@@ -31,6 +32,11 @@ scrape_configs:
     file_sd_configs:
       - files:
           - /etc/prometheus/targets/http-services.yml
+
+  - job_name: apache-ingress
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/ingress-log-exporters.yml
 
   - job_name: synapse
     metrics_path: /_synapse/metrics

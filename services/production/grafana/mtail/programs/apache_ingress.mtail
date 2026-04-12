@@ -1,0 +1,12 @@
+counter apache_ingress_requests_total by vhost, method, status
+counter apache_ingress_response_bytes_total by vhost
+histogram apache_ingress_request_duration_seconds buckets 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10 by vhost
+
+/^(?:host|vhost)=(?P<vhost>\S+) method=(?P<method>\S+) status=(?P<status>\d{3}) duration_us=(?P<duration_us>\d+) bytes=(?P<bytes_field>(?P<bytes>\d+)|-)$/ {
+  apache_ingress_requests_total[$vhost][$method][$status]++
+  apache_ingress_request_duration_seconds[$vhost] = float($duration_us) / 1000000.0
+
+  $bytes_field != "-" {
+    apache_ingress_response_bytes_total[$vhost] += $bytes
+  }
+}
