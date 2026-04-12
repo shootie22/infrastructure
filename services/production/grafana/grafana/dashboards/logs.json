@@ -965,6 +965,126 @@
       ],
       "title": "Recent Successful SSH Logins",
       "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Timestamp"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Status"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "success": {
+                        "color": "green",
+                        "text": "Success"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 94
+      },
+      "id": 22,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Timestamp"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "{job=\"auth\",host=~\"$host\"} |~ \"Accepted (publickey|password|keyboard-interactive/pam)\" | regexp `.*sshd\\[[0-9]+\\]: (?P<event>Accepted) (?P<method>publickey|password|keyboard-interactive/pam) for (?P<username>[^ ]+) from (?P<ip>[^ ]+) port [0-9]+.*` | ip=~\".+\" | username=~\".+\" | line_format `{\"Server\":\"{{.host}}\",\"Status\":\"success\",\"IP\":\"{{.ip}}\",\"Username\":\"{{.username}}\"}`",
+          "maxLines": 100,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent Successful SSH Logins Table",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "keepTime": true,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Line": true,
+              "labels": true
+            },
+            "indexByName": {
+              "Time": 0,
+              "Server": 1,
+              "IP": 2,
+              "Username": 3,
+              "Status": 4
+            },
+            "renameByName": {
+              "Time": "Timestamp"
+            }
+          }
+        }
+      ],
+      "type": "table"
     }
   ],
   "refresh": "30s",
