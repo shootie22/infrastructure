@@ -1,11 +1,19 @@
 routes:
-  - name: grafana
-    path: /hooks/grafana
+  - name: alerts
+    path: /hooks/alerts
     room_id: "!jiIGBoKjsbcuuRAOtS:nuke.zip"
     messages:
       - |
-        Grafana alert: {{ .body.status }}
+        Event: {{ .body.event }}
       - |
-        {{ .body.title }}
+        Status: {{ .body.status }}
       - |
         {{ .body.message }}
+  - name: deploys
+    path: /hooks/deploys
+    room_id: "!jiIGBoKjsbcuuRAOtS:nuke.zip"
+    messages:
+      - |
+        Deploy: {{ .body.service }}
+      - |
+        Version: {{ .body.version }}
