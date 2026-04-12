@@ -450,7 +450,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "sum by (status) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | regexp \"^(?:\\S+\\s+)?\\S+ \\S+ \\S+ \\[[^\\]]+\\] \\\"\\S+ \\S+(?: \\S+)?\\\" (?P<status>\\d{3}) \\S+.*$\" | status=~\"$apache_status\" [5m]))",
+          "expr": "sum by (status) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | status=~\"$apache_status\" [5m]))",
           "legendFormat": "{{status}}",
           "queryType": "range",
           "refId": "A"
@@ -509,7 +509,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "topk(20, sum by (path) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | regexp \"^(?:\\S+\\s+)?\\S+ \\S+ \\S+ \\[[^\\]]+\\] \\\"\\S+ (?P<path>\\S+)(?: \\S+)?\\\" (?P<status>\\d{3}) \\S+.*$\" | status=~\"$apache_status\" [$__range])))",
+          "expr": "topk(20, sum by (path) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])))",
           "legendFormat": "{{path}}",
           "queryType": "instant",
           "refId": "A"
@@ -568,7 +568,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "topk(20, sum by (ip) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | regexp \"^(?:\\S+\\s+)?(?P<ip>\\S+) \\S+ \\S+ \\[[^\\]]+\\] \\\"\\S+ \\S+(?: \\S+)?\\\" (?P<status>\\d{3}) \\S+.*$\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])))",
+          "expr": "topk(20, sum by (ip) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])))",
           "legendFormat": "{{ip}}",
           "queryType": "instant",
           "refId": "A"
@@ -627,7 +627,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "topk(20, sum by (user_agent) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | regexp \"^(?:\\S+\\s+)?\\S+ \\S+ \\S+ \\[[^\\]]+\\] \\\"\\S+ \\S+(?: \\S+)?\\\" (?P<status>\\d{3}) \\S+ \\\"[^\\\"]*\\\" \\\"(?P<user_agent>[^\\\"]*)\\\".*$\" | status=~\"$apache_status\" [$__range])))",
+          "expr": "topk(20, sum by (user_agent) (count_over_time({job=\"apache_access\",host=~\"$host\", filename=~\"$apache_file\"} | pattern \"<ip> <_> <_> [<time>] \\\"<method> <path> <protocol>\\\" <status> <bytes> \\\"<referrer>\\\" \\\"<user_agent>\\\"\" | ip=~\"$apache_ip\" | status=~\"$apache_status\" [$__range])))",
           "legendFormat": "{{user_agent}}",
           "queryType": "instant",
           "refId": "A"
@@ -828,6 +828,6 @@
   "timezone": "",
   "title": "Logs",
   "uid": "logs",
-  "version": 7,
+  "version": 8,
   "weekStart": ""
 }
