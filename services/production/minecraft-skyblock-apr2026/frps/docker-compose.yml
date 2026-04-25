@@ -8,7 +8,8 @@ services:
     restart: unless-stopped
     ports:
       - "${FRP_BIND_PORT}:${FRP_BIND_PORT}/tcp"
-      - "${FRP_REMOTE_PORT}:${FRP_REMOTE_PORT}/tcp"
+      - "${FRP_REMOTE_PORT_TCP}:${FRP_REMOTE_PORT_TCP}/tcp"
+      - "${FRP_REMOTE_PORT_UDP}:${FRP_REMOTE_PORT_UDP}/udp"
     volumes:
       - ../../../utils/frp/frps/frps.toml:/etc/frp/frps.toml:ro
       - ../../../utils/frp/frps/res:/etc/frp/res:ro
