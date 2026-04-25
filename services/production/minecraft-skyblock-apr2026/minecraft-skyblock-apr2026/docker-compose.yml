@@ -36,6 +36,30 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  frpc-bedrock:
+    image: ghcr.io/fatedier/frpc:v0.65.0
+    command:
+      - -c
+      - /etc/frp/frpc.toml
+    container_name: frpc-minecraft-skyblock-apr2026-bedrock
+    restart: unless-stopped
+    env_file:
+      - runtime.env
+    environment:
+      FRP_PROXY_NAME: ${FRP_BEDROCK_PROXY_NAME}
+      FRP_LOCAL_PORT: ${FRP_BEDROCK_LOCAL_PORT}
+      FRP_REMOTE_PORT: ${FRP_BEDROCK_REMOTE_PORT}
+    volumes:
+      - ../../../utils/frp/frpc/frpc-udp.toml:/etc/frp/frpc.toml:ro
+    depends_on:
+      - minecraft-skyblock-apr2026
+    networks:
+      - internal
+      - external
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
 networks:
   internal:
     driver: bridge
