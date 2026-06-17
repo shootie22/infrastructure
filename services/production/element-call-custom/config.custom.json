@@ -1,0 +1,11 @@
+{
+  "livekit": {
+    "livekit_service_url": "https://ec.nuke.zip"
+  },
+  "default_server_config": {
+    "m.homeserver": {
+      "base_url": "https://nuke.zip",
+      "server_name": "nuke.zip"
+    }
+  }
+}
