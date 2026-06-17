@@ -1,0 +1,11 @@
+services:
+  element-call:
+    image: ghcr.io/shootie22/element-call:sha-555bd6e
+    container_name: element-call-custom
+    restart: unless-stopped
+    ports:
+      - "8082:8080"
+    volumes:
+      - /home/main/services/element-call/custom-live/config.custom.json:/app/config.json:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
