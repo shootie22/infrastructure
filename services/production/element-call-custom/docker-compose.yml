@@ -1,6 +1,7 @@
 services:
   element-call:
-    image: ghcr.io/shootie22/element-call:sha-555bd6e
+    image: ghcr.io/shootie22/element-call:latest
+    pull_policy: always
     container_name: element-call-custom
     restart: unless-stopped
     ports:
