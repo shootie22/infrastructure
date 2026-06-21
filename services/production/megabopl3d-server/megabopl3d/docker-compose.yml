@@ -1,0 +1,22 @@
+services:
+  megabopl3d-server:
+    image: git.radunenu.com/radu/megabopl3d-server:latest
+    platform: linux/amd64
+    pull_policy: always
+    restart: unless-stopped
+
+  frpc:
+    image: ghcr.io/fatedier/frpc:v0.65.0
+    command:
+      - -c
+      - /etc/frp/frpc.toml
+    restart: unless-stopped
+    depends_on:
+      - megabopl3d-server
+    volumes:
+      - ../../../utils/frp/frpc/frpc-udp.toml:/etc/frp/frpc.toml:ro
+    env_file:
+      - runtime.env
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
