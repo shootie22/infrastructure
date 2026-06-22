@@ -9,7 +9,7 @@ services:
       GITEA_RUNNER_NAME: "${RUNNER_NAME}"
       GITEA_RUNNER_LABELS: "${RUNNER_LABELS}"
     volumes:
-      - ${GITEA_ACT_RUNNER_THINKCENTRE_ROOT}/config.yaml:/config.yaml
+      - ./config.yaml:/config.yaml:ro
       - ${GITEA_ACT_RUNNER_THINKCENTRE_ROOT}/data:/data
       - ${DOCKER_SOCK_PATH}:/var/run/docker.sock
     restart: unless-stopped
