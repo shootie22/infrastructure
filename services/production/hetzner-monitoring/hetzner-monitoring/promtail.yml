@@ -55,7 +55,6 @@ scrape_configs:
       - target_label: job
         replacement: livekit
     pipeline_stages:
-      - docker: {}
       - json:
           expressions:
             level: level
