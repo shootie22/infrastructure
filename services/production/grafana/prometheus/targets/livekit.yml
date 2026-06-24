@@ -1,0 +1,8 @@
+- targets:
+    - livekit-frps:5997
+  labels:
+    host: livekit
+    site: external
+    role: rtc
+    os: linux
+    service: livekit

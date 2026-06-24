@@ -43,3 +43,9 @@ scrape_configs:
     file_sd_configs:
       - files:
           - /etc/prometheus/targets/synapse.yml
+
+  - job_name: livekit
+    metrics_path: /metrics
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/livekit.yml
