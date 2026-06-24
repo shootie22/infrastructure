@@ -12,6 +12,19 @@
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "red",
+        "name": "LiveKit restarts",
+        "expr": "changes(process_start_time_seconds{job=\"livekit\",instance=~\"$instance\"}[$__interval]) > 0",
+        "titleFormat": "LiveKit restart",
+        "step": "60s"
       }
     ]
   },
@@ -2194,6 +2207,273 @@
         }
       ],
       "type": "table"
+    },
+    {
+      "type": "row",
+      "title": "Disconnects & Reconnects",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 56
+      },
+      "id": 29,
+      "panels": []
+    },
+    {
+      "type": "table",
+      "title": "Disconnect Reasons",
+      "description": "Count of participant close events grouped by LiveKit DisconnectReason over the dashboard time range. CLIENT_INITIATED / DUPLICATE_IDENTITY are benign; SIGNAL_CLOSE / JOIN_FAILURE / ICE failures point at the client's network; SERVER_SHUTDOWN / MIGRATION point at this LiveKit node.",
+      "id": 30,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 0,
+        "y": 57
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "count",
+            "desc": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | json | reason != \"\" [$__range]))",
+          "queryType": "instant",
+          "instant": true,
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value #A": "count",
+              "Value": "count"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Disconnects by Reason",
+      "description": "Same DisconnectReason breakdown over time. A spike in CLIENT_INITIATED / SIGNAL_CLOSE confined to a few series is client-side; a wall of SERVER_SHUTDOWN/MIGRATION across everyone lines up with a restart annotation = server-side.",
+      "id": 31,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 16,
+        "x": 8,
+        "y": 57
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | json | reason != \"\" [$__interval]))",
+          "queryType": "range",
+          "legendFormat": "{{reason}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "ICE / Connection Failures",
+      "description": "Lines indicating media-path trouble: ICE failed/disconnected, DTLS errors, failed negotiation, unresponsive participants. Almost always the client's network or NAT rather than the server.",
+      "id": 32,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 67
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "lineWidth": 1
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({job=\"livekit\"} |~ \"(?i)ice (connection )?(failed|disconnected)|dtls|negotiation failed|not responding\" [$__interval]))",
+          "queryType": "range",
+          "legendFormat": "failures",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Errors & Warnings",
+      "description": "LiveKit log volume at warn/error level. A jump here that coincides with disconnects is a strong server-side signal.",
+      "id": 33,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 67
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (level) (count_over_time({job=\"livekit\", level=~\"warn|error\"} [$__interval]))",
+          "queryType": "range",
+          "legendFormat": "{{level}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "logs",
+      "title": "Disconnect / Reconnect Events",
+      "description": "Raw LiveKit log lines for participant close, reconnect/resume, ICE failures and unresponsive participants. Read the line behind any spike above.",
+      "id": 34,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 75
+      },
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{job=\"livekit\"} |~ \"(?i)closing participant|participant closed|disconnect|reconnect|resuming|ice .*(failed|disconnected)|not responding|join.?failure\"",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ]
     }
   ],
   "refresh": "30s",

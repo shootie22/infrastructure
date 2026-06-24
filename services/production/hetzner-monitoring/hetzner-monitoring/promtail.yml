@@ -38,3 +38,26 @@ scrape_configs:
           job: nginx_error
           host: hetzner
           __path__: /var/log/nginx/*error.log
+
+  - job_name: livekit
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 30s
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/element-call-livekit'
+        action: keep
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: container
+      - target_label: host
+        replacement: hetzner
+      - target_label: job
+        replacement: livekit
+    pipeline_stages:
+      - docker: {}
+      - json:
+          expressions:
+            level: level
+      - labels:
+          level:
