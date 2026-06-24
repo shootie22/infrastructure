@@ -28,6 +28,11 @@ This stack now assumes centralized Prometheus scraping with per-host exporters e
 - `hetzner-synapse-metrics` provides a dedicated FRP path for the native Synapse metrics endpoint:
   - `synapse-frps:5996` from Prometheus on `monitoring_net`
   - local Synapse metrics endpoint expected on the Hetzner host at `127.0.0.1:8008/_synapse/metrics`
+- LiveKit metrics for Element Call reach central Prometheus through a dedicated FRP path:
+  - target inventory: `prometheus/targets/livekit.yml`
+  - LiveKit binds `prometheus_port: 6789` to loopback only, so it is tunnelled via the `livekit-metrics` stack
+  - `livekit-frps:5997` from Prometheus on `monitoring_net`
+  - LiveKit metrics endpoint expected on the Hetzner host at `127.0.0.1:6789/metrics`
 - Loki log shipping does not use FRP here; promtail pushes outbound directly to the edge Apache proxy.
 
 ## Grafana Assets
@@ -37,3 +42,4 @@ This stack now assumes centralized Prometheus scraping with per-host exporters e
 - Loki and promtail configs for the edge host live next to the Grafana stack root.
 - The starter dashboard JSON is stored under `grafana/dashboards/`.
 - Grafana dashboard provisioning is enabled through `grafana/provisioning/dashboards/default.yml`.
+- The LiveKit / Element Call dashboard is provisioned from `grafana/dashboards/livekit.json`.
