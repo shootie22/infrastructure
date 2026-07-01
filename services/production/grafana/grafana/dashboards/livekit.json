@@ -3252,7 +3252,7 @@
     {
       "type": "logs",
       "title": "Degraded quality moments (who \u00b7 direction \u00b7 numbers)",
-      "description": "Every scorer sample where quality is NOT excellent, one line each: participant, direction, quality, score and the raw loss/jitter/rtt. This is the 'exactly what happened and when' feed \u2014 when a friend says they cut out, find their identity here at that time.",
+      "description": "Every scorer sample with score < 100 (any imperfection, not just severe), one line each: participant, direction, quality, score and the raw loss/jitter/rtt. Empty only when everyone is a perfect 100. This is the 'exactly what happened and when' feed \u2014 when a friend says they cut out, find their identity here at that time.",
       "id": 56,
       "datasource": {
         "type": "loki",
@@ -3278,7 +3278,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", q=\"quality\", sc=\"score\", lost=\"stat.packetsLost\", jit=\"stat.jitterMax\", rtt=\"stat.rttMax\", cl=\"caller\" | cl=~\"connectionquality/scorer.go.*\" | q!=\"EXCELLENT\" | line_format \"{{.ident}} [{{.dir}}] quality={{.q}} score={{.sc}} lost={{.lost}} jitterUs={{.jit}} rttMs={{.rtt}}\"",
+          "expr": "{job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", q=\"quality\", sc=\"score\", lost=\"stat.packetsLost\", jit=\"stat.jitterMax\", rtt=\"stat.rttMax\", cl=\"caller\" | cl=~\"connectionquality/scorer.go.*\" | sc!=\"\" | sc<100 | line_format \"{{.ident}} [{{.dir}}] quality={{.q}} score={{.sc}} lost={{.lost}} jitterUs={{.jit}} rttMs={{.rtt}}\"",
           "queryType": "range",
           "refId": "A"
         }
