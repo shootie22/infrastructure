@@ -3283,6 +3283,107 @@
           "refId": "A"
         }
       ]
+    },
+    {
+      "type": "row",
+      "title": "Room / participant / track inventory (derived from scorer stream)",
+      "id": 60,
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 134 },
+      "panels": []
+    },
+    {
+      "type": "table",
+      "title": "Rooms & participants (active in range)",
+      "description": "Distinct room + participant seen in the scorer stream over the range = who was actually in a call and getting media scored. 'samples' is how many scorer windows we saw for them (rough proxy for time on the call).",
+      "id": 61,
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": { "defaults": { "custom": { "align": "auto", "filterable": true }, "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 135 },
+      "options": { "showHeader": true, "sortBy": [ { "displayName": "samples", "desc": true } ] },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "editorMode": "code",
+          "expr": "sum by (rm, ident) (count_over_time({job=\"livekit\"} | json rm=\"room\", ident=\"participant\", cl=\"caller\" | cl=~\"connectionquality/scorer.go.*\" | ident!=\"\" [$__range]))",
+          "queryType": "instant",
+          "instant": true,
+          "format": "table",
+          "refId": "A",
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true }, "renameByName": { "rm": "room", "ident": "participant", "Value": "samples" } } }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Published tracks (who is sending)",
+      "description": "Each track a participant publishes (uplink), from scorer 'livekit.pub' lines: publisher identity, trackID, codec. audio/opus = a mic. Cross-reference trackID against the Subscriptions panel to see who receives it.",
+      "id": 62,
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": { "defaults": { "custom": { "align": "auto", "filterable": true }, "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 135 },
+      "options": { "showHeader": true, "sortBy": [ { "displayName": "publisher", "desc": false } ] },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "editorMode": "code",
+          "expr": "sum by (ident, track, mime) (count_over_time({job=\"livekit\"} | json ident=\"participant\", track=\"trackID\", mime=\"mime\", lg=\"logger\", cl=\"caller\" | cl=~\"connectionquality/scorer.go.*\" | lg=\"livekit.pub\" | track!=\"\" [$__range]))",
+          "queryType": "instant",
+          "instant": true,
+          "format": "table",
+          "refId": "A",
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true }, "renameByName": { "ident": "publisher", "track": "trackID", "mime": "codec" } } }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Subscriptions (who is receiving which track)",
+      "description": "From scorer 'livekit.sub' lines: subscriber identity + the trackID they receive (downlink). Match trackID against Published tracks to read it as 'subscriber receives publisher's track'. A track a friend should hear but with no row here = they never subscribed to it.",
+      "id": 63,
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": { "defaults": { "custom": { "align": "auto", "filterable": true }, "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 135 },
+      "options": { "showHeader": true, "sortBy": [ { "displayName": "subscriber", "desc": false } ] },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "editorMode": "code",
+          "expr": "sum by (ident, track) (count_over_time({job=\"livekit\"} | json ident=\"participant\", track=\"trackID\", lg=\"logger\", cl=\"caller\" | cl=~\"connectionquality/scorer.go.*\" | lg=\"livekit.sub\" | track!=\"\" [$__range]))",
+          "queryType": "instant",
+          "instant": true,
+          "format": "table",
+          "refId": "A",
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true }, "renameByName": { "ident": "subscriber", "track": "trackID" } } }
+      ]
+    },
+    {
+      "type": "logs",
+      "title": "Errors & join failures (best-effort)",
+      "description": "Best-effort: log lines that look like a failure - JOIN_FAILURE plus text matching join/subscribe/connect failures or rejects. Empty is good (no failures in range). Refine this query once a real failure line is captured on the host.",
+      "id": 64,
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 143 },
+      "options": { "showTime": true, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending" },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "editorMode": "code",
+          "expr": "{job=\"livekit\"} |~ \"(?i)(JOIN_FAILURE|failed to (join|connect|subscrib)|could not (join|subscrib)|cannot join|join[^\\\"]{0,12}fail|rejected)\" != \"high loss\"",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ]
     }
   ],
   "refresh": "30s",
