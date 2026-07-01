@@ -2,7 +2,6 @@ services:
 
   exporter:
     build: ./app
-    image: livekit-quality-exporter:local
     container_name: ${LIVEKIT_QUALITY_NAME}
     restart: unless-stopped
 
