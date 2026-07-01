@@ -2331,7 +2331,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | json | reason != \"\" [$__interval]))",
+          "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | json | reason != \"\" | caller !~ \"connectionquality\" [$__interval]))",
           "queryType": "range",
           "legendFormat": "{{reason}}",
           "refId": "A"
