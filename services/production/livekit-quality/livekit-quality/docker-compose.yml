@@ -5,6 +5,12 @@ services:
     container_name: ${LIVEKIT_QUALITY_NAME}
     restart: unless-stopped
 
+    # Host networking so the probe reaches LiveKit's RoomService/signalling
+    # directly on the Hetzner loopback. Going via the public URL routes through
+    # the edge Apache proxy, which only fronts the WebSocket path and returns
+    # 405 for the RoomService Twirp POST. Mirrors the livekit-metrics stack.
+    network_mode: host
+
     environment:
       LIVEKIT_URL: ${LIVEKIT_URL}
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
@@ -12,10 +18,6 @@ services:
       PROBE_IDENTITY: ${PROBE_IDENTITY}
       POLL_INTERVAL: ${POLL_INTERVAL}
       LISTEN_ADDR: ${LISTEN_ADDR}
-
-    networks:
-      - internal
-      - outbound
 
     read_only: true
     security_opt:
@@ -32,25 +34,18 @@ services:
     depends_on:
       - exporter
 
+    # Host networking to reach the exporter on 127.0.0.1:6790 (same as
+    # livekit-metrics' frpc).
+    network_mode: host
+
     volumes:
       - ../../../utils/frp/frpc/frpc-tcp.toml:/etc/frp/frpc.toml:ro
 
     env_file:
       - runtime.env
 
-    networks:
-      - internal
-      - outbound
-
     read_only: true
     tmpfs:
       - /tmp
     security_opt:
       - no-new-privileges:true
-
-networks:
-  internal:
-    driver: bridge
-    internal: true
-  outbound:
-    driver: bridge
