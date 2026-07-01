@@ -1,0 +1,57 @@
+services:
+
+  exporter:
+    build: ./app
+    image: livekit-quality-exporter:local
+    container_name: ${LIVEKIT_QUALITY_NAME}
+    restart: unless-stopped
+
+    environment:
+      LIVEKIT_URL: ${LIVEKIT_URL}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+      PROBE_IDENTITY: ${PROBE_IDENTITY}
+      POLL_INTERVAL: ${POLL_INTERVAL}
+      LISTEN_ADDR: ${LISTEN_ADDR}
+
+    networks:
+      - internal
+      - outbound
+
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+  frpc:
+    image: ghcr.io/fatedier/frpc:v0.65.0
+    command:
+      - -c
+      - /etc/frp/frpc.toml
+    container_name: frpc-livekit-quality
+    restart: unless-stopped
+
+    depends_on:
+      - exporter
+
+    volumes:
+      - ../../../utils/frp/frpc/frpc-tcp.toml:/etc/frp/frpc.toml:ro
+
+    env_file:
+      - runtime.env
+
+    networks:
+      - internal
+      - outbound
+
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  internal:
+    driver: bridge
+    internal: true
+  outbound:
+    driver: bridge
