@@ -16,9 +16,11 @@ layers:
 ## How the exporter works
 
 `livekit-quality/app` is a small Go service. It polls `RoomService.ListRooms`
-and, for each active room, joins as a **hidden, non-publishing, non-subscribing**
-participant. LiveKit broadcasts a `ConnectionQualityUpdate` for *every*
-participant to everyone in the room, so the probe observes them all and exports:
+and, for each active room, joins as a **hidden, non-publishing** participant that
+subscribes to **audio only**. LiveKit only sends `ConnectionQualityUpdate` for
+participants you are *subscribed to* (not a room-wide broadcast), so the probe
+subscribes to each participant's audio track — tiny, and it stays local to the
+Hetzner host since the probe is co-located with the SFU — and exports:
 
 - `livekit_participant_quality_score{room, identity}` — 0 (lost) … 1 (excellent)
 - `livekit_participant_quality{room, identity}` — enum as a number (0/1/2/3)
@@ -131,12 +133,12 @@ before adding the service.
 
 ### Troubleshooting
 
-- **Probe joins rooms but no `quality_score` series appear.** The probe joins
-  with `CanSubscribe=false` so it never pulls media (protects the home uplink).
-  If a LiveKit version withholds `ConnectionQualityUpdate` from a non-subscriber,
-  set `CanSubscribe` to `true` in `app/main.go` *and* pass
-  `lksdk.WithAutoSubscribe(false)` to `ConnectToRoomWithToken` so it still pulls
-  zero tracks. Rebuild.
+- **Probe joins rooms but no `quality_score` series appear.** LiveKit only sends
+  `ConnectionQualityUpdate` for participants the probe is *subscribed to*, so the
+  probe must subscribe to at least one of each participant's tracks. It subscribes
+  to audio only (`OnTrackPublished` → `SetSubscribed(true)` for `TrackKindAudio`,
+  with `WithAutoSubscribe(false)`). If a participant publishes video but no audio,
+  they won't be covered — subscribe to their video too in `OnTrackPublished`.
 - **Build fails on a callback signature.** The LiveKit Go SDK API occasionally
   moves `OnConnectionQualityChanged` between `RoomCallback` and
   `ParticipantCallback`, or renames a field — the build error points at the exact
