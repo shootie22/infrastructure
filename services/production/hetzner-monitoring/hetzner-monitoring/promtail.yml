@@ -55,8 +55,35 @@ scrape_configs:
       - target_label: job
         replacement: livekit
     pipeline_stages:
+      # Parse LiveKit's JSON log line. `level` stays a label (low cardinality).
+      # participant/room/pID/reason are high cardinality, so they ride as
+      # structured metadata (filterable in Grafana, queryable via `| json`)
+      # rather than labels, to avoid exploding Loki's stream count.
+      # NOTE: confirm these key names against real logs first — see
+      # services/production/livekit-quality/README.md "Discovery". `reason` is
+      # already known-good (the dashboard's Disconnect Reasons panel uses it).
       - json:
           expressions:
             level: level
+            participant: participant
+            room: room
+            pid: pID
+            reason: reason
       - labels:
           level:
+      - structured_metadata:
+          participant:
+          room:
+          pid:
+          reason:
+      # Optional ingest guard for a debug-level window (used to capture the
+      # selected ICE candidate pair + client media IP). promtail's drop stage
+      # drops on match, so match the *noise*, not the signal: this drops only
+      # debug stats/keepalive chatter while keeping ICE/candidate/disconnect
+      # lines. Uncomment while LiveKit runs at `log_level: debug`.
+      # - match:
+      #     selector: '{job="livekit", level="debug"}'
+      #     stages:
+      #       - drop:
+      #           expression: "(?i)(stats|keepalive|periodic report)"
+      #           drop_counter_reason: livekit_debug_noise
