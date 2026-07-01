@@ -2261,7 +2261,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | json | reason != \"\" | caller !~ \"connectionquality\" [$__range]))",
+          "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | json cl=\"caller\" | reason != \"\" | cl !~ \"connectionquality\" [$__range]))",
           "queryType": "instant",
           "instant": true,
           "format": "table",
@@ -2331,7 +2331,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | json | reason != \"\" | caller !~ \"connectionquality\" [$__interval]))",
+          "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | json cl=\"caller\" | reason != \"\" | cl !~ \"connectionquality\" [$__interval]))",
           "queryType": "range",
           "legendFormat": "{{reason}}",
           "refId": "A"
@@ -2528,7 +2528,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (participant, room, reason) (count_over_time({job=\"livekit\"} | json | participant != \"\" | reason != \"\" | caller !~ \"connectionquality\" [$__range]))",
+          "expr": "sum by (participant, room, reason) (count_over_time({job=\"livekit\"} | json cl=\"caller\" | participant != \"\" | reason != \"\" | cl !~ \"connectionquality\" [$__range]))",
           "queryType": "instant",
           "instant": true,
           "format": "table",
