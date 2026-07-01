@@ -2261,7 +2261,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | json cl=\"caller\" | reason != \"\" | cl !~ \"connectionquality\" [$__range]))",
+          "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | reason=~\"^[A-Z_]+$\" [$__range]))",
           "queryType": "instant",
           "instant": true,
           "format": "table",
@@ -2331,7 +2331,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | json cl=\"caller\" | reason != \"\" | cl !~ \"connectionquality\" [$__interval]))",
+          "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | reason=~\"^[A-Z_]+$\" [$__interval]))",
           "queryType": "range",
           "legendFormat": "{{reason}}",
           "refId": "A"
@@ -2528,7 +2528,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (participant, room, reason) (count_over_time({job=\"livekit\"} | json cl=\"caller\" | participant != \"\" | reason != \"\" | cl !~ \"connectionquality\" [$__range]))",
+          "expr": "sum by (participant, room, reason) (count_over_time({job=\"livekit\"} | participant!=\"\" | reason=~\"^[A-Z_]+$\" [$__range]))",
           "queryType": "instant",
           "instant": true,
           "format": "table",
@@ -3314,7 +3314,7 @@
         }
       ],
       "transformations": [
-        { "id": "organize", "options": { "excludeByName": { "Time": true }, "renameByName": { "rm": "room", "ident": "participant", "Value": "samples" } } }
+        { "id": "organize", "options": { "excludeByName": { "Time": true }, "renameByName": { "rm": "room", "ident": "participant", "Value": "samples", "Value #A": "samples" } } }
       ]
     },
     {
@@ -3339,7 +3339,7 @@
         }
       ],
       "transformations": [
-        { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true }, "renameByName": { "ident": "publisher", "track": "trackID", "mime": "codec" } } }
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true, "Value #A": true }, "renameByName": { "ident": "publisher", "track": "trackID", "mime": "codec" } } }
       ]
     },
     {
@@ -3364,7 +3364,7 @@
         }
       ],
       "transformations": [
-        { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true }, "renameByName": { "ident": "subscriber", "track": "trackID" } } }
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true, "Value #A": true }, "renameByName": { "ident": "subscriber", "track": "trackID" } } }
       ]
     },
     {
@@ -3379,7 +3379,7 @@
         {
           "datasource": { "type": "loki", "uid": "loki" },
           "editorMode": "code",
-          "expr": "{job=\"livekit\"} |~ \"(?i)(JOIN_FAILURE|failed to (join|connect|subscrib)|could not (join|subscrib)|cannot join|join[^\\\"]{0,12}fail|rejected)\" != \"high loss\"",
+          "expr": "{job=\"livekit\"} |~ \"(?i)(JOIN_FAILURE|failed to (join|connect|subscribe|negotiate)|could not (join|subscribe)|cannot join|rejected|handshake failed)\" != \"high loss\"",
           "queryType": "range",
           "refId": "A"
         }
