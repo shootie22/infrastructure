@@ -3179,7 +3179,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "last by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"score\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
+          "expr": "min by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"score\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
           "queryType": "instant",
           "instant": true,
           "format": "table",
@@ -3192,7 +3192,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "last by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"packetScore\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
+          "expr": "min by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"packetScore\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
           "queryType": "instant",
           "instant": true,
           "format": "table",
@@ -3205,7 +3205,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "last by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"layerScore\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
+          "expr": "min by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"layerScore\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
           "queryType": "instant",
           "instant": true,
           "format": "table",
@@ -3218,7 +3218,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "last by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"bitrateScore\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
+          "expr": "min by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"bitrateScore\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
           "queryType": "instant",
           "instant": true,
           "format": "table",
