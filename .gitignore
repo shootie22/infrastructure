@@ -9,3 +9,7 @@ rathole.toml
 
 # reference symlinks
 reference/*
+
+# local agent scratch files
+CLAUDE
+.codex
