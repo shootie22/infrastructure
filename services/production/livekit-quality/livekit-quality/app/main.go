@@ -151,6 +151,19 @@ func (m *manager) ensureJoined(roomName string) {
 			qualityEnum.DeleteLabelValues(roomName, p.Identity())
 		},
 		ParticipantCallback: lksdk.ParticipantCallback{
+			// LiveKit only sends ConnectionQualityUpdate for participants we are
+			// subscribed to. Subscribe to each participant's AUDIO track (tiny,
+			// and stays local to the Hetzner host) so the server reports their
+			// quality; skip video so we don't pull camera/screen streams we
+			// never decode. Fires for tracks that already exist when we join.
+			OnTrackPublished: func(pub *lksdk.RemoteTrackPublication, rp *lksdk.RemoteParticipant) {
+				if pub.Kind() != lksdk.TrackKindAudio {
+					return
+				}
+				if err := pub.SetSubscribed(true); err != nil {
+					log.Printf("subscribe to %s audio failed: %v", rp.Identity(), err)
+				}
+			},
 			OnConnectionQualityChanged: func(info *livekit.ConnectionQualityInfo, p lksdk.Participant) {
 				identity := p.Identity()
 				if identity == "" || identity == m.identity {
