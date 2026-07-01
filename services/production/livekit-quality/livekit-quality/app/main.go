@@ -146,6 +146,9 @@ func (m *manager) ensureJoined(roomName string) {
 			qualityScore.DeletePartialMatch(prometheus.Labels{"room": roomName})
 			qualityEnum.DeletePartialMatch(prometheus.Labels{"room": roomName})
 		},
+		OnParticipantConnected: func(p *lksdk.RemoteParticipant) {
+			log.Printf("[diag] participant connected room=%q identity=%q tracks=%d", roomName, p.Identity(), len(p.TrackPublications()))
+		},
 		OnParticipantDisconnected: func(p *lksdk.RemoteParticipant) {
 			qualityScore.DeleteLabelValues(roomName, p.Identity())
 			qualityEnum.DeleteLabelValues(roomName, p.Identity())
@@ -157,15 +160,19 @@ func (m *manager) ensureJoined(roomName string) {
 			// quality; skip video so we don't pull camera/screen streams we
 			// never decode. Fires for tracks that already exist when we join.
 			OnTrackPublished: func(pub *lksdk.RemoteTrackPublication, rp *lksdk.RemoteParticipant) {
+				log.Printf("[diag] track published room=%q identity=%q kind=%s", roomName, rp.Identity(), pub.Kind())
 				if pub.Kind() != lksdk.TrackKindAudio {
 					return
 				}
 				if err := pub.SetSubscribed(true); err != nil {
-					log.Printf("subscribe to %s audio failed: %v", rp.Identity(), err)
+					log.Printf("[diag] subscribe to %s audio failed: %v", rp.Identity(), err)
+				} else {
+					log.Printf("[diag] subscribed to %s audio", rp.Identity())
 				}
 			},
 			OnConnectionQualityChanged: func(info *livekit.ConnectionQualityInfo, p lksdk.Participant) {
 				identity := p.Identity()
+				log.Printf("[diag] quality update room=%q identity=%q score=%.3f quality=%v", roomName, identity, info.Score, info.Quality)
 				if identity == "" || identity == m.identity {
 					return
 				}
@@ -269,6 +276,7 @@ func main() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
+	log.Printf("build=diag-audio-subscribe")
 	log.Printf("polling %s every %s as hidden identity %q", apiURL, pollInterval, identity)
 	m.reconcile(ctx)
 	for {
