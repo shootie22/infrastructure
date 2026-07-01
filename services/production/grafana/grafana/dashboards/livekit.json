@@ -2224,7 +2224,7 @@
     {
       "type": "table",
       "title": "Disconnect Reasons",
-      "description": "Count of participant close events grouped by LiveKit DisconnectReason over the dashboard time range. CLIENT_INITIATED / DUPLICATE_IDENTITY are benign; SIGNAL_CLOSE / JOIN_FAILURE / ICE failures point at the client's network; SERVER_SHUTDOWN / MIGRATION point at this LiveKit node.",
+      "description": "Count of participant close events grouped by LiveKit DisconnectReason over the dashboard time range. CLIENT_INITIATED / DUPLICATE_IDENTITY are benign; SIGNAL_CLOSE / JOIN_FAILURE / ICE failures point at the client's network; SERVER_SHUTDOWN / MIGRATION point at this LiveKit node. (Excludes connection-quality scorer logs, which also carry a 'reason' field like 'packet' and are NOT disconnects.)",
       "id": 30,
       "datasource": {
         "type": "loki",
@@ -2261,7 +2261,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | json | reason != \"\" [$__range]))",
+          "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | json | reason != \"\" | caller !~ \"connectionquality\" [$__range]))",
           "queryType": "instant",
           "instant": true,
           "format": "table",
@@ -2491,7 +2491,7 @@
     {
       "type": "table",
       "title": "Disconnects by Participant",
-      "description": "Participant close events grouped by Matrix identity, room and DisconnectReason over the time range. A single identity with many ICE/SIGNAL rows is a repeat offender (their network); spread across everyone points at this node. Identity is the LiveKit participant = Matrix user/device.",
+      "description": "Participant close events grouped by Matrix identity, room and DisconnectReason over the time range. A single identity with many ICE/SIGNAL rows is a repeat offender (their network); spread across everyone points at this node. Identity is the LiveKit participant = Matrix user/device. (Excludes scorer quality logs so only real disconnects are counted.)",
       "id": 41,
       "datasource": {
         "type": "loki",
@@ -2528,7 +2528,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (participant, room, reason) (count_over_time({job=\"livekit\"} | json | participant != \"\" | reason != \"\" [$__range]))",
+          "expr": "sum by (participant, room, reason) (count_over_time({job=\"livekit\"} | json | participant != \"\" | reason != \"\" | caller !~ \"connectionquality\" [$__range]))",
           "queryType": "instant",
           "instant": true,
           "format": "table",
@@ -2749,6 +2749,538 @@
               "Value": "score"
             }
           }
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Per-participant media detail (from LiveKit quality scorer, debug logs)",
+      "id": 50,
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 106
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Connection score (0-100) by participant \u00b7 direction",
+      "description": "Worst-track connection score per participant and direction, from LiveKit's scorer. down = what THEY receive (SFU\u2192them, 'can they hear us'); up = THEM\u2192SFU (their mic reaching us, 'can we hear them'). 100=excellent. A line diving toward 0 is the exact person + direction that degraded.",
+      "id": 51,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 107
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "min by (ident, dir) (min_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"score\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [1m]))",
+          "legendFormat": "{{ident}} \u00b7 {{dir}}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Packets lost / min by participant \u00b7 direction",
+      "description": "Total RTP packets lost per minute (summed across a participant's tracks), from the scorer stat window. Non-zero on a friend's up direction = their mic audio is losing packets before it even reaches us. down = they're losing what we send them.",
+      "id": 52,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 107
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "sum by (ident, dir) (sum_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"stat.packetsLost\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [1m]))",
+          "legendFormat": "{{ident}} \u00b7 {{dir}}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Jitter (max, raw \u00b5s) by participant \u00b7 direction",
+      "description": "Max jitter reported in the scorer stat window (LiveKit reports jitter in microseconds). Spikes correlate with choppy/robotic audio. Split by direction to see whose path and which way.",
+      "id": 53,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 116
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "max by (ident, dir) (max_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"stat.jitterMax\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [1m]))",
+          "legendFormat": "{{ident}} \u00b7 {{dir}}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "RTT (max, ms) by participant \u00b7 direction",
+      "description": "Max round-trip time in the scorer stat window (ms). High or climbing RTT = latency/congestion on that participant's path.",
+      "id": 54,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 116
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "max by (ident, dir) (max_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"stat.rttMax\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [1m]))",
+          "legendFormat": "{{ident}} \u00b7 {{dir}}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Score breakdown now (loss / resolution / bitrate)",
+      "description": "Latest score components per participant\u00b7direction. packetScore low = packet loss; layerScore low = forced to a lower resolution layer; bitrateScore low = not enough bandwidth. Tells you WHY the score dropped, not just that it did.",
+      "id": 55,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 116
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "packetScore",
+            "desc": false
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "last by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"score\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
+          "queryType": "instant",
+          "instant": true,
+          "format": "table",
+          "refId": "A",
+          "legendFormat": ""
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "last by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"packetScore\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
+          "queryType": "instant",
+          "instant": true,
+          "format": "table",
+          "refId": "B",
+          "legendFormat": ""
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "last by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"layerScore\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
+          "queryType": "instant",
+          "instant": true,
+          "format": "table",
+          "refId": "C",
+          "legendFormat": ""
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "last by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"bitrateScore\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
+          "queryType": "instant",
+          "instant": true,
+          "format": "table",
+          "refId": "D",
+          "legendFormat": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "ident": "participant",
+              "dir": "direction",
+              "Value #A": "score",
+              "Value #B": "packetScore",
+              "Value #C": "layerScore",
+              "Value #D": "bitrateScore"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "logs",
+      "title": "Degraded quality moments (who \u00b7 direction \u00b7 numbers)",
+      "description": "Every scorer sample where quality is NOT excellent, one line each: participant, direction, quality, score and the raw loss/jitter/rtt. This is the 'exactly what happened and when' feed \u2014 when a friend says they cut out, find their identity here at that time.",
+      "id": 56,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 124
+      },
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "{job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", q=\"quality\", sc=\"score\", lost=\"stat.packetsLost\", jit=\"stat.jitterMax\", rtt=\"stat.rttMax\", cl=\"caller\" | cl=~\"connectionquality/scorer.go.*\" | q!=\"EXCELLENT\" | line_format \"{{.ident}} [{{.dir}}] quality={{.q}} score={{.sc}} lost={{.lost}} jitterUs={{.jit}} rttMs={{.rtt}}\"",
+          "queryType": "range",
+          "refId": "A"
         }
       ]
     }
