@@ -162,7 +162,7 @@ func (m *manager) ensureJoined(roomName string) {
 		},
 	}
 
-	room, err := lksdk.ConnectToRoomWithToken(m.wsURL, token, cb)
+	room, err := lksdk.ConnectToRoomWithToken(m.wsURL, token, cb, lksdk.WithAutoSubscribe(false))
 	if err != nil {
 		log.Printf("join room %q failed: %v", roomName, err)
 		return
@@ -183,7 +183,11 @@ func (m *manager) ensureJoined(roomName string) {
 
 func (m *manager) buildToken(roomName string) (string, error) {
 	canPublish := false
-	canSubscribe := false
+	// Must be allowed to subscribe or LiveKit won't send this participant the
+	// room's ConnectionQualityUpdate broadcasts. We pair this with
+	// WithAutoSubscribe(false) at connect time so it subscribes to zero tracks
+	// and pulls no media — permission without traffic.
+	canSubscribe := true
 	at := auth.NewAccessToken(m.apiKey, m.apiSecret)
 	at.SetVideoGrant(&auth.VideoGrant{
 		RoomJoin:     true,
