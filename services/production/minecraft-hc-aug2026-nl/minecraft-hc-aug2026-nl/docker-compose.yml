@@ -1,9 +1,12 @@
 services:
   # server-latest does not build anything itself -- it just runs whatever
-  # jar is already sitting in the volume. buildtools-latest compiles
-  # /server/spigot.jar for MC_VERSION and, per its own entrypoint, skips
-  # the (slow) compile if that jar already exists -- so it's safe to run
-  # this automatically on every `up`, not just the first deploy.
+  # jar is already sitting in the volume. buildtools-latest compiles the
+  # jar for MC_VERSION and writes it to /data/spigot.jar (its own mount
+  # convention -- NOT /server, which is server-latest's convention). Same
+  # host directory, mounted at different paths per image. Per its own
+  # entrypoint, buildtools skips the (slow) compile if the jar already
+  # exists, so it's safe to run this automatically on every `up`, not
+  # just the first deploy.
   buildtools:
     image: git.radunenu.com/radu/spigotmc-docker:buildtools-latest
     container_name: buildtools-minecraft-hc-aug2026-nl
@@ -12,7 +15,7 @@ services:
     env_file:
       - runtime.env
     volumes:
-      - ${MINECRAFT_DATA_DIR}:/server
+      - ${MINECRAFT_DATA_DIR}:/data
     networks:
       - external
 
