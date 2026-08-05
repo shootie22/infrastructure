@@ -59,6 +59,25 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  # server-latest's internal process UID is unknown to us (external image),
+  # so files it creates (e.g. plugins/) may not be writable by the sftp
+  # user. Rather than guess a matching UID, open up permissions on the
+  # shared volume before sftp starts -- runs on every `up`, so it
+  # self-heals even for files/dirs the game server creates later.
+  fix-permissions:
+    image: alpine:latest
+    container_name: fix-permissions-minecraft-hc-aug2026-nl
+    restart: "no"
+    command:
+      - sh
+      - -c
+      - chmod -R a+rwX /server
+    volumes:
+      - ${MINECRAFT_DATA_DIR}:/server
+    depends_on:
+      buildtools:
+        condition: service_completed_successfully
+
   sftp:
     image: atmoz/sftp:alpine
     container_name: sftp-minecraft-hc-aug2026-nl
@@ -79,6 +98,9 @@ services:
       # generates fresh ephemeral host keys, which means SFTP clients will
       # show a one-time "host key changed" warning after a restart --
       # cosmetic only, doesn't weaken auth (password is the real gate).
+    depends_on:
+      fix-permissions:
+        condition: service_completed_successfully
     networks:
       - internal
     security_opt:
