@@ -60,19 +60,20 @@ services:
       - no-new-privileges:true
 
   # server-latest's internal process UID is unknown to us (external image),
-  # so files it creates (e.g. plugins/) may not be writable by the sftp
-  # user. Rather than guess a matching UID, open up permissions on the
-  # shared volume before sftp starts -- runs on every `up`, so it
-  # self-heals even for files/dirs the game server creates later.
+  # so files it creates (e.g. plugins/, world/) may not be writable by the
+  # sftp user. Rather than guess a matching UID, this loops forever,
+  # periodically re-opening permissions on the shared volume -- a one-shot
+  # run only covered files that existed at that moment, and the game
+  # server keeps writing new ones (new chunks, etc.) the whole time it runs.
   fix-permissions:
     image: alpine:latest
     container_name: fix-permissions-minecraft-hc-aug2026-nl
-    restart: "no"
+    restart: unless-stopped
     network_mode: none
     command:
       - sh
       - -c
-      - chmod -R a+rwX /server
+      - "while true; do chmod -R a+rwX /server; sleep 30; done"
     volumes:
       - ${MINECRAFT_DATA_DIR}:/server
     depends_on:
@@ -101,7 +102,7 @@ services:
       # cosmetic only, doesn't weaken auth (password is the real gate).
     depends_on:
       fix-permissions:
-        condition: service_completed_successfully
+        condition: service_started
     networks:
       - internal
     security_opt:
