@@ -1,0 +1,49 @@
+services:
+  sftp:
+    image: atmoz/sftp:alpine
+    container_name: sftp-minecraft-hc-aug2026-nl
+    restart: unless-stopped
+    command:
+      - ${SFTP_USERNAME}:${SFTP_PASSWORD}:1000
+    env_file:
+      - runtime.env
+    volumes:
+      # OpenSSH refuses to chroot into a directory writable by the chrooted
+      # user, so the shared data dir is mounted as a subfolder of the user's
+      # home rather than at the home/chroot root itself.
+      - ${MINECRAFT_DATA_DIR}:/home/${SFTP_USERNAME}/server
+      # Host keys persist here across restarts; generated on first boot if
+      # these files don't already exist on the host.
+      - ${SFTP_HOST_KEYS_DIR}/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key
+      - ${SFTP_HOST_KEYS_DIR}/ssh_host_rsa_key:/etc/ssh/ssh_host_rsa_key
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+
+  frpc:
+    image: ghcr.io/fatedier/frpc:v0.65.0
+    command:
+      - -c
+      - /etc/frp/frpc.toml
+    container_name: frpc-sftp-minecraft-hc-aug2026-nl
+    restart: unless-stopped
+    env_file:
+      - runtime.env
+    volumes:
+      - ../../../utils/frp/frpc/frpc-tcp.toml:/etc/frp/frpc.toml:ro
+    depends_on:
+      - sftp
+    networks:
+      - internal
+      - external
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  internal:
+    driver: bridge
+    internal: true
+  external:
+    driver: bridge
