@@ -72,10 +72,13 @@ services:
       # user, so the shared data dir is mounted as a subfolder of the user's
       # home rather than at the home/chroot root itself.
       - ${MINECRAFT_DATA_DIR}:/home/${SFTP_USERNAME}/server
-      # Host keys persist here across restarts; generated on first boot if
-      # these files don't already exist on the host.
-      - ${SFTP_HOST_KEYS_DIR}/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key
-      - ${SFTP_HOST_KEYS_DIR}/ssh_host_rsa_key:/etc/ssh/ssh_host_rsa_key
+      # NOTE: host keys are intentionally NOT persisted across restarts.
+      # Bind-mounting individual key files produced permission mismatches
+      # (0755 on a private key -> sshd refuses to load it, restart loop,
+      # no way to fix without host shell access). Each restart now
+      # generates fresh ephemeral host keys, which means SFTP clients will
+      # show a one-time "host key changed" warning after a restart --
+      # cosmetic only, doesn't weaken auth (password is the real gate).
     networks:
       - internal
     security_opt:
