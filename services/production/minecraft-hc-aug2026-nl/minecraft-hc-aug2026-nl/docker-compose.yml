@@ -68,6 +68,7 @@ services:
     image: alpine:latest
     container_name: fix-permissions-minecraft-hc-aug2026-nl
     restart: "no"
+    network_mode: none
     command:
       - sh
       - -c
