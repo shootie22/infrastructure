@@ -1,4 +1,20 @@
 services:
+  # One-shot: compiles /server/spigot.jar for MC_VERSION via BuildTools.
+  # server-latest does not build anything itself -- it just runs whatever
+  # jar is already sitting in the volume, so this has to complete first on
+  # a fresh volume.
+  buildtools:
+    image: git.radunenu.com/radu/spigotmc-docker:buildtools-latest
+    container_name: buildtools-minecraft-hc-aug2026-nl
+    pull_policy: always
+    restart: "no"
+    env_file:
+      - runtime.env
+    volumes:
+      - ${MINECRAFT_DATA_DIR}:/server
+    networks:
+      - external
+
   minecraft-hc-aug2026-nl:
     image: git.radunenu.com/radu/spigotmc-docker:server-latest
     container_name: minecraft-hc-aug2026-nl
@@ -12,6 +28,9 @@ services:
       EULA: "true"
     volumes:
       - ${MINECRAFT_DATA_DIR}:/server
+    depends_on:
+      buildtools:
+        condition: service_completed_successfully
     networks:
       - internal
       - external
