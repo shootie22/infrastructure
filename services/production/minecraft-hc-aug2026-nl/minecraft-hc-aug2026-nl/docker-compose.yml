@@ -3,15 +3,20 @@ services:
   # jar is already sitting in the volume. buildtools-latest compiles the
   # jar for MC_VERSION and writes it to /data/spigot.jar (its own mount
   # convention -- NOT /server, which is server-latest's convention). Same
-  # host directory, mounted at different paths per image. Per its own
-  # entrypoint, buildtools skips the (slow) compile if the jar already
-  # exists, so it's safe to run this automatically on every `up`, not
-  # just the first deploy.
+  # host directory, mounted at different paths per image. Per spigotmc-docker's
+  # own README, buildtools is meant to run once as a `docker run --rm`
+  # one-off, not on every `up` -- its entrypoint always does a full
+  # (slow) rebuild with no cache between runs. Gated behind the "build"
+  # profile so plain `docker compose up` never starts it. To (re)build
+  # the jar (first deploy, or after an MC_VERSION bump), run it explicitly:
+  #   docker compose --profile build run --rm buildtools --rev <version>
   buildtools:
     image: git.radunenu.com/radu/spigotmc-docker:buildtools-latest
     container_name: buildtools-minecraft-hc-aug2026-nl
     pull_policy: always
     restart: "no"
+    profiles:
+      - build
     env_file:
       - runtime.env
     volumes:
@@ -34,9 +39,6 @@ services:
       WHITE_LIST: "false"
     volumes:
       - ${MINECRAFT_DATA_DIR}:/server
-    depends_on:
-      buildtools:
-        condition: service_completed_successfully
     networks:
       - internal
       - external
@@ -78,9 +80,6 @@ services:
       - "while true; do chmod -R a+rwX /server; sleep 30; done"
     volumes:
       - ${MINECRAFT_DATA_DIR}:/server
-    depends_on:
-      buildtools:
-        condition: service_completed_successfully
 
   sftp:
     image: atmoz/sftp:alpine
