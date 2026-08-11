@@ -30,7 +30,7 @@ services:
       - runtime.env
     environment:
       EULA: "true"
-      LEVEL_SEED: "879583942"
+      LEVEL_SEED: "-2634042832057963959"
       WHITE_LIST: "false"
     volumes:
       - ${MINECRAFT_DATA_DIR}:/server
