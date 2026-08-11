@@ -30,6 +30,7 @@ services:
       - runtime.env
     environment:
       EULA: "true"
+      LEVEL_SEED: "879583942"
     volumes:
       - ${MINECRAFT_DATA_DIR}:/server
     depends_on:
