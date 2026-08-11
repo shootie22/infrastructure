@@ -31,6 +31,7 @@ services:
     environment:
       EULA: "true"
       LEVEL_SEED: "879583942"
+      WHITE_LIST: "false"
     volumes:
       - ${MINECRAFT_DATA_DIR}:/server
     depends_on:
