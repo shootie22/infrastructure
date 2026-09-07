@@ -329,7 +329,7 @@ attach_frp_flow() {
   fi
 
   local frp_server_addr
-  frp_server_addr="$(prompt "FRP server address (edge node IP/DNS)" "edge.example.invalid")"
+  frp_server_addr="$(prompt "FRP server address (edge node IP/DNS)" "")"
 
   mapfile -t existing_bind_ports < <(grep -RhoE '^FRP_BIND_PORT=[0-9]+' services 2>/dev/null | sed 's/^FRP_BIND_PORT=//' | sort -u || true)
   mapfile -t existing_vhost_ports < <(grep -RhoE '^FRP_VHOST_HTTP_PORT=[0-9]+' services 2>/dev/null | sed 's/^FRP_VHOST_HTTP_PORT=//' | sort -u || true)
@@ -927,7 +927,7 @@ if [[ "$attach_frpc" == "y" ]]; then
     note "Generated token."
   fi
 
-  frp_server_addr="$(prompt "FRP server address (edge node IP/DNS)" "edge.example.invalid")"
+  frp_server_addr="$(prompt "FRP server address (edge node IP/DNS)" "")"
 
   # Avoid obvious collisions with existing runtime.env ports (best-effort).
   mapfile -t existing_bind_ports < <(grep -RhoE '^FRP_BIND_PORT=[0-9]+' services 2>/dev/null | sed 's/^FRP_BIND_PORT=//' | sort -u || true)
