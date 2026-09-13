@@ -4,7 +4,7 @@ metadata:
   name: element-call
   namespace: element-call
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-staging
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: traefik
 
