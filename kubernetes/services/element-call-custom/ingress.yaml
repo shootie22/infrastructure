@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: element-call
+  namespace: element-call
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+spec:
+  ingressClassName: traefik
+
+  tls:
+    - hosts:
+        - call.nuke.zip
+      secretName: element-call-tls
+
+  rules:
+    - host: call.nuke.zip
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: element-call
+                port:
+                  number: 80
