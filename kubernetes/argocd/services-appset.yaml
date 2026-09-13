@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: services
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+
+  generators:
+    - git:
+        repoURL: https://github.com/shootie22/infrastructure.git
+        revision: main
+        directories:
+          - path: kubernetes/services/*
+
+  template:
+    metadata:
+      name: '{{.path.basenameNormalized}}'
+    spec:
+      project: default
+
+      source:
+        repoURL: https://github.com/shootie22/infrastructure.git
+        targetRevision: main
+        path: '{{.path.path}}'
+
+      destination:
+        server: https://kubernetes.default.svc
+
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
