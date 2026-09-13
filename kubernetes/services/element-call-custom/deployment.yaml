@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: element-call
+  namespace: element-call
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: element-call
+  template:
+    metadata:
+      labels:
+        app: element-call
+    spec:
+      containers:
+        - name: element-call
+          image: ghcr.io/shootie22/element-call:latest-ci
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.json
+              subPath: config.json
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: element-call-config

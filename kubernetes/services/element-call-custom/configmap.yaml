@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: element-call-config
+  namespace: element-call
+data:
+  config.json: |
+    {
+      "livekit": {
+        "livekit_service_url": "https://ec.nuke.zip"
+      },
+      "default_server_config": {
+        "m.homeserver": {
+          "base_url": "https://nuke.zip",
+          "server_name": "nuke.zip"
+        }
+      }
+    }
