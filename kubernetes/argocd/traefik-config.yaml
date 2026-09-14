@@ -5,5 +5,11 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |-
-    additionalArguments:
-      - "--api=true"
+    api:
+      dashboard: true
+
+    ingressRoute:
+      dashboard:
+        enabled: true
+        entryPoints:
+          - traefik
