@@ -23,11 +23,11 @@ spec:
             - containerPort: 9090
           volumeMounts:
             - name: config
-              mountPath: /etc/headscale/config.yaml
-              subPath: config.yaml
+              mountPath: /etc/headscale
               readOnly: true
             - name: data
               mountPath: /var/lib/headscale
+
       volumes:
         - name: config
           configMap:
