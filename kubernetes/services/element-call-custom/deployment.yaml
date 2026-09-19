@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: element-call
-          image: ghcr.io/shootie22/element-call:sha-a19461e
+          image: ghcr.io/element-hq/element-call:v0.26.0
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
