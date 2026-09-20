@@ -1,0 +1,166 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    rule_files:
+      - /etc/prometheus/rules/*.rules
+
+    scrape_configs:
+      - job_name: prometheus
+        static_configs:
+          - targets: [prometheus.monitoring.svc:9090]
+
+      - job_name: kubernetes-services
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_annotation_monitoring_radunenu_com_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_service_annotation_monitoring_radunenu_com_scheme]
+            action: replace
+            target_label: __scheme__
+            regex: (https?)
+          - source_labels: [__meta_kubernetes_service_annotation_monitoring_radunenu_com_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_service_name]
+            target_label: service
+
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_monitoring_radunenu_com_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_pod_annotation_monitoring_radunenu_com_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__meta_kubernetes_pod_ip, __meta_kubernetes_pod_annotation_monitoring_radunenu_com_port]
+            action: replace
+            target_label: __address__
+            separator: ";"
+            regex: (.+);(.+)
+            replacement: $1:$2
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+
+      - job_name: kubelet
+        scheme: https
+        kubernetes_sd_configs:
+          - role: node
+        authorization:
+          type: Bearer
+          credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        tls_config:
+          insecure_skip_verify: true
+        relabel_configs:
+          - action: replace
+            source_labels: [__meta_kubernetes_node_name]
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/${1}/proxy/metrics
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: node
+
+      - job_name: kubelet-cadvisor
+        scheme: https
+        kubernetes_sd_configs:
+          - role: node
+        authorization:
+          type: Bearer
+          credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        tls_config:
+          insecure_skip_verify: true
+        relabel_configs:
+          - action: replace
+            source_labels: [__meta_kubernetes_node_name]
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: node
+
+      - job_name: node-exporter
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names: [monitoring]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: node-exporter
+          - source_labels: [__meta_kubernetes_endpoint_node_name]
+            target_label: node
+
+      - job_name: kube-state-metrics
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names: [monitoring]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: kube-state-metrics
+
+      - job_name: grafana
+        static_configs:
+          - targets: [grafana.monitoring.svc:3000]
+  ingress.rules: |
+    groups:
+      - name: ingress
+        rules:
+          - record: apache_ingress:requests:rate5m
+            expr: sum by (host, vhost) (rate(apache_ingress_requests_total{job="apache-ingress"}[5m]))
+          - record: apache_ingress:requests_4xx:rate5m
+            expr: sum by (host, vhost) (rate(apache_ingress_requests_total{job="apache-ingress",status=~"4.."}[5m]))
+          - record: apache_ingress:requests_5xx:rate5m
+            expr: sum by (host, vhost) (rate(apache_ingress_requests_total{job="apache-ingress",status=~"5.."}[5m]))
+          - record: apache_ingress:response_bytes:rate5m
+            expr: sum by (host, vhost) (rate(apache_ingress_response_bytes_total{job="apache-ingress"}[5m]))
+          - record: apache_ingress:request_duration_seconds:p50_5m
+            expr: histogram_quantile(0.50, sum by (host, vhost, le) (rate(apache_ingress_request_duration_seconds_bucket{job="apache-ingress"}[5m])))
+          - record: apache_ingress:request_duration_seconds:p95_5m
+            expr: histogram_quantile(0.95, sum by (host, vhost, le) (rate(apache_ingress_request_duration_seconds_bucket{job="apache-ingress"}[5m])))
+          - record: apache_ingress:request_duration_seconds:p99_5m
+            expr: histogram_quantile(0.99, sum by (host, vhost, le) (rate(apache_ingress_request_duration_seconds_bucket{job="apache-ingress"}[5m])))
+  synapse-v2.rules: |
+    groups:
+      - name: synapse
+        rules:
+          - record: synapse_federation_client_sent
+            labels: {type: EDU}
+            expr: synapse_federation_client_sent_edus_total + 0
+          - record: synapse_federation_client_sent
+            labels: {type: PDU}
+            expr: synapse_federation_client_sent_pdu_destinations_count_total + 0
+          - record: synapse_federation_client_sent
+            labels: {type: Query}
+            expr: sum(synapse_federation_client_sent_queries) by (job)
+          - record: synapse_federation_server_received
+            labels: {type: EDU}
+            expr: synapse_federation_server_received_edus_total + 0
+          - record: synapse_federation_server_received
+            labels: {type: PDU}
+            expr: synapse_federation_server_received_pdus_total + 0
+          - record: synapse_federation_server_received
+            labels: {type: Query}
+            expr: sum(synapse_federation_server_received_queries) by (job)
+          - record: synapse_federation_transaction_queue_pending
+            labels: {type: EDU}
+            expr: synapse_federation_transaction_queue_pending_edus + 0
+          - record: synapse_federation_transaction_queue_pending
+            labels: {type: PDU}
+            expr: synapse_federation_transaction_queue_pending_pdus + 0
