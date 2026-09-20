@@ -24,6 +24,8 @@ spec:
             - name: http
               containerPort: 3000
           env:
+            - name: GF_PLUGINS_PREINSTALL_DISABLED
+              value: "true"
             - name: GF_SERVER_DOMAIN
               value: grafana.monitoring.svc
             - name: GF_SERVER_ROOT_URL
