@@ -334,6 +334,11 @@ spec:
           ports:
             - name: http
               containerPort: 12345
+          env:
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
           resources:
             requests:
               cpu: 100m

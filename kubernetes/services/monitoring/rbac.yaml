@@ -84,7 +84,7 @@ metadata:
   name: monitoring-alloy
 rules:
   - apiGroups: [""]
-    resources: [nodes, namespaces, pods]
+    resources: [nodes, namespaces, pods, pods/log]
     verbs: [get, list, watch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
