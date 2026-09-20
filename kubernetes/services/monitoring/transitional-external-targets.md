@@ -4,6 +4,9 @@ These OVH-local FRP aliases are preserved for a later connectivity review. They 
 not mounted by the K3s Prometheus and must not be enabled until their reachability
 from K3s has been validated.
 
+The 2026-09-20 read-only findings and retirement blockers are recorded in
+`external-observability-audit.md`.
+
 | Target | Job | Preserved labels |
 | --- | --- | --- |
 | `thinkcentre-frps:5994` | node-exporter | host=thinkcentre, site=homelab, role=workstation, os=linux |
