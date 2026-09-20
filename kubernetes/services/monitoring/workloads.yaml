@@ -27,9 +27,9 @@ spec:
             - name: GF_PLUGINS_PREINSTALL_DISABLED
               value: "true"
             - name: GF_SERVER_DOMAIN
-              value: grafana.monitoring.svc
+              value: mon.radunenu.com
             - name: GF_SERVER_ROOT_URL
-              value: http://grafana.monitoring.svc:3000
+              value: https://mon.radunenu.com
             - name: GF_ANALYTICS_REPORTING_ENABLED
               value: "false"
             - name: GF_ANALYTICS_CHECK_FOR_UPDATES
