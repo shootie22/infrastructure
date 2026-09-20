@@ -51,7 +51,7 @@ spec:
             - name: GF_METRICS_ENABLED
               value: "true"
             - name: GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH
-              value: /var/lib/grafana/dashboards/platform-overview.json
+              value: /var/lib/grafana/dashboards/observability/platform-overview.json
           envFrom:
             - secretRef:
                 name: grafana-auth
@@ -96,30 +96,69 @@ spec:
             sources:
               - configMap:
                   name: grafana-dashboard-edge
+                  items:
+                    - key: edge.json
+                      path: archive/edge.json
               - configMap:
                   name: grafana-dashboard-fleet-overview
+                  items:
+                    - key: fleet-overview.json
+                      path: archive/fleet-overview.json
               - configMap:
                   name: grafana-dashboard-livekit
+                  items:
+                    - key: livekit.json
+                      path: applications/livekit.json
               - configMap:
                   name: grafana-dashboard-logs
+                  items:
+                    - key: logs.json
+                      path: archive/logs.json
               - configMap:
                   name: grafana-dashboard-services
+                  items:
+                    - key: services.json
+                      path: archive/services.json
               - configMap:
                   name: grafana-dashboard-synapse
+                  items:
+                    - key: synapse.json
+                      path: applications/synapse.json
               - configMap:
                   name: grafana-dashboard-platform-overview
+                  items:
+                    - key: platform-overview.json
+                      path: observability/platform-overview.json
               - configMap:
                   name: grafana-dashboard-nodes
+                  items:
+                    - key: nodes.json
+                      path: observability/nodes.json
               - configMap:
                   name: grafana-dashboard-kubernetes-workloads
+                  items:
+                    - key: kubernetes-workloads.json
+                      path: observability/kubernetes-workloads.json
               - configMap:
                   name: grafana-dashboard-pod-drilldown
+                  items:
+                    - key: pod-drilldown.json
+                      path: observability/pod-drilldown.json
               - configMap:
                   name: grafana-dashboard-kubernetes-logs
+                  items:
+                    - key: kubernetes-logs.json
+                      path: observability/kubernetes-logs.json
               - configMap:
                   name: grafana-dashboard-traefik
+                  items:
+                    - key: traefik.json
+                      path: observability/traefik.json
               - configMap:
                   name: grafana-dashboard-observability-stack
+                  items:
+                    - key: observability-stack.json
+                      path: observability/observability-stack.json
 ---
 apiVersion: apps/v1
 kind: StatefulSet

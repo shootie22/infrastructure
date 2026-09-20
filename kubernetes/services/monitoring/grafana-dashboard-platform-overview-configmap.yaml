@@ -1063,15 +1063,11 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
+                    "color": "red",
                     "value": null
                   },
                   {
-                    "color": "orange",
-                    "value": 1
-                  },
-                  {
-                    "color": "red",
+                    "color": "green",
                     "value": 1
                   }
                 ]

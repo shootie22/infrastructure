@@ -34,6 +34,7 @@ def main() -> int:
     args = parser.parse_args()
     errors: list[str] = []
     configmaps: set[str] = set()
+    configmap_keys: dict[str, set[str]] = {}
     dashboards: dict[str, Path] = {}
     parsed: dict[Path, list[dict]] = {}
     promql_expressions: list[tuple[str, str]] = []
@@ -51,6 +52,7 @@ def main() -> int:
                 name = document.get("metadata", {}).get("name")
                 if name:
                     configmaps.add(name)
+                    configmap_keys[name] = set((document.get("data") or {}).keys())
                 encoded = len(path.read_bytes())
                 if encoded >= MAX_CONFIGMAP_BYTES:
                     errors.append(f"{path.name}: {encoded} bytes is too close to the Kubernetes object limit")
@@ -95,6 +97,8 @@ def main() -> int:
 
     workloads = parsed.get(ROOT / "workloads.yaml", [])
     projected: set[str] = set()
+    projected_paths: set[str] = set()
+    grafana_home_path: str | None = None
     for document in workloads:
         if document.get("kind") != "Deployment" or document.get("metadata", {}).get("name") != "grafana":
             continue
@@ -102,12 +106,34 @@ def main() -> int:
             if volume.get("name") != "dashboards":
                 continue
             for source in volume.get("projected", {}).get("sources", []):
-                name = source.get("configMap", {}).get("name")
+                configmap = source.get("configMap", {})
+                name = configmap.get("name")
                 if name:
                     projected.add(name)
+                    for item in configmap.get("items", []):
+                        key, item_path = item.get("key"), item.get("path")
+                        if key not in configmap_keys.get(name, set()):
+                            errors.append(f"Grafana projection {name} references missing key {key!r}")
+                        if not item_path:
+                            errors.append(f"Grafana projection {name}/{key} has no path")
+                        elif item_path in projected_paths:
+                            errors.append(f"Grafana dashboard path is duplicated: {item_path}")
+                        else:
+                            projected_paths.add(item_path)
+        for container in document["spec"]["template"]["spec"].get("containers", []):
+            if container.get("name") != "grafana":
+                continue
+            for env in container.get("env", []):
+                if env.get("name") == "GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH":
+                    grafana_home_path = env.get("value")
     missing = sorted(projected - configmaps)
     if missing:
         errors.append(f"Grafana projects missing ConfigMaps: {', '.join(missing)}")
+    dashboard_root = "/var/lib/grafana/dashboards/"
+    if not grafana_home_path or not grafana_home_path.startswith(dashboard_root):
+        errors.append("Grafana home dashboard path is missing or outside the dashboard volume")
+    elif grafana_home_path.removeprefix(dashboard_root) not in projected_paths:
+        errors.append(f"Grafana home dashboard is not projected: {grafana_home_path}")
 
     if args.promql_rules_output:
         substitutions = {

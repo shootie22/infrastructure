@@ -61,7 +61,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "",
+          "description": "1 means every selected pod is Ready or has completed successfully. Completed Jobs are not treated as unhealthy.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -118,14 +118,14 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "min(kube_pod_status_ready{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",condition=\"true\"})",
+              "expr": "min(max by(namespace,pod) (kube_pod_status_ready{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",condition=\"true\"} or kube_pod_status_phase{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",phase=\"Succeeded\"}))",
               "legendFormat": "",
               "range": false,
               "refId": "A",
               "instant": true
             }
           ],
-          "title": "Pod Ready",
+          "title": "Ready or Completed",
           "type": "stat"
         },
         {
@@ -672,7 +672,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "1 is Ready; 0 is not Ready.",
+          "description": "The active phase is 1. Succeeded Jobs remain visibly completed instead of appearing as failed containers.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -754,13 +754,13 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "kube_pod_container_status_ready{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}",
-              "legendFormat": "{{container}}",
+              "expr": "kube_pod_status_phase{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\"} == 1",
+              "legendFormat": "{{pod}} {{phase}}",
               "range": true,
               "refId": "A"
             }
           ],
-          "title": "Container Ready State",
+          "title": "Pod Phase",
           "type": "timeseries"
         },
         {
@@ -1109,9 +1109,9 @@ data:
           {
             "allValue": null,
             "current": {
-              "selected": false,
-              "text": "",
-              "value": ""
+              "selected": true,
+              "text": "monitoring",
+              "value": "monitoring"
             },
             "datasource": {
               "type": "prometheus",
@@ -1137,9 +1137,9 @@ data:
           {
             "allValue": null,
             "current": {
-              "selected": false,
-              "text": "",
-              "value": ""
+              "selected": true,
+              "text": "prometheus",
+              "value": "prometheus"
             },
             "datasource": {
               "type": "prometheus",

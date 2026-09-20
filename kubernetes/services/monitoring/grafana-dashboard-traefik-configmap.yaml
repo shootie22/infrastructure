@@ -127,7 +127,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "",
+          "description": "Server-error request ratio; zero is healthy.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -188,7 +188,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum(rate(traefik_entrypoint_requests_total{kubernetes_service=\"traefik-metrics\",entrypoint=~\"$entrypoint\",code=~\"5..\"}[5m])) / clamp_min(sum(rate(traefik_entrypoint_requests_total{kubernetes_service=\"traefik-metrics\",entrypoint=~\"$entrypoint\"}[5m])), 0.001)",
+              "expr": "(sum(rate(traefik_entrypoint_requests_total{kubernetes_service=\"traefik-metrics\",entrypoint=~\"$entrypoint\",code=~\"5..\"}[5m])) / clamp_min(sum(rate(traefik_entrypoint_requests_total{kubernetes_service=\"traefik-metrics\",entrypoint=~\"$entrypoint\"}[5m])), 0.001)) or vector(0)",
               "legendFormat": "",
               "range": false,
               "refId": "A",
@@ -670,7 +670,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "",
+          "description": "Server-error request rate by router; an unlabeled zero means no router emitted a 5xx in the selected interval.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -750,7 +750,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(router) (rate(traefik_router_requests_total{kubernetes_service=\"traefik-metrics\",router=~\"$router\",code=~\"5..\"}[$__rate_interval]))",
+              "expr": "sum by(router) (rate(traefik_router_requests_total{kubernetes_service=\"traefik-metrics\",router=~\"$router\",code=~\"5..\"}[$__rate_interval])) or vector(0)",
               "legendFormat": "{{router}}",
               "range": true,
               "refId": "A"
@@ -1205,8 +1205,12 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
+                    "color": "red",
                     "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
                   }
                 ]
               },

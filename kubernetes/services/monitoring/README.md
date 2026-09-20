@@ -25,9 +25,10 @@ Grafana provisions the following drill-down path in the `Observability` folder:
 7. **Observability Stack** — Prometheus, Loki, Alloy, Grafana, exporters,
    scrape/rule health, ingestion, and log-forwarding failures.
 
-The older Edge, Fleet Overview, Containers, Logs, Synapse, and LiveKit
-dashboards remain mounted during the transition. Synapse and LiveKit are kept
-as application deep dives until those metrics are connected to this Prometheus.
+The obsolete Edge, Fleet Overview, Services / Containers, and Logs dashboards
+are provisioned read-only in `Archive`. Synapse and LiveKit / Element Call are
+provisioned in `Applications` as active deep-dive references until their
+metrics are safely connected to this Prometheus.
 
 ## Dashboard generation
 
@@ -37,9 +38,11 @@ ConfigMap per dashboard to avoid large client-side apply annotations.
 
 ```bash
 nix-shell -p python3 --run \
-  'python3 kubernetes/services/monitoring/generate-dashboards.py'
-git diff --exit-code -- kubernetes/services/monitoring/grafana-dashboard-*-configmap.yaml
+  'python3 kubernetes/services/monitoring/generate-dashboards.py --check'
 ```
+
+Run the generator without `--check` after editing its source. Check mode
+renders the same models in memory and fails if any committed artifact differs.
 
 Grafana provisioning is read-only (`allowUiUpdates: false`); durable edits must
 be made in the generator and reconciled through Git.
@@ -85,5 +88,5 @@ Copy `grafana-secret.sops.yaml.example`, provide real values, encrypt the
 
 The legacy OVH/FRP targets are documented in
 `transitional-external-targets.md` and deliberately remain disabled. ThinkCentre
-is already represented natively by K3s; Hetzner, Synapse, and LiveKit require a
-new connectivity decision that does not depend on OVH.
+is already represented natively by K3s. The current Hetzner/OVH dependency
+audit and safe reconnection plan are in `external-observability-audit.md`.

@@ -7,7 +7,9 @@ it always writes beside itself. Generated ConfigMaps are committed for Argo CD.
 
 from __future__ import annotations
 
+import argparse
 import json
+import sys
 from pathlib import Path
 
 
@@ -290,7 +292,7 @@ def platform_overview() -> dict:
         row("User impact and recent evidence", 19),
         panel("Public Endpoint Reachability", "timeseries", 0, 20, 12, 7,
               [target('probe_success{job="blackbox-http"}', legend="{{instance}}")],
-              min_value=0, max_value=1, threshold=thresholds(1, 1), description="1 means DNS, connection, TLS and an accepted HTTP response succeeded from inside the cluster."),
+              min_value=0, max_value=1, threshold=thresholds(1, None, base="red", reverse=True), description="1 means DNS, connection, TLS and an accepted HTTP response succeeded from inside the cluster."),
         panel("HTTP Probe Duration", "timeseries", 12, 20, 12, 7,
               [target('probe_duration_seconds{job="blackbox-http"}', legend="{{instance}}")], unit="s"),
         panel("Recent Warning Kubernetes Events (empty is healthy)", "logs", 0, 27, 24, 8,
@@ -370,7 +372,7 @@ def pod_dashboard() -> dict:
     plink = "/d/obs-logs?var-namespace=$namespace&var-pod=$pod&var-container=$container&from=${__from}&to=${__to}"
     p = [
         row("Identity and current state", 0),
-        panel("Pod Ready", "stat", 0, 1, 4, 4, [target(f'min(kube_pod_status_ready{{job="kube-state-metrics",namespace=~"{ns}",pod=~"{podv}",condition="true"}})', instant=True)], min_value=0, max_value=1, threshold=thresholds(1, None, base="red", reverse=True)),
+        panel("Ready or Completed", "stat", 0, 1, 4, 4, [target(f'min(max by(namespace,pod) (kube_pod_status_ready{{job="kube-state-metrics",namespace=~"{ns}",pod=~"{podv}",condition="true"}} or kube_pod_status_phase{{job="kube-state-metrics",namespace=~"{ns}",pod=~"{podv}",phase="Succeeded"}}))', instant=True)], min_value=0, max_value=1, threshold=thresholds(1, None, base="red", reverse=True), description="1 means every selected pod is Ready or has completed successfully. Completed Jobs are not treated as unhealthy."),
         panel("Restarts in Range", "stat", 4, 1, 4, 4, [target(f'sum(increase(kube_pod_container_status_restarts_total{{job="kube-state-metrics",namespace=~"{ns}",pod=~"{podv}",container=~"{cont}"}}[$__range]))', instant=True)], threshold=thresholds(1, 3), decimals=1),
         panel("Pod Age", "stat", 8, 1, 4, 4, [target(f'min(time() - kube_pod_created{{job="kube-state-metrics",namespace=~"{ns}",pod=~"{podv}"}})', instant=True)], unit="s"),
         panel("Node Placement", "table", 12, 1, 6, 4, [target(f'max by(namespace,pod,node,host_ip,pod_ip) (kube_pod_info{{job="kube-state-metrics",namespace=~"{ns}",pod=~"{podv}"}})', instant=True, fmt="table")]),
@@ -378,7 +380,7 @@ def pod_dashboard() -> dict:
         row("Resources", 5),
         panel("CPU Usage / Requests / Limits", "timeseries", 0, 6, 12, 8, [target(f'sum by(container) (rate(container_cpu_usage_seconds_total{{job="kubelet-cadvisor",namespace=~"{ns}",pod=~"{podv}",container=~"{cont}",container!="",container!="POD"}}[$__rate_interval]))', "A", "{{container}} usage"), target(f'sum by(container) (kube_pod_container_resource_requests{{job="kube-state-metrics",namespace=~"{ns}",pod=~"{podv}",container=~"{cont}",resource="cpu"}})', "B", "{{container}} request"), target(f'sum by(container) (kube_pod_container_resource_limits{{job="kube-state-metrics",namespace=~"{ns}",pod=~"{podv}",container=~"{cont}",resource="cpu"}})', "C", "{{container}} limit")], unit="cores"),
         panel("Memory Working Set / Requests / Limits", "timeseries", 12, 6, 12, 8, [target(f'max by(container) (container_memory_working_set_bytes{{job="kubelet-cadvisor",namespace=~"{ns}",pod=~"{podv}",container=~"{cont}",container!="",container!="POD"}})', "A", "{{container}} working set"), target(f'sum by(container) (kube_pod_container_resource_requests{{job="kube-state-metrics",namespace=~"{ns}",pod=~"{podv}",container=~"{cont}",resource="memory"}})', "B", "{{container}} request"), target(f'sum by(container) (kube_pod_container_resource_limits{{job="kube-state-metrics",namespace=~"{ns}",pod=~"{podv}",container=~"{cont}",resource="memory"}})', "C", "{{container}} limit")], unit="bytes"),
-        panel("Container Ready State", "timeseries", 0, 14, 12, 7, [target(f'kube_pod_container_status_ready{{job="kube-state-metrics",namespace=~"{ns}",pod=~"{podv}",container=~"{cont}"}}', legend="{{container}}")], min_value=0, max_value=1, description="1 is Ready; 0 is not Ready."),
+        panel("Pod Phase", "timeseries", 0, 14, 12, 7, [target(f'kube_pod_status_phase{{job="kube-state-metrics",namespace=~"{ns}",pod=~"{podv}"}} == 1', legend="{{pod}} {{phase}}")], min_value=0, max_value=1, description="The active phase is 1. Succeeded Jobs remain visibly completed instead of appearing as failed containers."),
         panel("Pod Network RX / TX", "timeseries", 12, 14, 12, 7, [target(f'sum by(pod) (rate(container_network_receive_bytes_total{{job="kubelet-cadvisor",namespace=~"{ns}",pod=~"{podv}"}}[$__rate_interval]))', "A", "{{pod}} receive"), target(f'sum by(pod) (rate(container_network_transmit_bytes_total{{job="kubelet-cadvisor",namespace=~"{ns}",pod=~"{podv}"}}[$__rate_interval]))', "B", "{{pod}} transmit")], unit="Bps"),
         row("Restarts and evidence", 21),
         panel("Container Restart Counter", "timeseries", 0, 22, 12, 7, [target(f'kube_pod_container_status_restarts_total{{job="kube-state-metrics",namespace=~"{ns}",pod=~"{podv}",container=~"{cont}"}}', legend="{{container}}")], min_value=0),
@@ -386,8 +388,8 @@ def pod_dashboard() -> dict:
         panel("Recent Pod Logs", "logs", 0, 29, 24, 10, [log_target(f'{{namespace="{ns}",pod=~"{podv}",container=~"{cont}"}} |~ "$search"')], datasource=LOKI, links=[{"title": "Open Logs dashboard", "url": plink, "targetBlank": False}], description="Raw workload logs with the same namespace, pod, container and time range."),
     ]
     variables = [
-        prom_var("namespace", 'label_values(kube_namespace_status_phase{job="kube-state-metrics"}, namespace)'),
-        prom_var("workload", 'label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace="$namespace"}, workload)'),
+        prom_var("namespace", 'label_values(kube_namespace_status_phase{job="kube-state-metrics"}, namespace)', current="monitoring"),
+        prom_var("workload", 'label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace="$namespace"}, workload)', current="prometheus"),
         prom_var("pod", 'label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace="$namespace",workload="$workload"}, pod)', multi=True, include_all=True),
         prom_var("container", 'label_values(kube_pod_container_info{job="kube-state-metrics",namespace="$namespace",pod=~"$pod"}, container)', multi=True, include_all=True),
         text_var("search", ".*", "Log regex"),
@@ -425,20 +427,20 @@ def traefik_dashboard() -> dict:
     p = [
         row("Request health", 0),
         panel("Request Rate", "stat", 0, 1, 6, 4, [target(f'sum(rate(traefik_entrypoint_requests_total{{{ep}}}[5m]))', instant=True)], unit="reqps"),
-        panel("HTTP 5xx Ratio", "stat", 6, 1, 6, 4, [target(f'sum(rate(traefik_entrypoint_requests_total{{{ep},code=~"5.."}}[5m])) / clamp_min(sum(rate(traefik_entrypoint_requests_total{{{ep}}}[5m])), 0.001)', instant=True)], unit="percentunit", min_value=0, max_value=1, threshold=thresholds(0.01, 0.05)),
+        panel("HTTP 5xx Ratio", "stat", 6, 1, 6, 4, [target(f'(sum(rate(traefik_entrypoint_requests_total{{{ep},code=~"5.."}}[5m])) / clamp_min(sum(rate(traefik_entrypoint_requests_total{{{ep}}}[5m])), 0.001)) or vector(0)', instant=True)], unit="percentunit", min_value=0, max_value=1, threshold=thresholds(0.01, 0.05), description="Server-error request ratio; zero is healthy."),
         panel("HTTP 4xx Ratio", "stat", 12, 1, 6, 4, [target(f'sum(rate(traefik_entrypoint_requests_total{{{ep},code=~"4.."}}[5m])) / clamp_min(sum(rate(traefik_entrypoint_requests_total{{{ep}}}[5m])), 0.001)', instant=True)], unit="percentunit", min_value=0, max_value=1, threshold=thresholds(0.1, 0.25), description="Client errors can be expected; investigate changes rather than treating every 4xx as an incident."),
         panel("Services Returning 5xx", "stat", 18, 1, 6, 4, [target('count(sum by(service) (rate(traefik_service_requests_total{kubernetes_service="traefik-metrics",code=~"5.."}[5m])) > 0) or vector(0)', instant=True)], threshold=thresholds(1, 2), description="Number of Traefik services currently returning server errors; zero is healthy."),
         panel("Requests by Status Class", "timeseries", 0, 5, 12, 7, [target(f'sum by(code) (rate(traefik_entrypoint_requests_total{{{ep}}}[$__rate_interval]))', legend="HTTP {{code}}")], unit="reqps"),
         panel("Request Latency", "timeseries", 12, 5, 12, 7, [target(f'histogram_quantile(0.50, sum by(le,entrypoint) (rate(traefik_entrypoint_request_duration_seconds_bucket{{{ep}}}[$__rate_interval])))', "A", "{{entrypoint}} p50"), target(f'histogram_quantile(0.95, sum by(le,entrypoint) (rate(traefik_entrypoint_request_duration_seconds_bucket{{{ep}}}[$__rate_interval])))', "B", "{{entrypoint}} p95"), target(f'histogram_quantile(0.99, sum by(le,entrypoint) (rate(traefik_entrypoint_request_duration_seconds_bucket{{{ep}}}[$__rate_interval])))', "C", "{{entrypoint}} p99")], unit="s"),
         row("Routing and backends", 12),
         panel("Request Rate by Router", "timeseries", 0, 13, 12, 7, [target(f'sum by(router) (rate(traefik_router_requests_total{{{router}}}[$__rate_interval]))', legend="{{router}}")], unit="reqps"),
-        panel("5xx Rate by Router", "timeseries", 12, 13, 12, 7, [target(f'sum by(router) (rate(traefik_router_requests_total{{{router},code=~"5.."}}[$__rate_interval]))', legend="{{router}}")], unit="reqps"),
+        panel("5xx Rate by Router", "timeseries", 12, 13, 12, 7, [target(f'sum by(router) (rate(traefik_router_requests_total{{{router},code=~"5.."}}[$__rate_interval])) or vector(0)', legend="{{router}}")], unit="reqps", description="Server-error request rate by router; an unlabeled zero means no router emitted a 5xx in the selected interval."),
         panel("Request Rate by Service", "timeseries", 0, 20, 12, 7, [target(f'sum by(service) (rate(traefik_service_requests_total{{{service}}}[$__rate_interval]))', legend="{{service}}")], unit="reqps"),
         panel("Service p95 Latency", "timeseries", 12, 20, 12, 7, [target(f'histogram_quantile(0.95, sum by(le,service) (rate(traefik_service_request_duration_seconds_bucket{{{service}}}[$__rate_interval])))', legend="{{service}}")], unit="s", description="End-to-end request latency grouped by the Traefik backend service."),
         panel("Traffic Bytes", "timeseries", 0, 27, 12, 7, [target(f'sum by(entrypoint) (rate(traefik_entrypoint_requests_bytes_total{{{ep}}}[$__rate_interval]))', "A", "{{entrypoint}} request"), target(f'sum by(entrypoint) (rate(traefik_entrypoint_responses_bytes_total{{{ep}}}[$__rate_interval]))', "B", "{{entrypoint}} response")], unit="Bps"),
         panel("Open Connections", "timeseries", 12, 27, 12, 7, [target(f'sum by(entrypoint,protocol) (traefik_open_connections{{{ep}}})', legend="{{entrypoint}} {{protocol}}")], unit="short"),
         row("Reachability from Fuji", 34),
-        panel("Public Probe Success", "timeseries", 0, 35, 12, 7, [target('probe_success{job="blackbox-http"}', legend="{{instance}}")], min_value=0, max_value=1),
+        panel("Public Probe Success", "timeseries", 0, 35, 12, 7, [target('probe_success{job="blackbox-http"}', legend="{{instance}}")], min_value=0, max_value=1, threshold=thresholds(1, None, base="red", reverse=True)),
         panel("DNS / Connect / TLS / Processing", "timeseries", 12, 35, 12, 7, [target('probe_http_duration_seconds{job="blackbox-http"}', legend="{{instance}} {{phase}}")], unit="s", description="Phase breakdown for the internal blackbox probe. It does not represent an external user's network path."),
     ]
     variables = [
@@ -483,10 +485,10 @@ def stack_dashboard() -> dict:
     return dashboard("Observability Stack", "obs-stack", p, [], tags=["monitoring"])
 
 
-def write_configmap(filename: str, name: str, key: str, body: dict) -> None:
+def render_configmap(name: str, key: str, body: dict) -> str:
     rendered = json.dumps(body, indent=2, sort_keys=False) + "\n"
     indented = "".join("    " + line if line.strip() else line for line in rendered.splitlines(keepends=True))
-    content = (
+    return (
         "apiVersion: v1\n"
         "kind: ConfigMap\n"
         "metadata:\n"
@@ -497,10 +499,12 @@ def write_configmap(filename: str, name: str, key: str, body: dict) -> None:
         "data:\n"
         f"  {key}: |\n{indented}"
     )
-    (ROOT / filename).write_text(content)
 
 
-def main() -> None:
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--check", action="store_true", help="fail if committed dashboard ConfigMaps are stale")
+    args = parser.parse_args()
     dashboards = [
         ("grafana-dashboard-platform-overview-configmap.yaml", "grafana-dashboard-platform-overview", "platform-overview.json", platform_overview()),
         ("grafana-dashboard-nodes-configmap.yaml", "grafana-dashboard-nodes", "nodes.json", nodes_dashboard()),
@@ -510,9 +514,23 @@ def main() -> None:
         ("grafana-dashboard-traefik-configmap.yaml", "grafana-dashboard-traefik", "traefik.json", traefik_dashboard()),
         ("grafana-dashboard-observability-stack-configmap.yaml", "grafana-dashboard-observability-stack", "observability-stack.json", stack_dashboard()),
     ]
+    stale: list[str] = []
     for filename, name, key, body in dashboards:
-        write_configmap(filename, name, key, body)
+        path = ROOT / filename
+        content = render_configmap(name, key, body)
+        if args.check:
+            if not path.exists() or path.read_text() != content:
+                stale.append(filename)
+        else:
+            path.write_text(content)
+    if stale:
+        print("Generated dashboard ConfigMaps are stale: " + ", ".join(stale), file=sys.stderr)
+        print("Run generate-dashboards.py and commit the results.", file=sys.stderr)
+        return 1
+    if args.check:
+        print("Generated dashboard ConfigMaps are current")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

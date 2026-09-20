@@ -47,4 +47,22 @@ data:
         allowUiUpdates: false
         updateIntervalSeconds: 30
         options:
-          path: /var/lib/grafana/dashboards
+          path: /var/lib/grafana/dashboards/observability
+      - name: Archive
+        orgId: 1
+        folder: Archive
+        type: file
+        disableDeletion: false
+        allowUiUpdates: false
+        updateIntervalSeconds: 30
+        options:
+          path: /var/lib/grafana/dashboards/archive
+      - name: Applications
+        orgId: 1
+        folder: Applications
+        type: file
+        disableDeletion: false
+        allowUiUpdates: false
+        updateIntervalSeconds: 30
+        options:
+          path: /var/lib/grafana/dashboards/applications
