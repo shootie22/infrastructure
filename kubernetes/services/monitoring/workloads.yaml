@@ -48,8 +48,6 @@ spec:
               value: "true"
             - name: GF_METRICS_ENABLED
               value: "true"
-            - name: GF_PLUGINS_PREINSTALL_SYNC
-              value: grafana-lokiexplore-app@1.0.41,grafana-metricsdrilldown-app@1.0.34
           envFrom:
             - secretRef:
                 name: grafana-auth
