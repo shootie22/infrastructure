@@ -17,6 +17,25 @@ data:
         static_configs:
           - targets: [prometheus.monitoring.svc:9090]
 
+      - job_name: kubernetes-apiserver
+        scheme: https
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names: [default]
+        authorization:
+          type: Bearer
+          credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: kubernetes
+          - source_labels: [__meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: https
+
       - job_name: kubernetes-services
         kubernetes_sd_configs:
           - role: endpoints
@@ -35,7 +54,7 @@ data:
           - source_labels: [__meta_kubernetes_namespace]
             target_label: namespace
           - source_labels: [__meta_kubernetes_service_name]
-            target_label: service
+            target_label: kubernetes_service
 
       - job_name: kubernetes-pods
         kubernetes_sd_configs:
@@ -124,24 +143,231 @@ data:
       - job_name: grafana
         static_configs:
           - targets: [grafana.monitoring.svc:3000]
-  ingress.rules: |
+
+      - job_name: blackbox-http
+        metrics_path: /probe
+        scrape_interval: 30s
+        scrape_timeout: 15s
+        params:
+          module: [http_reachable]
+        static_configs:
+          - targets:
+              - https://mon.radunenu.com
+              - https://hs.radunenu.com
+              - https://call.nuke.zip
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - target_label: __address__
+            replacement: blackbox-exporter.monitoring.svc:9115
+  platform.rules: |
     groups:
-      - name: ingress
+      - name: kubernetes-container-resources
+        interval: 30s
         rules:
-          - record: apache_ingress:requests:rate5m
-            expr: sum by (host, vhost) (rate(apache_ingress_requests_total{job="apache-ingress"}[5m]))
-          - record: apache_ingress:requests_4xx:rate5m
-            expr: sum by (host, vhost) (rate(apache_ingress_requests_total{job="apache-ingress",status=~"4.."}[5m]))
-          - record: apache_ingress:requests_5xx:rate5m
-            expr: sum by (host, vhost) (rate(apache_ingress_requests_total{job="apache-ingress",status=~"5.."}[5m]))
-          - record: apache_ingress:response_bytes:rate5m
-            expr: sum by (host, vhost) (rate(apache_ingress_response_bytes_total{job="apache-ingress"}[5m]))
-          - record: apache_ingress:request_duration_seconds:p50_5m
-            expr: histogram_quantile(0.50, sum by (host, vhost, le) (rate(apache_ingress_request_duration_seconds_bucket{job="apache-ingress"}[5m])))
-          - record: apache_ingress:request_duration_seconds:p95_5m
-            expr: histogram_quantile(0.95, sum by (host, vhost, le) (rate(apache_ingress_request_duration_seconds_bucket{job="apache-ingress"}[5m])))
-          - record: apache_ingress:request_duration_seconds:p99_5m
-            expr: histogram_quantile(0.99, sum by (host, vhost, le) (rate(apache_ingress_request_duration_seconds_bucket{job="apache-ingress"}[5m])))
+          - record: node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m
+            expr: |
+              sum by (node, namespace, pod, container) (
+                rate(container_cpu_usage_seconds_total{job="kubelet-cadvisor", namespace!="", pod!="", container!="", container!="POD"}[5m])
+              )
+          - record: node_namespace_pod_container:container_memory_working_set_bytes:max
+            expr: |
+              max by (node, namespace, pod, container) (
+                container_memory_working_set_bytes{job="kubelet-cadvisor", namespace!="", pod!="", container!="", container!="POD"}
+              )
+
+      - name: kubernetes-workload-owners
+        interval: 30s
+        rules:
+          - record: namespace_workload_pod:kube_pod_owner:relabel
+            labels:
+              workload_type: deployment
+            expr: |
+              max by (namespace, workload, pod) (
+                label_replace(
+                  label_replace(
+                    kube_pod_owner{job="kube-state-metrics", owner_kind="ReplicaSet"},
+                    "replicaset", "$1", "owner_name", "(.*)"
+                  )
+                  * on (namespace, replicaset) group_left(owner_name)
+                    topk by (namespace, replicaset) (
+                      1,
+                      max by (namespace, replicaset, owner_name) (
+                        kube_replicaset_owner{job="kube-state-metrics", owner_kind="Deployment"}
+                      )
+                    ),
+                  "workload", "$1", "owner_name", "(.*)"
+                )
+              )
+          - record: namespace_workload_pod:kube_pod_owner:relabel
+            labels:
+              workload_type: replicaset
+            expr: |
+              max by (namespace, workload, pod) (
+                label_replace(
+                  label_replace(
+                    kube_pod_owner{job="kube-state-metrics", owner_kind="ReplicaSet"},
+                    "replicaset", "$1", "owner_name", "(.*)"
+                  )
+                  * on (namespace, replicaset) group_left(owner_name)
+                    topk by (namespace, replicaset) (
+                      1,
+                      max by (namespace, replicaset, owner_name) (
+                        kube_replicaset_owner{job="kube-state-metrics", owner_kind=""}
+                      )
+                    ),
+                  "workload", "$1", "replicaset", "(.*)"
+                )
+              )
+          - record: namespace_workload_pod:kube_pod_owner:relabel
+            labels:
+              workload_type: daemonset
+            expr: |
+              max by (namespace, workload, pod) (
+                label_replace(
+                  kube_pod_owner{job="kube-state-metrics", owner_kind="DaemonSet"},
+                  "workload", "$1", "owner_name", "(.*)"
+                )
+              )
+          - record: namespace_workload_pod:kube_pod_owner:relabel
+            labels:
+              workload_type: statefulset
+            expr: |
+              max by (namespace, workload, pod) (
+                label_replace(
+                  kube_pod_owner{job="kube-state-metrics", owner_kind="StatefulSet"},
+                  "workload", "$1", "owner_name", "(.*)"
+                )
+              )
+          - record: namespace_workload_pod:kube_pod_owner:relabel
+            labels:
+              workload_type: job
+            expr: |
+              max by (namespace, workload, pod) (
+                label_replace(
+                  kube_pod_owner{job="kube-state-metrics", owner_kind="Job"},
+                  "workload", "$1", "owner_name", "(.*)"
+                )
+              )
+          - record: namespace_workload_pod:kube_pod_owner:relabel
+            labels:
+              workload_type: staticpod
+            expr: |
+              max by (namespace, workload, pod) (
+                label_replace(
+                  kube_pod_owner{job="kube-state-metrics", owner_kind="Node"},
+                  "workload", "$1", "pod", "(.+)"
+                )
+              )
+          - record: namespace_workload_pod:kube_pod_owner:relabel
+            labels:
+              workload_type: barepod
+            expr: |
+              max by (namespace, workload, pod) (
+                label_replace(
+                  kube_pod_owner{job="kube-state-metrics", owner_kind="", owner_name=""},
+                  "workload", "$1", "pod", "(.+)"
+                )
+              )
+
+      - name: kubernetes-workload-resources
+        interval: 30s
+        rules:
+          - record: namespace_workload:container_cpu_usage_seconds_total:sum_rate5m
+            expr: |
+              sum by (namespace, workload, workload_type) (
+                node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m
+                * on (namespace, pod) group_left(workload, workload_type)
+                  namespace_workload_pod:kube_pod_owner:relabel
+              )
+          - record: namespace_workload:container_memory_working_set_bytes:sum
+            expr: |
+              sum by (namespace, workload, workload_type) (
+                node_namespace_pod_container:container_memory_working_set_bytes:max
+                * on (namespace, pod) group_left(workload, workload_type)
+                  namespace_workload_pod:kube_pod_owner:relabel
+              )
+
+      - name: homelab-actionable-alerts
+        rules:
+          - alert: KubernetesNodeUnavailable
+            expr: kube_node_status_condition{job="kube-state-metrics", condition="Ready", status="true"} == 0
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: Kubernetes node {{ $labels.node }} is unavailable
+              description: The node has not reported Ready for at least five minutes.
+          - alert: PrometheusTargetDown
+            expr: up{job=~"prometheus|grafana|kubernetes-apiserver|kube-state-metrics|node-exporter|kubelet|kubelet-cadvisor|kubernetes-services"} == 0
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: Prometheus target {{ $labels.job }}/{{ $labels.instance }} is down
+              description: A core scrape target has failed continuously for ten minutes.
+          - alert: KubernetesDeploymentReplicasUnavailable
+            expr: kube_deployment_spec_replicas{job="kube-state-metrics"} > kube_deployment_status_replicas_available{job="kube-state-metrics"}
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has unavailable replicas
+              description: Available replicas have remained below desired replicas for fifteen minutes.
+          - alert: KubernetesStatefulSetReplicasUnavailable
+            expr: kube_statefulset_replicas{job="kube-state-metrics"} > kube_statefulset_status_replicas_ready{job="kube-state-metrics"}
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} has unavailable replicas
+              description: Ready replicas have remained below desired replicas for fifteen minutes.
+          - alert: KubernetesDaemonSetPodsUnavailable
+            expr: kube_daemonset_status_number_unavailable{job="kube-state-metrics"} > 0
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} has unavailable pods
+              description: One or more desired DaemonSet pods have been unavailable for fifteen minutes.
+          - alert: KubernetesPodCrashLooping
+            expr: max_over_time(kube_pod_container_status_waiting_reason{job="kube-state-metrics", reason="CrashLoopBackOff"}[5m]) >= 1
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: Container {{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }} is crash looping
+              description: The container has remained in CrashLoopBackOff for fifteen minutes.
+          - alert: KubernetesPodUnschedulable
+            expr: max_over_time(kube_pod_status_unschedulable{job="kube-state-metrics"}[10m]) == 1
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} cannot be scheduled
+              description: Kubernetes has been unable to schedule this pod for fifteen minutes.
+          - alert: NodeRootFilesystemCriticallyLow
+            expr: |
+              node_filesystem_avail_bytes{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs"}
+              / node_filesystem_size_bytes{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs"} < 0.08
+              and on (node, device, mountpoint)
+              node_filesystem_readonly{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs"} == 0
+            for: 15m
+            labels:
+              severity: critical
+            annotations:
+              summary: Root filesystem on {{ $labels.node }} is critically low
+              description: Less than 8% of the root filesystem has been available for fifteen minutes.
+          - alert: PublicEndpointProbeFailed
+            expr: probe_success{job="blackbox-http"} == 0
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: Public endpoint {{ $labels.instance }} is unreachable from Fuji
+              description: The in-cluster HTTP/TLS probe has failed for five minutes.
   synapse-v2.rules: |
     groups:
       - name: synapse

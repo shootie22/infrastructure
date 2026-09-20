@@ -13,3 +13,14 @@ spec:
         enabled: true
         entryPoints:
           - traefik
+
+    metrics:
+      prometheus:
+        addEntryPointsLabels: true
+        addRoutersLabels: true
+        addServicesLabels: true
+        service:
+          enabled: true
+          annotations:
+            monitoring.radunenu.com/scrape: "true"
+            monitoring.radunenu.com/path: /metrics

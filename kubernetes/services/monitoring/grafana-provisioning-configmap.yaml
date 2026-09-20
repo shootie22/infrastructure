@@ -39,12 +39,12 @@ data:
   default.yml: |
     apiVersion: 1
     providers:
-      - name: Fleet Overview
+      - name: Observability
         orgId: 1
         folder: Observability
         type: file
         disableDeletion: false
-        allowUiUpdates: true
+        allowUiUpdates: false
         updateIntervalSeconds: 30
         options:
           path: /var/lib/grafana/dashboards

@@ -12,6 +12,8 @@ rules:
   - apiGroups: [""]
     resources: [nodes, nodes/metrics, nodes/proxy, services, endpoints, pods]
     verbs: [get, list, watch]
+  - nonResourceURLs: [/metrics]
+    verbs: [get]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -84,7 +86,7 @@ metadata:
   name: monitoring-alloy
 rules:
   - apiGroups: [""]
-    resources: [nodes, namespaces, pods, pods/log]
+    resources: [events, nodes, namespaces, pods, pods/log]
     verbs: [get, list, watch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1

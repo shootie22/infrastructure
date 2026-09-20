@@ -35,6 +35,9 @@ metadata:
   namespace: monitoring
   labels:
     app.kubernetes.io/name: loki
+  annotations:
+    monitoring.radunenu.com/scrape: "true"
+    monitoring.radunenu.com/path: /metrics
 spec:
   selector:
     app.kubernetes.io/name: loki
@@ -71,4 +74,59 @@ spec:
   ports:
     - name: http
       port: 8080
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alloy
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: alloy
+  annotations:
+    monitoring.radunenu.com/scrape: "true"
+    monitoring.radunenu.com/path: /metrics
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: alloy
+  ports:
+    - name: http
+      port: 12345
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alloy-events
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: alloy-events
+  annotations:
+    monitoring.radunenu.com/scrape: "true"
+    monitoring.radunenu.com/path: /metrics
+spec:
+  selector:
+    app.kubernetes.io/name: alloy-events
+  ports:
+    - name: http
+      port: 12345
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blackbox-exporter
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: blackbox-exporter
+  annotations:
+    monitoring.radunenu.com/scrape: "true"
+    monitoring.radunenu.com/path: /metrics
+spec:
+  selector:
+    app.kubernetes.io/name: blackbox-exporter
+  ports:
+    - name: http
+      port: 9115
       targetPort: http
