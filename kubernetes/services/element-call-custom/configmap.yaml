@@ -6,7 +6,7 @@ metadata:
 data:
   config.json: |
     {
-      "matrix_rtc_mode": "matrix_2_0",
+      "matrix_rtc_mode": "compatibility",
       "livekit": {
         "livekit_service_url": "https://a.nuke.zip/livekit/jwt"
       },
