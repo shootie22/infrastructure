@@ -13,6 +13,9 @@ spec:
         - analytics.radunenu.com
       secretName: analytics-radunenu-com-tls
     - hosts:
+        - api.radunenu.com
+      secretName: api-radunenu-com-tls
+    - hosts:
         - books.yeetus.net
       secretName: books-yeetus-net-tls
     - hosts:
@@ -28,6 +31,9 @@ spec:
         - pbin.radunenu.com
       secretName: pbin-radunenu-com-tls
     - hosts:
+        - pinga.radunenu.com
+      secretName: pinga-radunenu-com-tls
+    - hosts:
         - puml.radunenu.com
       secretName: puml-radunenu-com-tls
     - hosts:
@@ -39,6 +45,17 @@ spec:
 
   rules:
     - host: analytics.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: thinkcentre-http-gateway
+                port:
+                  number: 80
+
+    - host: api.radunenu.com
       http:
         paths:
           - path: /
@@ -83,6 +100,17 @@ spec:
                   number: 80
 
     - host: n.yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: thinkcentre-http-gateway
+                port:
+                  number: 80
+
+    - host: pinga.radunenu.com
       http:
         paths:
           - path: /
