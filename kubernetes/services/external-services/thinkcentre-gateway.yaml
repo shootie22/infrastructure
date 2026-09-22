@@ -31,8 +31,6 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/hostname: fuji
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: caddy
           image: caddy:2.10.0-alpine
