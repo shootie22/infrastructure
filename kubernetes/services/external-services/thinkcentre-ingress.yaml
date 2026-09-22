@@ -1,0 +1,138 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: thinkcentre-web
+  namespace: external-services
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+
+  tls:
+    - hosts:
+        - analytics.radunenu.com
+      secretName: analytics-radunenu-com-tls
+    - hosts:
+        - books.yeetus.net
+      secretName: books-yeetus-net-tls
+    - hosts:
+        - git.radunenu.com
+      secretName: git-radunenu-com-tls
+    - hosts:
+        - img.radunenu.com
+      secretName: img-radunenu-com-tls
+    - hosts:
+        - n.yeetus.net
+      secretName: n-yeetus-net-tls
+    - hosts:
+        - pbin.radunenu.com
+      secretName: pbin-radunenu-com-tls
+    - hosts:
+        - puml.radunenu.com
+      secretName: puml-radunenu-com-tls
+    - hosts:
+        - share.radunenu.com
+      secretName: share-radunenu-com-tls
+    - hosts:
+        - vw.yeetus.net
+      secretName: vw-yeetus-net-tls
+
+  rules:
+    - host: analytics.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: thinkcentre-http-gateway
+                port:
+                  number: 80
+
+    - host: books.yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: thinkcentre-http-gateway
+                port:
+                  number: 80
+
+    - host: git.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: thinkcentre-http-gateway
+                port:
+                  number: 80
+
+    - host: img.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: thinkcentre-http-gateway
+                port:
+                  number: 80
+
+    - host: n.yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: thinkcentre-http-gateway
+                port:
+                  number: 80
+
+    - host: pbin.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: thinkcentre-http-gateway
+                port:
+                  number: 80
+
+    - host: puml.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: thinkcentre-http-gateway
+                port:
+                  number: 80
+
+    - host: share.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: thinkcentre-http-gateway
+                port:
+                  number: 80
+
+    - host: vw.yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: thinkcentre-http-gateway
+                port:
+                  number: 80

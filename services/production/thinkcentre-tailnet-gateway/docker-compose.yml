@@ -1,0 +1,62 @@
+services:
+  gateway:
+    image: caddy:2.10.0-alpine
+    container_name: thinkcentre-tailnet-gateway
+    restart: unless-stopped
+
+    ports:
+      - "100.64.0.4:18080:8080/tcp"
+
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+
+    networks:
+      - rybbit
+      - audiobookshelf
+      - gitea
+      - picshare
+      - tunnel
+      - privatebin
+      - plantuml
+      - hemmelig
+
+    read_only: true
+    tmpfs:
+      - /data
+      - /config
+
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  rybbit:
+    external: true
+    name: rybbit_rybbit_internal
+
+  audiobookshelf:
+    external: true
+    name: audiobookshelf_audiobookshelf_internal-net
+
+  gitea:
+    external: true
+    name: gitea_gitea_internal-net
+
+  picshare:
+    external: true
+    name: picshare_internal
+
+  tunnel:
+    external: true
+    name: tunnel_net
+
+  privatebin:
+    external: true
+    name: privatebin_internal
+
+  plantuml:
+    external: true
+    name: plantuml_internal
+
+  hemmelig:
+    external: true
+    name: hemmelig_tunnel-net_hemmelig

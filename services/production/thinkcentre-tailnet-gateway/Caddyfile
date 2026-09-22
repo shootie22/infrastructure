@@ -1,0 +1,60 @@
+{
+    auto_https off
+    admin off
+}
+
+:8080 {
+    @health path /__gateway_health
+    handle @health {
+        respond "ok" 200
+    }
+
+    @analytics host analytics.radunenu.com
+    handle @analytics {
+        reverse_proxy rybbit-caddy:8080
+    }
+
+    @books host books.yeetus.net
+    handle @books {
+        reverse_proxy audiobookshelf:80
+    }
+
+    @git host git.radunenu.com
+    handle @git {
+        reverse_proxy gitea-server:3000
+    }
+
+    @img host img.radunenu.com
+    handle @img {
+        reverse_proxy picshare:3214
+    }
+
+    @joplin host n.yeetus.net
+    handle @joplin {
+        reverse_proxy joplin-server:22300
+    }
+
+    @privatebin host pbin.radunenu.com
+    handle @privatebin {
+        reverse_proxy privatebin:8080
+    }
+
+    @plantuml host puml.radunenu.com
+    handle @plantuml {
+        reverse_proxy plantuml:8080
+    }
+
+    @hemmelig host share.radunenu.com
+    handle @hemmelig {
+        reverse_proxy hemmelig:3000
+    }
+
+    @vaultwarden host vw.yeetus.net
+    handle @vaultwarden {
+        reverse_proxy vaultwarden:80
+    }
+
+    handle {
+        respond "unknown host" 404
+    }
+}
