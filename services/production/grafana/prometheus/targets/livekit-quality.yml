@@ -1,8 +1,0 @@
-- targets:
-    - livekit-quality-frps:5998
-  labels:
-    host: livekit
-    site: external
-    role: rtc
-    os: linux
-    service: livekit-quality
