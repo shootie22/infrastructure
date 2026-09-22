@@ -10,21 +10,19 @@ spec:
       protocol: TCP
       targetPort: 18080
 ---
-apiVersion: discovery.k8s.io/v1
-kind: EndpointSlice
+# Transitional external backend while these workloads remain on ThinkCentre.
+# Endpoints is deprecated upstream in favor of EndpointSlice, but Argo in this
+# cluster is not applying our manually-managed EndpointSlice. Keep this explicit
+# and small; replace it when the workloads move or the Argo exclusion is removed.
+apiVersion: v1
+kind: Endpoints
 metadata:
   name: thinkcentre-http-gateway
   namespace: external-services
-  labels:
-    kubernetes.io/service-name: thinkcentre-http-gateway
-    endpointslice.kubernetes.io/managed-by: infrastructure-gitops
-addressType: IPv4
-ports:
-  - name: http
-    protocol: TCP
-    port: 18080
-endpoints:
+subsets:
   - addresses:
-      - 100.64.0.4
-    conditions:
-      ready: true
+      - ip: 100.64.0.4
+    ports:
+      - name: http
+        port: 18080
+        protocol: TCP
