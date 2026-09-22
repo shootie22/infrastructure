@@ -86,7 +86,3 @@ Copy `grafana-secret.sops.yaml.example`, provide real values, encrypt the
 `secretTemplates` field with the repository's Age recipient, and save it as
 `grafana-secret.sops.yaml`. The example file is not applied by Argo.
 
-The legacy OVH/FRP targets are documented in
-`transitional-external-targets.md` and deliberately remain disabled. ThinkCentre
-is already represented natively by K3s. The current Hetzner/OVH dependency
-audit and safe reconnection plan are in `external-observability-audit.md`.
