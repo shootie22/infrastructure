@@ -44,6 +44,7 @@ services:
     volumes:
       - ./promtail.yml:/etc/promtail/promtail.yml:ro
       - /var/log:/var/log:ro
+      - /etc/machine-id:/etc/machine-id:ro
       - promtail_positions:/var/lib/promtail
 
 volumes:
