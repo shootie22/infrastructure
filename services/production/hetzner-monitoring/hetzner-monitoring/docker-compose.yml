@@ -43,28 +43,6 @@ services:
       - node-exporter
       - cadvisor
 
-  frpc:
-    image: ghcr.io/fatedier/frpc:v0.65.0
-    command:
-      - -c
-      - /etc/frp/frpc.toml
-    container_name: frpc-hetzner-monitoring
-    restart: unless-stopped
-    network_mode: host
-    depends_on:
-      - node-exporter
-      - cadvisor
-      - nginx-exporter
-    volumes:
-      - ../../../utils/frp/frpc/frpc-tcp.toml:/etc/frp/frpc.toml:ro
-    env_file:
-      - runtime.env
-    read_only: true
-    tmpfs:
-      - /tmp
-    security_opt:
-      - no-new-privileges:true
-
   promtail:
     image: grafana/promtail:3.4.2
     container_name: promtail-hetzner
