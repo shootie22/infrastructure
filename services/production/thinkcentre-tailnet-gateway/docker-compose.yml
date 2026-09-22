@@ -19,7 +19,6 @@ services:
       - privatebin
       - plantuml
       - hemmelig
-      - pinga
 
     read_only: true
     tmpfs:
@@ -62,6 +61,3 @@ networks:
     external: true
     name: hemmelig_tunnel-net_hemmelig
 
-  pinga:
-    external: true
-    name: pinga_net
