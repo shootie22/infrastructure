@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: radunenu-com
+  namespace: radunenu-com
+spec:
+  selector:
+    app: radunenu-com
+  ports:
+    - name: http
+      port: 80
+      targetPort: 1310
+      protocol: TCP

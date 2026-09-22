@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radunenu-com
+  namespace: radunenu-com
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: radunenu-com
+  template:
+    metadata:
+      labels:
+        app: radunenu-com
+    spec:
+      containers:
+        - name: website
+          image: git.radunenu.com/radu/radunenu.com-minimal:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 1310
+              protocol: TCP
+          volumeMounts:
+            - name: live
+              mountPath: /srv/live
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 1310
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 1310
+            initialDelaySeconds: 10
+            periodSeconds: 30
+
+        - name: stats-updater
+          image: git.radunenu.com/radu/radunenu.com-minimal-stats-updater:latest
+          imagePullPolicy: Always
+          env:
+            - name: STATUS_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: radunenu-com-stats
+                  key: STATUS_API_TOKEN
+            - name: STATUS_API_BASE
+              value: https://api.radunenu.com
+            - name: STATUS_REFRESH_INTERVAL
+              value: 300s
+            - name: STATUS_REQUEST_TIMEOUT
+              value: 10s
+            - name: OUTPUT_PATH
+              value: /data/status-live.json
+            - name: FALLBACK_SNAPSHOT_PATH
+              value: /app/status-snapshot.json
+            - name: LEADERBOARDS_OUTPUT_PATH
+              value: /data/leaderboards-live.json
+            - name: STATUS_CHART_CURVE
+              value: smooth
+          volumeMounts:
+            - name: live
+              mountPath: /data
+
+      volumes:
+        - name: live
+          emptyDir: {}

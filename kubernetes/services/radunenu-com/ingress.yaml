@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: radunenu-com
+  namespace: radunenu-com
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - radunenu.com
+      secretName: radunenu-com-tls
+  rules:
+    - host: radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: radunenu-com
+                port:
+                  number: 80
