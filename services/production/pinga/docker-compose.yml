@@ -10,9 +10,9 @@ services:
       - NET_RAW
     restart: unless-stopped
     networks:
-      - pinga_net
+      - tunnel
 
 networks:
-  pinga_net:
-    name: pinga_net
-    driver: bridge
+  tunnel:
+    external: true
+    name: tunnel_net
