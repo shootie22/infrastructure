@@ -45,26 +45,6 @@ services:
       - internal
       - external
 
-  frpc:
-    image: ghcr.io/fatedier/frpc:v0.65.0
-    command:
-      - -c
-      - /etc/frp/frpc.toml
-    container_name: frpc-minecraft-hc-aug2026-nl
-    restart: unless-stopped
-    env_file:
-      - runtime.env
-    volumes:
-      - ../../../utils/frp/frpc/frpc-tcp.toml:/etc/frp/frpc.toml:ro
-    depends_on:
-      - minecraft-hc-aug2026-nl
-    networks:
-      - internal
-      - external
-    read_only: true
-    security_opt:
-      - no-new-privileges:true
-
   # server-latest's internal process UID is unknown to us (external image),
   # so files it creates (e.g. plugins/, world/) may not be writable by the
   # sftp user. Rather than guess a matching UID, this loops forever,
@@ -111,31 +91,6 @@ services:
     networks:
       - internal
       - external
-    security_opt:
-      - no-new-privileges:true
-
-  frpc-sftp:
-    image: ghcr.io/fatedier/frpc:v0.65.0
-    command:
-      - -c
-      - /etc/frp/frpc.toml
-    container_name: frpc-sftp-minecraft-hc-aug2026-nl
-    restart: unless-stopped
-    env_file:
-      - runtime.env
-    environment:
-      FRP_PROXY_NAME: ${FRP_SFTP_PROXY_NAME}
-      FRP_LOCAL_IP: ${FRP_SFTP_LOCAL_IP}
-      FRP_LOCAL_PORT: ${FRP_SFTP_LOCAL_PORT}
-      FRP_REMOTE_PORT: ${FRP_SFTP_REMOTE_PORT}
-    volumes:
-      - ../../../utils/frp/frpc/frpc-tcp.toml:/etc/frp/frpc.toml:ro
-    depends_on:
-      - sftp
-    networks:
-      - internal
-      - external
-    read_only: true
     security_opt:
       - no-new-privileges:true
 
