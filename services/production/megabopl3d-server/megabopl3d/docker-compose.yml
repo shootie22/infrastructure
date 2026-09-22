@@ -6,19 +6,3 @@ services:
     restart: unless-stopped
     ports:
       - "100.64.0.4:24545:24545/udp"
-
-  frpc:
-    image: ghcr.io/fatedier/frpc:v0.65.0
-    command:
-      - -c
-      - /etc/frp/frpc.toml
-    restart: unless-stopped
-    depends_on:
-      - megabopl3d-server
-    volumes:
-      - ../../../utils/frp/frpc/frpc-udp.toml:/etc/frp/frpc.toml:ro
-    env_file:
-      - runtime.env
-    read_only: true
-    security_opt:
-      - no-new-privileges:true
