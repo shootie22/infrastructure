@@ -110,6 +110,7 @@ services:
         condition: service_started
     networks:
       - internal
+      - external
     security_opt:
       - no-new-privileges:true
 
