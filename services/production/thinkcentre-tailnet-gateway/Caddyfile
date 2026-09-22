@@ -14,6 +14,11 @@
         reverse_proxy rybbit-caddy:8080
     }
 
+    @api host api.radunenu.com
+    handle @api {
+        reverse_proxy pinga:8080
+    }
+
     @books host books.yeetus.net
     handle @books {
         reverse_proxy audiobookshelf:80
@@ -32,6 +37,11 @@
     @joplin host n.yeetus.net
     handle @joplin {
         reverse_proxy joplin-server:22300
+    }
+
+    @pinga host pinga.radunenu.com
+    handle @pinga {
+        reverse_proxy pinga:8080
     }
 
     @privatebin host pbin.radunenu.com
