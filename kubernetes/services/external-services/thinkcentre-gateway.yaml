@@ -1,28 +1,82 @@
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: thinkcentre-http-relay
+  namespace: external-services
+data:
+  Caddyfile: |
+    {
+        auto_https off
+        admin off
+    }
+
+    :18081 {
+        reverse_proxy http://100.64.0.4:18080
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thinkcentre-http-relay
+  namespace: external-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thinkcentre-http-relay
+  template:
+    metadata:
+      labels:
+        app: thinkcentre-http-relay
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: fuji
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: caddy
+          image: caddy:2.10.0-alpine
+          args:
+            - caddy
+            - run
+            - --config
+            - /etc/caddy/Caddyfile
+            - --adapter
+            - caddyfile
+          ports:
+            - name: http
+              containerPort: 18081
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/caddy
+              readOnly: true
+            - name: data
+              mountPath: /data
+            - name: runtime-config
+              mountPath: /config
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: config
+          configMap:
+            name: thinkcentre-http-relay
+        - name: data
+          emptyDir: {}
+        - name: runtime-config
+          emptyDir: {}
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: thinkcentre-http-gateway
   namespace: external-services
 spec:
+  selector:
+    app: thinkcentre-http-relay
   ports:
     - name: http
       port: 80
       protocol: TCP
-      targetPort: 18080
----
-# Transitional external backend while these workloads remain on ThinkCentre.
-# Endpoints is deprecated upstream in favor of EndpointSlice, but Argo in this
-# cluster is not applying our manually-managed EndpointSlice. Keep this explicit
-# and small; replace it when the workloads move or the Argo exclusion is removed.
-apiVersion: v1
-kind: Endpoints
-metadata:
-  name: thinkcentre-http-gateway
-  namespace: external-services
-subsets:
-  - addresses:
-      - ip: 100.64.0.4
-    ports:
-      - name: http
-        port: 18080
-        protocol: TCP
+      targetPort: 18081
