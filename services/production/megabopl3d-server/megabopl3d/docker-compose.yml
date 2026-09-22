@@ -4,6 +4,8 @@ services:
     platform: linux/amd64
     pull_policy: always
     restart: unless-stopped
+    ports:
+      - "100.64.0.4:24545:24545/udp"
 
   frpc:
     image: ghcr.io/fatedier/frpc:v0.65.0

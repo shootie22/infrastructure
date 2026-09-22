@@ -39,6 +39,8 @@ services:
       WHITE_LIST: "false"
     volumes:
       - ${MINECRAFT_DATA_DIR}:/server
+    ports:
+      - "100.64.0.4:6767:25565/tcp"
     networks:
       - internal
       - external
@@ -101,6 +103,8 @@ services:
       # generates fresh ephemeral host keys, which means SFTP clients will
       # show a one-time "host key changed" warning after a restart --
       # cosmetic only, doesn't weaken auth (password is the real gate).
+    ports:
+      - "100.64.0.4:51751:22/tcp"
     depends_on:
       fix-permissions:
         condition: service_started
