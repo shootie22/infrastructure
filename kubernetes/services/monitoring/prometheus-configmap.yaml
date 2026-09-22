@@ -165,6 +165,73 @@ data:
             target_label: instance
           - target_label: __address__
             replacement: blackbox-exporter.monitoring.svc:9115
+
+      - job_name: cadvisor
+        static_configs:
+          - targets: [100.64.0.5:9101]
+            labels:
+              host: hetzner
+              site: hetzner
+              role: app-host
+              os: linux
+
+      - job_name: http-servers
+        static_configs:
+          - targets: [100.64.0.5:9102]
+            labels:
+              host: hetzner
+              site: hetzner
+              role: app-host
+              os: linux
+              service: nginx
+              webserver: nginx
+
+      - job_name: synapse
+        metrics_path: /synapse/metrics
+        static_configs:
+          - targets: [100.64.0.5:9103]
+            labels:
+              host: hetzner
+              site: hetzner
+              role: matrix
+              service: synapse
+              stack: matrix
+              os: linux
+
+      - job_name: livekit
+        metrics_path: /livekit/metrics
+        static_configs:
+          - targets: [100.64.0.5:9103]
+            labels:
+              host: livekit
+              site: external
+              role: rtc
+              os: linux
+              service: livekit
+
+      - job_name: livekit-quality
+        metrics_path: /livekit-quality/metrics
+        static_configs:
+          - targets: [100.64.0.5:9103]
+            labels:
+              host: livekit
+              site: external
+              role: rtc
+              os: linux
+              service: livekit-quality
+
+      - job_name: node-exporter-hetzner
+        static_configs:
+          - targets: [100.64.0.5:9100]
+            labels:
+              host: hetzner
+              site: hetzner
+              role: app-host
+              os: linux
+        relabel_configs:
+          - target_label: job
+            replacement: node-exporter
+
   platform.rules: |
     groups:
       - name: kubernetes-container-resources
