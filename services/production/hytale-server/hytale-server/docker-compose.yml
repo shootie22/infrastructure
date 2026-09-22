@@ -21,23 +21,3 @@ services:
     stdin_open: true
     tty: true
     network_mode: host
-  
-  frpc-hytale:
-    image: ghcr.io/fatedier/frpc:v0.65.0
-    command:
-      - -c
-      - /etc/frp/frpc.toml
-    container_name: frpc-hytale
-    restart: always
-
-    network_mode: host
-
-    volumes:
-      - ../../../utils/frp/frpc/frpc-udp.toml:/etc/frp/frpc.toml:ro
-
-    env_file:
-      - runtime.env
-
-    read_only: true
-    security_opt:
-      - no-new-privileges:true
