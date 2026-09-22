@@ -31,27 +31,6 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker:/var/lib/docker:ro
 
-  frpc:
-    image: ghcr.io/fatedier/frpc:v0.65.0
-    command:
-      - -c
-      - /etc/frp/frpc.toml
-    container_name: frpc-thinkcentre-monitoring
-    restart: unless-stopped
-    network_mode: host
-    depends_on:
-      - node-exporter
-      - cadvisor
-    volumes:
-      - ../../../utils/frp/frpc/frpc-tcp.toml:/etc/frp/frpc.toml:ro
-    env_file:
-      - runtime.env
-    read_only: true
-    tmpfs:
-      - /tmp
-    security_opt:
-      - no-new-privileges:true
-
   promtail:
     image: grafana/promtail:2.9.8
     container_name: promtail-thinkcentre
