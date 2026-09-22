@@ -17,6 +17,7 @@ metadata:
   namespace: external-services
   labels:
     kubernetes.io/service-name: thinkcentre-http-gateway
+    endpointslice.kubernetes.io/managed-by: infrastructure-gitops
 addressType: IPv4
 ports:
   - name: http
