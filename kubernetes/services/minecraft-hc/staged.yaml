@@ -1,0 +1,164 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minecraft-hc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minecraft-hc
+  namespace: minecraft-hc
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: minecraft-hc
+  template:
+    metadata:
+      labels:
+        app: minecraft-hc
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: minecraft
+          image: git.radunenu.com/radu/spigotmc-docker@sha256:889d4d2f2a5c6523bed74a54b19cf155c9042ab0686032b7d6504f5b0359b0ec
+          stdin: true
+          tty: true
+          envFrom:
+            - secretRef:
+                name: minecraft-hc-env
+          env:
+            - name: EULA
+              value: "true"
+            - name: LEVEL_SEED
+              value: "-2634042832057963959"
+            - name: WHITE_LIST
+              value: "false"
+          ports:
+            - name: minecraft
+              containerPort: 25565
+              hostPort: 6767
+              hostIP: 100.64.0.4
+              protocol: TCP
+          volumeMounts:
+            - name: server
+              mountPath: /server
+      volumes:
+        - name: server
+          hostPath:
+            path: /opt/docker-data/minecraft-hc-aug2026-nl/server
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-hc
+  namespace: minecraft-hc
+spec:
+  selector:
+    app: minecraft-hc
+  ports:
+    - name: minecraft
+      port: 25565
+      targetPort: minecraft
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minecraft-hc-fix-permissions
+  namespace: minecraft-hc
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: minecraft-hc-fix-permissions
+  template:
+    metadata:
+      labels:
+        app: minecraft-hc-fix-permissions
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: fix-permissions
+          image: alpine@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+          command:
+            - sh
+            - -c
+            - while true; do chmod -R a+rwX /server; sleep 30; done
+          volumeMounts:
+            - name: server
+              mountPath: /server
+      volumes:
+        - name: server
+          hostPath:
+            path: /opt/docker-data/minecraft-hc-aug2026-nl/server
+            type: Directory
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minecraft-hc-sftp
+  namespace: minecraft-hc
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: minecraft-hc-sftp
+  template:
+    metadata:
+      labels:
+        app: minecraft-hc-sftp
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: sftp
+          image: atmoz/sftp@sha256:a81ea210713555be76075b4b2788a4addfaa54d137cd881f3a99ac539f0be2c5
+          args:
+            - "$(SFTP_USERNAME):$(SFTP_PASSWORD):1000"
+          envFrom:
+            - secretRef:
+                name: minecraft-hc-env
+          securityContext:
+            allowPrivilegeEscalation: false
+          ports:
+            - name: sftp
+              containerPort: 22
+              hostPort: 51751
+              hostIP: 100.64.0.4
+              protocol: TCP
+          volumeMounts:
+            - name: server
+              mountPath: /home/mcadmin/server
+      volumes:
+        - name: server
+          hostPath:
+            path: /opt/docker-data/minecraft-hc-aug2026-nl/server
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-hc-sftp
+  namespace: minecraft-hc
+spec:
+  selector:
+    app: minecraft-hc-sftp
+  ports:
+    - name: sftp
+      port: 22
+      targetPort: sftp
+      protocol: TCP
