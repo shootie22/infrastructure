@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audiobookshelf
+  namespace: audiobookshelf
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: audiobookshelf
+  template:
+    metadata:
+      labels:
+        app: audiobookshelf
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: audiobookshelf
+          image: ghcr.io/advplyr/audiobookshelf@sha256:3528a93b6442ffe54bd46771bbbab7c97084e1101071586d9dc2254f30bb4358
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: audiobooks
+              mountPath: /audiobooks
+            - name: config
+              mountPath: /config
+            - name: metadata
+              mountPath: /metadata
+            - name: podcasts
+              mountPath: /podcasts
+      volumes:
+        - name: audiobooks
+          hostPath:
+            path: /home/main/services/audiobookshelf/audiobooks
+            type: Directory
+        - name: config
+          hostPath:
+            path: /home/main/services/audiobookshelf/config
+            type: Directory
+        - name: metadata
+          hostPath:
+            path: /home/main/services/audiobookshelf/metadata
+            type: Directory
+        - name: podcasts
+          hostPath:
+            path: /home/main/services/audiobookshelf/podcasts
+            type: Directory
