@@ -9,7 +9,7 @@ metadata:
   name: minecraft-hc
   namespace: minecraft-hc
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -74,7 +74,7 @@ metadata:
   name: minecraft-hc-fix-permissions
   namespace: minecraft-hc
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -110,7 +110,7 @@ metadata:
   name: minecraft-hc-sftp
   namespace: minecraft-hc
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
