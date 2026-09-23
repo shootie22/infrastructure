@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plantuml
+  namespace: plantuml
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plantuml
+  template:
+    metadata:
+      labels:
+        app: plantuml
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: plantuml
+          image: plantuml/plantuml-server@sha256:cd3d67a3150ab9dbe3c77c2abce6796c7cbfb46819fa4c74c987b44ff2c10003
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
