@@ -15,8 +15,13 @@ spec:
       labels:
         app: privatebin
     spec:
+      automountServiceAccountToken: false
       nodeSelector:
         kubernetes.io/hostname: thinkcentre
+      securityContext:
+        runAsUser: 65534
+        runAsGroup: 82
+        fsGroup: 82
       containers:
         - name: privatebin
           image: privatebin/unit-pdo@sha256:b990915e4621d1eabd4a83df773dbde6c434616e371124c90c74d058e25209b0
@@ -41,8 +46,6 @@ spec:
             periodSeconds: 30
           securityContext:
             allowPrivilegeEscalation: false
-            runAsUser: 65534
-            runAsGroup: 82
           volumeMounts:
             - name: data
               mountPath: /srv/data
@@ -50,8 +53,6 @@ spec:
               mountPath: /run
             - name: tmp
               mountPath: /tmp
-            - name: unit-state
-              mountPath: /var/lib/unit
       volumes:
         - name: data
           hostPath:
@@ -60,6 +61,4 @@ spec:
         - name: run
           emptyDir: {}
         - name: tmp
-          emptyDir: {}
-        - name: unit-state
           emptyDir: {}
