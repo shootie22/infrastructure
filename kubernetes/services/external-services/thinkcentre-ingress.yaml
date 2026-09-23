@@ -34,9 +34,6 @@ spec:
         - pinga.radunenu.com
       secretName: pinga-radunenu-com-tls
     - hosts:
-        - puml.radunenu.com
-      secretName: puml-radunenu-com-tls
-    - hosts:
         - share.radunenu.com
       secretName: share-radunenu-com-tls
     - hosts:
@@ -122,17 +119,6 @@ spec:
                   number: 80
 
     - host: pbin.radunenu.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: thinkcentre-http-gateway
-                port:
-                  number: 80
-
-    - host: puml.radunenu.com
       http:
         paths:
           - path: /
