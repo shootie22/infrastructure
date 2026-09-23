@@ -12,11 +12,6 @@ services:
 
     networks:
       - rybbit
-      - audiobookshelf
-      - gitea
-      - picshare
-      - tunnel
-      - hemmelig
 
     read_only: true
     tmpfs:
@@ -30,24 +25,3 @@ networks:
   rybbit:
     external: true
     name: rybbit_rybbit_internal
-
-  audiobookshelf:
-    external: true
-    name: audiobookshelf_audiobookshelf_internal-net
-
-  gitea:
-    external: true
-    name: gitea_gitea_internal-net
-
-  picshare:
-    external: true
-    name: picshare_internal
-
-  tunnel:
-    external: true
-    name: tunnel_net
-
-  hemmelig:
-    external: true
-    name: hemmelig_tunnel-net_hemmelig
-
