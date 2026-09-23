@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: privatebin
+  namespace: privatebin
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: privatebin
+  template:
+    metadata:
+      labels:
+        app: privatebin
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: privatebin
+          image: privatebin/unit-pdo@sha256:b990915e4621d1eabd4a83df773dbde6c434616e371124c90c74d058e25209b0
+          env:
+            - name: TZ
+              value: UTC+1
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 65534
+            runAsGroup: 82
+          volumeMounts:
+            - name: data
+              mountPath: /srv/data
+            - name: run
+              mountPath: /run
+            - name: tmp
+              mountPath: /tmp
+            - name: unit-state
+              mountPath: /var/lib/unit
+      volumes:
+        - name: data
+          hostPath:
+            path: /home/main/services/privatebin/data
+            type: Directory
+        - name: run
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+        - name: unit-state
+          emptyDir: {}
