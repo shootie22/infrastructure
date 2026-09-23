@@ -28,9 +28,6 @@ spec:
         - n.yeetus.net
       secretName: n-yeetus-net-tls
     - hosts:
-        - pbin.radunenu.com
-      secretName: pbin-radunenu-com-tls
-    - hosts:
         - pinga.radunenu.com
       secretName: pinga-radunenu-com-tls
     - hosts:
@@ -108,17 +105,6 @@ spec:
                   number: 80
 
     - host: pinga.radunenu.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: thinkcentre-http-gateway
-                port:
-                  number: 80
-
-    - host: pbin.radunenu.com
       http:
         paths:
           - path: /
