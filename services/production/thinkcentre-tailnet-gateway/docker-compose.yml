@@ -12,6 +12,7 @@ services:
 
     networks:
       - rybbit
+      - tunnel
 
     read_only: true
     tmpfs:
@@ -25,3 +26,7 @@ networks:
   rybbit:
     external: true
     name: rybbit_rybbit_internal
+
+  tunnel:
+    external: true
+    name: tunnel_net
