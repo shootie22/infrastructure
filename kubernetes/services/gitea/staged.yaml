@@ -72,15 +72,12 @@ spec:
             - {name: ssh, containerPort: 22, hostPort: 222}
           volumeMounts:
             - {name: data, mountPath: /data}
-            - {name: timezone, mountPath: /etc/timezone, readOnly: true}
             - {name: localtime, mountPath: /etc/localtime, readOnly: true}
       volumes:
         - name: data
           hostPath:
             path: /home/main/services/gitea
             type: Directory
-        - name: timezone
-          hostPath: {path: /etc/timezone, type: File}
         - name: localtime
           hostPath: {path: /etc/localtime, type: File}
 ---
