@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legacy-redirects
+  namespace: legacy-redirects
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: legacy-redirects
+  template:
+    metadata:
+      labels:
+        app: legacy-redirects
+    spec:
+      containers:
+        - name: caddy
+          image: caddy:2.10.0-alpine
+          args:
+            - caddy
+            - run
+            - --config
+            - /etc/caddy/Caddyfile
+            - --adapter
+            - caddyfile
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /etc/caddy
+              readOnly: true
+            - name: data
+              mountPath: /data
+            - name: runtime-config
+              mountPath: /config
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: config
+          configMap:
+            name: legacy-redirects
+        - name: data
+          emptyDir: {}
+        - name: runtime-config
+          emptyDir: {}

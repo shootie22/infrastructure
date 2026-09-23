@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: legacy-redirects
+  namespace: legacy-redirects
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - byradu.com
+        - www.byradu.com
+        - cubi.tube
+        - www.cubi.tube
+        - cubtube.lol
+        - www.cubtube.lol
+      secretName: legacy-redirects-tls
+  rules:
+    - host: byradu.com
+      http: &redirect_paths
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: legacy-redirects
+                port:
+                  number: 80
+    - host: www.byradu.com
+      http: *redirect_paths
+    - host: cubi.tube
+      http: *redirect_paths
+    - host: www.cubi.tube
+      http: *redirect_paths
+    - host: cubtube.lol
+      http: *redirect_paths
+    - host: www.cubtube.lol
+      http: *redirect_paths

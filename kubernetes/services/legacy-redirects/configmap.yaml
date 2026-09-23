@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: legacy-redirects
+  namespace: legacy-redirects
+data:
+  Caddyfile: |
+    {
+        auto_https off
+        admin off
+    }
+
+    :8080 {
+        @radunenu_redirect host byradu.com www.byradu.com cubi.tube www.cubi.tube cubtube.lol www.cubtube.lol
+
+        handle @radunenu_redirect {
+            redir https://radunenu.com{uri} 301
+        }
+
+        handle {
+            respond "unknown host" 404
+        }
+    }
