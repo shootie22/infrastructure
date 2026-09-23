@@ -36,7 +36,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: db
+  name: joplin-db
   namespace: joplin
 spec:
   selector: {app: joplin-postgres}
