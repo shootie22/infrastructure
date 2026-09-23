@@ -16,7 +16,6 @@ services:
       - gitea
       - picshare
       - tunnel
-      - privatebin
       - hemmelig
 
     read_only: true
@@ -47,10 +46,6 @@ networks:
   tunnel:
     external: true
     name: tunnel_net
-
-  privatebin:
-    external: true
-    name: privatebin_internal
 
   hemmelig:
     external: true
