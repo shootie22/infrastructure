@@ -49,11 +49,6 @@
         reverse_proxy privatebin:8080
     }
 
-    @plantuml host puml.radunenu.com
-    handle @plantuml {
-        reverse_proxy plantuml:8080
-    }
-
     @hemmelig host share.radunenu.com
     handle @hemmelig {
         reverse_proxy hemmelig:3000
