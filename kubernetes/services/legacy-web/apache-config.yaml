@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: legacy-api-apache
+  namespace: legacy-web
+data:
+  000-default.conf: |
+    <VirtualHost *:80>
+        ServerName api-old.radunenu.com
+        DocumentRoot /var/www/api-old.radunenu.com
+
+        <Directory /var/www/api-old.radunenu.com>
+            Require all granted
+            AllowOverride None
+        </Directory>
+    </VirtualHost>
+
+    <VirtualHost *:80>
+        ServerName api.byradu.com
+        DocumentRoot /var/www/api-old.radunenu.com
+
+        <Directory /var/www/api-old.radunenu.com>
+            Require all granted
+            AllowOverride None
+        </Directory>
+    </VirtualHost>
+
+    <VirtualHost *:80>
+        ServerName news.kronorite.com
+        DocumentRoot /var/www/api-old.radunenu.com/v1
+
+        <Directory /var/www/api-old.radunenu.com/v1>
+            Require all granted
+            AllowOverride None
+        </Directory>
+    </VirtualHost>
+
+    <VirtualHost *:80>
+        ServerName stats.kronorite.com
+        DocumentRoot /var/www/api-old.radunenu.com
+
+        Alias /mazegame /var/www/api-old.radunenu.com/v2/stats/mazegame
+        Alias /mazegame/ /var/www/api-old.radunenu.com/v2/stats/mazegame/
+
+        <Directory /var/www/api-old.radunenu.com>
+            Require all granted
+            AllowOverride None
+        </Directory>
+
+        <Directory /var/www/api-old.radunenu.com/v2/stats/mazegame>
+            Require all granted
+            AllowOverride None
+        </Directory>
+    </VirtualHost>

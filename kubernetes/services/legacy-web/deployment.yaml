@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legacy-api
+  namespace: legacy-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: legacy-api
+  template:
+    metadata:
+      labels:
+        app: legacy-api
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: fuji
+      securityContext:
+        fsGroup: 33
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: apache-php
+          image: php:8.1.34-apache-bookworm
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /health-check.html
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: api-old.radunenu.com
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/www/api-old.radunenu.com
+            - name: apache-sites
+              mountPath: /etc/apache2/sites-enabled
+              readOnly: true
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: legacy-api-data
+        - name: apache-sites
+          configMap:
+            name: legacy-api-apache
