@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: legacy-api
+  namespace: legacy-web
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - api-old.radunenu.com
+        - api.byradu.com
+        - news.kronorite.com
+        - stats.kronorite.com
+      secretName: legacy-api-tls
+  rules:
+    - host: api-old.radunenu.com
+      http: &legacy_api_paths
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: legacy-api
+                port:
+                  number: 80
+    - host: api.byradu.com
+      http: *legacy_api_paths
+    - host: news.kronorite.com
+      http: *legacy_api_paths
+    - host: stats.kronorite.com
+      http: *legacy_api_paths
