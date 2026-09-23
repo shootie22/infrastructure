@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kronorite-caddy
+  namespace: legacy-web
+data:
+  Caddyfile: |
+    {
+      auto_https off
+      admin off
+    }
+
+    :8080 {
+      @root path /
+      redir @root https://store.steampowered.com/app/876780 302
+      respond 404
+    }

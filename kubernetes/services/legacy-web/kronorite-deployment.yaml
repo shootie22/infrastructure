@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kronorite
+  namespace: legacy-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kronorite
+  template:
+    metadata:
+      labels:
+        app: kronorite
+    spec:
+      containers:
+        - name: caddy
+          image: caddy:2.10.0-alpine
+          args:
+            - caddy
+            - run
+            - --config
+            - /etc/caddy/Caddyfile
+            - --adapter
+            - caddyfile
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/caddy
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: kronorite-caddy
