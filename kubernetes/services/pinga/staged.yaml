@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pinga
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pinga
+  namespace: pinga
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: {app: pinga}
+  template:
+    metadata:
+      labels: {app: pinga}
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: pinga
+          image: git.radunenu.com/radu/pinga@sha256:3ecb8250381d7b083ed8841792c842ba6c85b1e6f89916a8b30845db75068b07
+          envFrom:
+            - secretRef: {name: pinga-env}
+          ports:
+            - {name: http, containerPort: 8080}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              add: ["NET_RAW"]
+          volumeMounts:
+            - {name: data, mountPath: /data}
+      volumes:
+        - name: data
+          hostPath:
+            path: /home/main/services/pinga
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pinga
+  namespace: pinga
+spec:
+  selector: {app: pinga}
+  ports:
+    - {name: http, port: 80, targetPort: http}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pinga
+  namespace: pinga
+spec:
+  secretName: pinga-tls
+  dnsNames: [api.radunenu.com, pinga.radunenu.com]
+  issuerRef: {name: letsencrypt-prod, kind: ClusterIssuer}

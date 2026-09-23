@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hemmelig
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hemmelig
+  namespace: hemmelig
+spec:
+  replicas: 0
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: hemmelig}
+  template:
+    metadata:
+      labels: {app: hemmelig}
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: hemmelig
+          image: hemmeligapp/hemmelig@sha256:1c993643fca4835c057fcf11e99c2eabe441048ef813b4407f2e5e7ed24cea88
+          envFrom:
+            - secretRef: {name: hemmelig-env}
+          ports:
+            - {name: http, containerPort: 3000}
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - {name: database, mountPath: /app/database}
+            - {name: uploads, mountPath: /app/uploads}
+      volumes:
+        - name: database
+          hostPath: {path: /home/main/services/hemmelig/database, type: Directory}
+        - name: uploads
+          hostPath: {path: /home/main/services/hemmelig/uploads, type: Directory}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hemmelig
+  namespace: hemmelig
+spec:
+  selector: {app: hemmelig}
+  ports:
+    - {name: http, port: 80, targetPort: http}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: share-radunenu-com
+  namespace: hemmelig
+spec:
+  secretName: share-radunenu-com-tls
+  dnsNames: [share.radunenu.com]
+  issuerRef: {name: letsencrypt-prod, kind: ClusterIssuer}

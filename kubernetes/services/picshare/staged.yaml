@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: picshare
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: picshare
+  namespace: picshare
+spec:
+  replicas: 0
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: picshare}
+  template:
+    metadata:
+      labels: {app: picshare}
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: picshare
+          image: git.radunenu.com/radu/picshare@sha256:2f3b5f6d730f32aa714dab137644651f28062720fb3f682470e3da33a3f59c2c
+          envFrom:
+            - secretRef: {name: picshare-env}
+          ports:
+            - {name: http, containerPort: 3214}
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: config, mountPath: /config/config.yaml, readOnly: true}
+      volumes:
+        - name: data
+          hostPath: {path: /home/main/services/picshare/data, type: Directory}
+        - name: config
+          hostPath: {path: /home/main/services/picshare/config.yaml, type: File}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: picshare
+  namespace: picshare
+spec:
+  selector: {app: picshare}
+  ports:
+    - {name: http, port: 80, targetPort: http}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: img-radunenu-com
+  namespace: picshare
+spec:
+  secretName: img-radunenu-com-tls
+  dnsNames: [img.radunenu.com]
+  issuerRef: {name: letsencrypt-prod, kind: ClusterIssuer}

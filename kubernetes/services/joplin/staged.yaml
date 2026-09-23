@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: joplin
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: joplin-postgres
+  namespace: joplin
+spec:
+  replicas: 0
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: joplin-postgres}
+  template:
+    metadata:
+      labels: {app: joplin-postgres}
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: postgres
+          image: postgres@sha256:f30e3de0ac9cc938dac627ef2231099867c694b5f949fadb924c8c977428c399
+          envFrom:
+            - secretRef: {name: joplin-env}
+          ports:
+            - {name: postgres, containerPort: 5432}
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/postgresql/data}
+      volumes:
+        - name: data
+          hostPath: {path: /home/main/services/joplin/db, type: Directory}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  namespace: joplin
+spec:
+  selector: {app: joplin-postgres}
+  ports:
+    - {name: postgres, port: 5432, targetPort: postgres}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: joplin
+  namespace: joplin
+spec:
+  replicas: 0
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: joplin}
+  template:
+    metadata:
+      labels: {app: joplin}
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: joplin
+          image: joplin/server@sha256:5d9e7f9d31b436cb1b99d1a6a65d8c5bf760829094617e8ad1e956fd925de888
+          envFrom:
+            - secretRef: {name: joplin-env}
+          ports:
+            - {name: http, containerPort: 22300}
+          securityContext:
+            allowPrivilegeEscalation: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: joplin
+  namespace: joplin
+spec:
+  selector: {app: joplin}
+  ports:
+    - {name: http, port: 80, targetPort: http}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: n-yeetus-net
+  namespace: joplin
+spec:
+  secretName: n-yeetus-net-tls
+  dnsNames: [n.yeetus.net]
+  issuerRef: {name: letsencrypt-prod, kind: ClusterIssuer}

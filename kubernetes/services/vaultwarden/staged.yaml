@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vaultwarden
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaultwarden
+  namespace: vaultwarden
+spec:
+  replicas: 0
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: vaultwarden}
+  template:
+    metadata:
+      labels: {app: vaultwarden}
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: vaultwarden
+          image: vaultwarden/server@sha256:1587c45feaa479f1f5e8af3b00eded36bff77bcf1880cf8dbf0541706dd470e0
+          envFrom:
+            - secretRef: {name: vaultwarden-env}
+          ports:
+            - {name: http, containerPort: 80}
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - {name: data, mountPath: /data}
+      volumes:
+        - name: data
+          hostPath:
+            path: /home/main/services/vaultwarden
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vaultwarden
+  namespace: vaultwarden
+spec:
+  selector: {app: vaultwarden}
+  ports:
+    - {name: http, port: 80, targetPort: http}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vw-yeetus-net
+  namespace: vaultwarden
+spec:
+  secretName: vw-yeetus-net-tls
+  dnsNames: [vw.yeetus.net]
+  issuerRef: {name: letsencrypt-prod, kind: ClusterIssuer}
