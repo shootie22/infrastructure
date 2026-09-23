@@ -17,7 +17,6 @@ services:
       - picshare
       - tunnel
       - privatebin
-      - plantuml
       - hemmelig
 
     read_only: true
@@ -52,10 +51,6 @@ networks:
   privatebin:
     external: true
     name: privatebin_internal
-
-  plantuml:
-    external: true
-    name: plantuml_internal
 
   hemmelig:
     external: true
