@@ -9,7 +9,7 @@ metadata:
   name: picshare
   namespace: picshare
 spec:
-  replicas: 0
+  replicas: 1
   strategy: {type: Recreate}
   selector:
     matchLabels: {app: picshare}
@@ -57,3 +57,26 @@ spec:
   secretName: img-radunenu-com-tls
   dnsNames: [img.radunenu.com]
   issuerRef: {name: letsencrypt-prod, kind: ClusterIssuer}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: picshare
+  namespace: picshare
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - img.radunenu.com
+      secretName: img-radunenu-com-tls
+  rules:
+    - host: img.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: picshare
+                port:
+                  number: 80

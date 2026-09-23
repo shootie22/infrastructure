@@ -9,7 +9,7 @@ metadata:
   name: pinga
   namespace: pinga
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -59,3 +59,37 @@ spec:
   secretName: pinga-tls
   dnsNames: [api.radunenu.com, pinga.radunenu.com]
   issuerRef: {name: letsencrypt-prod, kind: ClusterIssuer}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pinga
+  namespace: pinga
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - api.radunenu.com
+        - pinga.radunenu.com
+      secretName: pinga-tls
+  rules:
+    - host: api.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pinga
+                port:
+                  number: 80
+    - host: pinga.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pinga
+                port:
+                  number: 80

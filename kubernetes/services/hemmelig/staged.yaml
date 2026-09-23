@@ -9,7 +9,7 @@ metadata:
   name: hemmelig
   namespace: hemmelig
 spec:
-  replicas: 0
+  replicas: 1
   strategy: {type: Recreate}
   selector:
     matchLabels: {app: hemmelig}
@@ -57,3 +57,26 @@ spec:
   secretName: share-radunenu-com-tls
   dnsNames: [share.radunenu.com]
   issuerRef: {name: letsencrypt-prod, kind: ClusterIssuer}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hemmelig
+  namespace: hemmelig
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - share.radunenu.com
+      secretName: share-radunenu-com-tls
+  rules:
+    - host: share.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hemmelig
+                port:
+                  number: 80

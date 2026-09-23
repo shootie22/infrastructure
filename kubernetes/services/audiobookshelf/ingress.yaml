@@ -1,24 +1,22 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: thinkcentre-web
-  namespace: external-services
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
+  name: audiobookshelf
+  namespace: audiobookshelf
 spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - analytics.radunenu.com
-      secretName: analytics-radunenu-com-tls
+        - books.yeetus.net
+      secretName: books-yeetus-net-tls
   rules:
-    - host: analytics.radunenu.com
+    - host: books.yeetus.net
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: thinkcentre-http-gateway
+                name: audiobookshelf
                 port:
                   number: 80

@@ -4,7 +4,7 @@ metadata:
   name: audiobookshelf
   namespace: audiobookshelf
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -20,7 +20,7 @@ spec:
         kubernetes.io/hostname: thinkcentre
       containers:
         - name: audiobookshelf
-          image: ghcr.io/advplyr/audiobookshelf@sha256:3528a93b6442ffe54bd46771bbbab7c97084e1101071586d9dc2254f30bb4358
+          image: ghcr.io/advplyr/audiobookshelf:2.36.1@sha256:3528a93b6442ffe54bd46771bbbab7c97084e1101071586d9dc2254f30bb4358
           ports:
             - name: http
               containerPort: 80

@@ -9,7 +9,7 @@ metadata:
   name: vaultwarden
   namespace: vaultwarden
 spec:
-  replicas: 0
+  replicas: 1
   strategy: {type: Recreate}
   selector:
     matchLabels: {app: vaultwarden}
@@ -56,3 +56,26 @@ spec:
   secretName: vw-yeetus-net-tls
   dnsNames: [vw.yeetus.net]
   issuerRef: {name: letsencrypt-prod, kind: ClusterIssuer}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vaultwarden
+  namespace: vaultwarden
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - vw.yeetus.net
+      secretName: vw-yeetus-net-tls
+  rules:
+    - host: vw.yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vaultwarden
+                port:
+                  number: 80

@@ -9,7 +9,7 @@ metadata:
   name: gitea-postgres
   namespace: gitea
 spec:
-  replicas: 0
+  replicas: 1
   strategy: {type: Recreate}
   selector:
     matchLabels: {app: gitea-postgres}
@@ -51,7 +51,7 @@ metadata:
   name: gitea
   namespace: gitea
 spec:
-  replicas: 0
+  replicas: 1
   strategy: {type: Recreate}
   selector:
     matchLabels: {app: gitea}
@@ -103,3 +103,26 @@ spec:
   secretName: git-radunenu-com-tls
   dnsNames: [git.radunenu.com]
   issuerRef: {name: letsencrypt-prod, kind: ClusterIssuer}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gitea
+  namespace: gitea
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - git.radunenu.com
+      secretName: git-radunenu-com-tls
+  rules:
+    - host: git.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gitea
+                port:
+                  number: 80
