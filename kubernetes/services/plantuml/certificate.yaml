@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: puml-radunenu-com
+  namespace: plantuml
+spec:
+  secretName: puml-radunenu-com-tls
+  dnsNames:
+    - puml.radunenu.com
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
