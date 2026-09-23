@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: yeetus-net
+  namespace: yeetus-net
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - yeetus.net
+        - www.yeetus.net
+      secretName: yeetus-net-tls
+  rules:
+    - host: yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: yeetus-net
+                port:
+                  number: 80
+    - host: www.yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: yeetus-net
+                port:
+                  number: 80

@@ -1,0 +1,152 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yeetus-net-site
+  namespace: yeetus-net
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>yeetus.net</title>
+    
+    <style>
+    html, body {
+        margin: 0;
+        height: 100%;
+        font-family: Arial, sans-serif;
+        overflow: hidden; /* keep particles inside */
+    }
+    
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    
+        background: linear-gradient(270deg, 
+            red, orange, yellow, green, cyan, blue, violet);
+        background-size: 1400% 1400%;
+        animation: bgshift 25s ease infinite;
+    }
+    
+    @keyframes bgshift {
+        0%   { background-position: 0% 50%; }
+        50%  { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    .container {
+        background: rgba(0,0,0,0.25); /* more transparent for particle visibility */
+        padding: 30px 50px;
+        border-radius: 12px;
+        max-width: 90%;
+    }
+    
+    /* Text hierarchy */
+    h1 {
+        font-size: clamp(2.5rem, 8vw, 5rem);
+        margin: 10px 0;
+    }
+    
+    h2 {
+        font-size: clamp(1.2rem, 4vw, 2rem);
+        margin: 8px 0;
+    }
+    
+    p {
+        font-size: clamp(1rem, 3vw, 1.5rem);
+        margin: 6px 0;
+    }
+    
+    .rainbow-text {
+        font-weight: bold;
+        color: white;
+        animation: textHue 10s linear infinite;
+    }
+    
+    @keyframes textHue {
+        from { filter: hue-rotate(0deg); }
+        to   { filter: hue-rotate(360deg); }
+    }
+    
+    /* Particle canvas full screen */
+    #particle-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1; /* behind content */
+        pointer-events: none;
+    }
+    </style>
+    </head>
+    
+    <body>
+    
+    <canvas id="particle-canvas"></canvas>
+    
+    <div class="container">
+        <h1 class="rainbow-text">yeetus deletus</h1>
+        <h2 class="rainbow-text">hytale server: yeetus.net</h2>
+        <p class="rainbow-text">more to come :p</p>
+    </div>
+    
+    <script>
+    // Particle system
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    
+    function createParticles(count) {
+        particles = [];
+        for (let i = 0; i < count; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 3 + 1.5,
+                speedX: (Math.random() - 0.5) * 0.3,
+                speedY: (Math.random() - 0.5) * 0.3,
+                hue: Math.random() * 360,
+                alpha: Math.random() * 0.8 + 0.2
+            });
+        }
+    }
+    
+    function drawParticles() {
+        ctx.clearRect(0,0,canvas.width, canvas.height);
+        for (let p of particles) {
+            ctx.fillStyle = `hsla(${p.hue}, 70%, 60%, ${p.alpha})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+            ctx.fill();
+            
+            p.x += p.speedX;
+            p.y += p.speedY;
+            p.hue += 0.5;
+    
+            // Wrap around edges
+            if (p.x < 0) p.x = canvas.width;
+            if (p.x > canvas.width) p.x = 0;
+            if (p.y < 0) p.y = canvas.height;
+            if (p.y > canvas.height) p.y = 0;
+        }
+        requestAnimationFrame(drawParticles);
+    }
+    
+    createParticles(150); // more particles for visibility
+    drawParticles();
+    </script>
+    
+    </body>
+    </html>

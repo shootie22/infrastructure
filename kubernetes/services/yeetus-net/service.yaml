@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: yeetus-net
+  namespace: yeetus-net
+spec:
+  selector:
+    app: yeetus-net
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

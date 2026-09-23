@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yeetus-net
+  namespace: yeetus-net
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yeetus-net
+  template:
+    metadata:
+      labels:
+        app: yeetus-net
+    spec:
+      containers:
+        - name: caddy
+          image: caddy:2.10.0-alpine
+          args:
+            - caddy
+            - file-server
+            - --root
+            - /srv
+            - --listen
+            - :8080
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: site
+              mountPath: /srv
+              readOnly: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: site
+          configMap:
+            name: yeetus-net-site
