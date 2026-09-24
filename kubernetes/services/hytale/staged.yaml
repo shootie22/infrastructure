@@ -9,7 +9,7 @@ metadata:
   name: hytale
   namespace: hytale
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:

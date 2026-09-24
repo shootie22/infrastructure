@@ -9,7 +9,7 @@ metadata:
   name: megabopl3d
   namespace: megabopl3d
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
