@@ -246,6 +246,8 @@ spec:
       containers:
         - name: backend
           image: git.radunenu.com/radu/rybbit-backend:migration-20260924
+          securityContext:
+            allowPrivilegeEscalation: false
           imagePullPolicy: Never
           env:
             - {name: NODE_ENV, value: production}
@@ -316,6 +318,8 @@ spec:
       containers:
         - name: client
           image: git.radunenu.com/radu/rybbit-client:migration-20260924
+          securityContext:
+            allowPrivilegeEscalation: false
           imagePullPolicy: Never
           env:
             - {name: NODE_ENV, value: production}
@@ -362,6 +366,8 @@ spec:
       containers:
         - name: caddy
           image: caddy@sha256:133b5eb7ef9d42e34756ba206b06d84f4e3eb308044e268e182c2747083f09de
+          securityContext:
+            allowPrivilegeEscalation: false
           args:
             - caddy
             - run
@@ -372,6 +378,8 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+              hostPort: 18080
+              hostIP: 100.64.0.4
               protocol: TCP
           readinessProbe:
             httpGet:
