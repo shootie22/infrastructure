@@ -78,7 +78,7 @@ services:
       }
       http {
         proxy_cache_path /var/cache/nginx/tiles levels=1:2 keys_zone=tiles:10m max_size=1g inactive=30d use_temp_path=off;
-      
+
         server {
           listen 80;
           location / {
