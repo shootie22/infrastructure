@@ -98,7 +98,7 @@ spec:
             name: runner-config
         - name: data
           hostPath:
-            path: /home/radu/services/gitea-act-runner-thinkcentre/data
+            path: /home/main/services/gitea-act-runner-thinkcentre/data
             type: Directory
         - name: docker-socket
           hostPath:

@@ -372,8 +372,6 @@ spec:
           ports:
             - name: http
               containerPort: 8080
-              hostPort: 18080
-              hostIP: 100.64.0.4
               protocol: TCP
           readinessProbe:
             httpGet:
