@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hytale
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hytale
+  namespace: hytale
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: hytale
+  template:
+    metadata:
+      labels:
+        app: hytale
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: hytale
+          image: indifferentbroccoli/hytale-server-docker@sha256:01eb2f5807312119dd044476bd5132a5d0c0b73397392f7f91c143acd05f23ea
+          stdin: true
+          tty: true
+          env:
+            - name: DEFAULT_PORT
+              value: "5520"
+            - name: DOWNLOAD_ON_START
+              value: "true"
+            - name: HYTALE_DATA_DIR
+              value: /home/main/game_servers/hytale
+            - name: HYTALE_HOST_PORT
+              value: "5520"
+            - name: MAX_MEMORY
+              value: 8G
+            - name: MAX_PLAYERS
+              value: "420"
+            - name: MIN_MEMORY
+              value: 4G
+            - name: PGID
+              value: "1000"
+            - name: PUID
+              value: "1000"
+            - name: SERVER_NAME
+              value: yeetus.net
+          ports:
+            - name: hytale
+              containerPort: 5520
+              protocol: UDP
+          volumeMounts:
+            - name: server-files
+              mountPath: /home/hytale/server-files
+      volumes:
+        - name: server-files
+          hostPath:
+            path: /home/main/game_servers/hytale
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hytale
+  namespace: hytale
+spec:
+  selector:
+    app: hytale
+  ports:
+    - name: hytale
+      port: 5520
+      targetPort: hytale
+      protocol: UDP

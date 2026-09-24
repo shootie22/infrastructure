@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: megabopl3d
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: megabopl3d
+  namespace: megabopl3d
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: megabopl3d
+  template:
+    metadata:
+      labels:
+        app: megabopl3d
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: megabopl3d
+          image: git.radunenu.com/radu/megabopl3d-server@sha256:0c6c38d32d11075ca19af960a84dbb77910331098144bc5b149a9255eadf9cf0
+          ports:
+            - name: game
+              containerPort: 24545
+              hostPort: 24545
+              hostIP: 100.64.0.4
+              protocol: UDP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: megabopl3d
+  namespace: megabopl3d
+spec:
+  selector:
+    app: megabopl3d
+  ports:
+    - name: game
+      port: 24545
+      targetPort: game
+      protocol: UDP

@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minecraft-skyblock
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minecraft-skyblock
+  namespace: minecraft-skyblock
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: minecraft-skyblock
+  template:
+    metadata:
+      labels:
+        app: minecraft-skyblock
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: minecraft
+          image: git.radunenu.com/radu/spigotmc-docker@sha256:889d4d2f2a5c6523bed74a54b19cf155c9042ab0686032b7d6504f5b0359b0ec
+          stdin: true
+          tty: true
+          env:
+            - name: EULA
+              value: "true"
+            - name: BEDROCK_PORT
+              value: "19132"
+            - name: JAVA_VERSION
+              value: "25"
+            - name: JVM_MAX_RAM
+              value: 8G
+            - name: JVM_MIN_RAM
+              value: 8G
+            - name: MC_VERSION
+              value: "26.1.1"
+            - name: MINECRAFT_DATA_DIR
+              value: /home/main/game_servers/minecraft-skyblock-apr2026
+            - name: MOTD
+              value: "-=[mental asylum - skyblocky]=-"
+            - name: SERVER_JAR
+              value: /server/spigot.jar
+            - name: SERVER_PORT
+              value: "25565"
+          ports:
+            - name: java
+              containerPort: 25565
+              hostPort: 25565
+              hostIP: 100.64.0.4
+              protocol: TCP
+            - name: bedrock
+              containerPort: 19132
+              hostPort: 19132
+              hostIP: 100.64.0.4
+              protocol: UDP
+          volumeMounts:
+            - name: server
+              mountPath: /server
+      volumes:
+        - name: server
+          hostPath:
+            path: /home/main/game_servers/minecraft-skyblock-apr2026
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-skyblock
+  namespace: minecraft-skyblock
+spec:
+  selector:
+    app: minecraft-skyblock
+  ports:
+    - name: java
+      port: 25565
+      targetPort: java
+      protocol: TCP
+    - name: bedrock
+      port: 19132
+      targetPort: bedrock
+      protocol: UDP
