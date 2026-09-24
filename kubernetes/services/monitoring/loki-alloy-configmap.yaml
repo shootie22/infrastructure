@@ -83,6 +83,27 @@ data:
       forward_to = [loki.write.default.receiver]
     }
 
+    loki.relabel "auth_journal" {
+      forward_to = []
+
+      rule {
+        source_labels = ["__journal_syslog_facility"]
+        regex         = "4|10"
+        action        = "keep"
+      }
+    }
+
+    loki.source.journal "auth" {
+      path          = "/run/log/journal"
+      max_age       = "12h"
+      relabel_rules = loki.relabel.auth_journal.rules
+      labels        = {
+        job  = "auth",
+        host = sys.env("KUBE_NODE_NAME"),
+      }
+      forward_to = [loki.write.default.receiver]
+    }
+
     loki.write "default" {
       endpoint {
         url = "http://loki.monitoring.svc:3100/loki/api/v1/push"

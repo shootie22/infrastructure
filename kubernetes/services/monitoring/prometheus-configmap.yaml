@@ -174,12 +174,6 @@ data:
               site: hetzner
               role: app-host
               os: linux
-          - targets: [100.64.0.4:9101]
-            labels:
-              host: thinkcentre
-              site: homelab
-              role: workstation
-              os: linux
 
       - job_name: http-servers
         static_configs:
@@ -238,17 +232,6 @@ data:
           - target_label: job
             replacement: node-exporter
 
-      - job_name: node-exporter-thinkcentre
-        static_configs:
-          - targets: [100.64.0.4:9100]
-            labels:
-              host: thinkcentre
-              site: homelab
-              role: workstation
-              os: linux
-        relabel_configs:
-          - target_label: job
-            replacement: node-exporter
   platform.rules: |
     groups:
       - name: kubernetes-container-resources

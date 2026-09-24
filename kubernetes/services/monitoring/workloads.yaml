@@ -417,6 +417,7 @@ spec:
             - run
             - /etc/alloy/config.alloy
             - --server.http.listen-addr=0.0.0.0:12345
+            - --storage.path=/var/lib/alloy
           ports:
             - name: http
               containerPort: 12345
@@ -435,10 +436,29 @@ spec:
             - name: config
               mountPath: /etc/alloy
               readOnly: true
+            - name: journal
+              mountPath: /run/log/journal
+              readOnly: true
+            - name: machine-id
+              mountPath: /etc/machine-id
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/alloy
       volumes:
         - name: config
           configMap:
             name: alloy-config
+        - name: journal
+          hostPath:
+            path: /run/log/journal
+        - name: machine-id
+          hostPath:
+            path: /etc/machine-id
+            type: File
+        - name: data
+          hostPath:
+            path: /var/lib/alloy
+            type: DirectoryOrCreate
 ---
 apiVersion: apps/v1
 kind: Deployment
