@@ -81,7 +81,7 @@ metadata:
   name: postgres
   namespace: rybbit
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -144,7 +144,7 @@ metadata:
   name: clickhouse
   namespace: rybbit
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -229,7 +229,7 @@ metadata:
   name: backend
   namespace: rybbit
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -301,7 +301,7 @@ metadata:
   name: client
   namespace: rybbit
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -349,7 +349,7 @@ metadata:
   name: caddy
   namespace: rybbit
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
