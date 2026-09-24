@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gitea-runner-thinkcentre
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: runner-config
+  namespace: gitea-runner-thinkcentre
+data:
+  config.yaml: |
+    log:
+      level: info
+
+    runner:
+      file: /data/.runner
+      capacity: 1
+      envs: {}
+      env_file: ""
+      timeout: 3h
+      shutdown_timeout: 0s
+      insecure: false
+      fetch_timeout: 5s
+      fetch_interval: 2s
+      github_mirror: ""
+      labels:
+        - "linux-amd64-thinkcentre:docker://docker.gitea.com/runner-images:ubuntu-latest"
+
+    cache:
+      enabled: true
+      dir: /data/cache
+      host: ""
+      port: 0
+      external_server: ""
+
+    container:
+      network: ""
+      privileged: false
+      options:
+      workdir_parent:
+      valid_volumes:
+        - "**"
+      docker_host: ""
+      force_pull: true
+      force_rebuild: false
+      require_docker: false
+      docker_timeout: 0s
+      bind_workdir: false
+
+    host:
+      workdir_parent:
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea-runner-thinkcentre
+  namespace: gitea-runner-thinkcentre
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: gitea-runner-thinkcentre
+  template:
+    metadata:
+      labels:
+        app: gitea-runner-thinkcentre
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: runner
+          image: gitea/act_runner@sha256:7940221bcfc9df16f3401ddafb2231bf98bba5517bc381224c7a2c504b558974
+          env:
+            - name: CONFIG_FILE
+              value: /config.yaml
+            - name: GITEA_INSTANCE_URL
+              value: https://git.radunenu.com
+            - name: GITEA_RUNNER_NAME
+              value: thinkcentre
+            - name: GITEA_RUNNER_LABELS
+              value: linux-amd64-thinkcentre:docker://docker.gitea.com/runner-images:ubuntu-latest
+          volumeMounts:
+            - name: config
+              mountPath: /config.yaml
+              subPath: config.yaml
+              readOnly: true
+            - name: data
+              mountPath: /data
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+      volumes:
+        - name: config
+          configMap:
+            name: runner-config
+        - name: data
+          hostPath:
+            path: /home/radu/services/gitea-act-runner-thinkcentre/data
+            type: Directory
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket

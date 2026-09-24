@@ -1,0 +1,139 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: borg-web-ui
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: borg-web-ui
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: borg-redis
+  template:
+    metadata:
+      labels:
+        app: borg-redis
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: redis
+          image: redis@sha256:520775a41a63e77e06c73e35d2fd9cc15921a609516818796b4ecbb813078bc7
+          args:
+            - redis-server
+            - --maxmemory
+            - 2gb
+            - --maxmemory-policy
+            - allkeys-lru
+          ports:
+            - name: redis
+              containerPort: 6379
+          readinessProbe:
+            exec:
+              command: [redis-cli, ping]
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 2304Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: borg-web-ui
+spec:
+  selector:
+    app: borg-redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: redis
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: borg-web-ui
+  namespace: borg-web-ui
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: borg-web-ui
+  template:
+    metadata:
+      labels:
+        app: borg-web-ui
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: borg-web-ui
+          image: ainullcode/borg-ui@sha256:e04c5a7fe3198208e4fdc9e8e7a13ce2df8294c945164a8aa11c03ff59606c52
+          env:
+            - name: TZ
+              value: Europe/Copenhagen
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: LOCAL_MOUNT_POINTS
+              value: /local
+            - name: REDIS_HOST
+              value: redis
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_DB
+              value: "0"
+          ports:
+            - name: http
+              containerPort: 8081
+              hostPort: 8081
+              protocol: TCP
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: cache
+              mountPath: /home/borg/.cache/borg
+            - name: local
+              mountPath: /local
+              readOnly: true
+      volumes:
+        - name: data
+          hostPath:
+            path: /home/main/services/borg-web-ui/data
+            type: Directory
+        - name: cache
+          hostPath:
+            path: /home/main/services/borg-web-ui/cache
+            type: Directory
+        - name: local
+          hostPath:
+            path: /home/main
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: borg-web-ui
+  namespace: borg-web-ui
+spec:
+  selector:
+    app: borg-web-ui
+  ports:
+    - name: http
+      port: 8081
+      targetPort: http

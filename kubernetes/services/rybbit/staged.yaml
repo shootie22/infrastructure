@@ -1,0 +1,405 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rybbit
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rybbit-config
+  namespace: rybbit
+data:
+  Caddyfile: |
+    :8080 {
+        encode zstd gzip
+
+        request_body max_size 10MB
+
+        handle /api/* {
+            reverse_proxy backend:3001 {
+                header_up Host {http.request.host}
+                header_up X-Forwarded-Host {http.request.host}
+                header_up X-Forwarded-Proto {http.request.header.X-Forwarded-Proto}
+                header_up X-Forwarded-Port {http.request.header.X-Forwarded-Port}
+            }
+        }
+
+        handle {
+            reverse_proxy client:3002 {
+                header_up Host {http.request.host}
+                header_up X-Forwarded-Host {http.request.host}
+                header_up X-Forwarded-Proto {http.request.header.X-Forwarded-Proto}
+                header_up X-Forwarded-Port {http.request.header.X-Forwarded-Port}
+            }
+        }
+    }
+
+  network.xml: |
+    <clickhouse>
+        <listen_host>0.0.0.0</listen_host>
+    </clickhouse>
+
+  enable_json.xml: |
+    <clickhouse>
+        <settings>
+            <enable_json_type>1</enable_json_type>
+        </settings>
+    </clickhouse>
+
+  logging_rules.xml: |
+    <clickhouse>
+        <logger>
+            <level>warning</level>
+            <console>true</console>
+        </logger>
+        <query_thread_log remove="remove"/>
+        <query_log remove="remove"/>
+        <text_log remove="remove"/>
+        <trace_log remove="remove"/>
+        <metric_log remove="remove"/>
+        <asynchronous_metric_log remove="remove"/>
+        <session_log remove="remove"/>
+        <part_log remove="remove"/>
+        <latency_log remove="remove"/>
+        <processors_profile_log remove="remove"/>
+    </clickhouse>
+
+  user_logging.xml: |
+    <clickhouse>
+        <profiles>
+            <default>
+                <log_queries>0</log_queries>
+                <log_query_threads>0</log_query_threads>
+                <log_processors_profiles>0</log_processors_profiles>
+            </default>
+        </profiles>
+    </clickhouse>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: rybbit
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: rybbit-postgres
+  template:
+    metadata:
+      labels:
+        app: rybbit-postgres
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: postgres
+          image: postgres@sha256:304ab813518754228f9f792f79d6da36359b82d8ecf418096c636725f8c930ad
+          env:
+            - name: POSTGRES_DB
+              valueFrom: {secretKeyRef: {name: rybbit-env, key: POSTGRES_DB}}
+            - name: POSTGRES_USER
+              valueFrom: {secretKeyRef: {name: rybbit-env, key: POSTGRES_USER}}
+            - name: POSTGRES_PASSWORD
+              valueFrom: {secretKeyRef: {name: rybbit-env, key: POSTGRES_PASSWORD}}
+          ports:
+            - name: postgres
+              containerPort: 5432
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          hostPath:
+            path: /home/main/services/rybbit/postgres
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: rybbit
+spec:
+  selector:
+    app: rybbit-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clickhouse
+  namespace: rybbit
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: rybbit-clickhouse
+  template:
+    metadata:
+      labels:
+        app: rybbit-clickhouse
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: clickhouse
+          image: clickhouse/clickhouse-server@sha256:5311f717b7a3ee1e8ed2c198fee498c636ba6c2da3e39dbe45769088ebc858d0
+          env:
+            - name: CLICKHOUSE_DB
+              valueFrom: {secretKeyRef: {name: rybbit-env, key: CLICKHOUSE_DB}}
+            - name: CLICKHOUSE_USER
+              valueFrom: {secretKeyRef: {name: rybbit-env, key: CLICKHOUSE_USER}}
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom: {secretKeyRef: {name: rybbit-env, key: CLICKHOUSE_PASSWORD}}
+          ports:
+            - name: http
+              containerPort: 8123
+            - name: native
+              containerPort: 9000
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/clickhouse
+            - name: config
+              mountPath: /etc/clickhouse-server/config.d/network.xml
+              subPath: network.xml
+              readOnly: true
+            - name: config
+              mountPath: /etc/clickhouse-server/config.d/enable_json.xml
+              subPath: enable_json.xml
+              readOnly: true
+            - name: config
+              mountPath: /etc/clickhouse-server/config.d/logging_rules.xml
+              subPath: logging_rules.xml
+              readOnly: true
+            - name: config
+              mountPath: /etc/clickhouse-server/config.d/user_logging.xml
+              subPath: user_logging.xml
+              readOnly: true
+      volumes:
+        - name: data
+          hostPath:
+            path: /home/main/services/rybbit/clickhouse
+            type: Directory
+        - name: config
+          configMap:
+            name: rybbit-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickhouse
+  namespace: rybbit
+spec:
+  selector:
+    app: rybbit-clickhouse
+  ports:
+    - name: http
+      port: 8123
+      targetPort: http
+    - name: native
+      port: 9000
+      targetPort: native
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: rybbit
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: rybbit-backend
+  template:
+    metadata:
+      labels:
+        app: rybbit-backend
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: backend
+          image: git.radunenu.com/radu/rybbit-backend:migration-20260924
+          imagePullPolicy: Never
+          env:
+            - {name: NODE_ENV, value: production}
+            - {name: CLICKHOUSE_HOST, value: "http://clickhouse:8123"}
+            - {name: POSTGRES_HOST, value: postgres}
+            - {name: POSTGRES_PORT, value: "5432"}
+            - name: CLICKHOUSE_DB
+              valueFrom: {secretKeyRef: {name: rybbit-env, key: CLICKHOUSE_DB}}
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom: {secretKeyRef: {name: rybbit-env, key: CLICKHOUSE_PASSWORD}}
+            - name: POSTGRES_DB
+              valueFrom: {secretKeyRef: {name: rybbit-env, key: POSTGRES_DB}}
+            - name: POSTGRES_USER
+              valueFrom: {secretKeyRef: {name: rybbit-env, key: POSTGRES_USER}}
+            - name: POSTGRES_PASSWORD
+              valueFrom: {secretKeyRef: {name: rybbit-env, key: POSTGRES_PASSWORD}}
+            - name: BETTER_AUTH_SECRET
+              valueFrom: {secretKeyRef: {name: rybbit-env, key: BETTER_AUTH_SECRET}}
+            - {name: BASE_URL, value: "https://analytics.radunenu.com"}
+            - {name: DOMAIN_NAME, value: analytics.radunenu.com}
+            - {name: DISABLE_SIGNUP, value: "false"}
+            - {name: DISABLE_TELEMETRY, value: "true"}
+            - name: MAPBOX_TOKEN
+              valueFrom: {secretKeyRef: {name: rybbit-env, key: MAPBOX_TOKEN}}
+          ports:
+            - name: http
+              containerPort: 3001
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: rybbit
+spec:
+  selector:
+    app: rybbit-backend
+  ports:
+    - name: http
+      port: 3001
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: rybbit
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: rybbit-client
+  template:
+    metadata:
+      labels:
+        app: rybbit-client
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: client
+          image: git.radunenu.com/radu/rybbit-client:migration-20260924
+          imagePullPolicy: Never
+          env:
+            - {name: NODE_ENV, value: production}
+            - {name: NEXT_PUBLIC_BACKEND_URL, value: "https://analytics.radunenu.com"}
+            - {name: NEXT_PUBLIC_DISABLE_SIGNUP, value: "false"}
+            - {name: DOMAIN_NAME, value: analytics.radunenu.com}
+          ports:
+            - name: http
+              containerPort: 3002
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: client
+  namespace: rybbit
+spec:
+  selector:
+    app: rybbit-client
+  ports:
+    - name: http
+      port: 3002
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: caddy
+  namespace: rybbit
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: rybbit-caddy
+  template:
+    metadata:
+      labels:
+        app: rybbit-caddy
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: caddy
+          image: caddy@sha256:133b5eb7ef9d42e34756ba206b06d84f4e3eb308044e268e182c2747083f09de
+          args:
+            - caddy
+            - run
+            - --config
+            - /etc/caddy/Caddyfile
+            - --adapter
+            - caddyfile
+          ports:
+            - name: http
+              containerPort: 8080
+              hostPort: 18080
+              hostIP: 100.64.0.4
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          volumeMounts:
+            - name: config
+              mountPath: /etc/caddy/Caddyfile
+              subPath: Caddyfile
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: rybbit-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: caddy
+  namespace: rybbit
+spec:
+  selector:
+    app: rybbit-caddy
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
