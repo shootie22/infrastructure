@@ -57,7 +57,7 @@ metadata:
   name: gitea-runner-thinkcentre
   namespace: gitea-runner-thinkcentre
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
