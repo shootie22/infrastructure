@@ -5,14 +5,14 @@ metadata:
   namespace: tailnet-dns
 data:
   Corefile: |
-    infra:53 {
+    infra.radunenu.com:53 {
       bind 100.64.0.1
       errors
       health 127.0.0.1:8081
       ready 127.0.0.1:8181
       reload
       hosts {
-        100.64.0.1 hl.infra
+        100.64.0.1 hl.infra.radunenu.com
         ttl 60
       }
     }
