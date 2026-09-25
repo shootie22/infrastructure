@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: headlamp-tailnet-proxy
+  namespace: headlamp
+data:
+  Caddyfile: |
+    {
+      admin 127.0.0.1:12019
+      auto_https disable_redirects
+    }
+
+    https://hl.infra.radunenu.com:8443 {
+      bind 100.64.0.1
+      tls /certs/tls.crt /certs/tls.key
+      reverse_proxy headlamp.headlamp.svc.cluster.local:80
+    }
