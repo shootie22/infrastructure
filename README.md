@@ -44,13 +44,13 @@ This provides a local copy for normal restores and an off-site copy for recovery
 
 The infrastructure has been rebuilt quite a few times as both the hardware and the way I wanted to manage it changed.
 
-I started by hosting Minecraft servers over [Hamachi](https://vpn.net/), then spent some time paying for managed Minecraft hosting. Soon enough I became progressively more interested in being able to mess around with more of the server and see what could be done, which eventually led to running my own server hardware, Linux, and port forwarding.
+I started hosting Minecraft servers over [Hamachi](https://vpn.net/), and then moved onto managed hosting for a while... but soon enough I became progressively more interested in being able to mess around with more of the server and see what could be done, which eventually led me to running my own server hardware and setups.
 
-The first proper server was an HP MicroServer in 2013, followed by a larger HP server and later a period of running things on OVH VMs. In 2017 I moved back to hardware at home with a Raspberry Pi 3B+, later adding an old laptop as a storage server before consolidating onto a Dell tower in 2018.
+My first proper server was an HP MicroServer in 2013, followed by a larger HP server and later a period of running things on OVH VMs. In 2017 I moved back to hardware at home with a Raspberry Pi 3B+, later adding an old laptop as a storage server before consolidating onto a Dell tower in 2018.
 
-That setup eventually evolved into Proxmox in 2024, then Git-managed Docker deployments with Komodo in 2025, and finally the current Kubernetes + Argo CD setup in 2026.
+That eventually evolved into a Proxmox setup in 2024, in an attempt to "clean things up". The setup was good, but also very power hungry and it felt a little unstable. After about a year, I took that server apart and moved to a distributed setup using mini PCs (for low power consumption), with Komodo handling deployments across them. At the same time I moved most of the setup towards GitOps.
 
-Most of those changes came from some combination of reducing cost and power use, trying different ways of managing servers, swapping Linux distributions to learn how they work, and generally experimenting with different setups. In 2025 I became increasingly curious about making the setup more reliable, declarative and reproducible, which naturally led me down the path of NixOS and Kubernetes.
+That setup worked too, but it started to feel a little slow and I didn't really like the deployment process. I had also been burning to play with Kubernetes and NixOS, so moving to the current Kubernetes + Argo CD setup felt like the natural next step.
 
 *(all roads lead to Kubernetes)*
 
