@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: headlamp-tailnet-proxy
+  namespace: headlamp
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: headlamp-tailnet-proxy
+  template:
+    metadata:
+      labels:
+        app: headlamp-tailnet-proxy
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: fuji
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: caddy
+          image: caddy:2.10-alpine
+          imagePullPolicy: IfNotPresent
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              caddy run --config /etc/caddy/Caddyfile &
+              proxy_pid=$!
+              trap 'kill -TERM "$proxy_pid" 2>/dev/null || true; wait "$proxy_pid" 2>/dev/null || true; exit 0' TERM INT
+              previous="$(sha256sum /certs/tls.crt /certs/tls.key)"
+              while kill -0 "$proxy_pid" 2>/dev/null; do
+                sleep 15
+                current="$(sha256sum /certs/tls.crt /certs/tls.key)"
+                if [ "$current" != "$previous" ]; then
+                  kill -USR1 "$proxy_pid"
+                  previous="$current"
+                fi
+              done
+              wait "$proxy_pid"
+          ports:
+            - name: https
+              containerPort: 8443
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              host: 100.64.0.1
+              port: https
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              host: 100.64.0.1
+              port: https
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 20m
+              memory: 48Mi
+            limits:
+              cpu: 250m
+              memory: 192Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/caddy
+              readOnly: true
+            - name: cert
+              mountPath: /certs
+              readOnly: true
+            - name: caddy-data
+              mountPath: /data
+            - name: caddy-config
+              mountPath: /config
+      volumes:
+        - name: config
+          configMap:
+            name: headlamp-tailnet-proxy
+        - name: cert
+          secret:
+            secretName: headlamp-infra-tls
+        - name: caddy-data
+          emptyDir: {}
+        - name: caddy-config
+          emptyDir: {}
