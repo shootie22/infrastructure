@@ -32,6 +32,13 @@ Some configuration and deployment work is done with the help of AI where it make
 - `scripts/` — repository and secret-management helpers
 - `docs/` — longer infrastructure notes
 
+
+## Backup & disaster recovery
+
+Each server is backed up independently with Borg to server#4 (the Mac mini M4) on a regular schedule. Server#4 stores the backups as encrypted Borg repositories, which are then backed up off-site to Backblaze B2.
+
+This provides a local copy for normal restores and an off-site copy for recovery if the backup host or site itself is lost.
+
 <details>
 <summary><strong>History</strong></summary>
 
