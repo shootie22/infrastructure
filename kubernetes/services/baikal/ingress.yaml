@@ -1,3 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cal-radunenu-com
+  namespace: baikal
+spec:
+  secretName: cal-radunenu-com-tls
+  dnsNames:
+    - cal.radunenu.com
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -5,6 +18,10 @@ metadata:
   namespace: baikal
 spec:
   ingressClassName: traefik
+  tls:
+    - hosts:
+        - cal.radunenu.com
+      secretName: cal-radunenu-com-tls
   rules:
     - host: cal.radunenu.com
       http:
