@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: headlamp-infra
+  namespace: headlamp
+spec:
+  secretName: headlamp-infra-tls
+  dnsNames:
+    - hl.infra.radunenu.com
+  issuerRef:
+    name: headlamp-dns01
+    kind: Issuer
