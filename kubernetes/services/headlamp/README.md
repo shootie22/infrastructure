@@ -1,10 +1,24 @@
 # Headlamp
 
-Headlamp 0.45.0 is served at `https://hl.radunenu.com` via Traefik and
-cert-manager. Ensure the DNS record for this hostname points at Traefik before
-merging. The ApplicationSet will discover this directory automatically. The
-Deployment is pinned to Fuji (`kubernetes.io/hostname: fuji`); it will stay
-Pending rather than move to another node if Fuji is unavailable.
+Headlamp 0.45.0 is private. It has no Ingress or external Service; the previous
+public `hl.radunenu.com` route was removed. The ApplicationSet discovers this
+directory automatically. The Deployment is pinned to Fuji
+(`kubernetes.io/hostname: fuji`); it will stay Pending rather than move to
+another node if Fuji is unavailable.
+
+## Access over SSH
+
+From a computer that can SSH to Fuji over the private network, run:
+
+```sh
+ssh -t -L 4466:127.0.0.1:4466 fuji 'sudo kubectl -n headlamp port-forward --address 127.0.0.1 svc/headlamp 4466:80'
+```
+
+Then open `http://localhost:4466` on that computer. Keep the SSH session open
+while using Headlamp. SSH encrypts the connection to Fuji and the port-forward
+binds only to loopback; no long-lived Kubernetes resource is created. If the
+local port is busy, change the first `4466` after `-L` and use that port in the
+browser. Do not bind the port-forward to `0.0.0.0`.
 
 ## Login and permissions
 
@@ -30,12 +44,12 @@ Headlamp until the API-server configuration and per-user RBAC are verified.
 
 ## Rollout checks
 
-Once DNS and Git changes are ready, check the `headlamp` Argo application is
-Synced and Healthy. On Fuji, use `sudo kubectl` to check the Deployment and
-pod, the Ingress, and the certificate in the `headlamp` namespace. Confirm an
-anonymous browser gets the token login, then sign in with a short-lived viewer
-token and inspect namespaces, nodes and workloads. Check the RBAC boundary
-without printing any credentials:
+After Git reconciliation, check the `headlamp` Argo application is Synced and
+Healthy. On Fuji, use `sudo kubectl` to check the Deployment and pod, and
+confirm that the Headlamp Ingress has been pruned. Open the local SSH tunnel,
+confirm an anonymous browser gets the token login, then sign in with a
+short-lived viewer token and inspect namespaces, nodes and workloads. Check
+the RBAC boundary without printing any credentials:
 
 ```sh
 sudo kubectl auth can-i list pods --all-namespaces --as=system:serviceaccount:headlamp:headlamp-viewer
