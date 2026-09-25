@@ -12,6 +12,8 @@ spec:
     metadata:
       labels:
         app: headscale
+      annotations:
+        config-revision: "split-infra-radunenu-com-1"
     spec:
       dnsConfig:
         options:
