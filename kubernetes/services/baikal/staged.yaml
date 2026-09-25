@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: baikal
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: baikal
+  namespace: baikal
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: baikal
+  template:
+    metadata:
+      labels:
+        app: baikal
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: fuji
+      containers:
+        - name: baikal
+          image: ckulka/baikal@sha256:045918423df00a3f9ec793a819b9acdb055d338b75387926b7d93d753ac1e93a
+          ports:
+            - name: http
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            failureThreshold: 12
+          volumeMounts:
+            - name: specific
+              mountPath: /var/www/baikal/Specific
+            - name: config
+              mountPath: /var/www/baikal/config
+      volumes:
+        - name: specific
+          hostPath:
+            path: /home/fuji/services/baikal/Specific
+            type: Directory
+        - name: config
+          hostPath:
+            path: /home/fuji/services/baikal/config
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: baikal
+  namespace: baikal
+spec:
+  selector:
+    app: baikal
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

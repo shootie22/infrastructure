@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: github-commit-sync
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: github-commit-sync
+  namespace: github-commit-sync
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: github-commit-sync
+  template:
+    metadata:
+      labels:
+        app: github-commit-sync
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: mixi
+      containers:
+        - name: github-commit-sync
+          image: git.radunenu.com/radu/github-commit-sync@sha256:fb9ae2cb6d934e4e316b2f0a6ed6a0535583c530f0f055608aaa3fe9623601cf
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: github-commit-sync-env
+          ports:
+            - name: http
+              containerPort: 6424
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: github-commit-sync
+  namespace: github-commit-sync
+spec:
+  selector:
+    app: github-commit-sync
+  ports:
+    - name: http
+      port: 6424
+      targetPort: http
