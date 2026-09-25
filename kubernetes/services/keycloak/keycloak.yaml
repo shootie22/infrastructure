@@ -58,10 +58,7 @@ spec:
                   name: keycloak-env
                   key: KC_DB_PASSWORD
             - name: KC_HOSTNAME
-              valueFrom:
-                secretKeyRef:
-                  name: keycloak-env
-                  key: KC_HOSTNAME
+              value: https://auth.radunenu.com
             - name: KC_HTTP_ENABLED
               value: "true"
             - name: KC_PROXY_HEADERS
