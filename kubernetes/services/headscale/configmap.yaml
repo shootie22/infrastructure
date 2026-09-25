@@ -28,6 +28,9 @@ data:
         global:
           - 1.1.1.1
           - 1.0.0.1
+        split:
+          infra.radunenu.com:
+            - 100.64.0.1
 
     prefixes:
       v4: 100.64.0.0/10
