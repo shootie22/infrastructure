@@ -1,0 +1,19 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: headlamp-dns01
+  namespace: headlamp
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: headlamp-acme-account-key
+    solvers:
+      - selector:
+          dnsNames:
+            - hl.infra.radunenu.com
+        dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: headlamp-cloudflare-api-token
+              key: api-token
