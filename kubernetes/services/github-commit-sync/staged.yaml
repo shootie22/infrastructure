@@ -23,6 +23,10 @@ spec:
       automountServiceAccountToken: false
       nodeSelector:
         kubernetes.io/hostname: mixi
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
       containers:
         - name: github-commit-sync
           image: git.radunenu.com/radu/github-commit-sync@sha256:fb9ae2cb6d934e4e316b2f0a6ed6a0535583c530f0f055608aaa3fe9623601cf
