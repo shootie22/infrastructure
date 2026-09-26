@@ -18,8 +18,10 @@ Grafana rendered correctly. No deployment or push is implied by a local commit.
   a fraction of total CPUs. CPU modes distinguish iowait and steal.
 - Host processes outside containers are not attributed by current collection.
   Fan sensors depend on hardware/driver exposure; absent data is not zero RPM.
-- Pending operator evidence: backing volumes, fan metrics, container label/data
-  availability, and rendered dashboard verification after deployment.
+- Operator evidence confirms all five local-path claims share a reported capacity
+  of 462289096704 bytes on Fuji. `node_hwmon_fan_rpm` exists on mixi, and Hetzner
+  uses `host` without `node`. Container label availability and rendered dashboard
+  verification remain to be checked.
 
 ## Edge / Traefik
 
@@ -50,7 +52,7 @@ Grafana rendered correctly. No deployment or push is implied by a local commit.
 
 ## Remaining sweep
 
-Observability Stack, Synapse,
+Synapse,
 LiveKit / Element Call.
 
 ## Kubernetes Workloads
@@ -86,3 +88,14 @@ LiveKit / Element Call.
   reason; clearly distinguish observations from unique incident counts.
 - Loki 2.9.8 accepted all queries; synthetic WARN/normal-line fixtures verify the
   token filter and displayed pod/container identity.
+
+## Observability Stack
+
+- Correct exporter coverage to count only distinct Kubernetes nodes, excluding
+  external hosts. Use actual DaemonSet availability for Alloy instead of treating
+  the number of scrape endpoints as distinct node coverage.
+- Add target health history, per-target scrape volume, monitoring-container CPU
+  and memory, component logs, Kubernetes Events and configuration reload status.
+- Remove fabricated zero series from optional failure counters and explicitly
+  document that Loki/collector failure can itself make log evidence unavailable.
+- Component log selectors are independent of the global stack health metrics.

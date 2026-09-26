@@ -730,7 +730,45 @@ def stack_dashboard() -> dict:
         row("API and UI", 42),
         panel("Kubernetes API Requests", "timeseries", 0, 43, 24, 7, [target('sum by(code) (rate(apiserver_request_total{job="kubernetes-apiserver"}[$__rate_interval]))', legend="HTTP {{code}}")], unit="reqps"),
     ]
-    return dashboard("Observability Stack", "obs-stack", p, [], tags=["monitoring"])
+    for item in p:
+        if item["title"] == "Node Exporter Coverage":
+            item["targets"][0]["expr"] = 'sum((max by(node) (up{job="node-exporter",node!=""}) == bool 1) and on(node) max by(node) (kube_node_info{job="kube-state-metrics"})) / count(max by(node) (kube_node_info{job="kube-state-metrics"}))'
+            item["description"] = "Healthy exporter nodes divided by Kubernetes nodes, deduplicated by node. External hosts are excluded from both sides."
+        elif item["title"] == "Alloy Node Coverage":
+            item["title"] = "Alloy Available / Desired Pods"
+            item["targets"][0]["expr"] = 'kube_daemonset_status_number_available{job="kube-state-metrics",namespace="monitoring",daemonset="alloy"} / clamp_min(kube_daemonset_status_desired_number_scheduled{job="kube-state-metrics",namespace="monitoring",daemonset="alloy"}, 1)'
+            item["description"] = "DaemonSet availability, not scrape success. Inspect Target Availability below for Alloy scrape failures."
+        elif item["title"] == "Scrape Targets Down":
+            item["targets"][0]["expr"] = 'max by(job,instance,node,host,kubernetes_service) (up) == 0'
+            item["targets"][0]["legendFormat"] = "Scrape up"
+        for query in item.get("targets", []):
+            if " or vector(0)" in query["expr"]:
+                query["expr"] = query["expr"].replace(" or vector(0)", "")
+                item["description"] += " Missing optional counter series are shown as no data, not a fabricated healthy zero. Compare target health and component logs."
+    p.extend([
+        row("Pipeline investigation — correlate a spike with targets and component logs", 50),
+        panel("Target Availability", "timeseries", 0, 51, 12, 7,
+              [target('min by(job,instance) (up)', legend="{{job}} / {{instance}}")], min_value=0, max_value=1),
+        panel("Samples per Scrape by Target", "timeseries", 12, 51, 12, 7,
+              [target('scrape_samples_post_metric_relabeling', legend="{{job}} / {{instance}}")],
+              description="Identify targets whose sample volume changed alongside TSDB growth. This is samples per scrape, not unique series count."),
+        panel("Monitoring Container CPU", "timeseries", 0, 58, 12, 7,
+              [target('sum by(pod,container) (rate(container_cpu_usage_seconds_total{job="kubelet-cadvisor",namespace="monitoring",container!="",container!="POD"}[$__rate_interval]))', legend="{{pod}} / {{container}}")], unit="cores"),
+        panel("Monitoring Container Memory", "timeseries", 12, 58, 12, 7,
+              [target('max by(pod,container) (container_memory_working_set_bytes{job="kubelet-cadvisor",namespace="monitoring",container!="",container!="POD"})', legend="{{pod}} / {{container}}")], unit="bytes"),
+        panel("Monitoring Component Logs", "logs", 0, 65, 24, 9,
+              [log_target('{namespace="monitoring",pod=~"$component_pod"} |~ "$search" | line_format "{{.pod}} / {{.container}} — {{ __line__ }}"')], datasource=LOKI,
+              description="Select the failing collector/pod and zoom the incident interval. Default shows all lines for context; use Log regex to narrow errors. If Loki or collection itself is down, logs can be absent despite failures."),
+        panel("Monitoring Kubernetes Events", "logs", 0, 74, 12, 7,
+              [log_target('{job="kubernetes-events",namespace="monitoring"} | logfmt')], datasource=LOKI),
+        panel("Prometheus Configuration Reload Success", "timeseries", 12, 74, 12, 7,
+              [target('prometheus_config_last_reload_successful{job="prometheus"}', legend="Configuration accepted")], min_value=0, max_value=1,
+              description="0 means the latest configuration reload failed. Inspect Prometheus and reloader logs in the same time range."),
+    ])
+    readable_fields(p)
+    variables = [loki_var("component_pod", 'label_values({namespace="monitoring"}, pod)', label="Log pod", multi=True, include_all=True),
+                 text_var("search", ".*", "Log regex")]
+    return dashboard("Observability Stack", "obs-stack", p, variables, tags=["monitoring"])
 
 
 def render_configmap(name: str, key: str, body: dict) -> str:

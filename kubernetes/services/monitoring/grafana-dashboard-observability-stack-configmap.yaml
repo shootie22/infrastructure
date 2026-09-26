@@ -119,7 +119,7 @@ data:
               },
               "editorMode": "code",
               "expr": "min(up{job=\"prometheus\"})",
-              "legendFormat": "",
+              "legendFormat": "Prometheus",
               "range": false,
               "refId": "A",
               "instant": true
@@ -191,7 +191,7 @@ data:
               },
               "editorMode": "code",
               "expr": "min(up{job=\"grafana\"})",
-              "legendFormat": "",
+              "legendFormat": "Grafana",
               "range": false,
               "refId": "A",
               "instant": true
@@ -263,7 +263,7 @@ data:
               },
               "editorMode": "code",
               "expr": "min(up{job=\"kubernetes-services\",kubernetes_service=\"loki\"})",
-              "legendFormat": "",
+              "legendFormat": "Loki",
               "range": false,
               "refId": "A",
               "instant": true
@@ -277,7 +277,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "Share of Kubernetes nodes with a healthy Alloy pod-log collector.",
+          "description": "DaemonSet availability, not scrape success. Inspect Target Availability below for Alloy scrape failures.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -338,14 +338,14 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum(up{job=\"kubernetes-services\",kubernetes_service=\"alloy\"} == 1) / count(kube_node_info{job=\"kube-state-metrics\"})",
-              "legendFormat": "",
+              "expr": "kube_daemonset_status_number_available{job=\"kube-state-metrics\",namespace=\"monitoring\",daemonset=\"alloy\"} / clamp_min(kube_daemonset_status_desired_number_scheduled{job=\"kube-state-metrics\",namespace=\"monitoring\",daemonset=\"alloy\"}, 1)",
+              "legendFormat": "Alloy Available / Desired Pods",
               "range": false,
               "refId": "A",
               "instant": true
             }
           ],
-          "title": "Alloy Node Coverage",
+          "title": "Alloy Available / Desired Pods",
           "type": "stat"
         },
         {
@@ -353,7 +353,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "Share of Kubernetes nodes with a healthy node-exporter target.",
+          "description": "Healthy exporter nodes divided by Kubernetes nodes, deduplicated by node. External hosts are excluded from both sides.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -414,8 +414,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum(up{job=\"node-exporter\"} == 1) / count(kube_node_info{job=\"kube-state-metrics\"})",
-              "legendFormat": "",
+              "expr": "sum((max by(node) (up{job=\"node-exporter\",node!=\"\"}) == bool 1) and on(node) max by(node) (kube_node_info{job=\"kube-state-metrics\"})) / count(max by(node) (kube_node_info{job=\"kube-state-metrics\"}))",
+              "legendFormat": "Node Exporter Coverage",
               "range": false,
               "refId": "A",
               "instant": true
@@ -448,7 +448,44 @@ data:
               },
               "unit": "short"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value #A"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Scrape up"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Scrape up"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Time"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hidden",
+                    "value": true
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 7,
@@ -467,13 +504,7 @@ data:
               ],
               "show": false
             },
-            "showHeader": true,
-            "sortBy": [
-              {
-                "desc": true,
-                "displayName": "Value"
-              }
-            ]
+            "showHeader": true
           },
           "pluginVersion": "12.4.1",
           "targets": [
@@ -483,8 +514,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "up == 0",
-              "legendFormat": "",
+              "expr": "max by(job,instance,node,host,kubernetes_service) (up) == 0",
+              "legendFormat": "Scrape up",
               "range": false,
               "refId": "A",
               "instant": true,
@@ -1089,7 +1120,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "Entries rejected by Loki limits or validation. Zero is expected.",
+          "description": "Entries rejected by Loki limits or validation. Zero is expected. Missing optional counter series are shown as no data, not a fabricated healthy zero. Compare target health and component logs.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1169,7 +1200,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(reason) (rate(loki_discarded_samples_total{kubernetes_service=\"loki\"}[$__rate_interval])) or vector(0)",
+              "expr": "sum by(reason) (rate(loki_discarded_samples_total{kubernetes_service=\"loki\"}[$__rate_interval]))",
               "legendFormat": "{{reason}}",
               "range": true,
               "refId": "A"
@@ -1183,7 +1214,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "",
+          "description": " Missing optional counter series are shown as no data, not a fabricated healthy zero. Compare target health and component logs.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1263,7 +1294,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(route) (rate(loki_request_duration_seconds_count{kubernetes_service=\"loki\",status_code=~\"5..\"}[$__rate_interval])) or vector(0)",
+              "expr": "sum by(route) (rate(loki_request_duration_seconds_count{kubernetes_service=\"loki\",status_code=~\"5..\"}[$__rate_interval]))",
               "legendFormat": "{{route}}",
               "range": true,
               "refId": "A"
@@ -1371,7 +1402,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "",
+          "description": " Missing optional counter series are shown as no data, not a fabricated healthy zero. Compare target health and component logs.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1451,7 +1482,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(instance) (rate(loki_write_batch_retries_total{kubernetes_service=~\"alloy|alloy-events\"}[$__rate_interval])) or vector(0)",
+              "expr": "sum by(instance) (rate(loki_write_batch_retries_total{kubernetes_service=~\"alloy|alloy-events\"}[$__rate_interval]))",
               "legendFormat": "{{instance}}",
               "range": true,
               "refId": "A"
@@ -1465,7 +1496,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "",
+          "description": " Missing optional counter series are shown as no data, not a fabricated healthy zero. Compare target health and component logs.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1545,7 +1576,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(instance,reason) (rate(loki_write_dropped_entries_total{kubernetes_service=~\"alloy|alloy-events\"}[$__rate_interval])) or vector(0)",
+              "expr": "sum by(instance,reason) (rate(loki_write_dropped_entries_total{kubernetes_service=~\"alloy|alloy-events\"}[$__rate_interval]))",
               "legendFormat": "{{instance}} {{reason}}",
               "range": true,
               "refId": "A"
@@ -1660,6 +1691,607 @@ data:
           ],
           "title": "Kubernetes API Requests",
           "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 50
+          },
+          "id": 23,
+          "panels": [],
+          "title": "Pipeline investigation \u2014 correlate a spike with targets and component logs",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short",
+              "min": 0,
+              "max": 1
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 51
+          },
+          "id": 24,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "min by(job,instance) (up)",
+              "legendFormat": "{{job}} / {{instance}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Target Availability",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Identify targets whose sample volume changed alongside TSDB growth. This is samples per scrape, not unique series count.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 51
+          },
+          "id": 25,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "scrape_samples_post_metric_relabeling",
+              "legendFormat": "{{job}} / {{instance}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Samples per Scrape by Target",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "cores"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 58
+          },
+          "id": 26,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "sum by(pod,container) (rate(container_cpu_usage_seconds_total{job=\"kubelet-cadvisor\",namespace=\"monitoring\",container!=\"\",container!=\"POD\"}[$__rate_interval]))",
+              "legendFormat": "{{pod}} / {{container}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Monitoring Container CPU",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 58
+          },
+          "id": 27,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "max by(pod,container) (container_memory_working_set_bytes{job=\"kubelet-cadvisor\",namespace=\"monitoring\",container!=\"\",container!=\"POD\"})",
+              "legendFormat": "{{pod}} / {{container}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Monitoring Container Memory",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "description": "Select the failing collector/pod and zoom the incident interval. Default shows all lines for context; use Log regex to narrow errors. If Loki or collection itself is down, logs can be absent despite failures.",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 24,
+            "x": 0,
+            "y": 65
+          },
+          "id": 28,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "editorMode": "code",
+              "expr": "{namespace=\"monitoring\",pod=~\"$component_pod\"} |~ \"$search\" | line_format \"{{.pod}} / {{.container}} \u2014 {{ __line__ }}\"",
+              "legendFormat": "",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Monitoring Component Logs",
+          "type": "logs"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 74
+          },
+          "id": 29,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "editorMode": "code",
+              "expr": "{job=\"kubernetes-events\",namespace=\"monitoring\"} | logfmt",
+              "legendFormat": "",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Monitoring Kubernetes Events",
+          "type": "logs"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "0 means the latest configuration reload failed. Inspect Prometheus and reloader logs in the same time range.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short",
+              "min": 0,
+              "max": 1
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 74
+          },
+          "id": 30,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "prometheus_config_last_reload_successful{job=\"prometheus\"}",
+              "legendFormat": "Configuration accepted",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Prometheus Configuration Reload Success",
+          "type": "timeseries"
         }
       ],
       "refresh": "30s",
@@ -1669,7 +2301,47 @@ data:
         "monitoring"
       ],
       "templating": {
-        "list": []
+        "list": [
+          {
+            "allValue": ".*",
+            "current": {
+              "selected": true,
+              "text": "All",
+              "value": "$__all"
+            },
+            "datasource": {
+              "type": "loki",
+              "uid": "loki"
+            },
+            "definition": "label_values({namespace=\"monitoring\"}, pod)",
+            "hide": 0,
+            "includeAll": true,
+            "label": "Log pod",
+            "multi": true,
+            "name": "component_pod",
+            "options": [],
+            "query": "label_values({namespace=\"monitoring\"}, pod)",
+            "refresh": 2,
+            "regex": "",
+            "skipUrlSync": false,
+            "sort": 1,
+            "type": "query"
+          },
+          {
+            "current": {
+              "selected": true,
+              "text": ".*",
+              "value": ".*"
+            },
+            "hide": 0,
+            "label": "Log regex",
+            "name": "search",
+            "options": [],
+            "query": ".*",
+            "skipUrlSync": false,
+            "type": "textbox"
+          }
+        ]
       },
       "time": {
         "from": "now-6h",
