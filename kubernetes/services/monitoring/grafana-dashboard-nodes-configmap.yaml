@@ -61,7 +61,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "Share of selected nodes reporting Ready.",
+          "description": "Readiness of selected Kubernetes nodes. External Docker hosts have no Kubernetes readiness and show no data when selected alone.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -123,13 +123,13 @@ data:
               },
               "editorMode": "code",
               "expr": "avg(kube_node_status_condition{job=\"kube-state-metrics\",condition=\"Ready\",status=\"true\",node=~\"$node\"})",
-              "legendFormat": "",
+              "legendFormat": "Readiness",
               "range": false,
               "refId": "A",
               "instant": true
             }
           ],
-          "title": "Readiness",
+          "title": "Kubernetes Readiness",
           "type": "stat"
         },
         {
@@ -188,8 +188,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "min(time() - node_boot_time_seconds{job=\"node-exporter\",node=~\"$node\"})",
-              "legendFormat": "",
+              "expr": "min(time() - (node_boot_time_seconds{job=\"node-exporter\",node=~\"$node\",node!=\"\"} or label_replace(node_boot_time_seconds{job=\"node-exporter\",node=\"\",host=~\"$node\"}, \"node\", \"$1\", \"host\", \"(.+)\")))",
+              "legendFormat": "Uptime",
               "range": false,
               "refId": "A",
               "instant": true
@@ -256,8 +256,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "1 - avg(rate(node_cpu_seconds_total{job=\"node-exporter\",mode=\"idle\",node=~\"$node\"}[5m]))",
-              "legendFormat": "",
+              "expr": "1 - avg((rate(node_cpu_seconds_total{job=\"node-exporter\",mode=\"idle\",node=~\"$node\",node!=\"\"}[5m]) or label_replace(rate(node_cpu_seconds_total{job=\"node-exporter\",mode=\"idle\",node=\"\",host=~\"$node\"}[5m]), \"node\", \"$1\", \"host\", \"(.+)\")))",
+              "legendFormat": "CPU Usage",
               "range": false,
               "refId": "A",
               "instant": true
@@ -324,8 +324,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "1 - sum(node_memory_MemAvailable_bytes{job=\"node-exporter\",node=~\"$node\"}) / sum(node_memory_MemTotal_bytes{job=\"node-exporter\",node=~\"$node\"})",
-              "legendFormat": "",
+              "expr": "1 - sum((node_memory_MemAvailable_bytes{job=\"node-exporter\",node=~\"$node\",node!=\"\"} or label_replace(node_memory_MemAvailable_bytes{job=\"node-exporter\",node=\"\",host=~\"$node\"}, \"node\", \"$1\", \"host\", \"(.+)\"))) / sum((node_memory_MemTotal_bytes{job=\"node-exporter\",node=~\"$node\",node!=\"\"} or label_replace(node_memory_MemTotal_bytes{job=\"node-exporter\",node=\"\",host=~\"$node\"}, \"node\", \"$1\", \"host\", \"(.+)\")))",
+              "legendFormat": "Memory Used",
               "range": false,
               "refId": "A",
               "instant": true
@@ -400,8 +400,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "min(node_filesystem_avail_bytes{job=\"node-exporter\",node=~\"$node\",mountpoint=\"/\",fstype!~\"tmpfs|overlay|squashfs\"} / node_filesystem_size_bytes{job=\"node-exporter\",node=~\"$node\",mountpoint=\"/\",fstype!~\"tmpfs|overlay|squashfs\"})",
-              "legendFormat": "",
+              "expr": "min((node_filesystem_avail_bytes{job=\"node-exporter\",node=~\"$node\",mountpoint=\"/\",fstype!~\"tmpfs|overlay|squashfs\",node!=\"\"} or label_replace(node_filesystem_avail_bytes{job=\"node-exporter\",node=\"\",host=~\"$node\",mountpoint=\"/\",fstype!~\"tmpfs|overlay|squashfs\"}, \"node\", \"$1\", \"host\", \"(.+)\")) / (node_filesystem_size_bytes{job=\"node-exporter\",node=~\"$node\",mountpoint=\"/\",fstype!~\"tmpfs|overlay|squashfs\",node!=\"\"} or label_replace(node_filesystem_size_bytes{job=\"node-exporter\",node=\"\",host=~\"$node\",mountpoint=\"/\",fstype!~\"tmpfs|overlay|squashfs\"}, \"node\", \"$1\", \"host\", \"(.+)\")))",
+              "legendFormat": "Root Free",
               "range": false,
               "refId": "A",
               "instant": true
@@ -510,7 +510,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "1 - avg by(node) (rate(node_cpu_seconds_total{job=\"node-exporter\",mode=\"idle\",node=~\"$node\"}[$__rate_interval]))",
+              "expr": "1 - avg by(node) ((rate(node_cpu_seconds_total{job=\"node-exporter\",mode=\"idle\",node=~\"$node\",node!=\"\"}[$__rate_interval]) or label_replace(rate(node_cpu_seconds_total{job=\"node-exporter\",mode=\"idle\",node=\"\",host=~\"$node\"}[$__rate_interval]), \"node\", \"$1\", \"host\", \"(.+)\")))",
               "legendFormat": "{{node}}",
               "range": true,
               "refId": "A"
@@ -605,7 +605,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "node_load1{job=\"node-exporter\",node=~\"$node\"} / on(node) count by(node) (node_cpu_seconds_total{job=\"node-exporter\",mode=\"idle\",node=~\"$node\"})",
+              "expr": "(node_load1{job=\"node-exporter\",node=~\"$node\",node!=\"\"} or label_replace(node_load1{job=\"node-exporter\",node=\"\",host=~\"$node\"}, \"node\", \"$1\", \"host\", \"(.+)\")) / on(node) count by(node) ((node_cpu_seconds_total{job=\"node-exporter\",mode=\"idle\",node=~\"$node\",node!=\"\"} or label_replace(node_cpu_seconds_total{job=\"node-exporter\",mode=\"idle\",node=\"\",host=~\"$node\"}, \"node\", \"$1\", \"host\", \"(.+)\")))",
               "legendFormat": "{{node}}",
               "range": true,
               "refId": "A"
@@ -701,7 +701,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "1 - node_memory_MemAvailable_bytes{job=\"node-exporter\",node=~\"$node\"} / node_memory_MemTotal_bytes{job=\"node-exporter\",node=~\"$node\"}",
+              "expr": "1 - (node_memory_MemAvailable_bytes{job=\"node-exporter\",node=~\"$node\",node!=\"\"} or label_replace(node_memory_MemAvailable_bytes{job=\"node-exporter\",node=\"\",host=~\"$node\"}, \"node\", \"$1\", \"host\", \"(.+)\")) / (node_memory_MemTotal_bytes{job=\"node-exporter\",node=~\"$node\",node!=\"\"} or label_replace(node_memory_MemTotal_bytes{job=\"node-exporter\",node=\"\",host=~\"$node\"}, \"node\", \"$1\", \"host\", \"(.+)\"))",
               "legendFormat": "{{node}}",
               "range": true,
               "refId": "A"
@@ -797,7 +797,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "(node_memory_SwapTotal_bytes{job=\"node-exporter\",node=~\"$node\"} - node_memory_SwapFree_bytes{job=\"node-exporter\",node=~\"$node\"}) / clamp_min(node_memory_SwapTotal_bytes{job=\"node-exporter\",node=~\"$node\"}, 1)",
+              "expr": "((node_memory_SwapTotal_bytes{job=\"node-exporter\",node=~\"$node\",node!=\"\"} or label_replace(node_memory_SwapTotal_bytes{job=\"node-exporter\",node=\"\",host=~\"$node\"}, \"node\", \"$1\", \"host\", \"(.+)\")) - (node_memory_SwapFree_bytes{job=\"node-exporter\",node=~\"$node\",node!=\"\"} or label_replace(node_memory_SwapFree_bytes{job=\"node-exporter\",node=\"\",host=~\"$node\"}, \"node\", \"$1\", \"host\", \"(.+)\"))) / clamp_min((node_memory_SwapTotal_bytes{job=\"node-exporter\",node=~\"$node\",node!=\"\"} or label_replace(node_memory_SwapTotal_bytes{job=\"node-exporter\",node=\"\",host=~\"$node\"}, \"node\", \"$1\", \"host\", \"(.+)\")), 1)",
               "legendFormat": "{{node}}",
               "range": true,
               "refId": "A"
@@ -906,7 +906,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "1 - node_filesystem_avail_bytes{job=\"node-exporter\",node=~\"$node\",fstype!~\"tmpfs|overlay|squashfs|nsfs\",mountpoint!~\"/var/lib/kubelet/pods/.+\"} / node_filesystem_size_bytes{job=\"node-exporter\",node=~\"$node\",fstype!~\"tmpfs|overlay|squashfs|nsfs\",mountpoint!~\"/var/lib/kubelet/pods/.+\"}",
+              "expr": "1 - (node_filesystem_avail_bytes{job=\"node-exporter\",node=~\"$node\",fstype!~\"tmpfs|overlay|squashfs|nsfs\",mountpoint!~\"/var/lib/kubelet/pods/.+\",node!=\"\"} or label_replace(node_filesystem_avail_bytes{job=\"node-exporter\",node=\"\",host=~\"$node\",fstype!~\"tmpfs|overlay|squashfs|nsfs\",mountpoint!~\"/var/lib/kubelet/pods/.+\"}, \"node\", \"$1\", \"host\", \"(.+)\")) / (node_filesystem_size_bytes{job=\"node-exporter\",node=~\"$node\",fstype!~\"tmpfs|overlay|squashfs|nsfs\",mountpoint!~\"/var/lib/kubelet/pods/.+\",node!=\"\"} or label_replace(node_filesystem_size_bytes{job=\"node-exporter\",node=\"\",host=~\"$node\",fstype!~\"tmpfs|overlay|squashfs|nsfs\",mountpoint!~\"/var/lib/kubelet/pods/.+\"}, \"node\", \"$1\", \"host\", \"(.+)\"))",
               "legendFormat": "{{node}} {{mountpoint}}",
               "range": true,
               "refId": "A"
@@ -1002,7 +1002,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "1 - node_filesystem_files_free{job=\"node-exporter\",node=~\"$node\",fstype!~\"tmpfs|overlay|squashfs|nsfs\",mountpoint!~\"/var/lib/kubelet/pods/.+\"} / node_filesystem_files{job=\"node-exporter\",node=~\"$node\",fstype!~\"tmpfs|overlay|squashfs|nsfs\",mountpoint!~\"/var/lib/kubelet/pods/.+\"}",
+              "expr": "1 - (node_filesystem_files_free{job=\"node-exporter\",node=~\"$node\",fstype!~\"tmpfs|overlay|squashfs|nsfs\",mountpoint!~\"/var/lib/kubelet/pods/.+\",node!=\"\"} or label_replace(node_filesystem_files_free{job=\"node-exporter\",node=\"\",host=~\"$node\",fstype!~\"tmpfs|overlay|squashfs|nsfs\",mountpoint!~\"/var/lib/kubelet/pods/.+\"}, \"node\", \"$1\", \"host\", \"(.+)\")) / (node_filesystem_files{job=\"node-exporter\",node=~\"$node\",fstype!~\"tmpfs|overlay|squashfs|nsfs\",mountpoint!~\"/var/lib/kubelet/pods/.+\",node!=\"\"} or label_replace(node_filesystem_files{job=\"node-exporter\",node=\"\",host=~\"$node\",fstype!~\"tmpfs|overlay|squashfs|nsfs\",mountpoint!~\"/var/lib/kubelet/pods/.+\"}, \"node\", \"$1\", \"host\", \"(.+)\"))",
               "legendFormat": "{{node}} {{mountpoint}}",
               "range": true,
               "refId": "A"
@@ -1096,7 +1096,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "rate(node_disk_read_bytes_total{job=\"node-exporter\",node=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\"}[$__rate_interval])",
+              "expr": "(rate(node_disk_read_bytes_total{job=\"node-exporter\",node=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\",node!=\"\"}[$__rate_interval]) or label_replace(rate(node_disk_read_bytes_total{job=\"node-exporter\",node=\"\",host=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\"}[$__rate_interval]), \"node\", \"$1\", \"host\", \"(.+)\"))",
               "legendFormat": "{{node}} {{device}} read",
               "range": true,
               "refId": "A"
@@ -1107,7 +1107,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "rate(node_disk_written_bytes_total{job=\"node-exporter\",node=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\"}[$__rate_interval])",
+              "expr": "(rate(node_disk_written_bytes_total{job=\"node-exporter\",node=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\",node!=\"\"}[$__rate_interval]) or label_replace(rate(node_disk_written_bytes_total{job=\"node-exporter\",node=\"\",host=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\"}[$__rate_interval]), \"node\", \"$1\", \"host\", \"(.+)\"))",
               "legendFormat": "{{node}} {{device}} write",
               "range": true,
               "refId": "B"
@@ -1201,7 +1201,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "rate(node_disk_read_time_seconds_total{job=\"node-exporter\",node=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\"}[$__rate_interval]) / clamp_min(rate(node_disk_reads_completed_total{job=\"node-exporter\",node=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\"}[$__rate_interval]), 0.001)",
+              "expr": "(rate(node_disk_read_time_seconds_total{job=\"node-exporter\",node=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\",node!=\"\"}[$__rate_interval]) or label_replace(rate(node_disk_read_time_seconds_total{job=\"node-exporter\",node=\"\",host=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\"}[$__rate_interval]), \"node\", \"$1\", \"host\", \"(.+)\")) / clamp_min((rate(node_disk_reads_completed_total{job=\"node-exporter\",node=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\",node!=\"\"}[$__rate_interval]) or label_replace(rate(node_disk_reads_completed_total{job=\"node-exporter\",node=\"\",host=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\"}[$__rate_interval]), \"node\", \"$1\", \"host\", \"(.+)\")), 0.001)",
               "legendFormat": "{{node}} {{device}} read",
               "range": true,
               "refId": "A"
@@ -1212,7 +1212,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "rate(node_disk_write_time_seconds_total{job=\"node-exporter\",node=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\"}[$__rate_interval]) / clamp_min(rate(node_disk_writes_completed_total{job=\"node-exporter\",node=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\"}[$__rate_interval]), 0.001)",
+              "expr": "(rate(node_disk_write_time_seconds_total{job=\"node-exporter\",node=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\",node!=\"\"}[$__rate_interval]) or label_replace(rate(node_disk_write_time_seconds_total{job=\"node-exporter\",node=\"\",host=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\"}[$__rate_interval]), \"node\", \"$1\", \"host\", \"(.+)\")) / clamp_min((rate(node_disk_writes_completed_total{job=\"node-exporter\",node=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\",node!=\"\"}[$__rate_interval]) or label_replace(rate(node_disk_writes_completed_total{job=\"node-exporter\",node=\"\",host=~\"$node\",device=~\"(sd|vd|xvd|nvme|mmcblk).+\"}[$__rate_interval]), \"node\", \"$1\", \"host\", \"(.+)\")), 0.001)",
               "legendFormat": "{{node}} {{device}} write",
               "range": true,
               "refId": "B"
@@ -1226,7 +1226,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "Actual kubelet-reported volume usage. Unsupported volume plugins are intentionally absent.",
+          "description": "Kubelet filesystem statistics, NOT per-directory/PVC consumption. Local-path claims can share a filesystem and legitimately show identical percentages. Requested GiB is not an enforced filesystem quota. Unsupported plugins are absent.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1318,14 +1318,14 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "kubelet_volume_stats_used_bytes{job=\"kubelet\",namespace!=\"\"} / kubelet_volume_stats_capacity_bytes{job=\"kubelet\",namespace!=\"\"}",
-              "legendFormat": "{{namespace}} / {{persistentvolumeclaim}}",
+              "expr": "max by(node,namespace,persistentvolumeclaim) (kubelet_volume_stats_used_bytes{job=\"kubelet\",namespace!=\"\",node=~\"$node\"} / kubelet_volume_stats_capacity_bytes{job=\"kubelet\",namespace!=\"\",node=~\"$node\"})",
+              "legendFormat": "{{node}} / {{namespace}} / {{persistentvolumeclaim}}",
               "range": false,
               "refId": "A",
               "instant": true
             }
           ],
-          "title": "PVC Filesystem Used",
+          "title": "PVC Backing Filesystem Used (may be shared)",
           "type": "bargauge"
         },
         {
@@ -1333,7 +1333,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "Provisioned request size for capacity context; this is not actual usage.",
+          "description": "Requested size for claims referenced by pods on selected nodes. This is neither measured consumption nor a local-path quota. Unmounted claims are excluded.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1379,7 +1379,8 @@ data:
                   }
                 ]
               },
-              "unit": "bytes"
+              "unit": "bytes",
+              "min": 0
             },
             "overrides": []
           },
@@ -1415,14 +1416,14 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "max by(namespace,persistentvolumeclaim) (kube_persistentvolumeclaim_resource_requests_storage_bytes{job=\"kube-state-metrics\"})",
+              "expr": "max by(namespace,persistentvolumeclaim) (kube_persistentvolumeclaim_resource_requests_storage_bytes{job=\"kube-state-metrics\"}) and on(namespace,persistentvolumeclaim) (max by(namespace,persistentvolumeclaim) (kube_pod_spec_volumes_persistentvolumeclaims_info{job=\"kube-state-metrics\"} * on(namespace,pod) group_left(node) max by(namespace,pod,node) (kube_pod_info{job=\"kube-state-metrics\",node=~\"$node\"})))",
               "legendFormat": "{{namespace}} / {{persistentvolumeclaim}}",
               "range": false,
               "refId": "A",
               "instant": true
             }
           ],
-          "title": "PVC Requested Capacity (not utilization)",
+          "title": "Mounted PVC Requested Capacity (not usage or quota)",
           "type": "bargauge"
         },
         {
@@ -1523,7 +1524,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(node) (rate(node_network_receive_bytes_total{job=\"node-exporter\",node=~\"$node\",device!~\"lo|veth.*|cni.*|flannel.*\"}[$__rate_interval]))",
+              "expr": "sum by(node) ((rate(node_network_receive_bytes_total{job=\"node-exporter\",node=~\"$node\",device!~\"lo|veth.*|cni.*|flannel.*\",node!=\"\"}[$__rate_interval]) or label_replace(rate(node_network_receive_bytes_total{job=\"node-exporter\",node=\"\",host=~\"$node\",device!~\"lo|veth.*|cni.*|flannel.*\"}[$__rate_interval]), \"node\", \"$1\", \"host\", \"(.+)\")))",
               "legendFormat": "{{node}} receive",
               "range": true,
               "refId": "A"
@@ -1534,7 +1535,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(node) (rate(node_network_transmit_bytes_total{job=\"node-exporter\",node=~\"$node\",device!~\"lo|veth.*|cni.*|flannel.*\"}[$__rate_interval]))",
+              "expr": "sum by(node) ((rate(node_network_transmit_bytes_total{job=\"node-exporter\",node=~\"$node\",device!~\"lo|veth.*|cni.*|flannel.*\",node!=\"\"}[$__rate_interval]) or label_replace(rate(node_network_transmit_bytes_total{job=\"node-exporter\",node=\"\",host=~\"$node\",device!~\"lo|veth.*|cni.*|flannel.*\"}[$__rate_interval]), \"node\", \"$1\", \"host\", \"(.+)\")))",
               "legendFormat": "{{node}} transmit",
               "range": true,
               "refId": "B"
@@ -1628,7 +1629,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(node) (rate(node_network_receive_drop_total{job=\"node-exporter\",node=~\"$node\",device!~\"lo|veth.*\"}[$__rate_interval]) + rate(node_network_receive_errs_total{job=\"node-exporter\",node=~\"$node\",device!~\"lo|veth.*\"}[$__rate_interval]))",
+              "expr": "sum by(node) ((rate(node_network_receive_drop_total{job=\"node-exporter\",node=~\"$node\",device!~\"lo|veth.*\",node!=\"\"}[$__rate_interval]) or label_replace(rate(node_network_receive_drop_total{job=\"node-exporter\",node=\"\",host=~\"$node\",device!~\"lo|veth.*\"}[$__rate_interval]), \"node\", \"$1\", \"host\", \"(.+)\")) + (rate(node_network_receive_errs_total{job=\"node-exporter\",node=~\"$node\",device!~\"lo|veth.*\",node!=\"\"}[$__rate_interval]) or label_replace(rate(node_network_receive_errs_total{job=\"node-exporter\",node=\"\",host=~\"$node\",device!~\"lo|veth.*\"}[$__rate_interval]), \"node\", \"$1\", \"host\", \"(.+)\")))",
               "legendFormat": "{{node}} receive",
               "range": true,
               "refId": "A"
@@ -1639,13 +1640,606 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(node) (rate(node_network_transmit_drop_total{job=\"node-exporter\",node=~\"$node\",device!~\"lo|veth.*\"}[$__rate_interval]) + rate(node_network_transmit_errs_total{job=\"node-exporter\",node=~\"$node\",device!~\"lo|veth.*\"}[$__rate_interval]))",
+              "expr": "sum by(node) ((rate(node_network_transmit_drop_total{job=\"node-exporter\",node=~\"$node\",device!~\"lo|veth.*\",node!=\"\"}[$__rate_interval]) or label_replace(rate(node_network_transmit_drop_total{job=\"node-exporter\",node=\"\",host=~\"$node\",device!~\"lo|veth.*\"}[$__rate_interval]), \"node\", \"$1\", \"host\", \"(.+)\")) + (rate(node_network_transmit_errs_total{job=\"node-exporter\",node=~\"$node\",device!~\"lo|veth.*\",node!=\"\"}[$__rate_interval]) or label_replace(rate(node_network_transmit_errs_total{job=\"node-exporter\",node=\"\",host=~\"$node\",device!~\"lo|veth.*\"}[$__rate_interval]), \"node\", \"$1\", \"host\", \"(.+)\")))",
               "legendFormat": "{{node}} transmit",
               "range": true,
               "refId": "B"
             }
           ],
           "title": "Network Drops and Errors",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 50
+          },
+          "id": 22,
+          "panels": [],
+          "title": "Spike investigation \u2014 drag across a graph to zoom every panel",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Historical container CPU on selected nodes. Drag over a host CPU spike above to inspect the same interval here. Includes terminated pods while their samples are retained; host processes outside containers are not attributed.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "cores",
+              "links": [
+                {
+                  "targetBlank": false,
+                  "title": "Open pod drilldown",
+                  "url": "/d/obs-pod?var-namespace=${__field.labels.namespace}&var-pod=${__field.labels.pod}&from=${__from}&to=${__to}"
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 51
+          },
+          "id": 23,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "sum by(node,namespace,pod,container) (rate(container_cpu_usage_seconds_total{job=\"kubelet-cadvisor\",node=~\"$node\",container!=\"\",container!=\"POD\",pod!=\"\"}[$__rate_interval]))",
+              "legendFormat": "{{node}} / {{namespace}} / {{pod}} / {{container}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "CPU by Kubernetes Container",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Docker cAdvisor CPU in cores. Host processes outside Docker are not collected; empty means no matching Docker telemetry, not zero host CPU.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "cores"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 51
+          },
+          "id": 24,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "sum by(host,name) (rate(container_cpu_usage_seconds_total{job=\"cadvisor\",host=~\"$node\",name!=\"\",image!=\"\"}[$__rate_interval]))",
+              "legendFormat": "{{host}} / {{name}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "CPU by Docker Container",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Distinguishes userspace/system CPU from iowait and hypervisor steal. Process-level profiling is not currently collected.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "percentunit",
+              "min": 0
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 59
+          },
+          "id": 25,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "avg by(node,mode) ((rate(node_cpu_seconds_total{job=\"node-exporter\",node=~\"$node\",mode!=\"idle\",node!=\"\"}[$__rate_interval]) or label_replace(rate(node_cpu_seconds_total{job=\"node-exporter\",node=\"\",host=~\"$node\",mode!=\"idle\"}[$__rate_interval]), \"node\", \"$1\", \"host\", \"(.+)\")))",
+              "legendFormat": "{{node}} / {{mode}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "CPU by Mode",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "bytes",
+              "links": [
+                {
+                  "targetBlank": false,
+                  "title": "Open pod drilldown",
+                  "url": "/d/obs-pod?var-namespace=${__field.labels.namespace}&var-pod=${__field.labels.pod}&from=${__from}&to=${__to}"
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 59
+          },
+          "id": 26,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "max by(node,namespace,pod,container) (container_memory_working_set_bytes{job=\"kubelet-cadvisor\",node=~\"$node\",container!=\"\",container!=\"POD\",pod!=\"\"})",
+              "legendFormat": "{{node}} / {{namespace}} / {{pod}} / {{container}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Memory by Kubernetes Container",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Hardware fan RPM exposed by Linux hwmon. No data means the host/driver exposes no fan sensor; it does not mean the fan is stopped.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "rotrpm",
+              "min": 0
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 66
+          },
+          "id": 27,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "(node_hwmon_fan_rpm{job=\"node-exporter\",node=~\"$node\",node!=\"\"} or label_replace(node_hwmon_fan_rpm{job=\"node-exporter\",node=\"\",host=~\"$node\"}, \"node\", \"$1\", \"host\", \"(.+)\"))",
+              "legendFormat": "{{node}} / {{chip}} / {{sensor}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Fan Speed",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "celsius"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 66
+          },
+          "id": 28,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "(node_hwmon_temp_celsius{job=\"node-exporter\",node=~\"$node\",node!=\"\"} or label_replace(node_hwmon_temp_celsius{job=\"node-exporter\",node=\"\",host=~\"$node\"}, \"node\", \"$1\", \"host\", \"(.+)\"))",
+              "legendFormat": "{{node}} / {{chip}} / {{sensor}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Hardware Temperature",
           "type": "timeseries"
         }
       ],
@@ -1668,7 +2262,7 @@ data:
               "type": "prometheus",
               "uid": "prometheus"
             },
-            "definition": "label_values(node_uname_info{job=\"node-exporter\"}, node)",
+            "definition": "query_result(count by(node) (node_uname_info{job=\"node-exporter\",node!=\"\"} or label_replace(node_uname_info{job=\"node-exporter\",node=\"\",host!=\"\"}, \"node\", \"$1\", \"host\", \"(.+)\")))",
             "hide": 0,
             "includeAll": true,
             "label": "Node",
@@ -1676,11 +2270,11 @@ data:
             "name": "node",
             "options": [],
             "query": {
-              "query": "label_values(node_uname_info{job=\"node-exporter\"}, node)",
+              "query": "query_result(count by(node) (node_uname_info{job=\"node-exporter\",node!=\"\"} or label_replace(node_uname_info{job=\"node-exporter\",node=\"\",host!=\"\"}, \"node\", \"$1\", \"host\", \"(.+)\")))",
               "refId": "var-node"
             },
             "refresh": 2,
-            "regex": "",
+            "regex": "/node=\"([^\"]+)\"/",
             "skipUrlSync": false,
             "sort": 1,
             "type": "query"

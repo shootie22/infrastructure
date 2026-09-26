@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -324,13 +325,56 @@ def nodes_dashboard() -> dict:
         panel("Inodes Used", "timeseries", 12, 21, 12, 7, [target(f'1 - node_filesystem_files_free{{job="node-exporter",node=~"{n}",fstype!~"tmpfs|overlay|squashfs|nsfs",mountpoint!~"/var/lib/kubelet/pods/.+"}} / node_filesystem_files{{job="node-exporter",node=~"{n}",fstype!~"tmpfs|overlay|squashfs|nsfs",mountpoint!~"/var/lib/kubelet/pods/.+"}}', legend="{{node}} {{mountpoint}}")], unit="percentunit", min_value=0, max_value=1),
         panel("Disk Throughput", "timeseries", 0, 28, 12, 7, [target(f'rate(node_disk_read_bytes_total{{job="node-exporter",node=~"{n}",device=~"(sd|vd|xvd|nvme|mmcblk).+"}}[$__rate_interval])', "A", "{{node}} {{device}} read"), target(f'rate(node_disk_written_bytes_total{{job="node-exporter",node=~"{n}",device=~"(sd|vd|xvd|nvme|mmcblk).+"}}[$__rate_interval])', "B", "{{node}} {{device}} write")], unit="Bps"),
         panel("Disk Operation Latency", "timeseries", 12, 28, 12, 7, [target(f'rate(node_disk_read_time_seconds_total{{job="node-exporter",node=~"{n}",device=~"(sd|vd|xvd|nvme|mmcblk).+"}}[$__rate_interval]) / clamp_min(rate(node_disk_reads_completed_total{{job="node-exporter",node=~"{n}",device=~"(sd|vd|xvd|nvme|mmcblk).+"}}[$__rate_interval]), 0.001)', "A", "{{node}} {{device}} read"), target(f'rate(node_disk_write_time_seconds_total{{job="node-exporter",node=~"{n}",device=~"(sd|vd|xvd|nvme|mmcblk).+"}}[$__rate_interval]) / clamp_min(rate(node_disk_writes_completed_total{{job="node-exporter",node=~"{n}",device=~"(sd|vd|xvd|nvme|mmcblk).+"}}[$__rate_interval]), 0.001)', "B", "{{node}} {{device}} write")], unit="s", description="Average device service time per completed operation."),
-        panel("PVC Filesystem Used", "bargauge", 0, 35, 12, 7, [target('kubelet_volume_stats_used_bytes{job="kubelet",namespace!=""} / kubelet_volume_stats_capacity_bytes{job="kubelet",namespace!=""}', legend="{{namespace}} / {{persistentvolumeclaim}}", instant=True)], unit="percentunit", min_value=0, max_value=1, threshold=thresholds(0.8, 0.9), description="Actual kubelet-reported volume usage. Unsupported volume plugins are intentionally absent."),
-        panel("PVC Requested Capacity (not utilization)", "bargauge", 12, 35, 12, 7, [target('max by(namespace,persistentvolumeclaim) (kube_persistentvolumeclaim_resource_requests_storage_bytes{job="kube-state-metrics"})', legend="{{namespace}} / {{persistentvolumeclaim}}", instant=True)], unit="bytes", description="Provisioned request size for capacity context; this is not actual usage."),
+        panel("PVC Backing Filesystem Used (may be shared)", "bargauge", 0, 35, 12, 7, [target('max by(node,namespace,persistentvolumeclaim) (kubelet_volume_stats_used_bytes{job="kubelet",namespace!="",node=~"$node"} / kubelet_volume_stats_capacity_bytes{job="kubelet",namespace!="",node=~"$node"})', legend="{{node}} / {{namespace}} / {{persistentvolumeclaim}}", instant=True)], unit="percentunit", min_value=0, max_value=1, threshold=thresholds(0.8, 0.9), description="Kubelet filesystem statistics, NOT per-directory/PVC consumption. Local-path claims can share a filesystem and legitimately show identical percentages. Requested GiB is not an enforced filesystem quota. Unsupported plugins are absent."),
+        panel("Mounted PVC Requested Capacity (not usage or quota)", "bargauge", 12, 35, 12, 7, [target('max by(namespace,persistentvolumeclaim) (kube_persistentvolumeclaim_resource_requests_storage_bytes{job="kube-state-metrics"}) and on(namespace,persistentvolumeclaim) (max by(namespace,persistentvolumeclaim) (kube_pod_spec_volumes_persistentvolumeclaims_info{job="kube-state-metrics"} * on(namespace,pod) group_left(node) max by(namespace,pod,node) (kube_pod_info{job="kube-state-metrics",node=~"$node"})))', legend="{{namespace}} / {{persistentvolumeclaim}}", instant=True)], unit="bytes", min_value=0, description="Requested size for claims referenced by pods on selected nodes. This is neither measured consumption nor a local-path quota. Unmounted claims are excluded."),
         row("Network", 42),
         panel("Network Throughput", "timeseries", 0, 43, 12, 7, [target(f'sum by(node) (rate(node_network_receive_bytes_total{{job="node-exporter",node=~"{n}",device!~"lo|veth.*|cni.*|flannel.*"}}[$__rate_interval]))', "A", "{{node}} receive"), target(f'sum by(node) (rate(node_network_transmit_bytes_total{{job="node-exporter",node=~"{n}",device!~"lo|veth.*|cni.*|flannel.*"}}[$__rate_interval]))', "B", "{{node}} transmit")], unit="Bps"),
         panel("Network Drops and Errors", "timeseries", 12, 43, 12, 7, [target(f'sum by(node) (rate(node_network_receive_drop_total{{job="node-exporter",node=~"{n}",device!~"lo|veth.*"}}[$__rate_interval]) + rate(node_network_receive_errs_total{{job="node-exporter",node=~"{n}",device!~"lo|veth.*"}}[$__rate_interval]))', "A", "{{node}} receive"), target(f'sum by(node) (rate(node_network_transmit_drop_total{{job="node-exporter",node=~"{n}",device!~"lo|veth.*"}}[$__rate_interval]) + rate(node_network_transmit_errs_total{{job="node-exporter",node=~"{n}",device!~"lo|veth.*"}}[$__rate_interval]))', "B", "{{node}} transmit")], unit="pps"),
     ]
-    variables = [prom_var("node", 'label_values(node_uname_info{job="node-exporter"}, node)', multi=True, include_all=True)]
+    p.extend([
+        row("Spike investigation — drag across a graph to zoom every panel", 50),
+        panel("CPU by Kubernetes Container", "timeseries", 0, 51, 12, 8,
+              [target('sum by(node,namespace,pod,container) (rate(container_cpu_usage_seconds_total{job="kubelet-cadvisor",node=~"$node",container!="",container!="POD",pod!=""}[$__rate_interval]))', legend="{{node}} / {{namespace}} / {{pod}} / {{container}}")], unit="cores", links=POD_LINK,
+              description="Historical container CPU on selected nodes. Drag over a host CPU spike above to inspect the same interval here. Includes terminated pods while their samples are retained; host processes outside containers are not attributed."),
+        panel("CPU by Docker Container", "timeseries", 12, 51, 12, 8,
+              [target('sum by(host,name) (rate(container_cpu_usage_seconds_total{job="cadvisor",host=~"$node",name!="",image!=""}[$__rate_interval]))', legend="{{host}} / {{name}}")], unit="cores",
+              description="Docker cAdvisor CPU in cores. Host processes outside Docker are not collected; empty means no matching Docker telemetry, not zero host CPU."),
+        panel("CPU by Mode", "timeseries", 0, 59, 12, 7,
+              [target('avg by(node,mode) (rate(node_cpu_seconds_total{job="node-exporter",node=~"$node",mode!="idle"}[$__rate_interval]))', legend="{{node}} / {{mode}}")], unit="percentunit", min_value=0,
+              description="Distinguishes userspace/system CPU from iowait and hypervisor steal. Process-level profiling is not currently collected."),
+        panel("Memory by Kubernetes Container", "timeseries", 12, 59, 12, 7,
+              [target('max by(node,namespace,pod,container) (container_memory_working_set_bytes{job="kubelet-cadvisor",node=~"$node",container!="",container!="POD",pod!=""})', legend="{{node}} / {{namespace}} / {{pod}} / {{container}}")], unit="bytes", links=POD_LINK),
+        panel("Fan Speed", "timeseries", 0, 66, 12, 7,
+              [target('node_hwmon_fan_rpm{job="node-exporter",node=~"$node"}', legend="{{node}} / {{chip}} / {{sensor}}")], unit="rotrpm", min_value=0,
+              description="Hardware fan RPM exposed by Linux hwmon. No data means the host/driver exposes no fan sensor; it does not mean the fan is stopped."),
+        panel("Hardware Temperature", "timeseries", 12, 66, 12, 7,
+              [target('node_hwmon_temp_celsius{job="node-exporter",node=~"$node"}', legend="{{node}} / {{chip}} / {{sensor}}")], unit="celsius"),
+    ])
+    # Normalize older external-host samples at query time, without rewriting history.
+    def normalize_host(match: re.Match) -> str:
+        rate_metric, rate_labels, interval, gauge_metric, gauge_labels = match.groups()
+        metric, labels = (rate_metric, rate_labels) if rate_metric else (gauge_metric, gauge_labels)
+        external = labels.replace('node=~"$node"', 'node="",host=~"$node"')
+        local_expr = f'{metric}{{{labels},node!=""}}'
+        external_expr = f'{metric}{{{external}}}'
+        if rate_metric:
+            local_expr = f'rate({local_expr}[{interval}])'
+            external_expr = f'rate({external_expr}[{interval}])'
+        return f'({local_expr} or label_replace({external_expr}, "node", "$1", "host", "(.+)"))'
+
+    for item in p:
+        for query in item.get("targets", []):
+            if item["type"] == "stat" and not query.get("legendFormat"):
+                query["legendFormat"] = item["title"]
+            # Rates need a range selector on the raw metric, so normalize after rate.
+            query["expr"] = re.sub(
+                r'rate\((node_\w+)\{([^{}]*node=~"\$node"[^{}]*)\}\[([^]]+)\]\)'
+                r'|\b(node_\w+)\{([^{}]*node=~"\$node"[^{}]*)\}',
+                normalize_host, query["expr"])
+    variables = [prom_var("node", 'query_result(count by(node) (node_uname_info{job="node-exporter",node!=""} or label_replace(node_uname_info{job="node-exporter",node="",host!=""}, "node", "$1", "host", "(.+)")))', multi=True, include_all=True)]
+    variables[0]["regex"] = '/node="([^"]+)"/'
+    p[1]["title"] = "Kubernetes Readiness"
+    p[1]["description"] = "Readiness of selected Kubernetes nodes. External Docker hosts have no Kubernetes readiness and show no data when selected alone."
     return dashboard("Nodes / Hosts", "obs-nodes", p, variables, tags=["infrastructure"])
 
 
