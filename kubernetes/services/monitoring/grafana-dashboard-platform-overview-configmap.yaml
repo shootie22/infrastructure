@@ -123,7 +123,7 @@ data:
               },
               "editorMode": "code",
               "expr": "avg(kube_node_status_condition{job=\"kube-state-metrics\",condition=\"Ready\",status=\"true\"})",
-              "legendFormat": "",
+              "legendFormat": "Node Readiness",
               "range": false,
               "refId": "A",
               "instant": true
@@ -197,7 +197,7 @@ data:
               },
               "editorMode": "code",
               "expr": "sum(kube_node_status_condition{job=\"kube-state-metrics\",condition=\"Ready\",status=\"true\"} == 0) or vector(0)",
-              "legendFormat": "",
+              "legendFormat": "Nodes Not Ready",
               "range": false,
               "refId": "A",
               "instant": true
@@ -271,7 +271,7 @@ data:
               },
               "editorMode": "code",
               "expr": "sum(clamp_min(kube_deployment_spec_replicas{job=\"kube-state-metrics\"} - kube_deployment_status_replicas_available{job=\"kube-state-metrics\"}, 0)) + sum(clamp_min(kube_statefulset_replicas{job=\"kube-state-metrics\"} - kube_statefulset_status_replicas_ready{job=\"kube-state-metrics\"}, 0)) + sum(kube_daemonset_status_number_unavailable{job=\"kube-state-metrics\"})",
-              "legendFormat": "",
+              "legendFormat": "Unavailable Workload Replicas",
               "range": false,
               "refId": "A",
               "instant": true
@@ -352,7 +352,7 @@ data:
               },
               "editorMode": "code",
               "expr": "sum((max by (namespace,pod) (kube_pod_status_ready{job=\"kube-state-metrics\",condition=\"true\"}) == 0) * on(namespace,pod) group_left() (max by(namespace,pod) (kube_pod_status_phase{job=\"kube-state-metrics\",phase=~\"Pending|Running\"}) == 1)) or vector(0)",
-              "legendFormat": "",
+              "legendFormat": "Pods Not Ready",
               "range": false,
               "refId": "A",
               "instant": true
@@ -426,7 +426,7 @@ data:
               },
               "editorMode": "code",
               "expr": "sum(up{job=~\"prometheus|grafana|kubernetes-apiserver|kube-state-metrics|node-exporter|kubelet|kubelet-cadvisor|kubernetes-services\"} == 0) or vector(0)",
-              "legendFormat": "",
+              "legendFormat": "Core Targets Down",
               "range": false,
               "refId": "A",
               "instant": true
@@ -500,7 +500,7 @@ data:
               },
               "editorMode": "code",
               "expr": "sum(probe_success{job=\"blackbox-http\"} == 0) or vector(0)",
-              "legendFormat": "",
+              "legendFormat": "Public Probes Failing",
               "range": false,
               "refId": "A",
               "instant": true
@@ -609,7 +609,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "1 - avg by (node) (rate(node_cpu_seconds_total{job=\"node-exporter\",mode=\"idle\"}[$__rate_interval]))",
+              "expr": "1 - avg by(node) ((rate(node_cpu_seconds_total{job=\"node-exporter\",mode=\"idle\",node=~\".*\",node!=\"\"}[$__rate_interval]) or label_replace(rate(node_cpu_seconds_total{job=\"node-exporter\",mode=\"idle\",node=\"\",host=~\".*\"}[$__rate_interval]), \"node\", \"$1\", \"host\", \"(.+)\")))",
               "legendFormat": "{{node}}",
               "range": true,
               "refId": "A"
@@ -705,7 +705,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "1 - (node_memory_MemAvailable_bytes{job=\"node-exporter\"} / node_memory_MemTotal_bytes{job=\"node-exporter\"})",
+              "expr": "1 - (node_memory_MemAvailable_bytes{job=\"node-exporter\",node=~\".*\",node!=\"\"} or label_replace(node_memory_MemAvailable_bytes{job=\"node-exporter\",node=\"\",host=~\".*\"}, \"node\", \"$1\", \"host\", \"(.+)\")) / (node_memory_MemTotal_bytes{job=\"node-exporter\",node=~\".*\",node!=\"\"} or label_replace(node_memory_MemTotal_bytes{job=\"node-exporter\",node=\"\",host=~\".*\"}, \"node\", \"$1\", \"host\", \"(.+)\"))",
               "legendFormat": "{{node}}",
               "range": true,
               "refId": "A"
@@ -811,7 +811,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "node_filesystem_avail_bytes{job=\"node-exporter\",mountpoint=\"/\",fstype!~\"tmpfs|overlay|squashfs\"} / node_filesystem_size_bytes{job=\"node-exporter\",mountpoint=\"/\",fstype!~\"tmpfs|overlay|squashfs\"}",
+              "expr": "(node_filesystem_avail_bytes{job=\"node-exporter\",node=~\".*\",mountpoint=\"/\",fstype!~\"tmpfs|overlay|squashfs\",node!=\"\"} or label_replace(node_filesystem_avail_bytes{job=\"node-exporter\",node=\"\",host=~\".*\",mountpoint=\"/\",fstype!~\"tmpfs|overlay|squashfs\"}, \"node\", \"$1\", \"host\", \"(.+)\")) / (node_filesystem_size_bytes{job=\"node-exporter\",node=~\".*\",mountpoint=\"/\",fstype!~\"tmpfs|overlay|squashfs\",node!=\"\"} or label_replace(node_filesystem_size_bytes{job=\"node-exporter\",node=\"\",host=~\".*\",mountpoint=\"/\",fstype!~\"tmpfs|overlay|squashfs\"}, \"node\", \"$1\", \"host\", \"(.+)\"))",
               "legendFormat": "{{node}}",
               "range": false,
               "refId": "A",
@@ -924,14 +924,14 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "topk(10, sum by (namespace,pod) (increase(kube_pod_container_status_restarts_total{job=\"kube-state-metrics\"}[1h])) > 0)",
+              "expr": "topk(10, sum by (namespace,pod) (increase(kube_pod_container_status_restarts_total{job=\"kube-state-metrics\"}[$__range])) > 0)",
               "legendFormat": "{{namespace}} / {{pod}}",
               "range": false,
               "refId": "A",
               "instant": true
             }
           ],
-          "title": "Container Restarts (1h)",
+          "title": "Container Restarts in Selected Range",
           "type": "bargauge"
         },
         {
@@ -958,7 +958,44 @@ data:
               },
               "unit": "short"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value #A"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Firing"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Firing"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Time"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hidden",
+                    "value": true
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 6,
@@ -977,13 +1014,7 @@ data:
               ],
               "show": false
             },
-            "showHeader": true,
-            "sortBy": [
-              {
-                "desc": true,
-                "displayName": "Value"
-              }
-            ]
+            "showHeader": true
           },
           "pluginVersion": "12.4.1",
           "targets": [
@@ -993,8 +1024,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "ALERTS{alertstate=\"firing\"}",
-              "legendFormat": "",
+              "expr": "max by(alertname,severity,namespace,pod,node,instance,job) (ALERTS{alertstate=\"firing\"})",
+              "legendFormat": "Firing",
               "range": false,
               "refId": "A",
               "instant": true,
@@ -1267,6 +1298,630 @@ data:
           ],
           "title": "Recent Warning Kubernetes Events (empty is healthy)",
           "type": "logs"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 35
+          },
+          "id": 18,
+          "panels": [],
+          "title": "Identify the affected target and workload in the selected interval",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Named scrape targets; zero identifies which collector or service failed at the time of the incident.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short",
+              "min": 0,
+              "max": 1
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 36
+          },
+          "id": 19,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "min by(job,instance) (up)",
+              "legendFormat": "{{job}} / {{instance}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Target Availability History",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short",
+              "min": 0,
+              "max": 1
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 36
+          },
+          "id": 20,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "max by(node,condition) (kube_node_status_condition{job=\"kube-state-metrics\",condition!=\"Ready\",status=\"true\"})",
+              "legendFormat": "{{node}} / {{condition}}",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "1 - max by(node) (kube_node_status_condition{job=\"kube-state-metrics\",condition=\"Ready\",status=\"true\"})",
+              "legendFormat": "{{node}} / NotReady",
+              "range": true,
+              "refId": "B"
+            }
+          ],
+          "title": "Kubernetes Node Conditions",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Zoom a host CPU spike to compare workloads at the same time. Kubernetes only; external Docker attribution is in Nodes / Hosts.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "cores"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 43
+          },
+          "id": 21,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "namespace_workload:container_cpu_usage_seconds_total:sum_rate5m",
+              "legendFormat": "{{namespace}} / {{workload}} / {{workload_type}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "CPU by Workload",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short",
+              "min": 0
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 43
+          },
+          "id": 22,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "clamp_min(kube_deployment_spec_replicas{job=\"kube-state-metrics\"} - kube_deployment_status_replicas_available{job=\"kube-state-metrics\"}, 0)",
+              "legendFormat": "{{namespace}} / deployment / {{deployment}}",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "clamp_min(kube_statefulset_replicas{job=\"kube-state-metrics\"} - kube_statefulset_status_replicas_ready{job=\"kube-state-metrics\"}, 0)",
+              "legendFormat": "{{namespace}} / statefulset / {{statefulset}}",
+              "range": true,
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "kube_daemonset_status_number_unavailable{job=\"kube-state-metrics\"}",
+              "legendFormat": "{{namespace}} / daemonset / {{daemonset}}",
+              "range": true,
+              "refId": "C"
+            }
+          ],
+          "title": "Unavailable Replicas by Workload",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short",
+              "min": 0,
+              "max": 1,
+              "links": [
+                {
+                  "targetBlank": false,
+                  "title": "Open pod drilldown",
+                  "url": "/d/obs-pod?var-namespace=${__field.labels.namespace}&var-pod=${__field.labels.pod}&from=${__from}&to=${__to}"
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 50
+          },
+          "id": 23,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "max by(namespace,pod,container,reason) (kube_pod_container_status_waiting_reason{job=\"kube-state-metrics\"}) == 1",
+              "legendFormat": "{{namespace}} / {{pod}} / {{container}} / {{reason}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Container Waiting Reasons",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "HTTP status observed by the probe; zero can indicate failure before an HTTP response. Compare DNS/connect/TLS phases on Edge / Traefik.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 50
+          },
+          "id": 24,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "probe_http_status_code{job=\"blackbox-http\"}",
+              "legendFormat": "{{instance}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Probe HTTP Response Status",
+          "type": "timeseries"
         }
       ],
       "refresh": "30s",

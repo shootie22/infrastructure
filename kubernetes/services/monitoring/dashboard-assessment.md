@@ -38,7 +38,17 @@ Grafana rendered correctly. No deployment or push is implied by a local commit.
   502 log fixtures, and Helm rendering against upstream chart 40.1.0 (operator
   reports K3s chart 40.1.4+up40.1.0). Live rendering awaits deployment.
 
+## Platform Overview
+
+- Fix host legends using the same historical normalization as Nodes / Hosts.
+- Add target availability history, named node pressure conditions, workload CPU,
+  unavailable replicas, container waiting reasons, and probe status codes.
+- Keep existing panel coordinates; selected-range restart counts replace fixed
+  one-hour counts. Give alert value columns a meaningful name and retain identity.
+- The overview distinguishes Kubernetes workload CPU from external host CPU;
+  external Docker attribution remains on Nodes / Hosts.
+
 ## Remaining sweep
 
-Platform Overview, Kubernetes Workloads, Pod / Container
+Kubernetes Workloads, Pod / Container
 Drilldown, Kubernetes Logs, Observability Stack, Synapse, LiveKit / Element Call.

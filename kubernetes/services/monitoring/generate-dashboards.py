@@ -250,6 +250,29 @@ WORKLOAD_LINK = [{
 }]
 
 
+def readable_fields(panels: list[dict]) -> None:
+    """Give scalar series and table values explicit names; preserve label columns."""
+    for item in panels:
+        if item["type"] == "stat":
+            for query in item.get("targets", []):
+                if not query.get("legendFormat"):
+                    query["legendFormat"] = item["title"]
+        if item["type"] == "table":
+            overrides = item["fieldConfig"]["overrides"]
+            for query in item["targets"]:
+                name = query.get("legendFormat") or item["title"]
+                if len(item["targets"]) > 1 and not query.get("legendFormat"):
+                    name += " " + query["refId"]
+                overrides.append({"matcher": {"id": "byName", "options": "Value #" + query["refId"]},
+                                  "properties": [{"id": "displayName", "value": name}]})
+            if len(item["targets"]) == 1:
+                overrides.append({"matcher": {"id": "byName", "options": "Value"},
+                                  "properties": [{"id": "displayName", "value": item["targets"][0].get("legendFormat") or item["title"]}]})
+            overrides.append({"matcher": {"id": "byName", "options": "Time"},
+                              "properties": [{"id": "custom.hidden", "value": True}]})
+            item["options"].pop("sortBy", None)
+
+
 def platform_overview() -> dict:
     p: list[dict] = [
         row("Immediate health", 0),
@@ -300,6 +323,43 @@ def platform_overview() -> dict:
               [log_target('{job="kubernetes-events"} | logfmt | type="Warning"')], datasource=LOKI,
               description="Scheduling, image pull, probe, mount, eviction, and node warnings collected from the Kubernetes Events API."),
     ]
+    host_panels = {item["title"]: item for item in nodes_dashboard()["panels"]}
+    for item in p:
+        source = {"Node CPU Usage": "CPU Utilization", "Node Memory Used": "Memory Used",
+                  "Root Filesystem Free": "Root Free"}.get(item["title"])
+        if source:
+            expression = host_panels[source]["targets"][0]["expr"].replace("$node", ".*")
+            if source == "Root Free":
+                expression = expression.removeprefix("min(")[:-1]
+            item["targets"][0]["expr"] = expression
+        if item["title"] == "Active Alerts":
+            item["targets"][0]["expr"] = 'max by(alertname,severity,namespace,pod,node,instance,job) (ALERTS{alertstate="firing"})'
+            item["targets"][0]["legendFormat"] = "Firing"
+        if item["title"] == "Container Restarts (1h)":
+            item["title"] = "Container Restarts in Selected Range"
+            item["targets"][0]["expr"] = item["targets"][0]["expr"].replace("[1h]", "[$__range]")
+    p.extend([
+        row("Identify the affected target and workload in the selected interval", 35),
+        panel("Target Availability History", "timeseries", 0, 36, 12, 7,
+              [target('min by(job,instance) (up)', legend="{{job}} / {{instance}}")], min_value=0, max_value=1,
+              description="Named scrape targets; zero identifies which collector or service failed at the time of the incident."),
+        panel("Kubernetes Node Conditions", "timeseries", 12, 36, 12, 7,
+              [target('max by(node,condition) (kube_node_status_condition{job="kube-state-metrics",condition!="Ready",status="true"})', "A", "{{node}} / {{condition}}"),
+               target('1 - max by(node) (kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"})', "B", "{{node}} / NotReady")], min_value=0, max_value=1),
+        panel("CPU by Workload", "timeseries", 0, 43, 12, 7,
+              [target('namespace_workload:container_cpu_usage_seconds_total:sum_rate5m', legend="{{namespace}} / {{workload}} / {{workload_type}}")], unit="cores",
+              description="Zoom a host CPU spike to compare workloads at the same time. Kubernetes only; external Docker attribution is in Nodes / Hosts."),
+        panel("Unavailable Replicas by Workload", "timeseries", 12, 43, 12, 7,
+              [target('clamp_min(kube_deployment_spec_replicas{job="kube-state-metrics"} - kube_deployment_status_replicas_available{job="kube-state-metrics"}, 0)', "A", "{{namespace}} / deployment / {{deployment}}"),
+               target('clamp_min(kube_statefulset_replicas{job="kube-state-metrics"} - kube_statefulset_status_replicas_ready{job="kube-state-metrics"}, 0)', "B", "{{namespace}} / statefulset / {{statefulset}}"),
+               target('kube_daemonset_status_number_unavailable{job="kube-state-metrics"}', "C", "{{namespace}} / daemonset / {{daemonset}}")], min_value=0),
+        panel("Container Waiting Reasons", "timeseries", 0, 50, 12, 7,
+              [target('max by(namespace,pod,container,reason) (kube_pod_container_status_waiting_reason{job="kube-state-metrics"}) == 1', legend="{{namespace}} / {{pod}} / {{container}} / {{reason}}")], links=POD_LINK, min_value=0, max_value=1),
+        panel("Probe HTTP Response Status", "timeseries", 12, 50, 12, 7,
+              [target('probe_http_status_code{job="blackbox-http"}', legend="{{instance}}")],
+              description="HTTP status observed by the probe; zero can indicate failure before an HTTP response. Compare DNS/connect/TLS phases on Edge / Traefik."),
+    ])
+    readable_fields(p)
     return dashboard("Platform Overview", "obs-platform", p, [], tags=["overview"], time_from="now-3h")
 
 
