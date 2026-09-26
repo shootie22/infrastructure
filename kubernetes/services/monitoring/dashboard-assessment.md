@@ -50,5 +50,17 @@ Grafana rendered correctly. No deployment or push is implied by a local commit.
 
 ## Remaining sweep
 
-Kubernetes Workloads, Pod / Container
-Drilldown, Kubernetes Logs, Observability Stack, Synapse, LiveKit / Element Call.
+Pod / Container Drilldown, Kubernetes Logs, Observability Stack, Synapse,
+LiveKit / Element Call.
+
+## Kubernetes Workloads
+
+- Add historical per-container CPU, throttling, waiting reasons, owner-scoped
+  pod events and logs. The evidence pod selector expands All to the owner's pod
+  names rather than matching every pod in a namespace.
+- Rank workload CPU/memory by peak in the selected range; restart counts also
+  use the selected range. These retain evidence a current-only ranking missed.
+- Explicitly label namespace-wide replica health: it must include workloads
+  with no pods, which cannot be discovered through a pod-owner join.
+- Give table values readable names. Workload aggregate resource panels remain
+  aggregates; Evidence pod narrows the pod status and investigation panels.

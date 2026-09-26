@@ -467,7 +467,44 @@ def workloads_dashboard() -> dict:
         prom_var("namespace", 'label_values(kube_namespace_status_phase{job="kube-state-metrics"}, namespace)', multi=True, include_all=True),
         prom_var("workload_type", 'label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace=~"$namespace"}, workload_type)', label="Workload type", multi=True, include_all=True),
         prom_var("workload", 'label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace=~"$namespace",workload_type=~"$workload_type"}, workload)', multi=True, include_all=True),
+        prom_var("pod", f'label_values({owner}, pod)', label="Evidence pod", multi=True, include_all=True),
+        text_var("search", ".*", "Log regex"),
     ]
+    # Expand All to the selected owner's pod names, not .* across the namespace.
+    variables[-2]["allValue"] = None
+    for item in p:
+        if "Replicas" in item["title"] or item["title"] == "Unavailable DaemonSet Pods":
+            item["description"] = "Namespace-wide replica health, including workloads with no pods. Workload/type/pod filters apply to resource and pod evidence panels, not this namespace summary."
+            item["title"] = "Namespace: " + item["title"]
+        if item["title"] in ("Restarts (1h)", "Pods Restarting"):
+            item["title"] = item["title"].replace("(1h)", "in Selected Range")
+        if item["title"].startswith("Top "):
+            item["title"] = item["title"].replace("Top ", "Peak ") + " in Selected Range"
+            query = item["targets"][0]
+            query["expr"] = re.sub(r'(namespace_workload:\w+\{[^}]+\})', r'max_over_time(\1[$__range])', query["expr"])
+            item["description"] = "Ranked by peak retained sample in the selected range, not just the current value. Workload CPU recording rules use a five-minute rate."
+        for query in item.get("targets", []):
+            query["expr"] = query["expr"].replace("[1h]", "[$__range]")
+            query["expr"] = re.sub(r'\b(kube_pod_(?:status|container_status)\w*)\{([^}]+)\}',
+                                   lambda m: f'{m[1]}{{{m[2]},pod=~"$pod"}}', query["expr"])
+        if item["type"] == "table":
+            item["targets"][0]["legendFormat"] = "Affected"
+    p.extend([
+        row("Explain workload spikes and failures in the selected interval", 42),
+        panel("CPU by Pod and Container", "timeseries", 0, 43, 12, 7,
+              [target('sum by(namespace,pod,container) (rate(container_cpu_usage_seconds_total{job="kubelet-cadvisor",namespace=~"$namespace",pod=~"$pod",container!="",container!="POD"}[$__rate_interval]))', legend="{{namespace}} / {{pod}} / {{container}}")], unit="cores", links=POD_LINK),
+        panel("CPU Throttled Periods", "timeseries", 12, 43, 12, 7,
+              [target('sum by(namespace,pod,container) (rate(container_cpu_cfs_throttled_periods_total{job="kubelet-cadvisor",namespace=~"$namespace",pod=~"$pod",container!="",container!="POD"}[$__rate_interval])) / clamp_min(sum by(namespace,pod,container) (rate(container_cpu_cfs_periods_total{job="kubelet-cadvisor",namespace=~"$namespace",pod=~"$pod",container!="",container!="POD"}[$__rate_interval])), 0.001)', legend="{{namespace}} / {{pod}} / {{container}}")], unit="percentunit", min_value=0, max_value=1,
+              description="Fraction of CFS periods throttled, not percentage CPU lost. Compare container usage and configured CPU limits."),
+        panel("Waiting Reasons Over Time", "timeseries", 0, 50, 12, 7,
+              [target('max by(namespace,pod,container,reason) (kube_pod_container_status_waiting_reason{job="kube-state-metrics",namespace=~"$namespace",pod=~"$pod"}) == 1', legend="{{namespace}} / {{pod}} / {{container}} / {{reason}}")], links=POD_LINK),
+        panel("Pod Events in Selected Range", "logs", 12, 50, 12, 7,
+              [log_target('{job="kubernetes-events",namespace=~"$namespace"} | logfmt | kind="Pod" | name=~"$pod"')], datasource=LOKI),
+        panel("Selected Workload Pod Logs", "logs", 0, 57, 24, 9,
+              [log_target('{namespace=~"$namespace",pod=~"$pod",pod!=""} |~ "$search"')], datasource=LOKI,
+              description="Pods are enumerated from the selected workload owner and time range. All expands to those names, not the entire namespace. Broaden Log regex for context around errors."),
+    ])
+    readable_fields(p)
     return dashboard("Kubernetes Workloads", "obs-workloads", p, variables, tags=["kubernetes"])
 
 

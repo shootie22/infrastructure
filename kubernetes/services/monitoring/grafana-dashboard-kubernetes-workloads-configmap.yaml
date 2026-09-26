@@ -61,7 +61,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "",
+          "description": "Namespace-wide replica health, including workloads with no pods. Workload/type/pod filters apply to resource and pod evidence panels, not this namespace summary.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -121,13 +121,13 @@ data:
               },
               "editorMode": "code",
               "expr": "sum(clamp_min(kube_deployment_spec_replicas{job=\"kube-state-metrics\",namespace=~\"$namespace\"} - kube_deployment_status_replicas_available{job=\"kube-state-metrics\",namespace=~\"$namespace\"}, 0))",
-              "legendFormat": "",
+              "legendFormat": "Namespace: Unavailable Deployment Replicas",
               "range": false,
               "refId": "A",
               "instant": true
             }
           ],
-          "title": "Unavailable Deployment Replicas",
+          "title": "Namespace: Unavailable Deployment Replicas",
           "type": "stat"
         },
         {
@@ -135,7 +135,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "",
+          "description": "Namespace-wide replica health, including workloads with no pods. Workload/type/pod filters apply to resource and pod evidence panels, not this namespace summary.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -195,13 +195,13 @@ data:
               },
               "editorMode": "code",
               "expr": "sum(clamp_min(kube_statefulset_replicas{job=\"kube-state-metrics\",namespace=~\"$namespace\"} - kube_statefulset_status_replicas_ready{job=\"kube-state-metrics\",namespace=~\"$namespace\"}, 0))",
-              "legendFormat": "",
+              "legendFormat": "Namespace: Unavailable StatefulSet Replicas",
               "range": false,
               "refId": "A",
               "instant": true
             }
           ],
-          "title": "Unavailable StatefulSet Replicas",
+          "title": "Namespace: Unavailable StatefulSet Replicas",
           "type": "stat"
         },
         {
@@ -209,7 +209,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "",
+          "description": "Namespace-wide replica health, including workloads with no pods. Workload/type/pod filters apply to resource and pod evidence panels, not this namespace summary.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -269,13 +269,13 @@ data:
               },
               "editorMode": "code",
               "expr": "sum(kube_daemonset_status_number_unavailable{job=\"kube-state-metrics\",namespace=~\"$namespace\"})",
-              "legendFormat": "",
+              "legendFormat": "Namespace: Unavailable DaemonSet Pods",
               "range": false,
               "refId": "A",
               "instant": true
             }
           ],
-          "title": "Unavailable DaemonSet Pods",
+          "title": "Namespace: Unavailable DaemonSet Pods",
           "type": "stat"
         },
         {
@@ -342,8 +342,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum(kube_pod_status_phase{job=\"kube-state-metrics\",namespace=~\"$namespace\",phase=\"Pending\"} == 1) or vector(0)",
-              "legendFormat": "",
+              "expr": "sum(kube_pod_status_phase{job=\"kube-state-metrics\",namespace=~\"$namespace\",phase=\"Pending\",pod=~\"$pod\"} == 1) or vector(0)",
+              "legendFormat": "Pending Pods",
               "range": false,
               "refId": "A",
               "instant": true
@@ -416,8 +416,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum(kube_pod_status_unschedulable{job=\"kube-state-metrics\",namespace=~\"$namespace\"} == 1) or vector(0)",
-              "legendFormat": "",
+              "expr": "sum(kube_pod_status_unschedulable{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\"} == 1) or vector(0)",
+              "legendFormat": "Unschedulable Pods",
               "range": false,
               "refId": "A",
               "instant": true
@@ -491,14 +491,14 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum(increase(kube_pod_container_status_restarts_total{job=\"kube-state-metrics\",namespace=~\"$namespace\"}[1h]))",
-              "legendFormat": "",
+              "expr": "sum(increase(kube_pod_container_status_restarts_total{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\"}[$__range]))",
+              "legendFormat": "Restarts in Selected Range",
               "range": false,
               "refId": "A",
               "instant": true
             }
           ],
-          "title": "Restarts (1h)",
+          "title": "Restarts in Selected Range",
           "type": "stat"
         },
         {
@@ -506,7 +506,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "",
+          "description": "Namespace-wide replica health, including workloads with no pods. Workload/type/pod filters apply to resource and pod evidence panels, not this namespace summary.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -615,7 +615,7 @@ data:
               "refId": "C"
             }
           ],
-          "title": "Unavailable Replicas by Workload (empty is healthy)",
+          "title": "Namespace: Unavailable Replicas by Workload (empty is healthy)",
           "type": "timeseries"
         },
         {
@@ -704,7 +704,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(namespace,phase) (kube_pod_status_phase{job=\"kube-state-metrics\",namespace=~\"$namespace\"} == 1)",
+              "expr": "sum by(namespace,phase) (kube_pod_status_phase{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\"} == 1)",
               "legendFormat": "{{namespace}} {{phase}}",
               "range": true,
               "refId": "A"
@@ -1240,7 +1240,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "topk(15, sum by(namespace,pod) (increase(kube_pod_container_status_restarts_total{job=\"kube-state-metrics\",namespace=~\"$namespace\"}[1h])) > 0)",
+              "expr": "topk(15, sum by(namespace,pod) (increase(kube_pod_container_status_restarts_total{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\"}[$__range])) > 0)",
               "legendFormat": "{{namespace}} / {{pod}}",
               "range": false,
               "refId": "A",
@@ -1281,7 +1281,44 @@ data:
                 }
               ]
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value #A"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Affected"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Affected"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Time"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hidden",
+                    "value": true
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 7,
@@ -1300,13 +1337,7 @@ data:
               ],
               "show": false
             },
-            "showHeader": true,
-            "sortBy": [
-              {
-                "desc": true,
-                "displayName": "Value"
-              }
-            ]
+            "showHeader": true
           },
           "pluginVersion": "12.4.1",
           "targets": [
@@ -1316,8 +1347,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "kube_pod_container_status_last_terminated_reason{job=\"kube-state-metrics\",namespace=~\"$namespace\",reason=\"OOMKilled\"} == 1",
-              "legendFormat": "",
+              "expr": "kube_pod_container_status_last_terminated_reason{job=\"kube-state-metrics\",namespace=~\"$namespace\",reason=\"OOMKilled\",pod=~\"$pod\"} == 1",
+              "legendFormat": "Affected",
               "range": false,
               "refId": "A",
               "instant": true,
@@ -1358,7 +1389,44 @@ data:
                 }
               ]
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value #A"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Affected"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Affected"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Time"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hidden",
+                    "value": true
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 7,
@@ -1377,13 +1445,7 @@ data:
               ],
               "show": false
             },
-            "showHeader": true,
-            "sortBy": [
-              {
-                "desc": true,
-                "displayName": "Value"
-              }
-            ]
+            "showHeader": true
           },
           "pluginVersion": "12.4.1",
           "targets": [
@@ -1393,8 +1455,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "(kube_pod_container_status_ready{job=\"kube-state-metrics\",namespace=~\"$namespace\"} == 0) * on(namespace,pod) group_left() (max by(namespace,pod) (kube_pod_status_phase{job=\"kube-state-metrics\",namespace=~\"$namespace\",phase=~\"Pending|Running\"}) == 1)",
-              "legendFormat": "",
+              "expr": "(kube_pod_container_status_ready{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\"} == 0) * on(namespace,pod) group_left() (max by(namespace,pod) (kube_pod_status_phase{job=\"kube-state-metrics\",namespace=~\"$namespace\",phase=~\"Pending|Running\",pod=~\"$pod\"}) == 1)",
+              "legendFormat": "Affected",
               "range": false,
               "refId": "A",
               "instant": true,
@@ -1409,7 +1471,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "",
+          "description": "Ranked by peak retained sample in the selected range, not just the current value. Workload CPU recording rules use a five-minute rate.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1498,7 +1560,7 @@ data:
               "instant": true
             }
           ],
-          "title": "Top CPU Workloads",
+          "title": "Peak CPU Workloads in Selected Range",
           "type": "bargauge"
         },
         {
@@ -1506,7 +1568,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "",
+          "description": "Ranked by peak retained sample in the selected range, not just the current value. Workload CPU recording rules use a five-minute rate.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1595,8 +1657,433 @@ data:
               "instant": true
             }
           ],
-          "title": "Top Memory Workloads",
+          "title": "Peak Memory Workloads in Selected Range",
           "type": "bargauge"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 42
+          },
+          "id": 21,
+          "panels": [],
+          "title": "Explain workload spikes and failures in the selected interval",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "cores",
+              "links": [
+                {
+                  "targetBlank": false,
+                  "title": "Open pod drilldown",
+                  "url": "/d/obs-pod?var-namespace=${__field.labels.namespace}&var-pod=${__field.labels.pod}&from=${__from}&to=${__to}"
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 43
+          },
+          "id": 22,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "sum by(namespace,pod,container) (rate(container_cpu_usage_seconds_total{job=\"kubelet-cadvisor\",namespace=~\"$namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"}[$__rate_interval]))",
+              "legendFormat": "{{namespace}} / {{pod}} / {{container}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "CPU by Pod and Container",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Fraction of CFS periods throttled, not percentage CPU lost. Compare container usage and configured CPU limits.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "percentunit",
+              "min": 0,
+              "max": 1
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 43
+          },
+          "id": 23,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "sum by(namespace,pod,container) (rate(container_cpu_cfs_throttled_periods_total{job=\"kubelet-cadvisor\",namespace=~\"$namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"}[$__rate_interval])) / clamp_min(sum by(namespace,pod,container) (rate(container_cpu_cfs_periods_total{job=\"kubelet-cadvisor\",namespace=~\"$namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"}[$__rate_interval])), 0.001)",
+              "legendFormat": "{{namespace}} / {{pod}} / {{container}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "CPU Throttled Periods",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short",
+              "links": [
+                {
+                  "targetBlank": false,
+                  "title": "Open pod drilldown",
+                  "url": "/d/obs-pod?var-namespace=${__field.labels.namespace}&var-pod=${__field.labels.pod}&from=${__from}&to=${__to}"
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 50
+          },
+          "id": 24,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "max by(namespace,pod,container,reason) (kube_pod_container_status_waiting_reason{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\"}) == 1",
+              "legendFormat": "{{namespace}} / {{pod}} / {{container}} / {{reason}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Waiting Reasons Over Time",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 50
+          },
+          "id": 25,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "editorMode": "code",
+              "expr": "{job=\"kubernetes-events\",namespace=~\"$namespace\"} | logfmt | kind=\"Pod\" | name=~\"$pod\"",
+              "legendFormat": "",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Pod Events in Selected Range",
+          "type": "logs"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "description": "Pods are enumerated from the selected workload owner and time range. All expands to those names, not the entire namespace. Broaden Log regex for context around errors.",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 24,
+            "x": 0,
+            "y": 57
+          },
+          "id": 26,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "editorMode": "code",
+              "expr": "{namespace=~\"$namespace\",pod=~\"$pod\",pod!=\"\"} |~ \"$search\"",
+              "legendFormat": "",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Selected Workload Pod Logs",
+          "type": "logs"
         }
       ],
       "refresh": "30s",
@@ -1690,6 +2177,48 @@ data:
             "skipUrlSync": false,
             "sort": 1,
             "type": "query"
+          },
+          {
+            "allValue": null,
+            "current": {
+              "selected": true,
+              "text": "All",
+              "value": "$__all"
+            },
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            },
+            "definition": "label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace=~\"$namespace\",workload=~\"$workload\",workload_type=~\"$workload_type\"}, pod)",
+            "hide": 0,
+            "includeAll": true,
+            "label": "Evidence pod",
+            "multi": true,
+            "name": "pod",
+            "options": [],
+            "query": {
+              "query": "label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace=~\"$namespace\",workload=~\"$workload\",workload_type=~\"$workload_type\"}, pod)",
+              "refId": "var-pod"
+            },
+            "refresh": 2,
+            "regex": "",
+            "skipUrlSync": false,
+            "sort": 1,
+            "type": "query"
+          },
+          {
+            "current": {
+              "selected": true,
+              "text": ".*",
+              "value": ".*"
+            },
+            "hide": 0,
+            "label": "Log regex",
+            "name": "search",
+            "options": [],
+            "query": ".*",
+            "skipUrlSync": false,
+            "type": "textbox"
           }
         ]
       },
