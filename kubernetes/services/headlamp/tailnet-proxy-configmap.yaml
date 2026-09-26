@@ -8,9 +8,14 @@ data:
     {
       admin 127.0.0.1:12019
       auto_https disable_redirects
+      # The host forwards tailnet TCP 443 to this internal listener.
+      https_port 8443
+      servers {
+        protocols h1 h2
+      }
     }
 
-    https://hl.infra.radunenu.com:8443 {
+    https://hl.infra.radunenu.com {
       bind 100.64.0.1
       tls /certs/tls.crt /certs/tls.key
       reverse_proxy headlamp.headlamp.svc.cluster.local:80
