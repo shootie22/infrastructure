@@ -2213,7 +2213,7 @@ data:
         },
         {
           "type": "row",
-          "title": "Disconnects & Reconnects",
+          "title": "Disconnects & Reconnects — Room / Participant filters apply below",
           "collapsed": false,
           "gridPos": {
             "h": 1,
@@ -2264,7 +2264,7 @@ data:
                 "type": "loki",
                 "uid": "loki"
               },
-              "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | json reason=\"reason\", cl=\"caller\" | reason!=\"\" | cl!~\"connectionquality\" [$__range]))",
+              "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | json reason=\"reason\", participant=\"participant\", room=\"room\", cl=\"caller\" | participant=~\"$participant\" | room=~\"$room\" | reason!=\"\" | cl!~\"connectionquality\" [$__range]))",
               "queryType": "instant",
               "instant": true,
               "format": "table",
@@ -2334,7 +2334,7 @@ data:
                 "type": "loki",
                 "uid": "loki"
               },
-              "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | json reason=\"reason\", cl=\"caller\" | reason!=\"\" | cl!~\"connectionquality\" [$__interval]))",
+              "expr": "sum by (reason) (count_over_time({job=\"livekit\"} | json reason=\"reason\", participant=\"participant\", room=\"room\", cl=\"caller\" | participant=~\"$participant\" | room=~\"$room\" | reason!=\"\" | cl!~\"connectionquality\" [$__interval]))",
               "queryType": "range",
               "legendFormat": "{{reason}}",
               "refId": "A"
@@ -2386,7 +2386,7 @@ data:
                 "type": "loki",
                 "uid": "loki"
               },
-              "expr": "sum(count_over_time({job=\"livekit\"} |~ \"(?i)ice (connection )?(failed|disconnected)|dtls|negotiation failed|not responding\" [$__interval]))",
+              "expr": "sum(count_over_time({job=\"livekit\"} | json participant=\"participant\", room=\"room\" | participant=~\"$participant\" | room=~\"$room\" |~ \"(?i)ice (connection )?(failed|disconnected)|dtls|negotiation failed|not responding\" [$__interval]))",
               "queryType": "range",
               "legendFormat": "failures",
               "refId": "A"
@@ -2437,7 +2437,7 @@ data:
                 "type": "loki",
                 "uid": "loki"
               },
-              "expr": "sum by (level) (count_over_time({job=\"livekit\", level=~\"warn|error\"} [$__interval]))",
+              "expr": "sum by (level) (count_over_time({job=\"livekit\", level=~\"warn|error\"} | json participant=\"participant\", room=\"room\" | participant=~\"$participant\" | room=~\"$room\" [$__interval]))",
               "queryType": "range",
               "legendFormat": "{{level}}",
               "refId": "A"
@@ -2472,7 +2472,7 @@ data:
                 "type": "loki",
                 "uid": "loki"
               },
-              "expr": "{job=\"livekit\"} |~ \"(?i)closing participant|participant closed|disconnect|reconnect|resuming|ice .*(failed|disconnected)|not responding|join.?failure\"",
+              "expr": "{job=\"livekit\"} | json participant=\"participant\", room=\"room\" | participant=~\"$participant\" | room=~\"$room\" |~ \"(?i)closing participant|participant closed|disconnect|reconnect|resuming|ice .*(failed|disconnected)|not responding|join.?failure\"",
               "queryType": "range",
               "refId": "A"
             }
@@ -2480,7 +2480,7 @@ data:
         },
         {
           "type": "row",
-          "title": "Per-participant attribution (logs)",
+          "title": "Per-participant attribution — filtered logs",
           "id": 40,
           "collapsed": false,
           "gridPos": {
@@ -2531,7 +2531,7 @@ data:
                 "type": "loki",
                 "uid": "loki"
               },
-              "expr": "sum by (participant, room, reason) (count_over_time({job=\"livekit\"} | json participant=\"participant\", room=\"room\", reason=\"reason\", cl=\"caller\" | participant!=\"\" | reason!=\"\" | cl!~\"connectionquality\" [$__range]))",
+              "expr": "sum by (participant, room, reason) (count_over_time({job=\"livekit\"} | json participant=\"participant\", room=\"room\", reason=\"reason\", cl=\"caller\" | participant=~\"$participant\" | room=~\"$room\" | participant!=\"\" | reason!=\"\" | cl!~\"connectionquality\" [$__range]))",
               "queryType": "instant",
               "instant": true,
               "format": "table",
@@ -2581,7 +2581,7 @@ data:
                 "type": "loki",
                 "uid": "loki"
               },
-              "expr": "{job=\"livekit\"} |~ \"(?i)selected (candidate|pair)|candidate pair|ice (connection )?(connected|failed|disconnected)|using candidate\"",
+              "expr": "{job=\"livekit\"} | json participant=\"participant\", room=\"room\" | participant=~\"$participant\" | room=~\"$room\" |~ \"(?i)selected (candidate|pair)|candidate pair|ice (connection )?(connected|failed|disconnected)|using candidate\"",
               "queryType": "range",
               "refId": "A"
             }
@@ -2589,7 +2589,7 @@ data:
         },
         {
           "type": "row",
-          "title": "Per-participant quality (exporter)",
+          "title": "Per-participant quality — filtered exporter metrics",
           "id": 43,
           "collapsed": false,
           "gridPos": {
@@ -2685,7 +2685,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "livekit_participant_quality_score",
+              "expr": "livekit_participant_quality_score{identity=~\"$participant\",room=~\"$room\"}",
               "legendFormat": "{{identity}} \u00b7 {{room}}",
               "range": true,
               "refId": "A"
@@ -2733,7 +2733,7 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "bottomk(15, min by (identity, room) (livekit_participant_quality_score))",
+              "expr": "bottomk(15, min by (identity, room) (livekit_participant_quality_score{identity=~\"$participant\",room=~\"$room\"}))",
               "format": "table",
               "instant": true,
               "range": false,
@@ -2757,7 +2757,7 @@ data:
         },
         {
           "type": "row",
-          "title": "Per-participant media detail (from LiveKit quality scorer, debug logs)",
+          "title": "Per-participant media detail — filtered scorer logs",
           "id": 50,
           "collapsed": false,
           "gridPos": {
@@ -2861,7 +2861,7 @@ data:
                 "uid": "loki"
               },
               "editorMode": "code",
-              "expr": "min by (ident, dir) (min_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"score\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [1m]))",
+              "expr": "min by (ident, dir) (min_over_time({job=\"livekit\"} | json ident=\"participant\", rm=\"room\", dir=\"direction\", cl=\"caller\", val=\"score\" | ident=~\"$participant\" | rm=~\"$room\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [1m]))",
               "legendFormat": "{{ident}} \u00b7 {{dir}}",
               "queryType": "range",
               "refId": "A"
@@ -2952,7 +2952,7 @@ data:
                 "uid": "loki"
               },
               "editorMode": "code",
-              "expr": "sum by (ident, dir) (sum_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"stat.packetsLost\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [1m]))",
+              "expr": "sum by (ident, dir) (sum_over_time({job=\"livekit\"} | json ident=\"participant\", rm=\"room\", dir=\"direction\", cl=\"caller\", val=\"stat.packetsLost\" | ident=~\"$participant\" | rm=~\"$room\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [1m]))",
               "legendFormat": "{{ident}} \u00b7 {{dir}}",
               "queryType": "range",
               "refId": "A"
@@ -3043,7 +3043,7 @@ data:
                 "uid": "loki"
               },
               "editorMode": "code",
-              "expr": "max by (ident, dir) (max_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"stat.jitterMax\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [1m]))",
+              "expr": "max by (ident, dir) (max_over_time({job=\"livekit\"} | json ident=\"participant\", rm=\"room\", dir=\"direction\", cl=\"caller\", val=\"stat.jitterMax\" | ident=~\"$participant\" | rm=~\"$room\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [1m]))",
               "legendFormat": "{{ident}} \u00b7 {{dir}}",
               "queryType": "range",
               "refId": "A"
@@ -3134,7 +3134,7 @@ data:
                 "uid": "loki"
               },
               "editorMode": "code",
-              "expr": "max by (ident, dir) (max_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"stat.rttMax\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [1m]))",
+              "expr": "max by (ident, dir) (max_over_time({job=\"livekit\"} | json ident=\"participant\", rm=\"room\", dir=\"direction\", cl=\"caller\", val=\"stat.rttMax\" | ident=~\"$participant\" | rm=~\"$room\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [1m]))",
               "legendFormat": "{{ident}} \u00b7 {{dir}}",
               "queryType": "range",
               "refId": "A"
@@ -3182,12 +3182,12 @@ data:
                 "uid": "loki"
               },
               "editorMode": "code",
-              "expr": "min by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"score\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
+              "expr": "min by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", rm=\"room\", dir=\"direction\", cl=\"caller\", val=\"score\" | ident=~\"$participant\" | rm=~\"$room\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
               "queryType": "instant",
               "instant": true,
               "format": "table",
               "refId": "A",
-              "legendFormat": ""
+              "legendFormat": "score"
             },
             {
               "datasource": {
@@ -3195,12 +3195,12 @@ data:
                 "uid": "loki"
               },
               "editorMode": "code",
-              "expr": "min by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"packetScore\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
+              "expr": "min by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", rm=\"room\", dir=\"direction\", cl=\"caller\", val=\"packetScore\" | ident=~\"$participant\" | rm=~\"$room\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
               "queryType": "instant",
               "instant": true,
               "format": "table",
               "refId": "B",
-              "legendFormat": ""
+              "legendFormat": "packet score"
             },
             {
               "datasource": {
@@ -3208,12 +3208,12 @@ data:
                 "uid": "loki"
               },
               "editorMode": "code",
-              "expr": "min by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"layerScore\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
+              "expr": "min by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", rm=\"room\", dir=\"direction\", cl=\"caller\", val=\"layerScore\" | ident=~\"$participant\" | rm=~\"$room\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
               "queryType": "instant",
               "instant": true,
               "format": "table",
               "refId": "C",
-              "legendFormat": ""
+              "legendFormat": "layer score"
             },
             {
               "datasource": {
@@ -3221,12 +3221,12 @@ data:
                 "uid": "loki"
               },
               "editorMode": "code",
-              "expr": "min by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", cl=\"caller\", val=\"bitrateScore\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
+              "expr": "min by (ident, dir) (last_over_time({job=\"livekit\"} | json ident=\"participant\", rm=\"room\", dir=\"direction\", cl=\"caller\", val=\"bitrateScore\" | ident=~\"$participant\" | rm=~\"$room\" | cl=~\"connectionquality/scorer.go.*\" | unwrap val [$__range]))",
               "queryType": "instant",
               "instant": true,
               "format": "table",
               "refId": "D",
-              "legendFormat": ""
+              "legendFormat": "bitrate score"
             }
           ],
           "transformations": [
@@ -3281,7 +3281,7 @@ data:
                 "uid": "loki"
               },
               "editorMode": "code",
-              "expr": "{job=\"livekit\"} | json ident=\"participant\", dir=\"direction\", q=\"quality\", sc=\"score\", lost=\"stat.packetsLost\", jit=\"stat.jitterMax\", rtt=\"stat.rttMax\", cl=\"caller\" | cl=~\"connectionquality/scorer.go.*\" | sc!=\"\" | sc<100 | line_format \"{{.ident}} [{{.dir}}] quality={{.q}} score={{.sc}} lost={{.lost}} jitterUs={{.jit}} rttMs={{.rtt}}\"",
+              "expr": "{job=\"livekit\"} | json ident=\"participant\", rm=\"room\", dir=\"direction\", q=\"quality\", sc=\"score\", lost=\"stat.packetsLost\", jit=\"stat.jitterMax\", rtt=\"stat.rttMax\", cl=\"caller\" | ident=~\"$participant\" | rm=~\"$room\" | cl=~\"connectionquality/scorer.go.*\" | sc!=\"\" | sc<100 | line_format \"{{.ident}} / {{.rm}} [{{.dir}}] quality={{.q}} score={{.sc}} lost={{.lost}} jitterUs={{.jit}} rttMs={{.rtt}}\"",
               "queryType": "range",
               "refId": "A"
             }
@@ -3308,12 +3308,12 @@ data:
             {
               "datasource": { "type": "loki", "uid": "loki" },
               "editorMode": "code",
-              "expr": "sum by (rm, ident) (count_over_time({job=\"livekit\"} | json rm=\"room\", ident=\"participant\", cl=\"caller\" | cl=~\"connectionquality/scorer.go.*\" | ident!=\"\" [$__range]))",
+              "expr": "sum by (rm, ident) (count_over_time({job=\"livekit\"} | json rm=\"room\", ident=\"participant\", cl=\"caller\" | ident=~\"$participant\" | rm=~\"$room\" | cl=~\"connectionquality/scorer.go.*\" | ident!=\"\" [$__range]))",
               "queryType": "instant",
               "instant": true,
               "format": "table",
               "refId": "A",
-              "legendFormat": ""
+              "legendFormat": "samples"
             }
           ],
           "transformations": [
@@ -3323,7 +3323,7 @@ data:
         {
           "type": "table",
           "title": "Published tracks (who is sending)",
-          "description": "Each track a participant publishes (uplink), from scorer 'livekit.pub' lines: publisher identity, trackID, codec. audio/opus = a mic. Cross-reference trackID against the Subscriptions panel to see who receives it.",
+          "description": "Each track a participant publishes (uplink), from scorer 'livekit.pub' lines: publisher identity, trackID, codec and observation count. audio/opus = a mic. Cross-reference trackID against the Subscriptions panel to see who receives it.",
           "id": 62,
           "datasource": { "type": "loki", "uid": "loki" },
           "fieldConfig": { "defaults": { "custom": { "align": "auto", "filterable": true }, "unit": "short" }, "overrides": [] },
@@ -3333,22 +3333,22 @@ data:
             {
               "datasource": { "type": "loki", "uid": "loki" },
               "editorMode": "code",
-              "expr": "sum by (ident, track, mime) (count_over_time({job=\"livekit\"} | json ident=\"participant\", track=\"trackID\", mime=\"mime\", lg=\"logger\", cl=\"caller\" | cl=~\"connectionquality/scorer.go.*\" | lg=\"livekit.pub\" | track!=\"\" [$__range]))",
+              "expr": "sum by (ident, track, mime) (count_over_time({job=\"livekit\"} | json ident=\"participant\", rm=\"room\", track=\"trackID\", mime=\"mime\", lg=\"logger\", cl=\"caller\" | ident=~\"$participant\" | rm=~\"$room\" | cl=~\"connectionquality/scorer.go.*\" | lg=\"livekit.pub\" | track!=\"\" [$__range]))",
               "queryType": "instant",
               "instant": true,
               "format": "table",
               "refId": "A",
-              "legendFormat": ""
+              "legendFormat": "published track"
             }
           ],
           "transformations": [
-            { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true, "Value #A": true }, "renameByName": { "ident": "publisher", "track": "trackID", "mime": "codec" } } }
+            { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true, "Value #A": true }, "renameByName": { "ident": "publisher", "track": "trackID", "mime": "codec", "published track": "observations" } } }
           ]
         },
         {
           "type": "table",
           "title": "Subscriptions (who is receiving which track)",
-          "description": "From scorer 'livekit.sub' lines: subscriber identity + the trackID they receive (downlink). Match trackID against Published tracks to read it as 'subscriber receives publisher's track'. A track a friend should hear but with no row here = they never subscribed to it.",
+          "description": "From scorer 'livekit.sub' lines: subscriber identity, trackID and observation count. Match trackID against Published tracks to read it as 'subscriber receives publisher's track'. A track a friend should hear but with no row here = they never subscribed to it.",
           "id": 63,
           "datasource": { "type": "loki", "uid": "loki" },
           "fieldConfig": { "defaults": { "custom": { "align": "auto", "filterable": true }, "unit": "short" }, "overrides": [] },
@@ -3358,16 +3358,16 @@ data:
             {
               "datasource": { "type": "loki", "uid": "loki" },
               "editorMode": "code",
-              "expr": "sum by (ident, track) (count_over_time({job=\"livekit\"} | json ident=\"participant\", track=\"trackID\", lg=\"logger\", cl=\"caller\" | cl=~\"connectionquality/scorer.go.*\" | lg=\"livekit.sub\" | track!=\"\" [$__range]))",
+              "expr": "sum by (ident, track) (count_over_time({job=\"livekit\"} | json ident=\"participant\", rm=\"room\", track=\"trackID\", lg=\"logger\", cl=\"caller\" | ident=~\"$participant\" | rm=~\"$room\" | cl=~\"connectionquality/scorer.go.*\" | lg=\"livekit.sub\" | track!=\"\" [$__range]))",
               "queryType": "instant",
               "instant": true,
               "format": "table",
               "refId": "A",
-              "legendFormat": ""
+              "legendFormat": "subscription"
             }
           ],
           "transformations": [
-            { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true, "Value #A": true }, "renameByName": { "ident": "subscriber", "track": "trackID" } } }
+            { "id": "organize", "options": { "excludeByName": { "Time": true, "Value": true, "Value #A": true }, "renameByName": { "ident": "subscriber", "track": "trackID", "subscription": "observations" } } }
           ]
         },
         {
@@ -3382,7 +3382,7 @@ data:
             {
               "datasource": { "type": "loki", "uid": "loki" },
               "editorMode": "code",
-              "expr": "{job=\"livekit\"} |~ \"(?i)(JOIN_FAILURE|failed to (join|connect|subscribe|negotiate)|could not (join|subscribe)|cannot join|rejected|handshake failed)\" != \"high loss\"",
+              "expr": "{job=\"livekit\"} | json participant=\"participant\", room=\"room\" | participant=~\"$participant\" | room=~\"$room\" |~ \"(?i)(JOIN_FAILURE|failed to (join|connect|subscribe|negotiate)|could not (join|subscribe)|cannot join|rejected|handshake failed)\" != \"high loss\"",
               "queryType": "range",
               "refId": "A"
             }
@@ -3457,6 +3457,26 @@ data:
             "skipUrlSync": false,
             "sort": 1,
             "type": "query"
+          },
+          {
+            "current": {"selected": true, "text": ".*", "value": ".*"},
+            "hide": 0,
+            "label": "Room regex",
+            "name": "room",
+            "options": [],
+            "query": ".*",
+            "skipUrlSync": false,
+            "type": "textbox"
+          },
+          {
+            "current": {"selected": true, "text": ".*", "value": ".*"},
+            "hide": 0,
+            "label": "Participant regex",
+            "name": "participant",
+            "options": [],
+            "query": ".*",
+            "skipUrlSync": false,
+            "type": "textbox"
           }
         ]
       },

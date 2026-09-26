@@ -52,7 +52,8 @@ Grafana rendered correctly. No deployment or push is implied by a local commit.
 
 ## Remaining sweep
 
-LiveKit / Element Call.
+The active dashboard sweep is complete; an Inventory / Updates dashboard is a
+separate telemetry feature described below.
 
 ## Kubernetes Workloads
 
@@ -111,3 +112,24 @@ LiveKit / Element Call.
   Synapse application logs are not currently collected, so this panel is
   explicitly reverse-proxy evidence and does not claim application-log coverage.
 - Existing imported panels and collapsed sections retain their coordinates.
+
+## LiveKit / Element Call
+
+- Add room and participant regex controls to all participant-level Prometheus
+  quality metrics and LiveKit/scorer LogQL evidence. Global node/call metrics
+  remain global because those series do not carry participant identity.
+- Apply the filters consistently to disconnect reasons, ICE failures, warnings,
+  raw reconnect events, candidate selection, score components, degraded moments,
+  room/track inventory, and join failures.
+- Give multi-query score fields and inventory observations stable names so
+  Grafana does not expose `Value #A`/`Value #B` columns.
+- Loki 2.9.8 accepts every query. Synthetic Alice/Bob scorer lines verify that
+  selecting Alice and her room excludes Bob and displays the matching evidence.
+
+## Proposed Inventory / Updates dashboard
+
+Useful, but it needs new scheduled telemetry rather than dashboard-only queries.
+Collect running component versions plus policy-aware latest versions and release
+URLs into low-cardinality Prometheus gauges. Group OS/kernel, Kubernetes/K3s and
+cluster add-ons, then applications. Track current, target, update kind, age and
+release notes; distinguish patch/minor updates from opt-in major upgrades.
