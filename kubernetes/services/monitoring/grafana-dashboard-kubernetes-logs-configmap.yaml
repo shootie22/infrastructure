@@ -141,7 +141,7 @@ data:
                 "uid": "loki"
               },
               "editorMode": "code",
-              "expr": "sum by(namespace) (rate({namespace=~\"$namespace\"}[$__auto]))",
+              "expr": "sum by(namespace) (rate({namespace=~\"$namespace\",app=~\"$app\",pod=~\"$pod\",container=~\"$container\"} |~ \"$search\"[$__auto]))",
               "legendFormat": "{{namespace}}",
               "queryType": "range",
               "refId": "A"
@@ -155,7 +155,7 @@ data:
             "type": "loki",
             "uid": "loki"
           },
-          "description": "The app label comes only from app.kubernetes.io/name or app pod labels; unlabeled workloads appear with an empty app value.",
+          "description": "Filtered log rate by application; streams without an app label are explicitly named (unlabelled).",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -235,7 +235,7 @@ data:
                 "uid": "loki"
               },
               "editorMode": "code",
-              "expr": "sum by(app) (rate({namespace=~\"$namespace\",app=~\"$app\",pod=~\"$pod\",container=~\"$container\"}[$__auto]))",
+              "expr": "sum by(app) (rate({namespace=~\"$namespace\",app=~\"$app\",pod=~\"$pod\",container=~\"$container\"} |~ \"$search\" | label_format app=\"{{if .app}}{{.app}}{{else}}(unlabelled){{end}}\"[$__auto]))",
               "legendFormat": "{{app}}",
               "queryType": "range",
               "refId": "A"
@@ -295,8 +295,13 @@ data:
                   }
                 ]
               },
-              "unit": "ops",
+              "unit": "short",
               "links": [
+                {
+                  "title": "Filter this dashboard to pod",
+                  "targetBlank": false,
+                  "url": "/d/obs-logs?var-namespace=${__field.labels.namespace}&var-pod=${__field.labels.pod}&from=${__from}&to=${__to}"
+                },
                 {
                   "targetBlank": false,
                   "title": "Open pod drilldown",
@@ -338,13 +343,13 @@ data:
                 "uid": "loki"
               },
               "editorMode": "code",
-              "expr": "topk(15, sum by(namespace,pod) (rate({namespace=~\"$namespace\",app=~\"$app\",pod=~\"$pod\",container=~\"$container\"}[$__auto])))",
+              "expr": "topk(15, sum by(namespace,pod) (count_over_time({namespace=~\"$namespace\",app=~\"$app\",pod=~\"$pod\",container=~\"$container\"} |~ \"$search\"[$__range])))",
               "legendFormat": "{{namespace}} / {{pod}}",
-              "queryType": "range",
+              "queryType": "instant",
               "refId": "A"
             }
           ],
-          "title": "Noisiest Pods",
+          "title": "Most Log Lines in Selected Range",
           "type": "bargauge"
         },
         {
@@ -432,8 +437,8 @@ data:
                 "uid": "loki"
               },
               "editorMode": "code",
-              "expr": "sum by(namespace) (rate({namespace=~\"$namespace\",app=~\"$app\",pod=~\"$pod\",container=~\"$container\"} |~ \"(?i)\\\\b(error|warn(ing)?|fatal|panic)\\\\b\" [$__auto]))",
-              "legendFormat": "{{namespace}}",
+              "expr": "sum by(namespace,pod) (rate({namespace=~\"$namespace\",app=~\"$app\",pod=~\"$pod\",container=~\"$container\"} |~ \"$search\" |~ \"(?i)\\\\b(error|warn(ing)?|fatal|panic)\\\\b\"[$__auto]))",
+              "legendFormat": "{{namespace}} / {{pod}}",
               "queryType": "range",
               "refId": "A"
             }
@@ -502,7 +507,7 @@ data:
                 "uid": "loki"
               },
               "editorMode": "code",
-              "expr": "{namespace=~\"$namespace\",app=~\"$app\",pod=~\"$pod\",container=~\"$container\"} |~ \"$search\"",
+              "expr": "{namespace=~\"$namespace\",app=~\"$app\",pod=~\"$pod\",container=~\"$container\"} |~ \"$search\" | line_format \"{{.namespace}} / {{.pod}} / {{.container}} \u2014 {{ __line__ }}\"",
               "legendFormat": "",
               "queryType": "range",
               "refId": "A"
@@ -567,6 +572,170 @@ data:
           ],
           "title": "Kubernetes Warning Events",
           "type": "logs"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 35
+          },
+          "id": 9,
+          "panels": [],
+          "title": "Error evidence and event concentration in the same time range",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "description": "Exact lines behind the error-token graph. Tokens are a content heuristic, not authoritative severity. Filter a pod above; use Filtered Workload Logs for surrounding non-error context.",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 24,
+            "x": 0,
+            "y": 36
+          },
+          "id": 10,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "editorMode": "code",
+              "expr": "{namespace=~\"$namespace\",app=~\"$app\",pod=~\"$pod\",container=~\"$container\"} |~ \"$search\" |~ \"(?i)\\\\b(error|warn(ing)?|fatal|panic)\\\\b\" | line_format \"{{.namespace}} / {{.pod}} / {{.container}} \u2014 {{ __line__ }}\"",
+              "legendFormat": "",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Matching Error / Warning Lines",
+          "type": "logs"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "description": "Rate of collected Event log observations, not unique incident counts. Namespace and Event regex apply; workload app/pod/container filters do not apply to non-pod Kubernetes objects.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "ops"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 45
+          },
+          "id": 11,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "editorMode": "code",
+              "expr": "sum by(namespace,kind,name,reason) (rate({job=\"kubernetes-events\",namespace=~\"$namespace\"} | logfmt | __error__=\"\" | type=\"Warning\" |~ \"$event_search\" [$__auto]))",
+              "legendFormat": "{{namespace}} / {{kind}} / {{name}} / {{reason}}",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Warning Event Observations by Object and Reason",
+          "type": "timeseries"
         }
       ],
       "refresh": "30s",

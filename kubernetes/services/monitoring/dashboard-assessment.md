@@ -50,7 +50,7 @@ Grafana rendered correctly. No deployment or push is implied by a local commit.
 
 ## Remaining sweep
 
-Kubernetes Logs, Observability Stack, Synapse,
+Observability Stack, Synapse,
 LiveKit / Element Call.
 
 ## Kubernetes Workloads
@@ -75,3 +75,14 @@ LiveKit / Element Call.
   relative to positive memory limits, beside the existing logs/events evidence.
 - Merge waiting/termination table frames with meaningful value column names.
   Last termination is explicitly a retained state, not a fresh event count.
+
+## Kubernetes Logs
+
+- Log-volume and error-token charts now follow the same workload/search filters
+  as raw evidence. Error graphs identify pods and have a matching error-line panel.
+- Rank noisy pods by total lines in the selected range, not the last rate sample.
+  Add same-dashboard pod filtering and explicit identity prefixes on raw lines.
+- Label missing app labels as unlabelled. Add event concentration by object and
+  reason; clearly distinguish observations from unique incident counts.
+- Loki 2.9.8 accepted all queries; synthetic WARN/normal-line fixtures verify the
+  token filter and displayed pod/container identity.

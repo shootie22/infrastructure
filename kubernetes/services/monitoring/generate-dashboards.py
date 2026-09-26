@@ -586,6 +586,38 @@ def logs_dashboard() -> dict:
         text_var("search", ".*", "Log regex"),
         text_var("event_search", ".*", "Event regex"),
     ]
+    filtered = f'{selector} |~ "$search"'
+    errors = filtered + r' |~ "(?i)\\b(error|warn(ing)?|fatal|panic)\\b"'
+    for item in p:
+        if item["title"] == "Log Lines / Second by Namespace":
+            item["targets"][0]["expr"] = f'sum by(namespace) (rate({filtered}[$__auto]))'
+        elif item["title"] == "Log Lines / Second by Application":
+            named = filtered + ' | label_format app="{{if .app}}{{.app}}{{else}}(unlabelled){{end}}"'
+            item["targets"][0]["expr"] = f'sum by(app) (rate({named}[$__auto]))'
+            item["description"] = "Filtered log rate by application; streams without an app label are explicitly named (unlabelled)."
+        elif item["title"] == "Noisiest Pods":
+            item["title"] = "Most Log Lines in Selected Range"
+            item["targets"][0]["expr"] = f'topk(15, sum by(namespace,pod) (count_over_time({filtered}[$__range])))'
+            item["targets"][0]["queryType"] = "instant"
+            item["fieldConfig"]["defaults"]["unit"] = "short"
+            item["fieldConfig"]["defaults"]["links"] = [{
+                "title": "Filter this dashboard to pod", "targetBlank": False,
+                "url": "/d/obs-logs?var-namespace=${__field.labels.namespace}&var-pod=${__field.labels.pod}&from=${__from}&to=${__to}",
+            }, *POD_LINK]
+        elif item["title"] == "Explicit Error / Warning Tokens":
+            item["targets"][0]["expr"] = f'sum by(namespace,pod) (rate({errors}[$__auto]))'
+            item["targets"][0]["legendFormat"] = "{{namespace}} / {{pod}}"
+        elif item["title"] == "Filtered Workload Logs":
+            item["targets"][0]["expr"] += ' | line_format "{{.namespace}} / {{.pod}} / {{.container}} — {{ __line__ }}"'
+    p.extend([
+        row("Error evidence and event concentration in the same time range", 35),
+        panel("Matching Error / Warning Lines", "logs", 0, 36, 24, 9,
+              [log_target(errors + ' | line_format "{{.namespace}} / {{.pod}} / {{.container}} — {{ __line__ }}"')], datasource=LOKI,
+              description="Exact lines behind the error-token graph. Tokens are a content heuristic, not authoritative severity. Filter a pod above; use Filtered Workload Logs for surrounding non-error context."),
+        panel("Warning Event Observations by Object and Reason", "timeseries", 0, 45, 24, 7,
+              [log_target('sum by(namespace,kind,name,reason) (rate({job="kubernetes-events",namespace=~"$namespace"} | logfmt | __error__="" | type="Warning" |~ "$event_search" [$__auto]))', legend="{{namespace}} / {{kind}} / {{name}} / {{reason}}")], datasource=LOKI, unit="ops",
+              description="Rate of collected Event log observations, not unique incident counts. Namespace and Event regex apply; workload app/pod/container filters do not apply to non-pod Kubernetes objects."),
+    ])
     return dashboard("Kubernetes Logs", "obs-logs", p, variables, tags=["logs"], time_from="now-1h")
 
 
