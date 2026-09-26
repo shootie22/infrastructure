@@ -119,7 +119,7 @@ data:
               },
               "editorMode": "code",
               "expr": "min(max by(namespace,pod) (kube_pod_status_ready{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",condition=\"true\"} or kube_pod_status_phase{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",phase=\"Succeeded\"}))",
-              "legendFormat": "",
+              "legendFormat": "Ready or Completed",
               "range": false,
               "refId": "A",
               "instant": true
@@ -194,7 +194,7 @@ data:
               },
               "editorMode": "code",
               "expr": "sum(increase(kube_pod_container_status_restarts_total{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}[$__range]))",
-              "legendFormat": "",
+              "legendFormat": "Restarts in Range",
               "range": false,
               "refId": "A",
               "instant": true
@@ -260,7 +260,7 @@ data:
               },
               "editorMode": "code",
               "expr": "min(time() - kube_pod_created{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\"})",
-              "legendFormat": "",
+              "legendFormat": "Pod Age",
               "range": false,
               "refId": "A",
               "instant": true
@@ -293,7 +293,44 @@ data:
               },
               "unit": "short"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value #A"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Present"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Present"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Time"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hidden",
+                    "value": true
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 4,
@@ -312,13 +349,7 @@ data:
               ],
               "show": false
             },
-            "showHeader": true,
-            "sortBy": [
-              {
-                "desc": true,
-                "displayName": "Value"
-              }
-            ]
+            "showHeader": true
           },
           "pluginVersion": "12.4.1",
           "targets": [
@@ -329,7 +360,7 @@ data:
               },
               "editorMode": "code",
               "expr": "max by(namespace,pod,node,host_ip,pod_ip) (kube_pod_info{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\"})",
-              "legendFormat": "",
+              "legendFormat": "Present",
               "range": false,
               "refId": "A",
               "instant": true,
@@ -363,7 +394,44 @@ data:
               },
               "unit": "short"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value #A"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Waiting"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value #B"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Last termination"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Time"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hidden",
+                    "value": true
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 4,
@@ -382,13 +450,7 @@ data:
               ],
               "show": false
             },
-            "showHeader": true,
-            "sortBy": [
-              {
-                "desc": true,
-                "displayName": "Value"
-              }
-            ]
+            "showHeader": true
           },
           "pluginVersion": "12.4.1",
           "targets": [
@@ -399,7 +461,7 @@ data:
               },
               "editorMode": "code",
               "expr": "kube_pod_container_status_waiting_reason{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"} == 1",
-              "legendFormat": "",
+              "legendFormat": "Waiting",
               "range": false,
               "refId": "A",
               "instant": true,
@@ -412,7 +474,7 @@ data:
               },
               "editorMode": "code",
               "expr": "kube_pod_container_status_last_terminated_reason{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"} == 1",
-              "legendFormat": "",
+              "legendFormat": "Last termination",
               "range": false,
               "refId": "B",
               "instant": true,
@@ -420,7 +482,13 @@ data:
             }
           ],
           "title": "Current Waiting / Last Termination",
-          "type": "table"
+          "type": "table",
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            }
+          ]
         },
         {
           "collapsed": false,
@@ -520,8 +588,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(container) (rate(container_cpu_usage_seconds_total{job=\"kubelet-cadvisor\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\",container!=\"\",container!=\"POD\"}[$__rate_interval]))",
-              "legendFormat": "{{container}} usage",
+              "expr": "sum by(namespace,pod,container) (rate(container_cpu_usage_seconds_total{job=\"kubelet-cadvisor\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\",container!=\"\",container!=\"POD\"}[$__rate_interval]))",
+              "legendFormat": "{{pod}} / {{container}} usage",
               "range": true,
               "refId": "A"
             },
@@ -531,8 +599,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(container) (kube_pod_container_resource_requests{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\",resource=\"cpu\"})",
-              "legendFormat": "{{container}} request",
+              "expr": "sum by(namespace,pod,container) (kube_pod_container_resource_requests{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\",resource=\"cpu\"})",
+              "legendFormat": "{{pod}} / {{container}} request",
               "range": true,
               "refId": "B"
             },
@@ -542,8 +610,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(container) (kube_pod_container_resource_limits{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\",resource=\"cpu\"})",
-              "legendFormat": "{{container}} limit",
+              "expr": "sum by(namespace,pod,container) (kube_pod_container_resource_limits{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\",resource=\"cpu\"})",
+              "legendFormat": "{{pod}} / {{container}} limit",
               "range": true,
               "refId": "C"
             }
@@ -636,8 +704,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "max by(container) (container_memory_working_set_bytes{job=\"kubelet-cadvisor\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\",container!=\"\",container!=\"POD\"})",
-              "legendFormat": "{{container}} working set",
+              "expr": "max by(namespace,pod,container) (container_memory_working_set_bytes{job=\"kubelet-cadvisor\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\",container!=\"\",container!=\"POD\"})",
+              "legendFormat": "{{pod}} / {{container}} working set",
               "range": true,
               "refId": "A"
             },
@@ -647,8 +715,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(container) (kube_pod_container_resource_requests{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\",resource=\"memory\"})",
-              "legendFormat": "{{container}} request",
+              "expr": "sum by(namespace,pod,container) (kube_pod_container_resource_requests{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\",resource=\"memory\"})",
+              "legendFormat": "{{pod}} / {{container}} request",
               "range": true,
               "refId": "B"
             },
@@ -658,8 +726,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(container) (kube_pod_container_resource_limits{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\",resource=\"memory\"})",
-              "legendFormat": "{{container}} limit",
+              "expr": "sum by(namespace,pod,container) (kube_pod_container_resource_limits{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\",resource=\"memory\"})",
+              "legendFormat": "{{pod}} / {{container}} limit",
               "range": true,
               "refId": "C"
             }
@@ -968,7 +1036,7 @@ data:
               },
               "editorMode": "code",
               "expr": "kube_pod_container_status_restarts_total{job=\"kube-state-metrics\",namespace=~\"$namespace\",pod=~\"$pod\",container=~\"$container\"}",
-              "legendFormat": "{{container}}",
+              "legendFormat": "{{pod}} / {{container}}",
               "range": true,
               "refId": "A"
             }
@@ -1024,7 +1092,7 @@ data:
                 "uid": "loki"
               },
               "editorMode": "code",
-              "expr": "{job=\"kubernetes-events\",namespace=\"$namespace\"} | logfmt | name=~\"$pod\"",
+              "expr": "{job=\"kubernetes-events\",namespace=\"$namespace\"} | logfmt | name=~\"$pod\" | kind=\"Pod\"",
               "legendFormat": "",
               "queryType": "range",
               "refId": "A"
@@ -1096,6 +1164,402 @@ data:
               "targetBlank": false
             }
           ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 39
+          },
+          "id": 16,
+          "panels": [],
+          "title": "Explain saturation and restarts in the highlighted interval",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "percentunit",
+              "min": 0,
+              "max": 1
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 40
+          },
+          "id": 17,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "sum by(pod,container) (rate(container_cpu_cfs_throttled_periods_total{job=\"kubelet-cadvisor\",namespace=\"$namespace\",pod=~\"$pod\",container=~\"$container\",container!=\"\",container!=\"POD\"}[$__rate_interval])) / clamp_min(sum by(pod,container) (rate(container_cpu_cfs_periods_total{job=\"kubelet-cadvisor\",namespace=\"$namespace\",pod=~\"$pod\",container=~\"$container\",container!=\"\",container!=\"POD\"}[$__rate_interval])), 0.001)",
+              "legendFormat": "{{pod}} / {{container}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "CPU Throttled Periods by Container",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short",
+              "min": 0,
+              "max": 1
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 40
+          },
+          "id": 18,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "kube_pod_container_status_waiting_reason{job=\"kube-state-metrics\",namespace=\"$namespace\",pod=~\"$pod\",container=~\"$container\"} == 1",
+              "legendFormat": "{{pod}} / {{container}} / {{reason}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Container Waiting Reason History",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Retained last-termination state, not a fresh event count. Correlate changes with the restart counter and Events.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short",
+              "min": 0,
+              "max": 1
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 47
+          },
+          "id": 19,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "kube_pod_container_status_last_terminated_reason{job=\"kube-state-metrics\",namespace=\"$namespace\",pod=~\"$pod\",container=~\"$container\"} == 1",
+              "legendFormat": "{{pod}} / {{container}} / {{reason}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Last Termination Reason History",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Only containers with a positive configured memory limit. Working set alone does not predict every OOM; use termination reasons and logs.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "percentunit",
+              "min": 0
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 47
+          },
+          "id": 20,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "max by(namespace,pod,container) (container_memory_working_set_bytes{job=\"kubelet-cadvisor\",namespace=\"$namespace\",pod=~\"$pod\",container=~\"$container\",container!=\"\",container!=\"POD\"}) / on(namespace,pod,container) (max by(namespace,pod,container) (kube_pod_container_resource_limits{job=\"kube-state-metrics\",namespace=\"$namespace\",pod=~\"$pod\",container=~\"$container\",resource=\"memory\"}) > 0)",
+              "legendFormat": "{{pod}} / {{container}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Memory Working Set / Limit",
+          "type": "timeseries"
         }
       ],
       "refresh": "30s",
@@ -1135,11 +1599,11 @@ data:
             "type": "query"
           },
           {
-            "allValue": null,
+            "allValue": ".*",
             "current": {
               "selected": true,
-              "text": "prometheus",
-              "value": "prometheus"
+              "text": "All",
+              "value": "$__all"
             },
             "datasource": {
               "type": "prometheus",
@@ -1147,9 +1611,9 @@ data:
             },
             "definition": "label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace=\"$namespace\"}, workload)",
             "hide": 0,
-            "includeAll": false,
+            "includeAll": true,
             "label": "Workload",
-            "multi": false,
+            "multi": true,
             "name": "workload",
             "options": [],
             "query": {
@@ -1163,7 +1627,7 @@ data:
             "type": "query"
           },
           {
-            "allValue": ".*",
+            "allValue": null,
             "current": {
               "selected": true,
               "text": "All",
@@ -1173,7 +1637,7 @@ data:
               "type": "prometheus",
               "uid": "prometheus"
             },
-            "definition": "label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace=\"$namespace\",workload=\"$workload\"}, pod)",
+            "definition": "label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace=\"$namespace\",workload=~\"$workload\"}, pod)",
             "hide": 0,
             "includeAll": true,
             "label": "Pod",
@@ -1181,7 +1645,7 @@ data:
             "name": "pod",
             "options": [],
             "query": {
-              "query": "label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace=\"$namespace\",workload=\"$workload\"}, pod)",
+              "query": "label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace=\"$namespace\",workload=~\"$workload\"}, pod)",
               "refId": "var-pod"
             },
             "refresh": 2,

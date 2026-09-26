@@ -530,11 +530,39 @@ def pod_dashboard() -> dict:
     ]
     variables = [
         prom_var("namespace", 'label_values(kube_namespace_status_phase{job="kube-state-metrics"}, namespace)', current="monitoring"),
-        prom_var("workload", 'label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace="$namespace"}, workload)', current="prometheus"),
-        prom_var("pod", 'label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace="$namespace",workload="$workload"}, pod)', multi=True, include_all=True),
+        prom_var("workload", 'label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace="$namespace"}, workload)', multi=True, include_all=True),
+        prom_var("pod", 'label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace="$namespace",workload=~"$workload"}, pod)', multi=True, include_all=True),
         prom_var("container", 'label_values(kube_pod_container_info{job="kube-state-metrics",namespace="$namespace",pod=~"$pod"}, container)', multi=True, include_all=True),
         text_var("search", ".*", "Log regex"),
     ]
+    variables[2]["allValue"] = None
+    for item in p:
+        for query in item.get("targets", []):
+            query["expr"] = query["expr"].replace("by(container)", "by(namespace,pod,container)")
+            if "{{container}}" in query.get("legendFormat", ""):
+                query["legendFormat"] = query["legendFormat"].replace("{{container}}", "{{pod}} / {{container}}")
+        if item["title"] == "Current Waiting / Last Termination":
+            item["targets"][0]["legendFormat"] = "Waiting"
+            item["targets"][1]["legendFormat"] = "Last termination"
+            item["transformations"] = [{"id": "merge", "options": {}}]
+        if item["title"] == "Node Placement":
+            item["targets"][0]["legendFormat"] = "Present"
+        if item["title"] == "Kubernetes Events for Pod (empty is healthy)":
+            item["targets"][0]["expr"] += ' | kind="Pod"'
+    p.extend([
+        row("Explain saturation and restarts in the highlighted interval", 39),
+        panel("CPU Throttled Periods by Container", "timeseries", 0, 40, 12, 7,
+              [target('sum by(pod,container) (rate(container_cpu_cfs_throttled_periods_total{job="kubelet-cadvisor",namespace="$namespace",pod=~"$pod",container=~"$container",container!="",container!="POD"}[$__rate_interval])) / clamp_min(sum by(pod,container) (rate(container_cpu_cfs_periods_total{job="kubelet-cadvisor",namespace="$namespace",pod=~"$pod",container=~"$container",container!="",container!="POD"}[$__rate_interval])), 0.001)', legend="{{pod}} / {{container}}")], unit="percentunit", min_value=0, max_value=1),
+        panel("Container Waiting Reason History", "timeseries", 12, 40, 12, 7,
+              [target('kube_pod_container_status_waiting_reason{job="kube-state-metrics",namespace="$namespace",pod=~"$pod",container=~"$container"} == 1', legend="{{pod}} / {{container}} / {{reason}}")], min_value=0, max_value=1),
+        panel("Last Termination Reason History", "timeseries", 0, 47, 12, 7,
+              [target('kube_pod_container_status_last_terminated_reason{job="kube-state-metrics",namespace="$namespace",pod=~"$pod",container=~"$container"} == 1', legend="{{pod}} / {{container}} / {{reason}}")], min_value=0, max_value=1,
+              description="Retained last-termination state, not a fresh event count. Correlate changes with the restart counter and Events."),
+        panel("Memory Working Set / Limit", "timeseries", 12, 47, 12, 7,
+              [target('max by(namespace,pod,container) (container_memory_working_set_bytes{job="kubelet-cadvisor",namespace="$namespace",pod=~"$pod",container=~"$container",container!="",container!="POD"}) / on(namespace,pod,container) (max by(namespace,pod,container) (kube_pod_container_resource_limits{job="kube-state-metrics",namespace="$namespace",pod=~"$pod",container=~"$container",resource="memory"}) > 0)', legend="{{pod}} / {{container}}")], unit="percentunit", min_value=0,
+              description="Only containers with a positive configured memory limit. Working set alone does not predict every OOM; use termination reasons and logs."),
+    ])
+    readable_fields(p)
     return dashboard("Pod / Container Drilldown", "obs-pod", p, variables, tags=["kubernetes"], time_from="now-1h")
 
 

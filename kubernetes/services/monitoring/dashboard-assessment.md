@@ -50,7 +50,7 @@ Grafana rendered correctly. No deployment or push is implied by a local commit.
 
 ## Remaining sweep
 
-Pod / Container Drilldown, Kubernetes Logs, Observability Stack, Synapse,
+Kubernetes Logs, Observability Stack, Synapse,
 LiveKit / Element Call.
 
 ## Kubernetes Workloads
@@ -64,3 +64,14 @@ LiveKit / Element Call.
   with no pods, which cannot be discovered through a pod-owner join.
 - Give table values readable names. Workload aggregate resource panels remain
   aggregates; Evidence pod narrows the pod status and investigation panels.
+
+## Pod / Container Drilldown
+
+- Preserve pod identity in CPU/memory series when several pods have containers
+  with the same name; previously those containers were merged.
+- Make workload selection optional and expand All pods to the selected owners.
+  Incoming pod links no longer inherit a fixed Prometheus workload.
+- Add throttled-period ratio, waiting/last-termination history and working set
+  relative to positive memory limits, beside the existing logs/events evidence.
+- Merge waiting/termination table frames with meaningful value column names.
+  Last termination is explicitly a retained state, not a fresh event count.
