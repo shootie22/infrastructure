@@ -52,7 +52,6 @@ Grafana rendered correctly. No deployment or push is implied by a local commit.
 
 ## Remaining sweep
 
-Synapse,
 LiveKit / Element Call.
 
 ## Kubernetes Workloads
@@ -99,3 +98,16 @@ LiveKit / Element Call.
 - Remove fabricated zero series from optional failure counters and explicitly
   document that Loki/collector failure can itself make log evidence unavailable.
 - Component log selectors are independent of the global stack health metrics.
+
+## Synapse
+
+- Name all overview stat fields so Grafana does not render `Value #A`.
+- Add a top-level incident row with response rate by exact HTTP status, method
+  and servlet, plus selected-range 4xx/5xx counts. This makes the failing Matrix
+  endpoint class visible without opening the large imported metric sections.
+- Add federation transaction, soft-failure and HTTP-pusher signals alongside
+  worker scrape/process-start history.
+- Add matching Nginx Matrix 4xx/5xx request evidence with method and path.
+  Synapse application logs are not currently collected, so this panel is
+  explicitly reverse-proxy evidence and does not claim application-log coverage.
+- Existing imported panels and collapsed sections retain their coordinates.
