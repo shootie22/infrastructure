@@ -61,7 +61,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "",
+          "description": " Evaluated at the selected range end. Entrypoint summaries are independent of router/service evidence filters.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -112,8 +112,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum(rate(traefik_entrypoint_requests_total{kubernetes_service=\"traefik-metrics\",entrypoint=~\"$entrypoint\"}[5m]))",
-              "legendFormat": "",
+              "expr": "sum(rate(traefik_entrypoint_requests_total{kubernetes_service=\"traefik-metrics\",entrypoint=~\"$entrypoint\"}[$__rate_interval]))",
+              "legendFormat": "Request Rate",
               "range": false,
               "refId": "A",
               "instant": true
@@ -127,7 +127,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "Server-error request ratio; zero is healthy.",
+          "description": "Server-error request ratio; zero is healthy. Evaluated at the selected range end. Entrypoint summaries are independent of router/service evidence filters.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -188,8 +188,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "(sum(rate(traefik_entrypoint_requests_total{kubernetes_service=\"traefik-metrics\",entrypoint=~\"$entrypoint\",code=~\"5..\"}[5m])) / clamp_min(sum(rate(traefik_entrypoint_requests_total{kubernetes_service=\"traefik-metrics\",entrypoint=~\"$entrypoint\"}[5m])), 0.001)) or vector(0)",
-              "legendFormat": "",
+              "expr": "(sum(rate(traefik_entrypoint_requests_total{kubernetes_service=\"traefik-metrics\",entrypoint=~\"$entrypoint\",code=~\"5..\"}[$__rate_interval])) or (0 * sum(rate(traefik_entrypoint_requests_total{kubernetes_service=\"traefik-metrics\",entrypoint=~\"$entrypoint\"}[$__rate_interval])))) / clamp_min(sum(rate(traefik_entrypoint_requests_total{kubernetes_service=\"traefik-metrics\",entrypoint=~\"$entrypoint\"}[$__rate_interval])), 0.001)",
+              "legendFormat": "HTTP 5xx Ratio",
               "range": false,
               "refId": "A",
               "instant": true
@@ -203,7 +203,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "Client errors can be expected; investigate changes rather than treating every 4xx as an incident.",
+          "description": "Client errors can be expected; investigate changes rather than treating every 4xx as an incident. Evaluated at the selected range end. Entrypoint summaries are independent of router/service evidence filters.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -264,8 +264,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum(rate(traefik_entrypoint_requests_total{kubernetes_service=\"traefik-metrics\",entrypoint=~\"$entrypoint\",code=~\"4..\"}[5m])) / clamp_min(sum(rate(traefik_entrypoint_requests_total{kubernetes_service=\"traefik-metrics\",entrypoint=~\"$entrypoint\"}[5m])), 0.001)",
-              "legendFormat": "",
+              "expr": "(sum(rate(traefik_entrypoint_requests_total{kubernetes_service=\"traefik-metrics\",entrypoint=~\"$entrypoint\",code=~\"4..\"}[$__rate_interval])) or (0 * sum(rate(traefik_entrypoint_requests_total{kubernetes_service=\"traefik-metrics\",entrypoint=~\"$entrypoint\"}[$__rate_interval])))) / clamp_min(sum(rate(traefik_entrypoint_requests_total{kubernetes_service=\"traefik-metrics\",entrypoint=~\"$entrypoint\"}[$__rate_interval])), 0.001)",
+              "legendFormat": "HTTP 4xx Ratio",
               "range": false,
               "refId": "A",
               "instant": true
@@ -279,7 +279,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "Number of Traefik services currently returning server errors; zero is healthy.",
+          "description": "Selected backend services returning 5xx at the range end. Independent of entrypoint/router filters. No data if no healthy scrape target.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -338,8 +338,8 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "count(sum by(service) (rate(traefik_service_requests_total{kubernetes_service=\"traefik-metrics\",code=~\"5..\"}[5m])) > 0) or vector(0)",
-              "legendFormat": "",
+              "expr": "count(sum by(service) (rate(traefik_service_requests_total{kubernetes_service=\"traefik-metrics\",service=~\"$service\",code=~\"5..\"}[$__rate_interval])) > 0) or (0 * count(up{kubernetes_service=\"traefik-metrics\"} == 1))",
+              "legendFormat": "Services Returning 5xx",
               "range": false,
               "refId": "A",
               "instant": true
@@ -439,7 +439,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "Requests by Status Class",
+          "title": "Entrypoint Requests by HTTP Status",
           "type": "timeseries"
         },
         {
@@ -670,7 +670,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "description": "Server-error request rate by router; an unlabeled zero means no router emitted a 5xx in the selected interval.",
+          "description": "Identify the route and backend for each error status. Router metrics do not include entrypoint labels; use request evidence below for entrypoint filtering and unmatched-route errors.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -750,13 +750,13 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum by(router) (rate(traefik_router_requests_total{kubernetes_service=\"traefik-metrics\",router=~\"$router\",code=~\"5..\"}[$__rate_interval])) or vector(0)",
-              "legendFormat": "{{router}}",
+              "expr": "sum by(router,service,code) (rate(traefik_router_requests_total{kubernetes_service=\"traefik-metrics\",router=~\"$router\",service=~\"$service\",code=~\"4..|5..\"}[$__rate_interval]))",
+              "legendFormat": "{{router}} \u2192 {{service}} / HTTP {{code}}",
               "range": true,
               "refId": "A"
             }
           ],
-          "title": "5xx Rate by Router",
+          "title": "4xx / 5xx by Router and Status",
           "type": "timeseries"
         },
         {
@@ -1352,6 +1352,421 @@ data:
           ],
           "title": "DNS / Connect / TLS / Processing",
           "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 42
+          },
+          "id": 18,
+          "panels": [],
+          "title": "Error investigation \u2014 zoom a spike, then narrow router / service / status",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Service-level errors across all entrypoints. No matching series can mean no errors or missing telemetry; check scrape health.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 43
+          },
+          "id": 19,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "sum by(service,code) (rate(traefik_service_requests_total{kubernetes_service=\"traefik-metrics\",service=~\"$service\",code=~\"4..|5..\"}[$__rate_interval]))",
+              "legendFormat": "{{service}} / HTTP {{code}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Backend Errors by Service and Status",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Estimated counter increase over the highlighted time range. Includes every matching route, without hiding small error counts behind a top-k cutoff.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short",
+              "min": 0
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 43
+          },
+          "id": 20,
+          "options": {
+            "displayMode": "gradient",
+            "minVizHeight": 10,
+            "minVizWidth": 0,
+            "namePlacement": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "sizing": "auto",
+            "valueMode": "color"
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "sum by(router,service,code) (increase(traefik_router_requests_total{kubernetes_service=\"traefik-metrics\",router=~\"$router\",service=~\"$service\",code=~\"$status\"}[$__range])) > 0",
+              "legendFormat": "{{router}} / {{service}} / {{code}}",
+              "range": false,
+              "refId": "A",
+              "instant": true
+            }
+          ],
+          "title": "Error Responses in Selected Range",
+          "type": "bargauge"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "description": "JSON access evidence: RequestHost, RequestPath, RouterName, ServiceName, DownstreamStatus (client response), OriginStatus (backend response), Duration and OriginDuration in nanoseconds. Expand a line for fields. Collected after access logging is deployed: all 4xx/5xx OR requests taking at least 1s. Use status .* to include slow successes. Missing route/backend identifies failures before routing; select All to retain them. No historical backfill.",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 24,
+            "x": 0,
+            "y": 50
+          },
+          "id": 21,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "editorMode": "code",
+              "expr": "{namespace=\"kube-system\",container=\"traefik\"} | json | __error__=\"\" | DownstreamStatus=~\"$status\" | entryPointName=~\"$entrypoint\" | RouterName=~\"$router\" | ServiceName=~\"$service\" | RequestHost=~\"$request_host\" | RequestPath=~\"$request_path\"",
+              "legendFormat": "",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Failed / Slow Requests \u2014 Host, Path, Route, Backend",
+          "type": "logs"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "description": "Controller/configuration/TLS errors in the same time window. Global Traefik logs; request filters do not apply.",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {},
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 60
+          },
+          "id": 22,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "loki"
+              },
+              "editorMode": "code",
+              "expr": "{namespace=\"kube-system\",container=\"traefik\"} |~ \"(?i)(error|warn|fatal)\"",
+              "legendFormat": "",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Traefik Internal Errors",
+          "type": "logs"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "0 means scrape failed; absent means no retained target samples. This is not HTTP request success.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 4,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short",
+              "min": 0,
+              "max": 1
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 60
+          },
+          "id": 23,
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "pluginVersion": "12.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "up{kubernetes_service=\"traefik-metrics\"}",
+              "legendFormat": "{{instance}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Traefik Metrics Scrape Health",
+          "type": "timeseries"
         }
       ],
       "refresh": "30s",
@@ -1445,6 +1860,48 @@ data:
             "skipUrlSync": false,
             "sort": 1,
             "type": "query"
+          },
+          {
+            "current": {
+              "selected": true,
+              "text": "4..|5..",
+              "value": "4..|5.."
+            },
+            "hide": 0,
+            "label": "Evidence status regex",
+            "name": "status",
+            "options": [],
+            "query": "4..|5..",
+            "skipUrlSync": false,
+            "type": "textbox"
+          },
+          {
+            "current": {
+              "selected": true,
+              "text": ".*",
+              "value": ".*"
+            },
+            "hide": 0,
+            "label": "Request host regex",
+            "name": "request_host",
+            "options": [],
+            "query": ".*",
+            "skipUrlSync": false,
+            "type": "textbox"
+          },
+          {
+            "current": {
+              "selected": true,
+              "text": ".*",
+              "value": ".*"
+            },
+            "hide": 0,
+            "label": "Request path regex",
+            "name": "request_path",
+            "options": [],
+            "query": ".*",
+            "skipUrlSync": false,
+            "type": "textbox"
           }
         ]
       },

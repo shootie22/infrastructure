@@ -21,7 +21,24 @@ Grafana rendered correctly. No deployment or push is implied by a local commit.
 - Pending operator evidence: backing volumes, fan metrics, container label/data
   availability, and rendered dashboard verification after deployment.
 
+## Edge / Traefik
+
+- Preserve existing panel positions. Break out 4xx and 5xx by route, backend and
+  exact status, with error counts over the selected interval and request evidence.
+- Add filtered JSON access logging through chart `additionalArguments`: all
+  errors or requests taking at least 1 second; headers are dropped. Alloy already
+  collects Traefik stdout. This requires a Traefik rollout and has no backfill.
+- Request evidence can narrow host, path, router, service, entrypoint and status.
+  All retains unmatched-route errors. Expand a line to compare downstream and
+  origin status and duration. Router/service metrics lack entrypoint labels, so
+  their filter boundaries are explicitly described.
+- Error-ratio zero fallback now depends on existing traffic series. Scrape health
+  is shown independently. Access logging is filtered, not a full request ledger.
+- Validated with Prometheus 3.9.1, Loki 2.9.8, synthetic unmatched 404 and backend
+  502 log fixtures, and Helm rendering against upstream chart 40.1.0 (operator
+  reports K3s chart 40.1.4+up40.1.0). Live rendering awaits deployment.
+
 ## Remaining sweep
 
-Edge / Traefik, Platform Overview, Kubernetes Workloads, Pod / Container
+Platform Overview, Kubernetes Workloads, Pod / Container
 Drilldown, Kubernetes Logs, Observability Stack, Synapse, LiveKit / Element Call.

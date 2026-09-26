@@ -491,7 +491,54 @@ def traefik_dashboard() -> dict:
         prom_var("entrypoint", 'label_values(traefik_entrypoint_requests_total{kubernetes_service="traefik-metrics"}, entrypoint)', multi=True, include_all=True),
         prom_var("router", 'label_values(traefik_router_requests_total{kubernetes_service="traefik-metrics"}, router)', multi=True, include_all=True),
         prom_var("service", 'label_values(traefik_service_requests_total{kubernetes_service="traefik-metrics"}, service)', multi=True, include_all=True),
+        text_var("status", "4..|5..", "Evidence status regex"),
+        text_var("request_host", ".*", "Request host regex"),
+        text_var("request_path", ".*", "Request path regex"),
     ]
+    access = ('{namespace="kube-system",container="traefik"} | json '
+              '| __error__="" | DownstreamStatus=~"$status" '
+              '| entryPointName=~"$entrypoint" | RouterName=~"$router" '
+              '| ServiceName=~"$service" | RequestHost=~"$request_host" '
+              '| RequestPath=~"$request_path"')
+    for item in p:
+        if item["title"] == "5xx Rate by Router":
+            item["title"] = "4xx / 5xx by Router and Status"
+            item["targets"] = [target(f'sum by(router,service,code) (rate(traefik_router_requests_total{{{router},service=~"$service",code=~"4..|5.."}}[$__rate_interval]))', legend="{{router}} → {{service}} / HTTP {{code}}")]
+            item["description"] = "Identify the route and backend for each error status. Router metrics do not include entrypoint labels; use request evidence below for entrypoint filtering and unmatched-route errors."
+        if item["title"] == "Requests by Status Class":
+            item["title"] = "Entrypoint Requests by HTTP Status"
+        if item["type"] == "stat":
+            item["description"] += " Evaluated at the selected range end. Entrypoint summaries are independent of router/service evidence filters."
+            for query in item["targets"]:
+                query["legendFormat"] = item["title"]
+        if item["title"] == "Services Returning 5xx":
+            item["targets"][0]["expr"] = f'count(sum by(service) (rate(traefik_service_requests_total{{{service},code=~"5.."}}[$__rate_interval])) > 0) or (0 * count(up{{kubernetes_service="traefik-metrics"}} == 1))'
+            item["description"] = "Selected backend services returning 5xx at the range end. Independent of entrypoint/router filters. No data if no healthy scrape target."
+        for query in item.get("targets", []):
+            query["expr"] = query["expr"].replace("[5m]", "[$__rate_interval]")
+            # Preserve a healthy zero only when the selected request series exists.
+            if item["title"] in ("HTTP 4xx Ratio", "HTTP 5xx Ratio"):
+                code = "4.." if "4xx" in item["title"] else "5.."
+                total = f'sum(rate(traefik_entrypoint_requests_total{{{ep}}}[$__rate_interval]))'
+                query["expr"] = f'(sum(rate(traefik_entrypoint_requests_total{{{ep},code=~"{code}"}}[$__rate_interval])) or (0 * {total})) / clamp_min({total}, 0.001)'
+    p.extend([
+        row("Error investigation — zoom a spike, then narrow router / service / status", 42),
+        panel("Backend Errors by Service and Status", "timeseries", 0, 43, 12, 7,
+              [target(f'sum by(service,code) (rate(traefik_service_requests_total{{{service},code=~"4..|5.."}}[$__rate_interval]))', legend="{{service}} / HTTP {{code}}")], unit="reqps",
+              description="Service-level errors across all entrypoints. No matching series can mean no errors or missing telemetry; check scrape health."),
+        panel("Error Responses in Selected Range", "bargauge", 12, 43, 12, 7,
+              [target(f'sum by(router,service,code) (increase(traefik_router_requests_total{{{router},service=~"$service",code=~"$status"}}[$__range])) > 0', legend="{{router}} / {{service}} / {{code}}", instant=True)], min_value=0,
+              description="Estimated counter increase over the highlighted time range. Includes every matching route, without hiding small error counts behind a top-k cutoff."),
+        panel("Failed / Slow Requests — Host, Path, Route, Backend", "logs", 0, 50, 24, 10,
+              [log_target(access)], datasource=LOKI,
+              description="JSON access evidence: RequestHost, RequestPath, RouterName, ServiceName, DownstreamStatus (client response), OriginStatus (backend response), Duration and OriginDuration in nanoseconds. Expand a line for fields. Collected after access logging is deployed: all 4xx/5xx OR requests taking at least 1s. Use status .* to include slow successes. Missing route/backend identifies failures before routing; select All to retain them. No historical backfill."),
+        panel("Traefik Internal Errors", "logs", 0, 60, 12, 8,
+              [log_target('{namespace="kube-system",container="traefik"} |~ "(?i)(error|warn|fatal)"')], datasource=LOKI,
+              description="Controller/configuration/TLS errors in the same time window. Global Traefik logs; request filters do not apply."),
+        panel("Traefik Metrics Scrape Health", "timeseries", 12, 60, 12, 8,
+              [target('up{kubernetes_service="traefik-metrics"}', legend="{{instance}}")], min_value=0, max_value=1,
+              description="0 means scrape failed; absent means no retained target samples. This is not HTTP request success."),
+    ])
     return dashboard("Edge / Traefik", "obs-traefik", p, variables, tags=["traffic"])
 
 

@@ -24,3 +24,25 @@ spec:
           annotations:
             monitoring.radunenu.com/scrape: "true"
             monitoring.radunenu.com/path: /metrics
+
+    # Error/slow requests go to stdout and the existing Alloy pod collector.
+    # Keep request evidence out of Prometheus labels and drop all headers.
+    additionalArguments:
+      - --accesslog=true
+      - --accesslog.format=json
+      - --accesslog.filters.statuscodes=400-599
+      - --accesslog.filters.minduration=1s
+      - --accesslog.fields.defaultmode=drop
+      - --accesslog.fields.headers.defaultmode=drop
+      - --accesslog.fields.names.StartUTC=keep
+      - --accesslog.fields.names.RequestHost=keep
+      - --accesslog.fields.names.RequestPath=keep
+      - --accesslog.fields.names.RequestMethod=keep
+      - --accesslog.fields.names.DownstreamStatus=keep
+      - --accesslog.fields.names.OriginStatus=keep
+      - --accesslog.fields.names.RouterName=keep
+      - --accesslog.fields.names.ServiceName=keep
+      - --accesslog.fields.names.Duration=keep
+      - --accesslog.fields.names.OriginDuration=keep
+      - --accesslog.fields.names.entryPointName=keep
+      - --accesslog.fields.names.RetryAttempts=keep
