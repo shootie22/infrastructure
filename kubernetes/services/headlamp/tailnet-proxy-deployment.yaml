@@ -37,10 +37,10 @@ spec:
               caddy run --config /etc/caddy/Caddyfile &
               proxy_pid=$!
               trap 'kill -TERM "$proxy_pid" 2>/dev/null || true; wait "$proxy_pid" 2>/dev/null || true; exit 0' TERM INT
-              previous="$(sha256sum /certs/tls.crt /certs/tls.key)"
+              previous="$(sha256sum /etc/caddy/Caddyfile /certs/tls.crt /certs/tls.key)"
               while kill -0 "$proxy_pid" 2>/dev/null; do
                 sleep 15
-                current="$(sha256sum /certs/tls.crt /certs/tls.key)"
+                current="$(sha256sum /etc/caddy/Caddyfile /certs/tls.crt /certs/tls.key)"
                 if [ "$current" != "$previous" ]; then
                   kill -USR1 "$proxy_pid"
                   previous="$current"
