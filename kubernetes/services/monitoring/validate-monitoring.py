@@ -72,28 +72,39 @@ def main() -> int:
                     errors.append(f"dashboard UID {uid!r} is duplicated in {dashboards[uid].name} and {path.name}")
                 else:
                     dashboards[uid] = path
-                for panel in model.get("panels", []):
-                    grid = panel.get("gridPos", {})
-                    if grid.get("x", 0) + grid.get("w", 0) > 24:
-                        errors.append(f"{path.name}:{panel.get('title')}: panel exceeds 24-column grid")
-                    datasource = panel.get("datasource")
-                    if isinstance(datasource, dict):
-                        ds_uid = datasource.get("uid")
-                        if ds_uid and ds_uid not in ALLOWED_DATASOURCES:
-                            errors.append(f"{path.name}:{panel.get('title')}: unknown datasource UID {ds_uid}")
-                    if panel.get("type") != "row" and not panel.get("targets"):
-                        errors.append(f"{path.name}:{panel.get('title')}: panel has no query target")
-                    for query in panel.get("targets", []):
-                        ds = query.get("datasource")
-                        if isinstance(ds, dict) and ds.get("uid") not in ALLOWED_DATASOURCES:
-                            errors.append(f"{path.name}:{panel.get('title')}: unknown target datasource {ds.get('uid')}")
-                        if not (query.get("expr") or query.get("query")):
-                            errors.append(f"{path.name}:{panel.get('title')}: empty query")
-                        include_query = not args.core_only or "observability-core" in model.get("tags", [])
-                        if include_query and isinstance(ds, dict) and ds.get("uid") == "prometheus" and query.get("expr"):
-                            promql_expressions.append((f"{model.get('uid')} / {panel.get('title')}", query["expr"]))
-                        if include_query and isinstance(ds, dict) and ds.get("uid") == "loki" and query.get("expr"):
-                            logql_expressions.append((f"{model.get('uid')} / {panel.get('title')}", query["expr"]))
+                panel_ids: set[int] = set()
+
+                def inspect_panels(panels: list[dict]) -> None:
+                    for panel in panels:
+                        panel_id = panel.get("id")
+                        if isinstance(panel_id, int):
+                            if panel_id in panel_ids:
+                                errors.append(f"{path.name}: duplicate panel ID {panel_id}")
+                            panel_ids.add(panel_id)
+                        grid = panel.get("gridPos", {})
+                        if grid.get("x", 0) + grid.get("w", 0) > 24:
+                            errors.append(f"{path.name}:{panel.get('title')}: panel exceeds 24-column grid")
+                        datasource = panel.get("datasource")
+                        if isinstance(datasource, dict):
+                            ds_uid = datasource.get("uid")
+                            if ds_uid and ds_uid not in ALLOWED_DATASOURCES:
+                                errors.append(f"{path.name}:{panel.get('title')}: unknown datasource UID {ds_uid}")
+                        if panel.get("type") != "row" and not panel.get("targets"):
+                            errors.append(f"{path.name}:{panel.get('title')}: panel has no query target")
+                        for query in panel.get("targets", []):
+                            ds = query.get("datasource")
+                            if isinstance(ds, dict) and ds.get("uid") not in ALLOWED_DATASOURCES:
+                                errors.append(f"{path.name}:{panel.get('title')}: unknown target datasource {ds.get('uid')}")
+                            if not (query.get("expr") or query.get("query")):
+                                errors.append(f"{path.name}:{panel.get('title')}: empty query")
+                            include_query = not args.core_only or "observability-core" in model.get("tags", [])
+                            if include_query and isinstance(ds, dict) and ds.get("uid") == "prometheus" and query.get("expr"):
+                                promql_expressions.append((f"{model.get('uid')} / {panel.get('title')}", query["expr"]))
+                            if include_query and isinstance(ds, dict) and ds.get("uid") == "loki" and query.get("expr"):
+                                logql_expressions.append((f"{model.get('uid')} / {panel.get('title')}", query["expr"]))
+                        inspect_panels(panel.get("panels", []))
+
+                inspect_panels(model.get("panels", []))
 
     workloads = parsed.get(ROOT / "workloads.yaml", [])
     projected: set[str] = set()

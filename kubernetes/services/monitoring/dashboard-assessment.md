@@ -112,6 +112,10 @@ separate telemetry feature described below.
   Synapse application logs are not currently collected, so this panel is
   explicitly reverse-proxy evidence and does not claim application-log coverage.
 - Existing imported panels and collapsed sections retain their coordinates.
+- Name the remaining event/rate-limiter series in collapsed sections and remove
+  an empty response-cache query that could produce an unexplained extra field.
+  Static validation now recurses into collapsed row panels and checks duplicate
+  panel IDs, so imported deep sections receive the same checks as visible panels.
 
 ## LiveKit / Element Call
 
