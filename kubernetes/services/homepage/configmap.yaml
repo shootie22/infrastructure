@@ -30,10 +30,10 @@ data:
       Overview:
         style: row
         columns: 1
-      Websites:
+      Apps:
         style: row
         columns: 4
-      Apps:
+      Websites:
         style: row
         columns: 4
       Media:
@@ -246,26 +246,6 @@ data:
   widgets.yaml: |
     - datetime:
         text_size: md
-        locale: ro-RO
-        format:
-          hour: 2-digit
-          minute: 2-digit
-          hourCycle: h23
-          timeZone: Europe/Bucharest
-          timeZoneName: short
-
-    - openmeteo:
-        label: Bucharest
-        latitude: 44.4268
-        longitude: 26.1025
-        timezone: Europe/Bucharest
-        units: metric
-        cache: 10
-        format:
-          maximumFractionDigits: 0
-
-    - datetime:
-        text_size: md
         locale: da-DK
         format:
           hour: 2-digit
@@ -284,6 +264,26 @@ data:
         format:
           maximumFractionDigits: 0
 
+    - openmeteo:
+        label: Bucharest
+        latitude: 44.4268
+        longitude: 26.1025
+        timezone: Europe/Bucharest
+        units: metric
+        cache: 10
+        format:
+          maximumFractionDigits: 0
+
+    - datetime:
+        text_size: md
+        locale: ro-RO
+        format:
+          hour: 2-digit
+          minute: 2-digit
+          hourCycle: h23
+          timeZone: Europe/Bucharest
+          timeZoneName: short
+
   bookmarks.yaml: ""
   docker.yaml: ""
   proxmox.yaml: ""
@@ -298,4 +298,75 @@ data:
       background-color: rgb(15 23 42 / 0.62) !important;
       border: 1px solid rgb(255 255 255 / 0.08);
       box-shadow: 0 12px 30px rgb(0 0 0 / 0.16);
+    }
+
+    #information-widgets-right {
+      display: grid !important;
+      grid-template-columns: max-content max-content minmax(2rem, 1fr) max-content max-content;
+      align-items: center;
+      column-gap: 0.75rem;
+      width: 100%;
+      flex-basis: 100%;
+      margin: 0 !important;
+    }
+
+    #information-widgets-right > :nth-child(1) {
+      grid-column: 1;
+    }
+
+    #information-widgets-right > :nth-child(2) {
+      grid-column: 2;
+    }
+
+    #information-widgets-right > :nth-child(3) {
+      grid-column: 4;
+    }
+
+    #information-widgets-right > :nth-child(4) {
+      grid-column: 5;
+    }
+
+    @media (max-width: 639px) {
+      #information-widgets-right {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        column-gap: 1rem;
+        row-gap: 0.65rem;
+      }
+
+      #information-widgets-right > :nth-child(1) {
+        grid-column: 1;
+        grid-row: 1;
+        justify-self: start;
+      }
+
+      #information-widgets-right > :nth-child(2) {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+      }
+
+      #information-widgets-right > :nth-child(3) {
+        grid-column: 1;
+        grid-row: 2;
+        justify-self: start;
+      }
+
+      #information-widgets-right > :nth-child(4) {
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: end;
+      }
+
+      #information-widgets-right .widget-container {
+        min-width: 0;
+      }
+
+      #information-widgets-right .widget-inner-text {
+        margin-left: 0.5rem;
+      }
+
+      #information-widgets-right .information-widget-icon {
+        width: 2.25rem;
+        height: 2.25rem;
+      }
     }
