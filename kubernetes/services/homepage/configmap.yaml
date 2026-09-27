@@ -30,6 +30,9 @@ data:
       Overview:
         style: row
         columns: 1
+      Websites:
+        style: row
+        columns: 4
       Apps:
         style: row
         columns: 4
@@ -42,6 +45,10 @@ data:
       Infrastructure:
         style: row
         columns: 4
+      Legacy Web:
+        style: row
+        columns: 4
+        initiallyCollapsed: true
 
   services.yaml: |
     - Overview:
@@ -71,6 +78,19 @@ data:
                     type: percent
                     options:
                       maximumFractionDigits: 0
+
+    - Websites:
+        - RaduNenu.com:
+            icon: mdi-web
+            href: https://radunenu.com
+            description: Personal website
+            siteMonitor: http://radunenu-com.radunenu-com.svc.cluster.local
+
+        - Yeetus.net:
+            icon: mdi-web
+            href: https://yeetus.net
+            description: Yeetus landing page
+            siteMonitor: http://yeetus-net.yeetus-net.svc.cluster.local
 
     - Apps:
         - Vaultwarden:
@@ -171,6 +191,54 @@ data:
             href: https://auth.radunenu.com
             description: Identity administration
             siteMonitor: http://keycloak.keycloak.svc.cluster.local:9000/health/ready
+
+    - Legacy Web:
+        - Old Radu API:
+            icon: mdi-api
+            href: https://api-old.radunenu.com
+            description: Original API endpoints
+            siteMonitor: https://api-old.radunenu.com/health-check.html
+
+        - ByRadu API:
+            icon: mdi-api
+            href: https://api.byradu.com
+            description: Legacy ByRadu API
+            siteMonitor: https://api.byradu.com/health-check.html
+
+        - Kronorite News API:
+            icon: mdi-newspaper-variant-outline
+            href: https://news.kronorite.com
+            description: Legacy news API
+
+        - Kronorite Stats API:
+            icon: mdi-chart-line
+            href: https://stats.kronorite.com
+            description: Legacy game statistics
+            siteMonitor: https://stats.kronorite.com/health-check.html
+
+        - Kronorite:
+            icon: mdi-steam
+            href: https://kronorite.com
+            description: Redirect to Steam
+            siteMonitor: https://kronorite.com
+
+        - ByRadu:
+            icon: mdi-link-variant
+            href: https://byradu.com
+            description: Redirect to RaduNenu.com
+            siteMonitor: https://byradu.com
+
+        - CubiTube:
+            icon: mdi-link-variant
+            href: https://cubi.tube
+            description: Legacy site redirect
+            siteMonitor: https://cubi.tube
+
+        - CubTube:
+            icon: mdi-link-variant
+            href: https://cubtube.lol
+            description: Legacy site redirect
+            siteMonitor: https://cubtube.lol
 
   kubernetes.yaml: |
     mode: disabled
