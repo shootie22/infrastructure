@@ -21,6 +21,9 @@ data:
       hideInternetSearch: true
       hideVisitURL: true
     layout:
+      Overview:
+        style: row
+        columns: 1
       Apps:
         style: row
         columns: 4
@@ -35,24 +38,40 @@ data:
         columns: 4
 
   services.yaml: |
+    - Overview:
+        - Cluster:
+            icon: mdi-server-network
+            description: Current cluster health
+            widget:
+              type: prometheusmetric
+              url: http://prometheus.monitoring.svc.cluster.local:9090
+              refreshInterval: 60000
+              metrics:
+                - label: Nodes
+                  query: count(kube_node_info{job="kube-state-metrics"})
+                  format:
+                    type: number
+                    options:
+                      maximumFractionDigits: 0
+                - label: CPU
+                  query: 100 * (1 - avg(rate(node_cpu_seconds_total{job="node-exporter", mode="idle", node!=""}[5m])))
+                  format:
+                    type: percent
+                    options:
+                      maximumFractionDigits: 0
+                - label: Memory
+                  query: 100 * (1 - sum(node_memory_MemAvailable_bytes{job="node-exporter", node!=""}) / sum(node_memory_MemTotal_bytes{job="node-exporter", node!=""}))
+                  format:
+                    type: percent
+                    options:
+                      maximumFractionDigits: 0
+
     - Apps:
         - Vaultwarden:
             icon: vaultwarden.png
             href: https://vw.yeetus.net
             description: Password vault
             siteMonitor: http://vaultwarden.vaultwarden.svc.cluster.local
-
-        - Vikunja:
-            icon: vikunja.png
-            href: https://kanban.radunenu.com
-            description: Tasks and projects
-            siteMonitor: https://kanban.radunenu.com
-
-        - Open WebUI:
-            icon: open-webui.png
-            href: https://chat.radunenu.com
-            description: Local AI workspace
-            siteMonitor: https://chat.radunenu.com
 
         - PrivateBin:
             icon: privatebin.png
@@ -71,12 +90,6 @@ data:
             href: https://img.radunenu.com
             description: Private image sharing
             siteMonitor: http://picshare.picshare.svc.cluster.local
-
-        - LibreTranslate:
-            icon: libretranslate.png
-            href: https://translate.radunenu.com
-            description: Private translation
-            siteMonitor: https://translate.radunenu.com
 
         - Element:
             icon: element.png
@@ -116,39 +129,6 @@ data:
             href: https://hl.infra.radunenu.com
             description: Cluster administration
             siteMonitor: http://headlamp.headlamp.svc.cluster.local
-
-        - Uptime Kuma:
-            icon: uptime-kuma.png
-            href: https://status.radunenu.com
-            description: Service availability
-            siteMonitor: https://status.radunenu.com
-
-        - Cluster:
-            icon: mdi-server-network
-            description: Current cluster health
-            widget:
-              type: prometheusmetric
-              url: http://prometheus.monitoring.svc.cluster.local:9090
-              refreshInterval: 60000
-              metrics:
-                - label: Nodes
-                  query: count(kube_node_info{job="kube-state-metrics"})
-                  format:
-                    type: number
-                    options:
-                      maximumFractionDigits: 0
-                - label: CPU
-                  query: 100 * (1 - avg(rate(node_cpu_seconds_total{job="node-exporter", mode="idle", node!=""}[5m])))
-                  format:
-                    type: percent
-                    options:
-                      maximumFractionDigits: 0
-                - label: Memory
-                  query: 100 * (1 - sum(node_memory_MemAvailable_bytes{job="node-exporter", node!=""}) / sum(node_memory_MemTotal_bytes{job="node-exporter", node!=""}))
-                  format:
-                    type: percent
-                    options:
-                      maximumFractionDigits: 0
 
   kubernetes.yaml: |
     mode: disabled

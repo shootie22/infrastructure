@@ -4,11 +4,13 @@
 self-hosted applications that are useful day to day. It is available only on
 the tailnet at <https://hub.infra.radunenu.com>.
 
-The catalogue and appearance live in `configmap.yaml`. To add, remove, or move
-a card, edit `services.yaml` inside that ConfigMap and keep the list limited to
-interactive applications. Prefer an internal Kubernetes Service URL for
-`siteMonitor` while retaining the normal HTTPS URL as `href`. Do not add API
-credentials solely for a dashboard widget.
+The catalogue and appearance live in `configmap.yaml`. It is not generated
+from repository directories or active workloads. To add, remove, or move a
+card, edit `services.yaml` inside that ConfigMap and keep the list limited to
+interactive applications. Argo CD deploys the updated ConfigMap after it is
+committed. Prefer an internal Kubernetes Service URL for `siteMonitor` while
+retaining the normal HTTPS URL as `href`. Do not add API credentials solely
+for a dashboard widget.
 
 Kubernetes discovery is deliberately disabled in `kubernetes.yaml`. The pod
 has no service account token or RBAC and does not inspect Ingresses or cluster
