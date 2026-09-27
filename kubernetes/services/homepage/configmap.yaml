@@ -158,7 +158,7 @@ data:
             icon: grafana.png
             href: https://mon.radunenu.com
             description: Metrics and logs
-            siteMonitor: http://grafana.monitoring.svc.cluster.local:3000
+            siteMonitor: http://grafana.monitoring.svc.cluster.local:3000/api/health
 
         - Headlamp:
             icon: headlamp.png
@@ -175,7 +175,47 @@ data:
   kubernetes.yaml: |
     mode: disabled
 
-  widgets.yaml: ""
+  widgets.yaml: |
+    - datetime:
+        text_size: md
+        locale: ro-RO
+        format:
+          hour: 2-digit
+          minute: 2-digit
+          hourCycle: h23
+          timeZone: Europe/Bucharest
+          timeZoneName: short
+
+    - openmeteo:
+        label: Bucharest
+        latitude: 44.4268
+        longitude: 26.1025
+        timezone: Europe/Bucharest
+        units: metric
+        cache: 10
+        format:
+          maximumFractionDigits: 0
+
+    - datetime:
+        text_size: md
+        locale: da-DK
+        format:
+          hour: 2-digit
+          minute: 2-digit
+          hourCycle: h23
+          timeZone: Europe/Copenhagen
+          timeZoneName: short
+
+    - openmeteo:
+        label: Copenhagen
+        latitude: 55.6761
+        longitude: 12.5683
+        timezone: Europe/Copenhagen
+        units: metric
+        cache: 10
+        format:
+          maximumFractionDigits: 0
+
   bookmarks.yaml: ""
   docker.yaml: ""
   proxmox.yaml: ""

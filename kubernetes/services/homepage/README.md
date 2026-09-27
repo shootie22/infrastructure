@@ -12,6 +12,10 @@ committed. Prefer an internal Kubernetes Service URL for `siteMonitor` while
 retaining the normal HTTPS URL as `href`. Do not add API credentials solely
 for a dashboard widget.
 
+Header clocks and weather live in `widgets.yaml` inside the same ConfigMap.
+They currently show Bucharest and Copenhagen using their local time zones and
+Open-Meteo, which needs no API key.
+
 Homepage renders some settings into static HTML at startup. When changing
 `settings.yaml`, also change the `homepage.gethomepage.dev/config-revision`
 pod-template annotation in `deployment.yaml` so Argo CD performs a rollout.
