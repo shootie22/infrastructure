@@ -156,6 +156,7 @@ data:
   widgets.yaml: ""
   bookmarks.yaml: ""
   docker.yaml: ""
+  proxmox.yaml: ""
   providers.yaml: ""
   custom.js: ""
   custom.css: |
