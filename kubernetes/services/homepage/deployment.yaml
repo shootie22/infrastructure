@@ -16,7 +16,7 @@ spec:
       labels:
         app.kubernetes.io/name: homepage
       annotations:
-        homepage.gethomepage.dev/config-revision: "2026-09-27-node-health"
+        homepage.gethomepage.dev/config-revision: "2026-09-27-node-health-cache-warm"
     spec:
       automountServiceAccountToken: false
       nodeSelector:
@@ -45,6 +45,17 @@ spec:
             - name: http
               containerPort: 3000
               protocol: TCP
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -ec
+                  - |
+                    until wget -q -O /dev/null "http://${MY_POD_IP}:3000/api/healthcheck"; do
+                      sleep 1
+                    done
+                    wget -q -O /dev/null "http://${MY_POD_IP}:3000/api/revalidate"
           startupProbe:
             httpGet:
               path: /api/healthcheck
