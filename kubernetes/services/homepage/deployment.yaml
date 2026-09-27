@@ -16,7 +16,7 @@ spec:
       labels:
         app.kubernetes.io/name: homepage
       annotations:
-        homepage.gethomepage.dev/config-revision: "2026-09-27-ingress-discovery"
+        homepage.gethomepage.dev/config-revision: "2026-09-27-minima"
     spec:
       automountServiceAccountToken: false
       serviceAccountName: homepage

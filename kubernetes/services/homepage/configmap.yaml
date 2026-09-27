@@ -163,6 +163,34 @@ data:
                     options:
                       maximumFractionDigits: 0
 
+        - Minima:
+            icon: mdi-server
+            href: https://mon.radunenu.com/d/obs-nodes/nodes-hosts?var-node=minima
+            description: Kubernetes node
+            widget:
+              type: prometheusmetric
+              url: http://prometheus.monitoring.svc.cluster.local:9090
+              refreshInterval: 60000
+              metrics:
+                - label: Ready
+                  query: 100 * max(kube_node_status_condition{job="kube-state-metrics", condition="Ready", status="true", node="minima"})
+                  format:
+                    type: percent
+                    options:
+                      maximumFractionDigits: 0
+                - label: CPU
+                  query: 100 * (1 - avg(rate(node_cpu_seconds_total{job="node-exporter", mode="idle", node="minima"}[5m])))
+                  format:
+                    type: percent
+                    options:
+                      maximumFractionDigits: 0
+                - label: Memory
+                  query: 100 * (1 - sum(node_memory_MemAvailable_bytes{job="node-exporter", node="minima"}) / sum(node_memory_MemTotal_bytes{job="node-exporter", node="minima"}))
+                  format:
+                    type: percent
+                    options:
+                      maximumFractionDigits: 0
+
     - Apps:
         - Element:
             icon: element.png
