@@ -42,8 +42,15 @@ spec:
                 sleep 15
                 current="$(sha256sum /etc/caddy/Caddyfile /certs/tls.crt /certs/tls.key)"
                 if [ "$current" != "$previous" ]; then
-                  kill -USR1 "$proxy_pid"
-                  previous="$current"
+                  # Caddy 2.10 does not reload on SIGUSR1. Use its admin API so
+                  # ConfigMap updates and renewed certificate files take effect.
+                  if caddy reload \
+                    --config /etc/caddy/Caddyfile \
+                    --adapter caddyfile \
+                    --address 127.0.0.1:12019 \
+                    --force; then
+                    previous="$current"
+                  fi
                 fi
               done
               wait "$proxy_pid"
