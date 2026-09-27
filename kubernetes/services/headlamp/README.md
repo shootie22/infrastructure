@@ -6,11 +6,17 @@ directory automatically. The Deployment is pinned to Fuji
 (`kubernetes.io/hostname: fuji`); it will stay Pending rather than move to
 another node if Fuji is unavailable.
 
-## Private HTTPS certificate (preparation)
+Tailnet HTTPS is served by the existing host-network Caddy proxy bound only to
+Fuji's `100.64.0.1` address. The listener also serves Homepage at
+`hub.infra.radunenu.com`; the historical Headlamp resource names are retained
+to avoid a disruptive proxy migration.
 
-`hl.infra.radunenu.com` resolves to Fuji's tailnet address via Headscale split
-DNS. A namespaced `headlamp-dns01` Issuer can obtain a browser-trusted
-certificate without adding a public A record or exposing Headlamp. cert-manager
+## Private HTTPS certificate
+
+`hl.infra.radunenu.com` and `hub.infra.radunenu.com` resolve to Fuji's tailnet
+address via Headscale split DNS. A namespaced `headlamp-dns01` Issuer obtains a
+browser-trusted certificate without adding public A records or exposing either
+application. cert-manager
 uses a Cloudflare API token to add and remove the public ACME TXT challenge.
 The token must be scoped to the `radunenu.com` zone with `Zone DNS Edit` and
 `Zone Zone Read`, then placed in an encrypted SopsSecret based on
@@ -20,10 +26,9 @@ echoing it or writing plaintext to disk. If `sops` is not installed, run the
 script with `nix shell nixpkgs#sops -c bash scripts/create-headlamp-cloudflare-secret.sh`.
 Never commit a plaintext token. The Issuer and Certificate manifests are
 deployed after the encrypted secret is ready; the Certificate will write
-`headlamp-infra-tls` in the `headlamp` namespace.
-
-The certificate alone does not make Headlamp reachable. Keep using the SSH
-tunnel until a separate tailnet-only HTTPS route is deployed and tested.
+`headlamp-infra-tls` in the `headlamp` namespace. The host forwards tailnet TCP
+443 to Caddy's internal 8443 listener; Caddy selects Headlamp or Homepage by
+the requested hostname.
 
 ## Access over SSH
 

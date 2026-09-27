@@ -15,10 +15,8 @@ setting. Its pod-template `config-revision` annotation triggers that rollout.
 Do not point clients at this resolver until these checks pass: failed DNS
 would affect the entire `infra.radunenu.com` suffix.
 
-The `hl.infra.radunenu.com` DNS record currently names Fuji only. Headlamp still requires
-the SSH tunnel documented in `../headlamp/README.md`; a DNS record does not
-publish its Kubernetes Service. Any future HTTP route must be restricted to
-the tailnet and tested for actual client source IP preservation. Similarly,
-add `mon.infra.radunenu.com` or `gp.infra.radunenu.com` only after their
-private HTTP endpoints exist. A browser-trusted certificate for a private
-HTTPS route requires DNS-01 validation; the existing issuer uses HTTP-01.
+The `hl.infra.radunenu.com` and `hub.infra.radunenu.com` records name Fuji's
+tailnet address only. Their private HTTPS routes share the host-network Caddy
+listener in the Headlamp application; neither Kubernetes Service is published
+through a public Ingress. Browser-trusted certificates for these private routes
+use DNS-01 validation and do not require public A or AAAA records.

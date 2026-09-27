@@ -20,3 +20,9 @@ data:
       tls /certs/tls.crt /certs/tls.key
       reverse_proxy headlamp.headlamp.svc.cluster.local:80
     }
+
+    https://hub.infra.radunenu.com {
+      bind 100.64.0.1
+      tls /certs/tls.crt /certs/tls.key
+      reverse_proxy homepage.homepage.svc.cluster.local:3000
+    }
