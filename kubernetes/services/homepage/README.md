@@ -12,6 +12,10 @@ committed. Prefer an internal Kubernetes Service URL for `siteMonitor` while
 retaining the normal HTTPS URL as `href`. Do not add API credentials solely
 for a dashboard widget.
 
+Homepage renders some settings into static HTML at startup. When changing
+`settings.yaml`, also change the `homepage.gethomepage.dev/config-revision`
+pod-template annotation in `deployment.yaml` so Argo CD performs a rollout.
+
 When changing deployed services, audit both `kubernetes/services/` and
 `services/production/` for interactive HTTP applications. Public personal
 sites, redirects, protocol-only servers, databases, exporters, runners and
