@@ -29,7 +29,7 @@ data:
     layout:
       Overview:
         style: row
-        columns: 1
+        columns: 4
       Apps:
         style: row
         columns: 4
@@ -74,6 +74,90 @@ data:
                       maximumFractionDigits: 0
                 - label: Memory
                   query: 100 * (1 - sum(node_memory_MemAvailable_bytes{job="node-exporter", node!=""}) / sum(node_memory_MemTotal_bytes{job="node-exporter", node!=""}))
+                  format:
+                    type: percent
+                    options:
+                      maximumFractionDigits: 0
+
+        - Fuji:
+            icon: mdi-server
+            href: https://mon.radunenu.com/d/obs-nodes/nodes-hosts?var-node=fuji
+            description: Kubernetes node
+            widget:
+              type: prometheusmetric
+              url: http://prometheus.monitoring.svc.cluster.local:9090
+              refreshInterval: 60000
+              metrics:
+                - label: Ready
+                  query: 100 * max(kube_node_status_condition{job="kube-state-metrics", condition="Ready", status="true", node="fuji"})
+                  format:
+                    type: percent
+                    options:
+                      maximumFractionDigits: 0
+                - label: CPU
+                  query: 100 * (1 - avg(rate(node_cpu_seconds_total{job="node-exporter", mode="idle", node="fuji"}[5m])))
+                  format:
+                    type: percent
+                    options:
+                      maximumFractionDigits: 0
+                - label: Memory
+                  query: 100 * (1 - sum(node_memory_MemAvailable_bytes{job="node-exporter", node="fuji"}) / sum(node_memory_MemTotal_bytes{job="node-exporter", node="fuji"}))
+                  format:
+                    type: percent
+                    options:
+                      maximumFractionDigits: 0
+
+        - ThinkCentre:
+            icon: mdi-server
+            href: https://mon.radunenu.com/d/obs-nodes/nodes-hosts?var-node=thinkcentre
+            description: Kubernetes node
+            widget:
+              type: prometheusmetric
+              url: http://prometheus.monitoring.svc.cluster.local:9090
+              refreshInterval: 60000
+              metrics:
+                - label: Ready
+                  query: 100 * max(kube_node_status_condition{job="kube-state-metrics", condition="Ready", status="true", node="thinkcentre"})
+                  format:
+                    type: percent
+                    options:
+                      maximumFractionDigits: 0
+                - label: CPU
+                  query: 100 * (1 - avg(rate(node_cpu_seconds_total{job="node-exporter", mode="idle", node="thinkcentre"}[5m])))
+                  format:
+                    type: percent
+                    options:
+                      maximumFractionDigits: 0
+                - label: Memory
+                  query: 100 * (1 - sum(node_memory_MemAvailable_bytes{job="node-exporter", node="thinkcentre"}) / sum(node_memory_MemTotal_bytes{job="node-exporter", node="thinkcentre"}))
+                  format:
+                    type: percent
+                    options:
+                      maximumFractionDigits: 0
+
+        - Mixi:
+            icon: mdi-server
+            href: https://mon.radunenu.com/d/obs-nodes/nodes-hosts?var-node=mixi
+            description: Kubernetes node
+            widget:
+              type: prometheusmetric
+              url: http://prometheus.monitoring.svc.cluster.local:9090
+              refreshInterval: 60000
+              metrics:
+                - label: Ready
+                  query: 100 * max(kube_node_status_condition{job="kube-state-metrics", condition="Ready", status="true", node="mixi"})
+                  format:
+                    type: percent
+                    options:
+                      maximumFractionDigits: 0
+                - label: CPU
+                  query: 100 * (1 - avg(rate(node_cpu_seconds_total{job="node-exporter", mode="idle", node="mixi"}[5m])))
+                  format:
+                    type: percent
+                    options:
+                      maximumFractionDigits: 0
+                - label: Memory
+                  query: 100 * (1 - sum(node_memory_MemAvailable_bytes{job="node-exporter", node="mixi"}) / sum(node_memory_MemTotal_bytes{job="node-exporter", node="mixi"}))
                   format:
                     type: percent
                     options:
