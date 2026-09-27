@@ -95,6 +95,15 @@ kind: Ingress
 metadata:
   name: joplin
   namespace: joplin
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: Joplin Server
+    gethomepage.dev/icon: joplin.png
+    gethomepage.dev/description: Notes and sync
+    gethomepage.dev/weight: "700"
+    gethomepage.dev/siteMonitor: http://joplin.joplin.svc.cluster.local
 spec:
   ingressClassName: traefik
   tls:

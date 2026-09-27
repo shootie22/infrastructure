@@ -63,6 +63,15 @@ kind: Ingress
 metadata:
   name: picshare
   namespace: picshare
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: Picshare
+    gethomepage.dev/icon: mdi-image-multiple-outline
+    gethomepage.dev/description: Private image sharing
+    gethomepage.dev/weight: "400"
+    gethomepage.dev/siteMonitor: http://picshare.picshare.svc.cluster.local
 spec:
   ingressClassName: traefik
   tls:

@@ -4,13 +4,23 @@
 self-hosted applications that are useful day to day. It is available only on
 the tailnet at <https://hub.infra.radunenu.com>.
 
-The catalogue and appearance live in `configmap.yaml`. To add, remove, or move
-a card, edit `services.yaml` inside that ConfigMap. The catalogue is derived
-from the active directories under `kubernetes/services/`; backend-only
-workloads and duplicate host aliases remain intentionally hidden. Argo CD
-deploys the updated ConfigMap after it is committed. Prefer an internal
-Kubernetes Service URL for `siteMonitor` while retaining the normal HTTPS URL
-as `href`. Do not add API credentials solely for a dashboard widget.
+HTTP discovery is opt-in, not fully automatic: a new application appears only
+after its Kubernetes Ingress has these annotations:
+
+```yaml
+gethomepage.dev/enabled: "true"
+gethomepage.dev/external: "true"
+```
+
+`external: "true"` prevents Homepage from looking up Pods, keeping its access
+limited to reading Ingresses. Add the optional group, name, icon, description,
+weight, and internal `siteMonitor` annotations to produce a polished card.
+Removing the Ingress removes the discovered card.
+
+`services.yaml` in `configmap.yaml` contains only entries that cannot be
+discovered from an Ingress, including the cluster summary, private Headlamp
+route, legacy multi-host routes, and protocol-only game servers. Do not add API
+credentials solely for a dashboard widget.
 
 Header clocks and weather live in `widgets.yaml` inside the same ConfigMap.
 They currently show Bucharest and Copenhagen using their local time zones and
@@ -20,18 +30,17 @@ Homepage renders some settings into static HTML at startup. When changing
 `settings.yaml`, also change the `homepage.gethomepage.dev/config-revision`
 pod-template annotation in `deployment.yaml` so Argo CD performs a rollout.
 
-When changing deployed services, audit `kubernetes/services/` for interactive
-HTTP applications. Public websites and legacy routes have their own groups;
-protocol-only servers, databases, exporters, runners and other supporting
-workloads remain intentionally excluded. This explicit audit keeps the hub
-comprehensive without granting Homepage discovery credentials or turning it
-into a workload inventory.
+Discovery uses a dedicated service account with an explicitly projected,
+hour-long rotating token. Its ClusterRole permits only `get` and `list` on
+Ingresses. It cannot read Secrets, ConfigMaps, Services, Pods, Nodes, logs, or
+metrics and cannot modify any Kubernetes object. Traefik CRD and Gateway API
+discovery are disabled.
 
-Kubernetes discovery is deliberately disabled in `kubernetes.yaml`. The pod
-has no service account token or RBAC and does not inspect Ingresses or cluster
-objects; curation happens through Git. The compact Cluster card reads node,
-aggregate CPU, and aggregate memory metrics from the existing in-cluster
-Prometheus service without another collector or secret.
+Backend-only workloads, duplicate host aliases, runners, databases, and
+supporting components stay hidden because discovery is opt-in. The cluster and
+node cards read aggregate and per-node health from the existing in-cluster
+Prometheus service without additional Kubernetes permissions, collectors, or
+secrets.
 
 The background image is the repository-owned
 `assets/nordic-lake.webp`. Homepage loads it from the repository's raw GitHub

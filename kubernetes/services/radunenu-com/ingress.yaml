@@ -5,6 +5,14 @@ metadata:
   namespace: radunenu-com
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Websites
+    gethomepage.dev/name: RaduNenu.com
+    gethomepage.dev/icon: mdi-web
+    gethomepage.dev/description: Personal website
+    gethomepage.dev/weight: "100"
+    gethomepage.dev/siteMonitor: http://radunenu-com.radunenu-com.svc.cluster.local
 spec:
   ingressClassName: traefik
   tls:

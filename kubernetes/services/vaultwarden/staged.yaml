@@ -62,6 +62,15 @@ kind: Ingress
 metadata:
   name: vaultwarden
   namespace: vaultwarden
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: Vaultwarden
+    gethomepage.dev/icon: vaultwarden.png
+    gethomepage.dev/description: Password vault
+    gethomepage.dev/weight: "100"
+    gethomepage.dev/siteMonitor: http://vaultwarden.vaultwarden.svc.cluster.local
 spec:
   ingressClassName: traefik
   tls:

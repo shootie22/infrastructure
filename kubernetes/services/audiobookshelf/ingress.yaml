@@ -3,6 +3,15 @@ kind: Ingress
 metadata:
   name: audiobookshelf
   namespace: audiobookshelf
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: Audiobookshelf
+    gethomepage.dev/icon: audiobookshelf.png
+    gethomepage.dev/description: Audiobooks and podcasts
+    gethomepage.dev/weight: "1000"
+    gethomepage.dev/siteMonitor: http://audiobookshelf.audiobookshelf.svc.cluster.local
 spec:
   ingressClassName: traefik
   tls:

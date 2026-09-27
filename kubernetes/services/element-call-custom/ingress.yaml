@@ -5,6 +5,14 @@ metadata:
   namespace: element-call
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: Element Call
+    gethomepage.dev/icon: element.png
+    gethomepage.dev/description: Video meetings
+    gethomepage.dev/weight: "600"
+    gethomepage.dev/siteMonitor: http://element-call.element-call.svc.cluster.local
 spec:
   ingressClassName: traefik
 

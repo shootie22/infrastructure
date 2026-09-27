@@ -16,9 +16,10 @@ spec:
       labels:
         app.kubernetes.io/name: homepage
       annotations:
-        homepage.gethomepage.dev/config-revision: "2026-09-27-node-health-cache-warm"
+        homepage.gethomepage.dev/config-revision: "2026-09-27-ingress-discovery"
     spec:
       automountServiceAccountToken: false
+      serviceAccountName: homepage
       nodeSelector:
         kubernetes.io/hostname: fuji
       securityContext:
@@ -92,9 +93,29 @@ spec:
               readOnly: true
             - name: logs
               mountPath: /app/config/logs
+            - name: kubernetes-api
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
       volumes:
         - name: config
           configMap:
             name: homepage-config
         - name: logs
           emptyDir: {}
+        - name: kubernetes-api
+          projected:
+            defaultMode: 0440
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  expirationSeconds: 3600
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+              - downwardAPI:
+                  items:
+                    - path: namespace
+                      fieldRef:
+                        fieldPath: metadata.namespace

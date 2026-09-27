@@ -106,6 +106,15 @@ kind: Ingress
 metadata:
   name: gitea
   namespace: gitea
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Development
+    gethomepage.dev/name: Gitea
+    gethomepage.dev/icon: gitea.png
+    gethomepage.dev/description: Source and builds
+    gethomepage.dev/weight: "100"
+    gethomepage.dev/siteMonitor: http://gitea.gitea.svc.cluster.local
 spec:
   ingressClassName: traefik
   tls:

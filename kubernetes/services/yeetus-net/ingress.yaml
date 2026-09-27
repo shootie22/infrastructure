@@ -5,6 +5,14 @@ metadata:
   namespace: yeetus-net
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Websites
+    gethomepage.dev/name: Yeetus.net
+    gethomepage.dev/icon: mdi-web
+    gethomepage.dev/description: Yeetus landing page
+    gethomepage.dev/weight: "200"
+    gethomepage.dev/siteMonitor: http://yeetus-net.yeetus-net.svc.cluster.local
 spec:
   ingressClassName: traefik
   tls:

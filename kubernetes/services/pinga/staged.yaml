@@ -65,6 +65,16 @@ kind: Ingress
 metadata:
   name: pinga
   namespace: pinga
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: Pinga
+    gethomepage.dev/icon: mdi-radar
+    gethomepage.dev/description: Network checks
+    gethomepage.dev/weight: "900"
+    gethomepage.dev/href: https://pinga.radunenu.com
+    gethomepage.dev/siteMonitor: http://pinga.pinga.svc.cluster.local
 spec:
   ingressClassName: traefik
   tls:

@@ -3,6 +3,15 @@ kind: Ingress
 metadata:
   name: plantuml
   namespace: plantuml
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Development
+    gethomepage.dev/name: PlantUML
+    gethomepage.dev/icon: plantuml.png
+    gethomepage.dev/description: Text-based diagrams
+    gethomepage.dev/weight: "200"
+    gethomepage.dev/siteMonitor: http://plantuml.plantuml.svc.cluster.local
 spec:
   ingressClassName: traefik
   tls:

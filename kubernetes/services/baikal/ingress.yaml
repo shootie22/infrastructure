@@ -16,6 +16,15 @@ kind: Ingress
 metadata:
   name: baikal
   namespace: baikal
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: Baïkal
+    gethomepage.dev/icon: baikal.png
+    gethomepage.dev/description: Calendars and contacts
+    gethomepage.dev/weight: "800"
+    gethomepage.dev/siteMonitor: http://baikal.baikal.svc.cluster.local
 spec:
   ingressClassName: traefik
   tls:

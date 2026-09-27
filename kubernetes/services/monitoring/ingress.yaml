@@ -5,6 +5,14 @@ metadata:
   namespace: monitoring
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/name: Grafana
+    gethomepage.dev/icon: grafana.png
+    gethomepage.dev/description: Metrics and logs
+    gethomepage.dev/weight: "100"
+    gethomepage.dev/siteMonitor: http://grafana.monitoring.svc.cluster.local:3000/api/health
 spec:
   ingressClassName: traefik
   tls:

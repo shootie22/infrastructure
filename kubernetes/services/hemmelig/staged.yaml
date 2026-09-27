@@ -63,6 +63,15 @@ kind: Ingress
 metadata:
   name: hemmelig
   namespace: hemmelig
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: Hemmelig
+    gethomepage.dev/icon: hemmelig.png
+    gethomepage.dev/description: One-time secret sharing
+    gethomepage.dev/weight: "300"
+    gethomepage.dev/siteMonitor: http://hemmelig.hemmelig.svc.cluster.local
 spec:
   ingressClassName: traefik
   tls:

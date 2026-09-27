@@ -3,6 +3,15 @@ kind: Ingress
 metadata:
   name: keycloak
   namespace: keycloak
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/name: Keycloak
+    gethomepage.dev/icon: keycloak.png
+    gethomepage.dev/description: Identity administration
+    gethomepage.dev/weight: "300"
+    gethomepage.dev/siteMonitor: http://keycloak.keycloak.svc.cluster.local:9000/health/ready
 spec:
   ingressClassName: traefik
   tls:

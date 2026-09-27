@@ -33,10 +33,10 @@ data:
       Apps:
         style: row
         columns: 4
-      Websites:
+      Game Servers:
         style: row
-        columns: 4
-      Media:
+        columns: 3
+      Websites:
         style: row
         columns: 4
       Development:
@@ -163,118 +163,54 @@ data:
                     options:
                       maximumFractionDigits: 0
 
-    - Websites:
-        - RaduNenu.com:
-            icon: mdi-web
-            href: https://radunenu.com
-            description: Personal website
-            siteMonitor: http://radunenu-com.radunenu-com.svc.cluster.local
-
-        - Yeetus.net:
-            icon: mdi-web
-            href: https://yeetus.net
-            description: Yeetus landing page
-            siteMonitor: http://yeetus-net.yeetus-net.svc.cluster.local
-
     - Apps:
-        - Vaultwarden:
-            icon: vaultwarden.png
-            href: https://vw.yeetus.net
-            description: Password vault
-            siteMonitor: http://vaultwarden.vaultwarden.svc.cluster.local
-
-        - PrivateBin:
-            icon: privatebin.png
-            href: https://pbin.radunenu.com
-            description: Encrypted paste sharing
-            siteMonitor: http://privatebin.privatebin.svc.cluster.local
-
-        - Hemmelig:
-            icon: hemmelig.png
-            href: https://share.radunenu.com
-            description: One-time secret sharing
-            siteMonitor: http://hemmelig.hemmelig.svc.cluster.local
-
-        - Picshare:
-            icon: mdi-image-multiple-outline
-            href: https://img.radunenu.com
-            description: Private image sharing
-            siteMonitor: http://picshare.picshare.svc.cluster.local
-
         - Element:
             icon: element.png
             href: https://nuke.zip
             description: Private messaging
             siteMonitor: https://nuke.zip
+            weight: 500
 
-        - Element Call:
-            icon: element.png
-            href: https://call.nuke.zip
-            description: Video meetings
-            siteMonitor: http://element-call.element-call.svc.cluster.local
+    - Game Servers:
+        - Minecraft Hardcore:
+            icon: minecraft.png
+            description: Hardcore Java server
+            weight: 100
+            widget:
+              type: minecraft
+              url: udp://minecraft-hc.minecraft-hc.svc.cluster.local:25565
 
-        - Joplin Server:
-            icon: joplin.png
-            href: https://n.yeetus.net
-            description: Notes and sync
-            siteMonitor: http://joplin.joplin.svc.cluster.local
+        - Minecraft Skyblock:
+            icon: minecraft.png
+            description: Java and Bedrock server
+            weight: 200
+            widget:
+              type: minecraft
+              url: udp://minecraft-skyblock.minecraft-skyblock.svc.cluster.local:25565
 
-        - Baïkal:
-            icon: baikal.png
-            href: https://cal.radunenu.com
-            description: Calendars and contacts
-            siteMonitor: http://baikal.baikal.svc.cluster.local
-
-        - Pinga:
-            icon: mdi-radar
-            href: https://pinga.radunenu.com
-            description: Network checks
-            siteMonitor: http://pinga.pinga.svc.cluster.local
-
-    - Media:
-        - Audiobookshelf:
-            icon: audiobookshelf.png
-            href: https://books.yeetus.net
-            description: Audiobooks and podcasts
-            siteMonitor: http://audiobookshelf.audiobookshelf.svc.cluster.local
-
-    - Development:
-        - Gitea:
-            icon: gitea.png
-            href: https://git.radunenu.com
-            description: Source and builds
-            siteMonitor: http://gitea.gitea.svc.cluster.local
-
-        - PlantUML:
-            icon: plantuml.png
-            href: https://puml.radunenu.com
-            description: Text-based diagrams
-            siteMonitor: http://plantuml.plantuml.svc.cluster.local
-
-        - Rybbit:
-            icon: mdi-chart-box-outline
-            href: https://analytics.radunenu.com
-            description: Private web analytics
-            siteMonitor: http://caddy.rybbit.svc.cluster.local:8080/api/health
+        - MegaBopl3D:
+            icon: mdi-gamepad-variant-outline
+            description: Private game server
+            weight: 300
+            widget:
+              type: prometheusmetric
+              url: http://prometheus.monitoring.svc.cluster.local:9090
+              refreshInterval: 60000
+              metrics:
+                - label: Ready
+                  query: 100 * clamp_max(kube_deployment_status_replicas_available{job="kube-state-metrics", namespace="megabopl3d", deployment="megabopl3d"} / clamp_min(kube_deployment_spec_replicas{job="kube-state-metrics", namespace="megabopl3d", deployment="megabopl3d"}, 1), 1)
+                  format:
+                    type: percent
+                    options:
+                      maximumFractionDigits: 0
 
     - Infrastructure:
-        - Grafana:
-            icon: grafana.png
-            href: https://mon.radunenu.com
-            description: Metrics and logs
-            siteMonitor: http://grafana.monitoring.svc.cluster.local:3000/api/health
-
         - Headlamp:
             icon: headlamp.png
             href: https://hl.infra.radunenu.com
             description: Cluster administration
             siteMonitor: http://headlamp.headlamp.svc.cluster.local
-
-        - Keycloak:
-            icon: keycloak.png
-            href: https://auth.radunenu.com
-            description: Identity administration
-            siteMonitor: http://keycloak.keycloak.svc.cluster.local:9000/health/ready
+            weight: 200
 
     - Legacy Web:
         - Old Radu API:
@@ -325,7 +261,10 @@ data:
             siteMonitor: https://cubtube.lol
 
   kubernetes.yaml: |
-    mode: disabled
+    mode: cluster
+    ingress: true
+    traefik: false
+    gateway: false
 
   widgets.yaml: |
     - datetime:

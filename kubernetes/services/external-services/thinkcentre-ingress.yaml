@@ -5,6 +5,14 @@ metadata:
   namespace: external-services
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Development
+    gethomepage.dev/name: Rybbit
+    gethomepage.dev/icon: mdi-chart-box-outline
+    gethomepage.dev/description: Private web analytics
+    gethomepage.dev/weight: "300"
+    gethomepage.dev/siteMonitor: http://caddy.rybbit.svc.cluster.local:8080/api/health
 spec:
   ingressClassName: traefik
   tls:

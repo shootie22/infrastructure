@@ -3,6 +3,15 @@ kind: Ingress
 metadata:
   name: privatebin
   namespace: privatebin
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: PrivateBin
+    gethomepage.dev/icon: privatebin.png
+    gethomepage.dev/description: Encrypted paste sharing
+    gethomepage.dev/weight: "200"
+    gethomepage.dev/siteMonitor: http://privatebin.privatebin.svc.cluster.local
 spec:
   ingressClassName: traefik
   tls:
