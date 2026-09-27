@@ -11,6 +11,12 @@ data:
     theme: dark
     color: slate
     headerStyle: clean
+    background:
+      image: https://raw.githubusercontent.com/shootie22/infrastructure/main/kubernetes/services/homepage/assets/nordic-lake.webp
+      blur: sm
+      saturate: 50
+      brightness: 50
+      opacity: 35
     target: _self
     statusStyle: dot
     hideVersion: true
@@ -97,6 +103,30 @@ data:
             description: Private messaging
             siteMonitor: https://nuke.zip
 
+        - Element Call:
+            icon: element.png
+            href: https://call.nuke.zip
+            description: Video meetings
+            siteMonitor: http://element-call.element-call.svc.cluster.local
+
+        - Joplin Server:
+            icon: joplin.png
+            href: https://n.yeetus.net
+            description: Notes and sync
+            siteMonitor: http://joplin.joplin.svc.cluster.local
+
+        - Baïkal:
+            icon: baikal.png
+            href: https://cal.radunenu.com
+            description: Calendars and contacts
+            siteMonitor: http://baikal.baikal.svc.cluster.local
+
+        - Pinga:
+            icon: mdi-radar
+            href: https://pinga.radunenu.com
+            description: Network checks
+            siteMonitor: http://pinga.pinga.svc.cluster.local
+
     - Media:
         - Audiobookshelf:
             icon: audiobookshelf.png
@@ -117,6 +147,12 @@ data:
             description: Text-based diagrams
             siteMonitor: http://plantuml.plantuml.svc.cluster.local
 
+        - Rybbit:
+            icon: mdi-chart-box-outline
+            href: https://analytics.radunenu.com
+            description: Private web analytics
+            siteMonitor: http://caddy.rybbit.svc.cluster.local:8080/api/health
+
     - Infrastructure:
         - Grafana:
             icon: grafana.png
@@ -130,6 +166,12 @@ data:
             description: Cluster administration
             siteMonitor: http://headlamp.headlamp.svc.cluster.local
 
+        - Keycloak:
+            icon: keycloak.png
+            href: https://auth.radunenu.com
+            description: Identity administration
+            siteMonitor: http://keycloak.keycloak.svc.cluster.local:9000/health/ready
+
   kubernetes.yaml: |
     mode: disabled
 
@@ -142,4 +184,10 @@ data:
   custom.css: |
     #page_container {
       max-width: 1600px;
+    }
+
+    .service-card {
+      background-color: rgb(15 23 42 / 0.62) !important;
+      border: 1px solid rgb(255 255 255 / 0.08);
+      box-shadow: 0 12px 30px rgb(0 0 0 / 0.16);
     }

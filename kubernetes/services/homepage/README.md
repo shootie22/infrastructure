@@ -12,11 +12,22 @@ committed. Prefer an internal Kubernetes Service URL for `siteMonitor` while
 retaining the normal HTTPS URL as `href`. Do not add API credentials solely
 for a dashboard widget.
 
+When changing deployed services, audit both `kubernetes/services/` and
+`services/production/` for interactive HTTP applications. Public personal
+sites, redirects, protocol-only servers, databases, exporters, runners and
+other supporting workloads remain intentionally excluded. This explicit audit
+keeps the hub comprehensive without granting Homepage discovery credentials or
+turning it into a workload inventory.
+
 Kubernetes discovery is deliberately disabled in `kubernetes.yaml`. The pod
 has no service account token or RBAC and does not inspect Ingresses or cluster
 objects; curation happens through Git. The compact Cluster card reads node,
 aggregate CPU, and aggregate memory metrics from the existing in-cluster
 Prometheus service without another collector or secret.
+
+The background image is the repository-owned
+`assets/nordic-lake.webp`. Homepage loads it from the repository's raw GitHub
+URL and applies its native blur, saturation, brightness and opacity filters.
 
 Private DNS maps the hub hostname to Fuji's `100.64.0.1` tailnet address. HTTPS
 shares the existing host-network Caddy listener in the Headlamp application,
