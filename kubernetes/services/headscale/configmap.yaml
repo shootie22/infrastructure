@@ -32,6 +32,11 @@ data:
           infra.radunenu.com:
             - 100.64.0.1
 
+    # Default-deny access policy (acl.hujson below).
+    policy:
+      mode: file
+      path: /etc/headscale/acl.hujson
+
     prefixes:
       v4: 100.64.0.0/10
       v6: fd7a:115c:a1e0::/48
@@ -48,3 +53,59 @@ data:
 
       auto_update_enabled: true
       update_frequency: 3h
+
+  acl.hujson: |
+    {
+      // Tailnet access policy. Default deny: only the flows below are allowed.
+      // Addresses are Headscale's sequential allocations (prefixes in config.yaml);
+      // each node has an IPv4 and an IPv6 address, both listed.
+      "hosts": {
+        "fuji": "100.64.0.1",         "fuji6": "fd7a:115c:a1e0::1/128",
+        "mixi": "100.64.0.2",         "mixi6": "fd7a:115c:a1e0::2/128",
+        "macminim4": "100.64.0.3",    "macminim46": "fd7a:115c:a1e0::3/128",
+        "thinkcentre": "100.64.0.4",  "thinkcentre6": "fd7a:115c:a1e0::4/128",
+        "hetzy": "100.64.0.5",        "hetzy6": "fd7a:115c:a1e0::5/128",
+        "phon": "100.64.0.6",         "phon6": "fd7a:115c:a1e0::6/128",
+        "nixpad": "100.64.0.7",       "nixpad6": "fd7a:115c:a1e0::7/128",
+        "minima": "100.64.0.8",       "minima6": "fd7a:115c:a1e0::8/128",
+
+        // Fuji's LAN API address (the kubernetes Service endpoint), routed via
+        // Fuji for remote K3s nodes. Approved on the node:
+        //   headscale nodes approve-routes -i 1 -r 192.168.100.136/32
+        "fuji-lan": "192.168.100.136/32",
+      },
+
+      "acls": [
+        // Cluster nodes and the Mac (VM host, Borg target) trust each other: K3s
+        // API and kubelet, Flannel, pod traffic masqueraded to node addresses,
+        // Borg over SSH, the raw game edge, SSH between servers.
+        {
+          "action": "accept",
+          "src": [
+            "fuji", "mixi", "macminim4", "thinkcentre", "minima",
+            "fuji6", "mixi6", "macminim46", "thinkcentre6", "minima6",
+          ],
+          "dst": [
+            "fuji:*", "mixi:*", "macminim4:*", "thinkcentre:*", "minima:*",
+            "fuji6:*", "mixi6:*", "macminim46:*", "thinkcentre6:*", "minima6:*",
+            "fuji-lan:*",
+          ],
+        },
+
+        // Admin devices (the Mac doubles as a workstation) reach everything.
+        {
+          "action": "accept",
+          "src": ["nixpad", "phon", "macminim4", "nixpad6", "phon6", "macminim46"],
+          "dst": ["*:*"],
+        },
+
+        // hetzy (Matrix VPS, outside the cluster) ships logs to Loki's tailnet
+        // proxy (listens on 100.64.0.1 only), and Prometheus on Fuji scrapes its
+        // exporters (the scrape targets are IPv4).
+        { "action": "accept", "src": ["hetzy", "hetzy6"], "dst": ["fuji:3101"] },
+        { "action": "accept", "src": ["fuji"], "dst": ["hetzy:9100-9103"] },
+
+        // Tailnet DNS (split DNS for infra.radunenu.com, served on 100.64.0.1).
+        { "action": "accept", "src": ["*"], "dst": ["fuji:53"] },
+      ],
+    }
