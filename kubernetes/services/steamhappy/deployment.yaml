@@ -55,6 +55,9 @@ spec:
         - name: steamhappy
           image: git.radunenu.com/radu/steamhappy:v1.0.0
           env:
+            # Python buffers stdout without a terminal: logs would never show.
+            - name: PYTHONUNBUFFERED
+              value: "1"
             - name: MATRIX_PASS
               valueFrom:
                 secretKeyRef:
