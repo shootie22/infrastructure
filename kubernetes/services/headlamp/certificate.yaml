@@ -8,6 +8,7 @@ spec:
   dnsNames:
     - hl.infra.radunenu.com
     - hub.infra.radunenu.com
+    - ollama.infra.radunenu.com
   issuerRef:
     name: headlamp-dns01
     kind: Issuer

@@ -1,0 +1,54 @@
+# Exposes Minima's GPU render node (Venus: Vulkan over virtio-gpu to the Mac's
+# M4) as the schedulable resource squat.ai/gpu, so Ollama gets the device
+# without running privileged. Only this small plugin needs privileges.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: gpu-device-plugin
+  namespace: ollama
+  labels:
+    app.kubernetes.io/name: gpu-device-plugin
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gpu-device-plugin
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gpu-device-plugin
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: minima
+      priorityClassName: system-node-critical
+      containers:
+        - name: plugin
+          # squat/generic-device-plugin publishes only commit tags; pin the
+          # multi-arch digest (includes arm64).
+          image: docker.io/squat/generic-device-plugin@sha256:dc192e164c69b03f156765793a1be62ca437709ae477b27ca7d8f3dcf5021576
+          args:
+            - --device
+            - |
+              name: gpu
+              groups:
+                - paths:
+                    - path: /dev/dri/renderD128
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/device-plugins
+            - name: dev
+              mountPath: /dev
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+        - name: dev
+          hostPath:
+            path: /dev

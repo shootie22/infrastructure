@@ -1,0 +1,14 @@
+# Downloaded models. local-path on Minima: kept across restarts and included
+# in the daily Minima VM image backup.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models
+  namespace: ollama
+spec:
+  storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 80Gi

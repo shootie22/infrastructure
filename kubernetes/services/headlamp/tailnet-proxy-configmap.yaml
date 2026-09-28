@@ -26,3 +26,11 @@ data:
       tls /certs/tls.crt /certs/tls.key
       reverse_proxy homepage.homepage.svc.cluster.local:3000
     }
+    https://ollama.infra.radunenu.com {
+      bind 100.64.0.1
+      tls /certs/tls.crt /certs/tls.key
+      # Model pulls and long generations stream for minutes.
+      reverse_proxy ollama.ollama.svc.cluster.local:11434 {
+        flush_interval -1
+      }
+    }
