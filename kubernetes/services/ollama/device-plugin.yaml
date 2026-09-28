@@ -1,5 +1,5 @@
 # Exposes Minima's GPU render node (Venus: Vulkan over virtio-gpu to the Mac's
-# M4) as the schedulable resource squat.ai/gpu, so Ollama gets the device
+# M4) as the schedulable resource devic.es/gpu, so Ollama gets the device
 # without running privileged. Only this small plugin needs privileges.
 apiVersion: apps/v1
 kind: DaemonSet

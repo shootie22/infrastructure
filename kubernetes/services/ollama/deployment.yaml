@@ -45,7 +45,7 @@ spec:
               memory: 2Gi
             limits:
               memory: 10Gi
-              squat.ai/gpu: 1
+              devic.es/gpu: 1
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
