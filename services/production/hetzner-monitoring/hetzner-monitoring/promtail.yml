@@ -56,9 +56,10 @@ scrape_configs:
         replacement: livekit
     pipeline_stages:
       # Parse LiveKit's JSON log line. `level` stays a label (low cardinality).
-      # participant/room/pID/reason are high cardinality, so they ride as
-      # structured metadata (filterable in Grafana, queryable via `| json`)
-      # rather than labels, to avoid exploding Loki's stream count.
+      # participant/room/pID/reason are high cardinality: they stay in the
+      # line and are queried with `| json`, never as labels. Not structured
+      # metadata either: Loki 2.9 rejects it, and a rejected line fails the
+      # whole push batch (all of this host's logs were being dropped).
       # NOTE: confirm these key names against real logs first — see
       # services/production/livekit-quality/README.md "Discovery". `reason` is
       # already known-good (the dashboard's Disconnect Reasons panel uses it).
@@ -71,11 +72,6 @@ scrape_configs:
             reason: reason
       - labels:
           level:
-      - structured_metadata:
-          participant:
-          room:
-          pid:
-          reason:
       # Optional ingest guard for a debug-level window (used to capture the
       # selected ICE candidate pair + client media IP). promtail's drop stage
       # drops on match, so match the *noise*, not the signal: this drops only
