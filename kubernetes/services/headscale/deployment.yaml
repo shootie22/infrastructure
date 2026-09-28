@@ -5,6 +5,10 @@ metadata:
   namespace: headscale
 spec:
   replicas: 1
+  # One SQLite database on a ReadWriteOnce volume: never run two pods at
+  # once, not even briefly during a rollout.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: headscale
@@ -15,6 +19,10 @@ spec:
       annotations:
         config-revision: "split-infra-radunenu-com-1"
     spec:
+      # Tailnet coordination must not depend on a remote worker. Its data
+      # volume (local-path) already lives on Fuji; make that explicit.
+      nodeSelector:
+        kubernetes.io/hostname: fuji
       dnsConfig:
         options:
           - name: ndots
@@ -27,6 +35,25 @@ spec:
           ports:
             - containerPort: 8080
             - containerPort: 9090
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
+          # Generous: restarting the coordinator is worse than a slow reply.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
           volumeMounts:
             - name: config
               mountPath: /etc/headscale
