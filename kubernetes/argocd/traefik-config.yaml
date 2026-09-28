@@ -4,7 +4,14 @@ metadata:
   name: traefik
   namespace: kube-system
 spec:
+  # Never uninstall the ingress serving Headscale after a failed upgrade.
+  failurePolicy: abort
   valuesContent: |-
+    # Remote workers depend on Headscale to establish their tailnet paths.
+    # Keep its ingress on Fuji so worker failure cannot break coordination.
+    nodeSelector:
+      kubernetes.io/hostname: fuji
+
     api:
       dashboard: true
 
