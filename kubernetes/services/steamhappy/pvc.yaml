@@ -1,0 +1,15 @@
+# The bot's Matrix session (session.txt) and E2EE keys (store/). Losing them
+# means a new device that has to be verified again. local-path on Minima:
+# covered by the daily VM image backup.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: steamhappy-data
+  namespace: steamhappy
+spec:
+  storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

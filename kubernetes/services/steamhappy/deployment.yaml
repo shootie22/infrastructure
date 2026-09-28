@@ -1,0 +1,86 @@
+# steamhappy: Matrix bot (@steamhappy:nuke.zip) answering with Ollama.
+# Source and image: git.radunenu.com/radu/steamhappy.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: steamhappy
+  namespace: steamhappy
+spec:
+  replicas: 1
+  # Exactly one client per E2EE session: two at once would corrupt it.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: steamhappy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: steamhappy
+    spec:
+      # Next to Ollama, on the node whose storage is backed up as a VM image.
+      nodeSelector:
+        kubernetes.io/hostname: minima
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # First start only: restore the session the bot had on the Mac (already
+        # verified), so it needs no new device verification. Never overwrites.
+        - name: restore-session
+          image: git.radunenu.com/radu/steamhappy:v1.0.0
+          command:
+            - sh
+            - -c
+            - |
+              if [ -f /data/session.txt ]; then
+                echo "session present, not restoring"
+              else
+                tar -xzf /seed/seed.tgz -C /data && echo "session restored"
+              fi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: seed
+              mountPath: /seed
+              readOnly: true
+      containers:
+        - name: steamhappy
+          image: git.radunenu.com/radu/steamhappy:v1.0.0
+          env:
+            - name: MATRIX_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: steamhappy-env
+                  key: MATRIX_PASS
+            - name: OLLAMA_API_URL
+              value: http://ollama.ollama.svc.cluster.local:11434/api/generate
+            - name: OLLAMA_MODEL
+              value: huihui_ai/deepseek-r1-abliterated
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: steamhappy-data
+        - name: seed
+          secret:
+            secretName: steamhappy-seed
