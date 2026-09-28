@@ -40,21 +40,21 @@ scrape_configs:
           __path__: /var/log/nginx/*error.log
 
   - job_name: livekit
+    # Select the container with a Docker filter and set the stream's labels in
+    # the pipeline: labels from relabel_configs did not reach Docker streams,
+    # which were pushed label-less and Loki rejected the whole batch ("at least
+    # one label pair is required per stream"), dropping every job's logs.
     docker_sd_configs:
       - host: unix:///var/run/docker.sock
         refresh_interval: 30s
-    relabel_configs:
-      - source_labels: ['__meta_docker_container_name']
-        regex: '/element-call-livekit'
-        action: keep
-      - source_labels: ['__meta_docker_container_name']
-        regex: '/(.*)'
-        target_label: container
-      - target_label: host
-        replacement: hetzner
-      - target_label: job
-        replacement: livekit
+        filters:
+          - name: name
+            values: ["^/element-call-livekit$"]
     pipeline_stages:
+      - static_labels:
+          job: livekit
+          host: hetzner
+          container: element-call-livekit
       # Parse LiveKit's JSON log line. `level` stays a label (low cardinality).
       # participant/room/pID/reason are high cardinality: they stay in the
       # line and are queried with `| json`, never as labels. Not structured
