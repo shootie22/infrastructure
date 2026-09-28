@@ -12,7 +12,7 @@ data:
       ready 127.0.0.1:8181
       reload
       hosts {
-        100.64.0.1 hl.infra.radunenu.com hub.infra.radunenu.com ollama.infra.radunenu.com
+        100.64.0.1 hl.infra.radunenu.com hub.infra.radunenu.com ollama.infra.radunenu.com sxng.infra.radunenu.com
         ttl 60
       }
     }

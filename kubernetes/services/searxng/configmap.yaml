@@ -1,0 +1,28 @@
+# Private metasearch for my devices (https://sxng.infra.radunenu.com, tailnet
+# only) and for in-cluster use (steamhappy). Never public: the upstream search
+# engines only see a handful of queries from this IP, so no rate limiting, and
+# SearXNG's own public-instance limiter stays off.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: searxng
+  namespace: searxng
+data:
+  settings.yml: |
+    use_default_settings: true
+    general:
+      instance_name: sxng
+    server:
+      # secret_key comes from the SEARXNG_SECRET environment variable.
+      base_url: https://sxng.infra.radunenu.com/
+      limiter: false
+      public_instance: false
+      image_proxy: true
+    search:
+      # 0 off, 1 moderate, 2 strict. Clients can ask per request (the bot
+      # asks for strict).
+      safe_search: 1
+      # json: the API steamhappy uses.
+      formats:
+        - html
+        - json

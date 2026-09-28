@@ -34,3 +34,8 @@ data:
         flush_interval -1
       }
     }
+    https://sxng.infra.radunenu.com {
+      bind 100.64.0.1
+      tls /certs/tls.crt /certs/tls.key
+      reverse_proxy searxng.searxng.svc.cluster.local:8080
+    }
