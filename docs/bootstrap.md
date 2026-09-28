@@ -27,7 +27,7 @@ so Fuji comes up alone first, on its LAN address.
 
 1. **Fuji**: install NixOS from `hosts/fuji`, put the age key at
    `/var/lib/sops-nix/key.txt`, then
-   `sudo nixos-rebuild switch --impure --flake ~/git/dotfiles#fuji`.
+   `sudo nixos-rebuild switch --flake ~/git/dotfiles#fuji`.
    This starts the K3s server (API advertised on `192.168.100.136`) and
    Tailscale (DNS independent of the tailnet).
 2. **Restore state before any workload runs** (keeps Headscale's identity,
