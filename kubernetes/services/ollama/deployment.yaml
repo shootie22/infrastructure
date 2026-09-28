@@ -28,7 +28,7 @@ spec:
         - name: ollama
           # Built from git.radunenu.com/radu/ollama-vulkan: Ollama with the
           # Vulkan backend on libkrun-patched Mesa (stock Mesa crashes the VM).
-          image: git.radunenu.com/radu/ollama-vulkan:v0.34.4-1
+          image: git.radunenu.com/radu/ollama-vulkan:v0.34.4-3
           env:
             # The VM has 13 GiB: keep one model resident and serve one request
             # at a time rather than risk memory pressure on the node.
