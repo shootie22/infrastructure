@@ -31,7 +31,7 @@ spec:
         # First start only: restore the session the bot had on the Mac (already
         # verified), so it needs no new device verification. Never overwrites.
         - name: restore-session
-          image: git.radunenu.com/radu/steamhappy:v1.0.0
+          image: git.radunenu.com/radu/steamhappy:v1.1.0-rc1
           command:
             - sh
             - -c
@@ -53,7 +53,7 @@ spec:
               readOnly: true
       containers:
         - name: steamhappy
-          image: git.radunenu.com/radu/steamhappy:v1.0.0
+          image: git.radunenu.com/radu/steamhappy:v1.1.0-rc1
           env:
             # Python buffers stdout without a terminal: logs would never show.
             - name: PYTHONUNBUFFERED
@@ -67,6 +67,14 @@ spec:
               value: http://ollama.ollama.svc.cluster.local:11434/api/generate
             - name: OLLAMA_MODEL
               value: huihui_ai/deepseek-r1-abliterated
+            # Web search and pictures: only in the test DM while on the
+            # web-search branch.
+            - name: TOOL_ROOMS
+              value: "!lNVuHJFxtNFcYIqYad:nuke.zip"
+            - name: SEARXNG_URL
+              value: http://searxng.searxng.svc.cluster.local:8080
+            - name: ROUTER_MODEL
+              value: qwen3:4b-instruct
           resources:
             requests:
               cpu: 50m
