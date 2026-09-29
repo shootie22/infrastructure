@@ -1,5 +1,7 @@
 # Element Web config for c.nuke.zip. Bump config-revision in deployment.yaml
 # after editing so the pods pick it up (the image copies it at startup).
+# "features" locks a labs flag for everyone (users cannot toggle it);
+# "setting_defaults" only changes the default, users can still toggle it.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -33,6 +35,13 @@ data:
         "feature_jump_to_date": true,
         "feature_latex_maths": true,
         "feature_render_reaction_images": true,
-        "feature_location_share_live": true
+        "feature_location_share_live": true,
+        "feature_wysiwyg_composer": true,
+        "feature_pdf_viewer": true,
+        "feature_msc4095_url_preview_bundle": true,
+        "feature_user_status": true
+      },
+      "setting_defaults": {
+        "RoomList.showMessagePreview": true
       }
     }

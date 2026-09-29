@@ -22,7 +22,7 @@ spec:
       labels:
         app.kubernetes.io/name: element-web
       annotations:
-        config-revision: "1"
+        config-revision: "2"
     spec:
       automountServiceAccountToken: false
       containers:

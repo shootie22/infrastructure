@@ -69,9 +69,9 @@ Prometheus configuration and both rule files must also be checked using the
   labels. Event fields remain logfmt content and are parsed at query time.
 - The Kubernetes API server `/metrics` endpoint is scraped with the Prometheus
   ServiceAccount token and the minimum non-resource RBAC permission.
-- blackbox-exporter probes the public Grafana, Headscale, and Element Call
-  endpoints from Fuji. This detects DNS/connect/TLS/HTTP failure from the
-  cluster but is explicitly not outside-in monitoring.
+- blackbox-exporter probes the public Grafana, Headscale, Element Call and
+  Element Web endpoints from Fuji. This detects DNS/connect/TLS/HTTP failure
+  from the cluster but is explicitly not outside-in monitoring.
 - Prometheus uses the official Prometheus Operator config reloader sidecar and
   lifecycle endpoint so ConfigMap changes reload without a manual restart.
 
