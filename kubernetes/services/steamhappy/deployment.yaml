@@ -31,7 +31,7 @@ spec:
         # First start only: restore the session the bot had on the Mac (already
         # verified), so it needs no new device verification. Never overwrites.
         - name: restore-session
-          image: git.radunenu.com/radu/steamhappy:v1.2.0-rc1
+          image: git.radunenu.com/radu/steamhappy:v1.2.0-rc2
           command:
             - sh
             - -c
@@ -53,7 +53,7 @@ spec:
               readOnly: true
       containers:
         - name: steamhappy
-          image: git.radunenu.com/radu/steamhappy:v1.2.0-rc1
+          image: git.radunenu.com/radu/steamhappy:v1.2.0-rc2
           env:
             # Python buffers stdout without a terminal: logs would never show.
             - name: PYTHONUNBUFFERED
