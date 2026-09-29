@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: element-web
+  namespace: element-web
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: Element
+    gethomepage.dev/icon: element.png
+    gethomepage.dev/description: Matrix client (develop)
+    gethomepage.dev/weight: "590"
+    gethomepage.dev/siteMonitor: http://element-web.element-web.svc.cluster.local
+spec:
+  ingressClassName: traefik
+
+  tls:
+    - hosts:
+        - c.nuke.zip
+      secretName: element-web-tls
+
+  rules:
+    - host: c.nuke.zip
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: element-web
+                port:
+                  number: 80

@@ -1,0 +1,38 @@
+# Element Web config for c.nuke.zip. Bump config-revision in deployment.yaml
+# after editing so the pods pick it up (the image copies it at startup).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: element-web
+  namespace: element-web
+data:
+  config.json: |
+    {
+      "default_server_config": {
+        "m.homeserver": {
+          "base_url": "https://nuke.zip",
+          "server_name": "nuke.zip"
+        }
+      },
+      "brand": "Element",
+      "disable_guests": true,
+      "disable_custom_urls": false,
+      "default_country_code": "RO",
+      "room_directory": {
+        "servers": ["nuke.zip"]
+      },
+      "element_call": {
+        "url": "https://call.nuke.zip",
+        "use_exclusively": true
+      },
+      "show_labs_settings": true,
+      "features": {
+        "feature_video_rooms": true,
+        "feature_element_call_video_rooms": true,
+        "feature_ask_to_join": true,
+        "feature_jump_to_date": true,
+        "feature_latex_maths": true,
+        "feature_render_reaction_images": true,
+        "feature_location_share_live": true
+      }
+    }

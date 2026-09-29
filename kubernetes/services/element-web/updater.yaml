@@ -1,0 +1,104 @@
+# Nightly updater: at 04:00 Europe/Berlin, compare the registry's develop
+# digest with what the pods run and restart the Deployment only if it moved.
+# The rolling restart never drops a request (maxUnavailable 0); the hour is
+# for open tabs, which get Element's "update available" toast afterwards.
+# Run by hand: kubectl -n element-web create job --from=cronjob/element-web-updater manual-1
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: element-web-updater
+  namespace: element-web
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: element-web-updater
+  namespace: element-web
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["element-web"]
+    verbs: ["get", "patch"]
+  # rollout status watches the ReplicaSets.
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: element-web-updater
+  namespace: element-web
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: element-web-updater
+subjects:
+  - kind: ServiceAccount
+    name: element-web-updater
+    namespace: element-web
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: element-web-updater
+  namespace: element-web
+spec:
+  schedule: "0 4 * * *"
+  timeZone: Europe/Berlin
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 1800
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1200
+      template:
+        spec:
+          serviceAccountName: element-web-updater
+          restartPolicy: Never
+          containers:
+            - name: updater
+              image: docker.io/alpine/k8s:1.35.9@sha256:b9cb6db0091a2327c0a56ecda69d37fa830c7a96ea669e7382b3ee778aa07a24
+              command: ["/bin/sh", "-euc"]
+              args:
+                - |
+                  repo=vectorim/element-web
+                  token=$(curl -fsS "https://auth.docker.io/token?service=registry.docker.io&scope=repository:$repo:pull" | jq -r .token)
+                  # HEAD does not count against Docker Hub's pull limit.
+                  latest=$(curl -fsSI \
+                    -H "Authorization: Bearer $token" \
+                    -H "Accept: application/vnd.oci.image.index.v1+json" \
+                    -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json" \
+                    -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+                    "https://registry-1.docker.io/v2/$repo/manifests/develop" \
+                    | tr -d '\r' | awk -F': ' 'tolower($1) == "docker-content-digest" { print $2 }')
+                  [ -n "$latest" ] || { echo "no digest from registry"; exit 1; }
+
+                  running=$(kubectl get pods -l app.kubernetes.io/name=element-web \
+                    -o jsonpath='{range .items[*]}{.status.containerStatuses[0].imageID}{"\n"}{end}' \
+                    | sed -n 's/.*@//p' | sort -u)
+                  echo "registry develop: $latest"
+                  echo "running: $(echo $running)"
+
+                  if [ "$running" = "$latest" ]; then
+                    echo "up to date"
+                    exit 0
+                  fi
+                  echo "new build, restarting"
+                  kubectl rollout restart deployment/element-web
+                  kubectl rollout status deployment/element-web --timeout=10m
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
