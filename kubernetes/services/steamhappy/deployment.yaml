@@ -31,7 +31,7 @@ spec:
         # First start only: restore the session the bot had on the Mac (already
         # verified), so it needs no new device verification. Never overwrites.
         - name: restore-session
-          image: git.radunenu.com/radu/steamhappy:v1.1.0-rc2
+          image: git.radunenu.com/radu/steamhappy:v1.2.0-rc1
           command:
             - sh
             - -c
@@ -53,7 +53,7 @@ spec:
               readOnly: true
       containers:
         - name: steamhappy
-          image: git.radunenu.com/radu/steamhappy:v1.1.0-rc2
+          image: git.radunenu.com/radu/steamhappy:v1.2.0-rc1
           env:
             # Python buffers stdout without a terminal: logs would never show.
             - name: PYTHONUNBUFFERED
@@ -67,6 +67,21 @@ spec:
               value: http://ollama.ollama.svc.cluster.local:11434/api/generate
             - name: OLLAMA_MODEL
               value: huihui_ai/deepseek-r1-abliterated
+            # Each new batch of profile statuses is posted here for a look.
+            - name: STATUS_LOG_ROOM
+              value: "!lNVuHJFxtNFcYIqYad:nuke.zip"
+          # The bot touches /tmp/healthy while it syncs and no reply has taken
+          # over 15 minutes; restart it when that stops.
+          livenessProbe:
+            exec:
+              command:
+                - python
+                - -c
+                - import os, sys, time; sys.exit(time.time() - os.path.getmtime("/tmp/healthy") > 120)
+            initialDelaySeconds: 180
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 3
           resources:
             requests:
               cpu: 50m
