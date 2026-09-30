@@ -25,6 +25,7 @@ data:
       fetch_interval: 2s
       github_mirror: ""
       labels:
+        - "linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest"
         - "linux-amd64-thinkcentre:docker://docker.gitea.com/runner-images:ubuntu-latest"
 
     cache:
@@ -82,7 +83,7 @@ spec:
             - name: GITEA_RUNNER_NAME
               value: thinkcentre
             - name: GITEA_RUNNER_LABELS
-              value: linux-amd64-thinkcentre:docker://docker.gitea.com/runner-images:ubuntu-latest
+              value: linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-thinkcentre:docker://docker.gitea.com/runner-images:ubuntu-latest
           volumeMounts:
             - name: config
               mountPath: /config.yaml

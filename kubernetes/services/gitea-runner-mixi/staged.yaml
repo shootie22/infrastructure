@@ -25,6 +25,7 @@ data:
       fetch_interval: 2s
       github_mirror: ""
       labels:
+        - "linux-arm64:docker://docker.gitea.com/runner-images:ubuntu-latest"
         - "linux-arm64-mixi:docker://docker.gitea.com/runner-images:ubuntu-latest"
 
     cache:
@@ -82,7 +83,7 @@ spec:
             - name: GITEA_RUNNER_NAME
               value: mixi
             - name: GITEA_RUNNER_LABELS
-              value: linux-arm64-mixi:docker://docker.gitea.com/runner-images:ubuntu-latest
+              value: linux-arm64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-arm64-mixi:docker://docker.gitea.com/runner-images:ubuntu-latest
             - name: GITEA_RUNNER_REGISTRATION_TOKEN
               valueFrom:
                 secretKeyRef:
