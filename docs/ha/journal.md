@@ -9,3 +9,9 @@ Started out wanting everything behind Keycloak, and quickly found that Keycloak 
 So the SSO project waits, and HA comes first. The main thing I learned is that two sites aren't enough for automatic failover. Neither side can tell whether the other one is down or just unreachable. A cheap VPS in a third location fixes that by being the tiebreaker.
 
 Also found that the Keycloak cert is a static one in SOPS rather than managed by cert-manager, and that alert rules exist but nothing actually sends them anywhere. Both are on the board now.
+
+## 2026-09-30: DNS inventory
+
+Pulled every record from Cloudflare: 7 zones, 103 records, and 37 of them point at nothing. Most are left over from the Komodo and Proxmox days.
+
+The bigger surprise: nearly every web record is proxied through Cloudflare, so Cloudflare was already in the traffic path, which I'd forgotten about. The apexes are CNAMEs that only work because of Cloudflare's flattening, and everything ends at the router's dynamic DNS name. So Phase 0 grows a bit: proxy off, and our own dynamic IP updater before Hetzner can join. Details in [dns-inventory.md](dns-inventory.md).

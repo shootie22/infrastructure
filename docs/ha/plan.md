@@ -46,20 +46,4 @@ About 2-3 GB of extra RAM across the cluster and very little CPU: etcd on two no
 
 ## Domains
 
-To fill in with [#2](https://github.com/shootie22/infrastructure/issues/2).
-
-| Domain | Registrar | Nameservers today |
-|---|---|---|
-| radunenu.com | | |
-| yeetus.net | | |
-| nuke.zip | | |
-| byradu.com | | |
-| cubi.tube | | |
-| cubtube.lol | | |
-| kronorite.com | | |
-
-## Still single points of failure
-
-- The domain registrar.
-- Every service that still keeps its data on one node (hostPath). They move over one by one using the CNPG template.
-- Matrix and LiveKit on the separate VPS, which is its own project.
+See [dns-inventory.md](dns-inventory.md): registrars, expiry dates, every record, and what to keep or delete.
