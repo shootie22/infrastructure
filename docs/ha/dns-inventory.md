@@ -33,15 +33,26 @@ These are live, or mail and verification records:
 ## Delete (dead, no Ingress, origin doesn't answer)
 
 - **radunenu.com:**
-  - `archive`, `cats`, `chat`, `cloud`, `cubitube`, `dev`, `graphs`, `hl`, `komodo`, `lt`, `translate`, `monitor`, `panel`, `s`, `sb`, `sd`, `services`, `status`;
+  - `chat`, `cloud`, `cubitube`, `dev`, `graphs`, `hl`, `komodo`, `lt`, `translate`, `monitor`, `panel`, `s`, `sb`, `sd`, `services`, `status`;
   - the `*-monitor` names: filestorage, gamesv, scratchpad, skynet, webservers;
   - `ocean` (old DigitalOcean IP);
   - `kanban` (the OVH VPS, which is empty);
   - the `*` wildcard (Porkbun parking page);
   - two stale `_acme-challenge` TXT records.
-- **kronorite.com:** `aki`, `discord`, `git`, `kairi`, `status`.
-- **byradu.com:** `7zile7arte`, `analytics`.
+- **kronorite.com:** `status`.
 - **yeetus.net:** `ass`, `tits`.
+
+## Restore (should work, currently broken)
+
+- `git.kronorite.com`: redirect to git.radunenu.com. Fixed in legacy-redirects.
+- `www.radunenu.com`: redirect to the apex. Fixed in legacy-redirects.
+- `cats.radunenu.com`: landing page for the cats archive.
+- `aki.kronorite.com` and `kairi.kronorite.com`: redirect to `aki.radunenu.com` and `kairi.radunenu.com`, read-only galleries of a friend's cats. The radunenu.com names don't exist in DNS yet.
+- `7zile7arte.byradu.com`: an archive site made for a friend. Its target, `archive.radunenu.com`, stays too.
+- `analytics.byradu.com`: one of the old APIs.
+- `discord.kronorite.com`: probably a redirect to a Discord invite.
+
+The content for these isn't in this repo or in the OVH retirement archives on fuji.
 
 ## Game servers
 
@@ -51,6 +62,3 @@ One central name, DNS only (game traffic can't go through the proxy):
 
 All of them resolve to the RO IP, and the port picks the game (Minecraft 25565 and 6767, MegaBopl3D 24545, Hytale 5520).
 
-## Needs an answer
-
-- `www.radunenu.com` returns an error (526). The apex works, but no Ingress has `www`. Add it, or redirect it.
