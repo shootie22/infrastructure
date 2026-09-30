@@ -1,6 +1,9 @@
 # Runbooks
 
-Step by step procedures. A runbook goes here once it has actually been run at least once.
+Step by step procedures. Each one says whether it has been run for real yet.
+
+Written:
+- [dns-switch-to-hetzner.md](dns-switch-to-hetzner.md): switching nameservers to the Hetzner standby ([#6](https://github.com/shootie22/infrastructure/issues/6)). Not tested for real, since that means actually switching.
 
 Planned:
 - `replace-edge.md`: moving the edge to a new VPS ([#14](https://github.com/shootie22/infrastructure/issues/14))
