@@ -10,6 +10,10 @@ terraform {
       source  = "hetznercloud/hcloud"
       version = "~> 1.54"
     }
+    dns = {
+      source  = "hashicorp/dns"
+      version = "~> 3.4"
+    }
   }
 
   # State and plans are encrypted, so terraform.tfstate can live in Git.
