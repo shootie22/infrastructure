@@ -1,0 +1,79 @@
+# Crosty dedicated server (Godot, headless). Players connect to
+# crosty.yeetus.net:7777/udp; fuji relays that port over the tailnet to the
+# hostPort here (hosts/fuji/raw-edge.nix in dotfiles). No state to keep.
+# The tag is :latest on purpose: updater.yaml restarts it when a new build is
+# pushed, and pullPolicy Always makes the restart fetch it.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: crosty
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crosty
+  namespace: crosty
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: crosty
+  template:
+    metadata:
+      labels:
+        app: crosty
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: crosty
+          image: git.radunenu.com/crosty/crosty-game-server:latest
+          imagePullPolicy: Always
+          ports:
+            - name: game
+              containerPort: 7777
+              hostPort: 7777
+              hostIP: 100.64.0.4
+              protocol: UDP
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            # HOME=/tmp in the image; Godot writes user:// data there.
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crosty
+  namespace: crosty
+spec:
+  selector:
+    app: crosty
+  ports:
+    - name: game
+      port: 7777
+      targetPort: game
+      protocol: UDP
