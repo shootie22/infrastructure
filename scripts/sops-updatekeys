@@ -12,7 +12,7 @@ if ! command -v sops >/dev/null; then
   exit 1
 fi
 
-git ls-files '*.sops.yaml' | while read -r f; do
+git ls-files '*.sops.yaml' ':!.sops.yaml' | while read -r f; do
   printf '%s\n' "$f"
   sops updatekeys --yes "$f"
 done
