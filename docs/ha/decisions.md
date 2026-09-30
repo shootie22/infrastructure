@@ -57,3 +57,7 @@ This replaces "Hetzner is a cold standby". radunenu.com, yeetus.net and cubtube.
 The catch is deSEC's 1 hour minimum TTL. That only matters for record changes made while running on the standby, which is fine for a fallback. Other options were thin: NS1 supports multi-signer but costs enterprise money, and self-hosting (Knot, PowerDNS) would mean running a live service on the infrastructure that might be down.
 
 The deSEC provider (`Valodim/desec`) is a community one, and OpenTofu couldn't check its signature. The version and hashes are pinned in `.terraform.lock.hcl`.
+
+## 2026-09-30: Nameserver failover is automatic, with strict detection
+
+The whole point is not having to log in and fix things by hand. The risk of an automatic switch is a false positive: undoing a switch can take up to 48 hours to spread, and sites run without the proxy meanwhile. So checkers run in three places (RO, DK, edge) as NixOS services outside Kubernetes. A switch needs 2 of 3 to agree for 30-60 minutes, each one proves its own network works by also reaching deSEC, and there's a one-switch-per-day brake. There's no leader: setting the same nameservers twice is harmless, so any checker that sees the majority can act. Tracked in [#77](https://github.com/shootie22/infrastructure/issues/77). kronorite.com moves to Porkbun ([#76](https://github.com/shootie22/infrastructure/issues/76)) so one API covers every domain.

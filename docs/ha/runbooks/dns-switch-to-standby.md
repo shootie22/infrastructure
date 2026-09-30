@@ -1,5 +1,7 @@
 # Switch DNS to the deSEC standby
 
+This is the manual fallback. The plan is for this to happen automatically ([#77](https://github.com/shootie22/infrastructure/issues/77)).
+
 For when Cloudflare DNS has been down long enough that waiting it out is worse than a slow switch. The switch takes hours to spread, because the `.com` servers let resolvers cache nameservers for up to 2 days. For a short outage, it's better to wait.
 
 nuke.zip is not in the standby and stays on Cloudflare.
