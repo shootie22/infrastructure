@@ -19,3 +19,7 @@ The bigger surprise: nearly every web record is proxied through Cloudflare, so C
 ## 2026-09-30: DNS is code now
 
 All DNS except nuke.zip is in OpenTofu (`tofu/`). The import went through with zero changes, which was a nice check that the config matches Cloudflare exactly. Then the cleanup: 29 dead records gone, and the game hostnames all point at one name, `games.radunenu.com`. The only gotcha was Cloudflare refusing a CNAME next to an A record with the same name, so the old A records had to go in a separate apply first.
+
+## 2026-09-30: First multi-signer DNSSEC zone
+
+cubi.tube is now signed by both Cloudflare and deSEC, with both DS records at the registry, and validates on Google, Cloudflare and Quad9. Two things tripped me up. Cloudflare only shows its zone-signing key once multi-signer is on, so the key exchange takes two rounds. And Porkbun's DS form failed with a registry error ("2004 parameter value range error"); entering the public key under Key Data worked, and the registry works out the DS itself. Before touching the registrar I tested everything with `delv`, using both keys as trust anchors, which made the Porkbun step a lot less scary.
