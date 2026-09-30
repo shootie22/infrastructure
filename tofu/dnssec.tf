@@ -3,7 +3,7 @@
 # without breaking DNSSEC. Both DS records sit at the registrar.
 # Rolled out one zone at a time (#74, #75).
 locals {
-  multi_signer_zones = toset(["cubi.tube"])
+  multi_signer_zones = toset(["cubi.tube", "byradu.com"])
 }
 
 resource "cloudflare_zone_dnssec" "this" {
@@ -22,10 +22,12 @@ resource "cloudflare_zone_dnssec" "this" {
 
 # Cloudflare's zone-signing key per zone, as published at Cloudflare's
 # nameservers once multi-signer is on (dig DNSKEY <zone> @nola.ns.cloudflare.com,
-# the flags 256 one). deSEC has to publish it too.
+# the flags 256 one). deSEC has to publish it too. A new zone gets its entry
+# after the first apply, once Cloudflare has generated the key.
 locals {
   cloudflare_zsk = {
-    "cubi.tube" = "256 3 13 oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeqCYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA=="
+    "cubi.tube"  = "256 3 13 oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeqCYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA=="
+    "byradu.com" = "256 3 13 oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeqCYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA=="
   }
 
   # deSEC signs with a single combined key (flags 257). Its key list also
@@ -53,7 +55,7 @@ resource "cloudflare_dns_record" "desec_dnskey" {
 
 # Cloudflare's ZSK, published by deSEC next to its own key.
 resource "desec_rrset" "cloudflare_dnskey" {
-  for_each = local.multi_signer_zones
+  for_each = local.cloudflare_zsk
 
   domain  = desec_domain.standby[each.key].name
   subname = ""
