@@ -12,3 +12,8 @@ variable "state_passphrase" {
   type      = string
   sensitive = true
 }
+
+variable "desec_token" {
+  type      = string
+  sensitive = true
+}

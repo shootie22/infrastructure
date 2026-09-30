@@ -10,6 +10,10 @@ terraform {
       source  = "hetznercloud/hcloud"
       version = "~> 1.54"
     }
+    desec = {
+      source  = "Valodim/desec"
+      version = "~> 0.6"
+    }
     dns = {
       source  = "hashicorp/dns"
       version = "~> 3.4"

@@ -49,3 +49,11 @@ It's part of the Matrix stack. DNSControl doesn't manage it until the Matrix pro
 ## 2026-09-30: OpenTofu instead of DNSControl
 
 This replaces DNSControl in the entries above. DNSControl is cleaner if all you ever manage is DNS, but this won't stay DNS-only: Cloudflare settings, Hetzner and maybe the edge VPS can all go through the same tool later. OpenTofu is the open source fork of Terraform, which is what most teams use, so it's also the more useful thing to learn. The state is encrypted with OpenTofu's built-in state encryption and kept in the repo. One list of records feeds both Cloudflare and the Hetzner standby (the `hcloud` provider has DNS support since 1.54).
+
+## 2026-09-30: deSEC replaces Hetzner as the standby, for DNSSEC
+
+This replaces "Hetzner is a cold standby". radunenu.com, yeetus.net and cubtube.lol have DNSSEC on, and Hetzner can't sign zones, so switching to it would have meant removing DNSSEC first and waiting a day. deSEC signs everything and supports multi-signer DNSSEC (RFC 8901) together with Cloudflare: each provider signs with its own keys, publishes the other's, and both DS records sit at the registrar. The switch then keeps DNSSEC valid, and all six zones can have DNSSEC.
+
+The catch is deSEC's 1 hour minimum TTL. That only matters for record changes made while running on the standby, which is fine for a fallback. Other options were thin: NS1 supports multi-signer but costs enterprise money, and self-hosting (Knot, PowerDNS) would mean running a live service on the infrastructure that might be down.
+
+The deSEC provider (`Valodim/desec`) is a community one, and OpenTofu couldn't check its signature. The version and hashes are pinned in `.terraform.lock.hcl`.
