@@ -17,9 +17,9 @@ The edge runs no services. It has three jobs: the third etcd vote, a TCP pass-th
 
 ## Traffic
 
-DNS normally points only at RO, so everyday traffic uses the gigabit line at home and never touches the edge. Health checkers on the edge and in DK watch RO. If RO stops answering, they switch the records to the edge, which forwards to DK over the tailnet. With a 60s TTL that takes about 1-3 minutes.
+Web traffic goes through the Cloudflare proxy to RO. Health checkers on the edge and in DK watch RO. If RO stops answering, they point the origin records at the edge, which forwards to DK over the tailnet. For proxied names that takes seconds. For DNS-only names (games, Headscale), it depends on the 60s TTL.
 
-DNS is served by two providers (Cloudflare and one more), both fed from DNSControl in this repo, so a DNS provider outage doesn't take everything down either.
+Cloudflare is the only active nameserver. DNSControl in this repo also keeps a DNS-only copy of the zones at Hetzner as a cold standby.
 
 ## Phases
 
