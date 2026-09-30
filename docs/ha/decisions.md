@@ -33,3 +33,15 @@ I already have a Hetzner account for the Matrix box. It's free, EU based, allows
 ## 2026-09-30: Cloudflare proxy stays for web traffic
 
 This replaces part of "No Cloudflare in the traffic path". Proxied web records are fine: if Cloudflare is down, most of the internet is too. What I don't want is being tied to it through Tunnels or anything else that only works on Cloudflare. Proxying also makes failover faster, since the origin behind a proxied record can be swapped in seconds. Maybe later: automatically unproxy records when the Cloudflare proxy is down but its API still works.
+
+## 2026-09-30: Hetzner is a cold standby, not a second nameserver
+
+Proxied records can't be copied to another provider, so Hetzner can't answer alongside Cloudflare. DNSControl keeps a DNS-only copy of every zone at Hetzner, but the registrars only list Cloudflare. If Cloudflare were down for a long time, I'd switch the nameservers at the registrar to Hetzner's. That takes a few hours to spread, and sites are then reached directly, without the proxy. It costs nothing to keep ready.
+
+## 2026-09-30: One DNS name for all game servers
+
+`games.radunenu.com` points at RO, DNS only, and every game hostname (`mc.*`, `play.*`, `bopl.yeetus.net`) CNAMEs to it. The port picks the game. When RO's address changes or failover kicks in, there's one record to change.
+
+## 2026-09-30: nuke.zip stays out of this project
+
+It's part of the Matrix stack. DNSControl doesn't manage it until the Matrix project does.

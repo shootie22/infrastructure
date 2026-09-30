@@ -28,7 +28,7 @@ All zones are on Cloudflare's nameservers today. Porkbun and Namecheap both let 
 These are live, or mail and verification records:
 - Everything that matches an Ingress in the repo (33 names), plus `beacon.radunenu.com` as the alias most names point at.
 - Mail for radunenu.com and yeetus.net: Mailfence MX, SPF, DKIM. byradu.com keeps its Porkbun email forwarding (MX, SPF, autodiscover). Also `ownercheck.yeetus.net` and the two `google-site-verification` TXT records.
-- The Matrix VPS records in nuke.zip: `nuke.zip`, `a`, `d`, `ec`, `g`, `r`, `s`, `x` and the `_matrix._tcp` SRV records. Some don't answer on HTTPS, which is expected for non-web services.
+- **nuke.zip: all of it, untouched.** It belongs to the Matrix stack. DNSControl leaves this zone alone until the Matrix project.
 
 ## Delete (dead, no Ingress, origin doesn't answer)
 
@@ -39,16 +39,18 @@ These are live, or mail and verification records:
   - `kanban` (the OVH VPS, which is empty);
   - the `*` wildcard (Porkbun parking page);
   - two stale `_acme-challenge` TXT records.
-- **kronorite.com:** `aki`, `discord`, `git`, `kairi`, `status`, `mc`.
+- **kronorite.com:** `aki`, `discord`, `git`, `kairi`, `status`.
 - **byradu.com:** `7zile7arte`, `analytics`.
-- **nuke.zip:** `j` (the OVH VPS).
+- **yeetus.net:** `ass`, `tits`.
+
+## Game servers
+
+One central name, DNS only (game traffic can't go through the proxy):
+- `games.radunenu.com` CNAME `noc-studios.go.ro`
+- `mc.radunenu.com`, `mc.kronorite.com`, `play.radunenu.com`, `play.yeetus.net` and `bopl.yeetus.net` CNAME `games.radunenu.com`, all DNS only
+
+All of them resolve to the RO IP, and the port picks the game (Minecraft 25565 and 6767, MegaBopl3D 24545, Hytale 5520).
 
 ## Needs an answer
 
 - `www.radunenu.com` returns an error (526). The apex works, but no Ingress has `www`. Add it, or redirect it.
-- **Game hostnames point at the empty OVH VPS:**
-  - `mc.radunenu.com` and `bopl.yeetus.net` point at it directly;
-  - `play.yeetus.net`, `ass.yeetus.net` and `tits.yeetus.net` CNAME to `mc.radunenu.com`;
-  - `play.radunenu.com` points at the Matrix VPS.
-
-  The game servers now go through fuji's raw edge, so these are probably broken. What do players actually connect to?
