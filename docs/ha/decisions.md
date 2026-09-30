@@ -69,3 +69,7 @@ Entering DS records by hand at Porkbun turned out to depend on the registry: .tu
 ## 2026-09-30: Keep Digi's dynamic DNS, and make `ro.radunenu.com` the switch
 
 This replaces the plan for our own IP updater. The router updates `noc-studios.go.ro` the moment the RO address changes, which is faster than anything we'd poll. What was missing was one record we control: `ro.radunenu.com` (DNS only) points at Digi's name, `beacon` (proxied), `games` and `hs` point at `ro`, and every other proxied name points at `beacon`. DNS-only names can't point at `beacon`, because they'd resolve to Cloudflare's addresses. Failover ([#41](https://github.com/shootie22/infrastructure/issues/41)) only has to change `ro`.
+
+## 2026-09-30: The OVH VPS is the edge until February
+
+It's on contract until February 2027 anyway, so it becomes the edge now instead of paying for a second VPS. Everything on it gets backed up first ([#79](https://github.com/shootie22/infrastructure/issues/79)), then it's wiped and reinstalled with NixOS like the plan says. In February it's replaced by a cheaper one ([#80](https://github.com/shootie22/infrastructure/issues/80)), which doubles as the real test of the replacement runbook.
