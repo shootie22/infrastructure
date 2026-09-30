@@ -1,4 +1,9 @@
+# Recipients:
+#   fuji     age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l  (cluster, sops-secrets-operator)
+#   personal age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659  (nixpad + workstation, copy in Bitwarden)
 creation_rules:
   - path_regex: kubernetes/.*\.sops\.yaml$
-    age: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l
+    age: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l,age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
     encrypted_suffix: Templates
+  - path_regex: tofu/.*\.sops\.yaml$
+    age: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l,age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659

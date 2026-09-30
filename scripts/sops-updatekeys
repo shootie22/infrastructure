@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Re-wrap every *.sops.yaml for the recipients currently listed in .sops.yaml.
+# The values don't change, only who can decrypt them. Needs a key that can
+# already decrypt the files, e.g. on fuji:
+#   sudo SOPS_AGE_KEY_FILE=/var/lib/sops-nix/key.txt nix shell nixpkgs#sops -c scripts/sops-updatekeys
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+if ! command -v sops >/dev/null; then
+  printf 'sops is required; run with: nix shell nixpkgs#sops -c %s\n' "$0" >&2
+  exit 1
+fi
+
+git ls-files '*.sops.yaml' | while read -r f; do
+  printf '%s\n' "$f"
+  sops updatekeys --yes "$f"
+done
