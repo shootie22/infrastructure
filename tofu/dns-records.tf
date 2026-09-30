@@ -161,7 +161,7 @@ locals {
     }
     "radunenu.com/argocd-webhook/CNAME" = {
       zone    = "radunenu.com", name = "argocd-webhook", type = "CNAME"
-      content = "noc-studios.go.ro"
+      content = "beacon.radunenu.com"
       proxied = true
     }
     "radunenu.com/auth/CNAME" = {
@@ -171,7 +171,7 @@ locals {
     }
     "radunenu.com/beacon/CNAME" = {
       zone    = "radunenu.com", name = "beacon", type = "CNAME"
-      content = "noc-studios.go.ro"
+      content = "ro.radunenu.com"
       proxied = true
     }
     "radunenu.com/cal/CNAME" = {
@@ -191,7 +191,7 @@ locals {
     }
     "radunenu.com/hs/CNAME" = {
       zone    = "radunenu.com", name = "hs", type = "CNAME"
-      content = "noc-studios.go.ro"
+      content = "ro.radunenu.com"
     }
     "radunenu.com/img/CNAME" = {
       zone    = "radunenu.com", name = "img", type = "CNAME"
@@ -200,7 +200,7 @@ locals {
     }
     "radunenu.com/mon/CNAME" = {
       zone    = "radunenu.com", name = "mon", type = "CNAME"
-      content = "noc-studios.go.ro"
+      content = "beacon.radunenu.com"
       proxied = true
     }
     "radunenu.com/pbin/CNAME" = {
@@ -233,7 +233,7 @@ locals {
     }
     "yeetus.net/@/CNAME" = {
       zone    = "yeetus.net", name = "@", type = "CNAME"
-      content = "noc-studios.go.ro"
+      content = "beacon.radunenu.com"
       proxied = true
     }
     "yeetus.net/@/MX/smtp1" = {
@@ -252,12 +252,12 @@ locals {
     }
     "yeetus.net/books/CNAME" = {
       zone    = "yeetus.net", name = "books", type = "CNAME"
-      content = "noc-studios.go.ro"
+      content = "beacon.radunenu.com"
       proxied = true
     }
     "yeetus.net/n/CNAME" = {
       zone    = "yeetus.net", name = "n", type = "CNAME"
-      content = "noc-studios.go.ro"
+      content = "beacon.radunenu.com"
       proxied = true
     }
     "yeetus.net/ownercheck/TXT" = {
@@ -266,19 +266,26 @@ locals {
     }
     "yeetus.net/vw/CNAME" = {
       zone    = "yeetus.net", name = "vw", type = "CNAME"
-      content = "noc-studios.go.ro"
+      content = "beacon.radunenu.com"
       proxied = true
     }
     "yeetus.net/www/CNAME" = {
       zone    = "yeetus.net", name = "www", type = "CNAME"
-      content = "noc-studios.go.ro"
+      content = "beacon.radunenu.com"
       proxied = true
+    }
+
+    # The one record that says where RO is, DNS only. Everything else points
+    # here (DNS-only names) or at beacon (proxied names). Failover changes this.
+    "radunenu.com/ro/CNAME" = {
+      zone    = "radunenu.com", name = "ro", type = "CNAME"
+      content = "noc-studios.go.ro"
     }
 
     # Game servers: one DNS-only name pointing at RO, everything else CNAMEs to it.
     "radunenu.com/games/CNAME" = {
       zone    = "radunenu.com", name = "games", type = "CNAME"
-      content = "noc-studios.go.ro"
+      content = "ro.radunenu.com"
     }
     "radunenu.com/mc/CNAME" = {
       zone    = "radunenu.com", name = "mc", type = "CNAME"
