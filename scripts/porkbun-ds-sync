@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Makes sure every DS record in OpenTofu's ds_records output (Cloudflare's and
+# deSEC's, per multi-signer zone) exists at Porkbun. Only adds, never removes.
+# Dry run by default; pass --apply to write.
+# Needs sops, opentofu, jq, curl and dig, e.g.:
+#   nix shell nixpkgs#sops nixpkgs#opentofu nixpkgs#jq nixpkgs#dnsutils -c scripts/porkbun-ds-sync --apply
+set -euo pipefail
+
+repo_root=$(git rev-parse --show-toplevel)
+secrets="$repo_root/tofu/secrets.sops.yaml"
+api=https://api.porkbun.com/api/json/v3
+apply=false
+[[ ${1:-} == --apply ]] && apply=true
+
+get() { sops --decrypt --extract "[\"$1\"]" "$secrets"; }
+auth=$(jq -n --arg a "$(get porkbun_api_key)" --arg s "$(get porkbun_secret_api_key)" '{apikey: $a, secretapikey: $s}')
+
+# zone<TAB>keytag alg digesttype digest, one line per wanted DS record.
+wanted=$("$repo_root/scripts/tofu" output -json ds_records | jq -r '
+  to_entries[] | .key as $z
+  | ([.value.cloudflare | select(. != null) | split(" ") | .[-4:] | join(" ")] + .value.desec)[]
+  | "\($z)\t\(.)"')
+
+while IFS=$'\t' read -r zone ds; do
+  read -r tag alg type digest <<<"$ds"
+  digest=${digest^^}
+  # Ask the registry itself: Porkbun lists some records as key data instead of DS.
+  tld_ns=$(dig +short NS "${zone##*.}." | head -1)
+  have=$(dig +short DS "$zone" "@$tld_ns" | awk '{d=""; for (i = 4; i <= NF; i++) d = d $i; print $1, toupper(d)}')
+  if grep -qx "$tag $digest" <<<"$have"; then
+    printf '%-14s %-6s ok\n' "$zone" "$tag"
+    continue
+  fi
+  if ! $apply; then
+    printf '%-14s %-6s missing (dry run)\n' "$zone" "$tag"
+    continue
+  fi
+  body=$(jq -n --argjson a "$auth" --arg t "$tag" --arg al "$alg" --arg dt "$type" --arg d "$digest" \
+    '$a + {keyTag: $t, alg: $al, digestType: $dt, digest: $d}')
+  result=$(curl -fsS -X POST "$api/dns/createDnssecRecord/$zone" -d "$body" | jq -r '"\(.status) \(.message // "")"')
+  printf '%-14s %-6s added: %s\n' "$zone" "$tag" "$result"
+  sleep 1
+done <<<"$wanted"
