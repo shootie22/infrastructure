@@ -3,7 +3,7 @@
 # without breaking DNSSEC. Both DS records sit at the registrar.
 # Rolled out one zone at a time (#74, #75).
 locals {
-  multi_signer_zones = toset(["cubi.tube", "byradu.com", "cubtube.lol", "yeetus.net"])
+  multi_signer_zones = toset(["cubi.tube", "byradu.com", "cubtube.lol", "yeetus.net", "radunenu.com"])
 }
 
 resource "cloudflare_zone_dnssec" "this" {
@@ -26,10 +26,11 @@ resource "cloudflare_zone_dnssec" "this" {
 # after the first apply, once Cloudflare has generated the key.
 locals {
   cloudflare_zsk = {
-    "cubi.tube"   = "256 3 13 oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeqCYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA=="
-    "byradu.com"  = "256 3 13 oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeqCYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA=="
-    "cubtube.lol" = "256 3 13 oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeqCYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA=="
-    "yeetus.net"  = "256 3 13 oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeqCYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA=="
+    "cubi.tube"    = "256 3 13 oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeqCYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA=="
+    "byradu.com"   = "256 3 13 oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeqCYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA=="
+    "cubtube.lol"  = "256 3 13 oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeqCYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA=="
+    "yeetus.net"   = "256 3 13 oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeqCYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA=="
+    "radunenu.com" = "256 3 13 oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeqCYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA=="
   }
 
   # deSEC signs with a single combined key (flags 257). Its key list also
