@@ -25,3 +25,7 @@ Moving it to the edge would make the edge matter. Headscale can't run more than 
 ## 2026-09-30: Tracking in GitHub, not a self-hosted tool
 
 The plan involves taking the cluster down on purpose. Notes about how to bring it back can't live on the cluster. Tasks go in GitHub Issues and the board; knowledge goes in these Markdown files.
+
+## 2026-09-30: Hetzner DNS as the second DNS provider
+
+I already have a Hetzner account for the Matrix box. It's free, EU based, allows a 60s TTL (the minimum), and DNSControl supports it as `HETZNER_V2`. The old dns.hetzner.com API was shut down in May 2026, so this uses the new Hetzner Console API from the start. Bunny DNS was the runner-up. deSEC was out because of its 1 hour minimum TTL.
