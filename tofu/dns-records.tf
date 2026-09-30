@@ -292,6 +292,10 @@ locals {
       zone    = "kronorite.com", name = "mc", type = "CNAME"
       content = "games.radunenu.com"
     }
+    "yeetus.net/crosty/CNAME" = {
+      zone    = "yeetus.net", name = "crosty", type = "CNAME"
+      content = "games.radunenu.com"
+    }
     "yeetus.net/play/CNAME" = {
       zone    = "yeetus.net", name = "play", type = "CNAME"
       content = "games.radunenu.com"
