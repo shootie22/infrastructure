@@ -65,3 +65,7 @@ The whole point is not having to log in and fix things by hand. The risk of an a
 ## 2026-09-30: DS records through the Porkbun API
 
 Entering DS records by hand at Porkbun turned out to depend on the registry: .tube only accepted the public key (Key Data), .com only the DS values. Porkbun's API does it the same way every time, and the automatic nameserver failover needs it anyway ([#77](https://github.com/shootie22/infrastructure/issues/77)). The key is restricted to my domains and stored in SOPS next to the Cloudflare token, which can do just as much damage. `scripts/porkbun-ds-sync` compares the DS records OpenTofu expects with what the registry actually publishes, and adds what's missing.
+
+## 2026-09-30: Keep Digi's dynamic DNS, and make `ro.radunenu.com` the switch
+
+This replaces the plan for our own IP updater. The router updates `noc-studios.go.ro` the moment the RO address changes, which is faster than anything we'd poll. What was missing was one record we control: `ro.radunenu.com` (DNS only) points at Digi's name, `beacon` (proxied), `games` and `hs` point at `ro`, and every other proxied name points at `beacon`. DNS-only names can't point at `beacon`, because they'd resolve to Cloudflare's addresses. Failover ([#41](https://github.com/shootie22/infrastructure/issues/41)) only has to change `ro`.

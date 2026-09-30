@@ -20,7 +20,7 @@ Tasks live in issues. Knowledge lives here. Problems found along the way get an 
 
 ## Status
 
-Phase 0 (DNS) in progress. All DNS except nuke.zip is in OpenTofu, with a deSEC standby, and every domain except kronorite.com runs multi-signer DNSSEC. Left: kronorite.com ([#76](https://github.com/shootie22/infrastructure/issues/76)) and the `beacon` repointing ([#68](https://github.com/shootie22/infrastructure/issues/68)).
+Phase 0 (DNS) nearly done. All DNS except nuke.zip is in OpenTofu, with a deSEC standby, every domain except kronorite.com runs multi-signer DNSSEC, and `ro.radunenu.com` is the one record failover will change. Left: kronorite.com ([#76](https://github.com/shootie22/infrastructure/issues/76)) and optional CI ([#8](https://github.com/shootie22/infrastructure/issues/8)).
 
 ## A note on AI
 
