@@ -16,17 +16,18 @@ Snapshot from 2026-09-30, pulled from the Cloudflare API. 7 zones, 103 records. 
 
 All zones are on Cloudflare's nameservers today. Porkbun and Namecheap both let you set custom nameservers, so adding Hetzner's is fine.
 
-## What changes the plan
+## What this means for the plan
 
-- **Most web records are proxied (orange cloud).** Cloudflare is in the traffic path today. A second DNS provider can't mirror proxied records, so every record has to become DNS only (grey cloud) before Hetzner joins. Origin certs are already valid (Cloudflare's strict mode checks them), so browsers won't notice. What goes away is Cloudflare hiding the home IP, and its caching and DDoS protection.
-- **The apex records are CNAMEs.** For example `radunenu.com → beacon.radunenu.com → noc-studios.go.ro`. This only works because of Cloudflare's CNAME flattening. On Hetzner, an apex needs an A record, and the RO IP changes, so something has to keep those A records up to date on both providers.
-- **Everything hangs off `noc-studios.go.ro`.** That's the router's dynamic DNS name at Digi, which makes it another outside dependency. Better: our own updater writes the RO IP to one record (e.g. `ro.radunenu.com`) on both providers, and the apexes get A records from the same updater. It's the same job the failover checker does later, so it can be one small service.
+- **Most web records are proxied (orange cloud).** That stays: Cloudflare in front of web traffic is fine. No tunnels, though. A nice extra for later: if the Cloudflare proxy is down but its API works, unproxy the records automatically.
+- **Proxying makes failover easier.** Visitors only ever see Cloudflare's IPs, so changing the origin behind a proxied record takes effect in seconds, with no TTL to wait out. Only the DNS-only names (game servers, `hs`, `share`, Matrix) depend on TTL.
+- **Everything hangs off `noc-studios.go.ro`**, the router's dynamic DNS name at Digi. It works, but it's another outside dependency. Our own updater writing the RO IP straight into Cloudflare would remove it, and the failover checker needs the same API access anyway.
+- **A second DNS provider can't mirror proxied records.** Hetzner can only be a standby copy of the zone, not an active second nameserver.
 
 ## Keep
 
 These are live, or mail and verification records:
 - Everything that matches an Ingress in the repo (33 names), plus `beacon.radunenu.com` as the alias most names point at.
-- Mail for radunenu.com and yeetus.net: Mailfence MX, SPF, DKIM. Also `ownercheck.yeetus.net` and the two `google-site-verification` TXT records.
+- Mail for radunenu.com and yeetus.net: Mailfence MX, SPF, DKIM. byradu.com keeps its Porkbun email forwarding (MX, SPF, autodiscover). Also `ownercheck.yeetus.net` and the two `google-site-verification` TXT records.
 - The Matrix VPS records in nuke.zip: `nuke.zip`, `a`, `d`, `ec`, `g`, `r`, `s`, `x` and the `_matrix._tcp` SRV records. Some don't answer on HTTPS, which is expected for non-web services.
 
 ## Delete (dead, no Ingress, origin doesn't answer)
@@ -51,4 +52,3 @@ These are live, or mail and verification records:
   - `play.radunenu.com` points at the Matrix VPS.
 
   The game servers now go through fuji's raw edge, so these are probably broken. What do players actually connect to?
-- **byradu.com mail:** Porkbun email forwarding (MX, SPF, autodiscover). Still used?

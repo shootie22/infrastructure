@@ -29,3 +29,7 @@ The plan involves taking the cluster down on purpose. Notes about how to bring i
 ## 2026-09-30: Hetzner DNS as the second DNS provider
 
 I already have a Hetzner account for the Matrix box. It's free, EU based, allows a 60s TTL (the minimum), and DNSControl supports it as `HETZNER_V2`. The old dns.hetzner.com API was shut down in May 2026, so this uses the new Hetzner Console API from the start. Bunny DNS was the runner-up. deSEC was out because of its 1 hour minimum TTL.
+
+## 2026-09-30: Cloudflare proxy stays for web traffic
+
+This replaces part of "No Cloudflare in the traffic path". Proxied web records are fine: if Cloudflare is down, most of the internet is too. What I don't want is being tied to it through Tunnels or anything else that only works on Cloudflare. Proxying also makes failover faster, since the origin behind a proxied record can be swapped in seconds. Maybe later: automatically unproxy records when the Cloudflare proxy is down but its API still works.
