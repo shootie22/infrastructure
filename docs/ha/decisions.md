@@ -61,3 +61,7 @@ The deSEC provider (`Valodim/desec`) is a community one, and OpenTofu couldn't c
 ## 2026-09-30: Nameserver failover is automatic, with strict detection
 
 The whole point is not having to log in and fix things by hand. The risk of an automatic switch is a false positive: undoing a switch can take up to 48 hours to spread, and sites run without the proxy meanwhile. So checkers run in three places (RO, DK, edge) as NixOS services outside Kubernetes. A switch needs 2 of 3 to agree for 30-60 minutes, each one proves its own network works by also reaching deSEC, and there's a one-switch-per-day brake. There's no leader: setting the same nameservers twice is harmless, so any checker that sees the majority can act. Tracked in [#77](https://github.com/shootie22/infrastructure/issues/77). kronorite.com moves to Porkbun ([#76](https://github.com/shootie22/infrastructure/issues/76)) so one API covers every domain.
+
+## 2026-09-30: DS records through the Porkbun API
+
+Entering DS records by hand at Porkbun turned out to depend on the registry: .tube only accepted the public key (Key Data), .com only the DS values. Porkbun's API does it the same way every time, and the automatic nameserver failover needs it anyway ([#77](https://github.com/shootie22/infrastructure/issues/77)). The key is restricted to my domains and stored in SOPS next to the Cloudflare token, which can do just as much damage. `scripts/porkbun-ds-sync` compares the DS records OpenTofu expects with what the registry actually publishes, and adds what's missing.

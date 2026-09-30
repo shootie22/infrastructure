@@ -17,12 +17,9 @@ Not run for real yet.
 
 ## Before switching: check DNSSEC
 
-Once a zone runs multi-signer DNSSEC (Cloudflare and deSEC, both DS records at the registrar), it switches with DNSSEC intact and there's nothing to do here. Check the zone's status in [decisions.md](../decisions.md) and on the board.
+All zones except kronorite.com run multi-signer DNSSEC: both Cloudflare's and deSEC's DS records are at the registry, so they switch with DNSSEC intact. `scripts/porkbun-ds-sync` (dry run) shows whether every DS record is published.
 
-For a zone that is signed by Cloudflare only (a DS record at the registrar, but no deSEC one yet):
-1. Remove the DS record at the registrar.
-2. Wait until `dig DS <domain> @1.1.1.1` comes back empty, up to a day.
-3. Then switch.
+kronorite.com has no DNSSEC yet, so it can switch straight away. Once it's on multi-signer too ([#75](https://github.com/shootie22/infrastructure/issues/75)), this section has nothing left to check.
 
 ## Steps
 

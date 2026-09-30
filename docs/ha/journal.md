@@ -23,3 +23,7 @@ All DNS except nuke.zip is in OpenTofu (`tofu/`). The import went through with z
 ## 2026-09-30: First multi-signer DNSSEC zone
 
 cubi.tube is now signed by both Cloudflare and deSEC, with both DS records at the registry, and validates on Google, Cloudflare and Quad9. Two things tripped me up. Cloudflare only shows its zone-signing key once multi-signer is on, so the key exchange takes two rounds. And Porkbun's DS form failed with a registry error ("2004 parameter value range error"); entering the public key under Key Data worked, and the registry works out the DS itself. Before touching the registrar I tested everything with `delv`, using both keys as trust anchors, which made the Porkbun step a lot less scary.
+
+## 2026-09-30: DNSSEC everywhere (almost)
+
+All five Porkbun domains now run multi-signer DNSSEC. byradu.com was the second one done by hand, and the `.com` registry turned out to want the exact opposite of `.tube`: DS values, not the public key. That was enough to switch to Porkbun's API, and after that each zone took minutes. For the three zones that already had DNSSEC, I checked Cloudflare's key and the DS at the registry before and after turning on multi-signer. Nothing changed, and they validated the whole time. Mail records validate too. kronorite.com is the only one left, waiting for its move to Porkbun.
