@@ -20,7 +20,7 @@ Tasks live in issues. Knowledge lives here. Problems found along the way get an 
 
 ## Status
 
-Phase 0 (DNS) in progress. Provider picked, inventory done, OpenTofu set up with encrypted state. Next: importing the zones ([#4](https://github.com/shootie22/infrastructure/issues/4)).
+Phase 0 (DNS) in progress. All DNS except nuke.zip is managed by OpenTofu and cleaned up. Next: the Hetzner standby copy ([#5](https://github.com/shootie22/infrastructure/issues/5)) and our own dynamic IP updater ([#68](https://github.com/shootie22/infrastructure/issues/68)).
 
 ## A note on AI
 
