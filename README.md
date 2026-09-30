@@ -18,7 +18,7 @@ Matrix Synapse and LiveKit are kept on a separate VPS for now, outside of this s
 
 Host configuration lives separately in my [dotfiles repo](https://github.com/shootie22/dotfiles). All servers except server #4, a Mac mini M4, run NixOS and are configured declaratively there (my workstation and laptop run NixOS too because it's nice).
 
-Some configuration and deployment work is done with the help of AI where it makes sense, because it speeds up some steps considerably.
+Some configuration and deployment work is done with the help of AI where it makes sense, because it speeds up some steps considerably. [docs/ha](docs/ha/README.md#a-note-on-ai) shows concretely what that means: which parts are drafted by AI (issues, docs, config, scripts) and which stay with me.
 
 ## Repo layout
 
