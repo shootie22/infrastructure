@@ -1,0 +1,111 @@
+# Send (timvisee/send): end-to-end encrypted file transfer. The browser
+# encrypts before upload and the key only lives in the link's #fragment, so
+# the server holds ciphertext it cannot read. Uploading needs a Keycloak login
+# (ingress.yaml); downloading only needs the link.
+#
+# Redis holds each upload's metadata with a TTL and is deliberately not
+# persisted: a restart invalidates live links, and send-cleanup
+# (cleanup.yaml) deletes the orphaned files. Send removes a file itself when
+# its download limit is reached, but not when it expires by time.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: send
+  namespace: send
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: send
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: send
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      initContainers:
+        # Native sidecar: started, and ready, before Send connects to it.
+        - name: redis
+          image: docker.io/library/redis:8.10.2-alpine@sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0
+          restartPolicy: Always
+          args: ["--bind", "127.0.0.1", "--save", "", "--appendonly", "no"]
+          startupProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            periodSeconds: 1
+            failureThreshold: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 128Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - {name: redis-data, mountPath: /data}
+      containers:
+        - name: send
+          image: registry.gitlab.com/timvisee/send:v3.4.27@sha256:b950a557f0f4eb7d2114a9126aea5df984ffe868385a3fb6b327d9f770bec0ae
+          env:
+            # Anything but production swaps Redis for an in-memory mock.
+            - {name: NODE_ENV, value: production}
+            - {name: BASE_URL, value: https://share.radunenu.com}
+            - {name: FILE_DIR, value: /uploads}
+            - {name: REDIS_HOST, value: 127.0.0.1}
+            # 50 GiB per upload.
+            - {name: MAX_FILE_SIZE, value: "53687091200"}
+            # Choices offered per upload: 1h, 1d, 3d, 7d, 14d / 1-100 downloads.
+            - {name: EXPIRE_TIMES_SECONDS, value: "3600,86400,259200,604800,1209600"}
+            - {name: DEFAULT_EXPIRE_SECONDS, value: "86400"}
+            - {name: MAX_EXPIRE_SECONDS, value: "1209600"}
+            - {name: DOWNLOAD_COUNTS, value: "1,2,5,10,20,50,100"}
+            - {name: DEFAULT_DOWNLOADS, value: "1"}
+            - {name: MAX_DOWNLOADS, value: "100"}
+            - {name: SEND_FOOTER_DONATE_URL, value: ""}
+            - {name: SEND_FOOTER_DMCA_URL, value: "mailto:hello@radunenu.com"}
+          ports:
+            - {name: http, containerPort: 1443}
+          readinessProbe:
+            httpGet:
+              path: /__heartbeat__
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /__lbheartbeat__
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 20m
+              memory: 96Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - {name: uploads, mountPath: /uploads}
+      volumes:
+        - name: redis-data
+          emptyDir: {sizeLimit: 16Mi}
+        # On the 4 TB LUKS disk. type: Directory refuses to start the pod if
+        # the disk is not unlocked and mounted, instead of filling the system
+        # SSD. Create it once, owned by 1000:1000 (the image's app user).
+        - name: uploads
+          hostPath: {path: /home/main/storage/send-uploads, type: Directory}

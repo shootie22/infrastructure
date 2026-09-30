@@ -1,0 +1,133 @@
+# share.radunenu.com is public by default, so download links, the service
+# worker and the hashed static assets need no login. Only the routes that
+# accept uploads sit behind send-login:
+#   /            upload page (Exact; /download/<id> etc. stay public)
+#   /login       same page under another path
+#   /api/ws      the WebSocket every browser upload goes through
+#   /api/upload  legacy HTTP upload
+#   /api/filelist
+# Owner actions (/api/delete, /api/password, /api/params, /api/info) stay
+# public: they already require the owner token only the uploader holds.
+#
+# Traefik ranks routers by rule length, so the gated routers carry an explicit
+# priority to win over the shorter public PathPrefix(`/`).
+#
+# DNS-only (grey cloud) in Cloudflare: large binary downloads through the
+# proxy break its terms and long upload WebSockets get cut.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: login
+  namespace: send
+spec:
+  forwardAuth:
+    address: http://oauth2-proxy.send.svc.cluster.local/
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: send
+  namespace: send
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: Send
+    gethomepage.dev/icon: mdi-file-send-outline
+    gethomepage.dev/description: Encrypted file transfer
+    gethomepage.dev/weight: "300"
+    gethomepage.dev/siteMonitor: http://send.send.svc.cluster.local/__lbheartbeat__
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - share.radunenu.com
+      secretName: share-radunenu-com-tls
+  rules:
+    - host: share.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: send
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: send-upload
+  namespace: send
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: send-login@kubernetescrd
+    traefik.ingress.kubernetes.io/router.priority: "1000"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - share.radunenu.com
+      secretName: share-radunenu-com-tls
+  rules:
+    - host: share.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Exact
+            backend:
+              service:
+                name: send
+                port:
+                  number: 80
+          - path: /login
+            pathType: Exact
+            backend:
+              service:
+                name: send
+                port:
+                  number: 80
+          - path: /api/ws
+            pathType: Prefix
+            backend:
+              service:
+                name: send
+                port:
+                  number: 80
+          - path: /api/upload
+            pathType: Prefix
+            backend:
+              service:
+                name: send
+                port:
+                  number: 80
+          - path: /api/filelist
+            pathType: Prefix
+            backend:
+              service:
+                name: send
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: oauth2-proxy
+  namespace: send
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - share.radunenu.com
+      secretName: share-radunenu-com-tls
+  rules:
+    - host: share.radunenu.com
+      http:
+        paths:
+          - path: /oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth2-proxy
+                port:
+                  number: 80

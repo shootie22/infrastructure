@@ -1,0 +1,72 @@
+# Login gate for Send's upload side, used by Traefik forwardAuth
+# (ingress.yaml). The forwardAuth address is oauth2-proxy's root with a
+# static 202 upstream: a valid session answers 202 and Traefik passes the
+# request on to Send; no session answers a redirect to Keycloak.
+#
+# Only users with the client role share:upload in Keycloak may pass.
+# Secrets (issuer URL, client secret, cookie secret) come from send-oauth2
+# in secret.sops.yaml; scripts/create-send-oauth2-secret.sh creates it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+  namespace: send
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oauth2-proxy
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+        - name: oauth2-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.4@sha256:b1b2021fe8f4004573e8d690dec6c7bb29cc44364572cf8510a05bf3a0ae2ded
+          args:
+            - --http-address=0.0.0.0:4180
+            - --provider=keycloak-oidc
+            - --client-id=share
+            - --code-challenge-method=S256
+            - --allowed-role=share:upload
+            - --email-domain=*
+            - --redirect-url=https://share.radunenu.com/oauth2/callback
+            - --reverse-proxy=true
+            - --upstream=static://202
+            - --skip-provider-button=true
+            - --cookie-name=_send_session
+            - --cookie-secure=true
+            - --cookie-samesite=lax
+            - --silence-ping-logging=true
+          envFrom:
+            # OAUTH2_PROXY_OIDC_ISSUER_URL, OAUTH2_PROXY_CLIENT_SECRET,
+            # OAUTH2_PROXY_COOKIE_SECRET
+            - secretRef: {name: send-oauth2}
+          ports:
+            - {name: http, containerPort: 4180}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

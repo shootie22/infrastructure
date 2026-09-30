@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: send
+  namespace: send
+spec:
+  selector:
+    app.kubernetes.io/name: send
+  ports:
+    - {name: http, port: 80, targetPort: http}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth2-proxy
+  namespace: send
+spec:
+  selector:
+    app.kubernetes.io/name: oauth2-proxy
+  ports:
+    - {name: http, port: 80, targetPort: http}

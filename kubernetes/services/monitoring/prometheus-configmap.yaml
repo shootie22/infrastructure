@@ -159,6 +159,7 @@ data:
               - https://hs.radunenu.com
               - https://call.nuke.zip
               - https://c.nuke.zip
+              - https://share.radunenu.com/__lbheartbeat__
         relabel_configs:
           - source_labels: [__address__]
             target_label: __param_target
@@ -431,6 +432,17 @@ data:
             annotations:
               summary: Root filesystem on {{ $labels.node }} is critically low
               description: Less than 8% of the root filesystem has been available for fifteen minutes.
+          # Send uploads (up to 50 GiB each, kept up to 14 days) share this disk
+          # with Gitea repositories and /home/main/storage.
+          - alert: ThinkcentreStorageDiskLow
+            expr: |
+              node_filesystem_avail_bytes{job="node-exporter", node="thinkcentre", mountpoint="/home/main/storage"} < 250 * 1024 ^ 3
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: The 4 TB storage disk on thinkcentre has less than 250 GiB free
+              description: Check /home/main/storage/send-uploads; Send uploads expire within 14 days.
           - alert: PublicEndpointProbeFailed
             expr: probe_success{job="blackbox-http"} == 0
             for: 5m
