@@ -90,8 +90,10 @@ spec:
               readOnly: true
             - name: data
               mountPath: /data
-            - name: docker-socket
-              mountPath: /var/run/docker.sock
+            # Mount the directory, not the socket file. Docker recreates the
+            # socket on restart and a file mount would keep the dead one.
+            - name: docker-run
+              mountPath: /var/run
       volumes:
         - name: config
           configMap:
@@ -100,7 +102,7 @@ spec:
           hostPath:
             path: /home/main/services/gitea-act-runner-thinkcentre/data
             type: Directory
-        - name: docker-socket
+        - name: docker-run
           hostPath:
-            path: /var/run/docker.sock
-            type: Socket
+            path: /var/run
+            type: Directory
