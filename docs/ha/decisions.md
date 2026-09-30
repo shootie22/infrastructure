@@ -45,3 +45,7 @@ Proxied records can't be copied to another provider, so Hetzner can't answer alo
 ## 2026-09-30: nuke.zip stays out of this project
 
 It's part of the Matrix stack. DNSControl doesn't manage it until the Matrix project does.
+
+## 2026-09-30: OpenTofu instead of DNSControl
+
+This replaces DNSControl in the entries above. DNSControl is cleaner if all you ever manage is DNS, but this won't stay DNS-only: Cloudflare settings, Hetzner and maybe the edge VPS can all go through the same tool later. OpenTofu is the open source fork of Terraform, which is what most teams use, so it's also the more useful thing to learn. The state is encrypted with OpenTofu's built-in state encryption and kept in the repo. One list of records feeds both Cloudflare and the Hetzner standby (the `hcloud` provider has DNS support since 1.54).

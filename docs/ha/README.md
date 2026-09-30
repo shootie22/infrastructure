@@ -20,7 +20,7 @@ Tasks live in issues. Knowledge lives here. Problems found along the way get an 
 
 ## Status
 
-Phase 0 (DNS) in progress. The second provider is picked and the inventory is done. Next: the questions in [dns-inventory.md](dns-inventory.md#needs-an-answer), then DNSControl.
+Phase 0 (DNS) in progress. The second provider is picked and the inventory is done. Next: the questions in [dns-inventory.md](dns-inventory.md#needs-an-answer), then OpenTofu for DNS.
 
 ## A note on AI
 

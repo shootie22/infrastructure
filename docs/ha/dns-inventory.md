@@ -28,7 +28,7 @@ All zones are on Cloudflare's nameservers today. Porkbun and Namecheap both let 
 These are live, or mail and verification records:
 - Everything that matches an Ingress in the repo (33 names), plus `beacon.radunenu.com` as the alias most names point at.
 - Mail for radunenu.com and yeetus.net: Mailfence MX, SPF, DKIM. byradu.com keeps its Porkbun email forwarding (MX, SPF, autodiscover). Also `ownercheck.yeetus.net` and the two `google-site-verification` TXT records.
-- **nuke.zip: all of it, untouched.** It belongs to the Matrix stack. DNSControl leaves this zone alone until the Matrix project.
+- **nuke.zip: all of it, untouched.** It belongs to the Matrix stack. OpenTofu leaves this zone alone until the Matrix project.
 
 ## Delete (dead, no Ingress, origin doesn't answer)
 
