@@ -96,10 +96,6 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
-    "kronorite.com/mc/CNAME" = {
-      zone    = "kronorite.com", name = "mc", type = "CNAME"
-      content = "beacon.radunenu.com"
-    }
     "kronorite.com/news/CNAME" = {
       zone    = "kronorite.com", name = "news", type = "CNAME"
       content = "beacon.radunenu.com"
@@ -110,19 +106,9 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
-    "kronorite.com/status/CNAME" = {
-      zone    = "kronorite.com", name = "status", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
     "kronorite.com/www/CNAME" = {
       zone    = "kronorite.com", name = "www", type = "CNAME"
       content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/*/CNAME" = {
-      zone    = "radunenu.com", name = "*", type = "CNAME"
-      content = "pixie.porkbun.com"
       proxied = true
     }
     "radunenu.com/20250913-vafn._domainkey/TXT" = {
@@ -152,14 +138,6 @@ locals {
       zone    = "radunenu.com", name = "@", type = "TXT"
       content = "google-site-verification=Pe00awN0OgFayUIxOe1N_KpBGqiBrZTH99Tse7Tr9Mo"
       ttl     = 3600
-    }
-    "radunenu.com/_acme-challenge/TXT/1" = {
-      zone    = "radunenu.com", name = "_acme-challenge", type = "TXT"
-      content = "P5lRLYDrnsoqqmoFqP3GKXzdlr1TBz30Ym3pwD6V6N0"
-    }
-    "radunenu.com/_acme-challenge/TXT/2" = {
-      zone    = "radunenu.com", name = "_acme-challenge", type = "TXT"
-      content = "RlicbhMOGVCgH65MOBISRFb1iMUNBqtqpHK7u80JyXg"
     }
     "radunenu.com/analytics/CNAME" = {
       zone    = "radunenu.com", name = "analytics", type = "CNAME"
@@ -206,48 +184,8 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
-    "radunenu.com/chat/CNAME" = {
-      zone    = "radunenu.com", name = "chat", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/cloud/CNAME" = {
-      zone    = "radunenu.com", name = "cloud", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/cubitube/CNAME" = {
-      zone    = "radunenu.com", name = "cubitube", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/dev/CNAME" = {
-      zone    = "radunenu.com", name = "dev", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/filestorage-monitor/CNAME" = {
-      zone    = "radunenu.com", name = "filestorage-monitor", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/gamesv-monitor/CNAME" = {
-      zone    = "radunenu.com", name = "gamesv-monitor", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
     "radunenu.com/git/CNAME" = {
       zone    = "radunenu.com", name = "git", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/graphs/CNAME" = {
-      zone    = "radunenu.com", name = "graphs", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/hl/CNAME" = {
-      zone    = "radunenu.com", name = "hl", type = "CNAME"
       content = "beacon.radunenu.com"
       proxied = true
     }
@@ -260,43 +198,9 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
-    "radunenu.com/kanban/A" = {
-      zone    = "radunenu.com", name = "kanban", type = "A"
-      content = "141.95.67.178"
-      proxied = true
-    }
-    "radunenu.com/komodo/CNAME" = {
-      zone    = "radunenu.com", name = "komodo", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/lt/CNAME" = {
-      zone    = "radunenu.com", name = "lt", type = "CNAME"
-      content = "translate.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/mc/A" = {
-      zone    = "radunenu.com", name = "mc", type = "A"
-      content = "141.95.67.178"
-    }
     "radunenu.com/mon/CNAME" = {
       zone    = "radunenu.com", name = "mon", type = "CNAME"
       content = "noc-studios.go.ro"
-      proxied = true
-    }
-    "radunenu.com/monitor/CNAME" = {
-      zone    = "radunenu.com", name = "monitor", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/ocean/A" = {
-      zone    = "radunenu.com", name = "ocean", type = "A"
-      content = "167.172.191.19"
-      proxied = true
-    }
-    "radunenu.com/panel/CNAME" = {
-      zone    = "radunenu.com", name = "panel", type = "CNAME"
-      content = "beacon.radunenu.com"
       proxied = true
     }
     "radunenu.com/pbin/CNAME" = {
@@ -309,63 +213,14 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
-    "radunenu.com/play/A" = {
-      zone    = "radunenu.com", name = "play", type = "A"
-      content = "195.201.129.220"
-    }
     "radunenu.com/puml/CNAME" = {
       zone    = "radunenu.com", name = "puml", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/s/CNAME" = {
-      zone    = "radunenu.com", name = "s", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/sb/CNAME" = {
-      zone    = "radunenu.com", name = "sb", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/scratchpad-monitor/CNAME" = {
-      zone    = "radunenu.com", name = "scratchpad-monitor", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/sd/CNAME" = {
-      zone    = "radunenu.com", name = "sd", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/services/CNAME" = {
-      zone    = "radunenu.com", name = "services", type = "CNAME"
       content = "beacon.radunenu.com"
       proxied = true
     }
     "radunenu.com/share/CNAME" = {
       zone    = "radunenu.com", name = "share", type = "CNAME"
       content = "beacon.radunenu.com"
-    }
-    "radunenu.com/skynet-monitor/CNAME" = {
-      zone    = "radunenu.com", name = "skynet-monitor", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/status/CNAME" = {
-      zone    = "radunenu.com", name = "status", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/translate/CNAME" = {
-      zone    = "radunenu.com", name = "translate", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/webservers-monitor/CNAME" = {
-      zone    = "radunenu.com", name = "webservers-monitor", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
     }
     "radunenu.com/www/CNAME" = {
       zone    = "radunenu.com", name = "www", type = "CNAME"
@@ -395,18 +250,10 @@ locals {
       zone    = "yeetus.net", name = "@", type = "TXT"
       content = "\"v=spf1 include:_spf.mailfence.com ~all\""
     }
-    "yeetus.net/ass/CNAME" = {
-      zone    = "yeetus.net", name = "ass", type = "CNAME"
-      content = "mc.radunenu.com"
-    }
     "yeetus.net/books/CNAME" = {
       zone    = "yeetus.net", name = "books", type = "CNAME"
       content = "noc-studios.go.ro"
       proxied = true
-    }
-    "yeetus.net/bopl/A" = {
-      zone    = "yeetus.net", name = "bopl", type = "A"
-      content = "141.95.67.178"
     }
     "yeetus.net/n/CNAME" = {
       zone    = "yeetus.net", name = "n", type = "CNAME"
@@ -417,14 +264,6 @@ locals {
       zone    = "yeetus.net", name = "ownercheck", type = "TXT"
       content = "\"f4f6f4d3\""
     }
-    "yeetus.net/play/CNAME" = {
-      zone    = "yeetus.net", name = "play", type = "CNAME"
-      content = "mc.radunenu.com"
-    }
-    "yeetus.net/tits/CNAME" = {
-      zone    = "yeetus.net", name = "tits", type = "CNAME"
-      content = "mc.radunenu.com"
-    }
     "yeetus.net/vw/CNAME" = {
       zone    = "yeetus.net", name = "vw", type = "CNAME"
       content = "noc-studios.go.ro"
@@ -434,6 +273,32 @@ locals {
       zone    = "yeetus.net", name = "www", type = "CNAME"
       content = "noc-studios.go.ro"
       proxied = true
+    }
+
+    # Game servers: one DNS-only name pointing at RO, everything else CNAMEs to it.
+    "radunenu.com/games/CNAME" = {
+      zone    = "radunenu.com", name = "games", type = "CNAME"
+      content = "noc-studios.go.ro"
+    }
+    "radunenu.com/mc/CNAME" = {
+      zone    = "radunenu.com", name = "mc", type = "CNAME"
+      content = "games.radunenu.com"
+    }
+    "radunenu.com/play/CNAME" = {
+      zone    = "radunenu.com", name = "play", type = "CNAME"
+      content = "games.radunenu.com"
+    }
+    "kronorite.com/mc/CNAME" = {
+      zone    = "kronorite.com", name = "mc", type = "CNAME"
+      content = "games.radunenu.com"
+    }
+    "yeetus.net/play/CNAME" = {
+      zone    = "yeetus.net", name = "play", type = "CNAME"
+      content = "games.radunenu.com"
+    }
+    "yeetus.net/bopl/CNAME" = {
+      zone    = "yeetus.net", name = "bopl", type = "CNAME"
+      content = "games.radunenu.com"
     }
   }
 }
