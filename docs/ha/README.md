@@ -20,7 +20,7 @@ Tasks live in issues. Knowledge lives here. Problems found along the way get an 
 
 ## Status
 
-Phase 0 (DNS) in progress. All DNS except nuke.zip is managed by OpenTofu and cleaned up. Next: the Hetzner standby copy ([#5](https://github.com/shootie22/infrastructure/issues/5)) and our own dynamic IP updater ([#68](https://github.com/shootie22/infrastructure/issues/68)).
+Phase 0 (DNS) in progress. All DNS except nuke.zip is managed by OpenTofu, with a deSEC standby. Next: multi-signer DNSSEC, starting with cubi.tube ([#74](https://github.com/shootie22/infrastructure/issues/74)).
 
 ## A note on AI
 
