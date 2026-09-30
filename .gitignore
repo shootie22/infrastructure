@@ -13,3 +13,7 @@ reference/*
 # local agent scratch files
 CLAUDE
 .codex
+
+# OpenTofu: providers are downloaded, state is encrypted and committed
+tofu/.terraform/
+tofu/*.tfplan

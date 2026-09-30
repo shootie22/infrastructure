@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Runs OpenTofu in tofu/ with the secrets from tofu/secrets.sops.yaml in the
+# environment. Usage: scripts/tofu plan, scripts/tofu apply, ...
+set -euo pipefail
+
+repo_root=$(git rev-parse --show-toplevel)
+secrets="$repo_root/tofu/secrets.sops.yaml"
+
+for bin in sops tofu; do
+  if ! command -v "$bin" >/dev/null; then
+    printf '%s is required; try: nix shell nixpkgs#sops nixpkgs#opentofu -c %s\n' "$bin" "$0" >&2
+    exit 1
+  fi
+done
+
+get() { sops --decrypt --extract "[\"$1\"]" "$secrets"; }
+
+TF_VAR_cloudflare_api_token=$(get cloudflare_api_token)
+TF_VAR_hcloud_token=$(get hcloud_token)
+TF_VAR_state_passphrase=$(get state_passphrase)
+export TF_VAR_cloudflare_api_token TF_VAR_hcloud_token TF_VAR_state_passphrase
+
+exec tofu -chdir="$repo_root/tofu" "$@"
