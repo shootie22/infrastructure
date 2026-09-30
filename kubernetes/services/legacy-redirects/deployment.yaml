@@ -10,6 +10,8 @@ spec:
       app: legacy-redirects
   template:
     metadata:
+      annotations:
+        config-revision: "2"
       labels:
         app: legacy-redirects
     spec:

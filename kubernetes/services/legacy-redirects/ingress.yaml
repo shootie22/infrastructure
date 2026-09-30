@@ -16,6 +16,10 @@ spec:
         - cubtube.lol
         - www.cubtube.lol
       secretName: legacy-redirects-tls
+    - hosts:
+        - www.radunenu.com
+        - git.kronorite.com
+      secretName: legacy-redirects-extra-tls
   rules:
     - host: byradu.com
       http: &redirect_paths
@@ -36,4 +40,8 @@ spec:
     - host: cubtube.lol
       http: *redirect_paths
     - host: www.cubtube.lol
+      http: *redirect_paths
+    - host: www.radunenu.com
+      http: *redirect_paths
+    - host: git.kronorite.com
       http: *redirect_paths

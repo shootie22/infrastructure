@@ -11,10 +11,15 @@ data:
     }
 
     :8080 {
-        @radunenu_redirect host byradu.com www.byradu.com cubi.tube www.cubi.tube cubtube.lol www.cubtube.lol
+        @radunenu_redirect host www.radunenu.com byradu.com www.byradu.com cubi.tube www.cubi.tube cubtube.lol www.cubtube.lol
 
         handle @radunenu_redirect {
             redir https://radunenu.com{uri} 301
+        }
+
+        @gitea_redirect host git.kronorite.com
+        handle @gitea_redirect {
+            redir https://git.radunenu.com{uri} 301
         }
 
         handle {
