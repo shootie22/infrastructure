@@ -111,6 +111,10 @@ data:
         // The edge passes web traffic through to Traefik at either site.
         { "action": "accept", "src": ["edge", "edge6"], "dst": ["fuji:80,443", "thinkcentre:80,443", "fuji6:80,443", "thinkcentre6:80,443"] },
 
+        // Failover checkers read each other's votes (docs/ha/failover.md).
+        { "action": "accept", "src": ["edge", "edge6"], "dst": ["mixi:9180", "mixi6:9180"] },
+        { "action": "accept", "src": ["mixi", "mixi6"], "dst": ["edge:9180", "edge6:9180"] },
+
         // Tailnet DNS (split DNS for infra.radunenu.com, served on 100.64.0.1).
         { "action": "accept", "src": ["*"], "dst": ["fuji:53"] },
       ],
