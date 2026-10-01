@@ -73,3 +73,15 @@ This replaces the plan for our own IP updater. The router updates `noc-studios.g
 ## 2026-09-30: The OVH VPS is the edge until February
 
 It's on contract until February 2027 anyway, so it becomes the edge now instead of paying for a second VPS. Everything on it gets backed up first ([#79](https://github.com/shootie22/infrastructure/issues/79)), then it's wiped and reinstalled with NixOS like the plan says. In February it's replaced by a cheaper one ([#80](https://github.com/shootie22/infrastructure/issues/80)), which doubles as the real test of the replacement runbook.
+
+## 2026-10-01: Every machine follows Git, the way Argo does for the cluster
+
+Servers deploy themselves from the dotfiles repo with [comin](https://github.com/nlewo/comin): it checks `main` every 60 seconds and switches to the new config, so a push is live within a minute. Polling everywhere instead of webhooks: only fuji and the edge could even receive a GitHub webhook (DK has no port forwarding, the desktops are behind NAT), and two mechanisms for the same job isn't worth saving a minute. A webhook can be added to fuji and the edge later if the minute ever matters.
+
+Kernel updates need a reboot, which comin doesn't do. Each server reboots itself in a nightly window when the running kernel is older than the deployed one.
+
+The desktops (nixpad, workstation) only keep their checkout in sync: fetch every minute, fast-forward only when there are no local changes or unpushed commits, otherwise just show that they're behind. They never rebuild on their own.
+
+New package versions only arrive when `flake.lock` changes, so a weekly job on the Gitea runner updates it, checks that every host still builds, and commits. A broken update fails the build and never reaches `main`.
+
+Rollout: the edge first, then the desktops' sync, then fuji, mixi and minima one at a time, thinkcentre once it runs NixOS.
