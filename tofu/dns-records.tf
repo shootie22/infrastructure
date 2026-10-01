@@ -282,6 +282,12 @@ locals {
       content = "noc-studios.go.ro"
     }
 
+    # The edge VPS. ro points here during a failover (dns-failover.tf).
+    "radunenu.com/edge/A" = {
+      zone    = "radunenu.com", name = "edge", type = "A"
+      content = "141.95.67.178"
+    }
+
     # Game servers: one DNS-only name pointing at RO, everything else CNAMEs to it.
     "radunenu.com/games/CNAME" = {
       zone    = "radunenu.com", name = "games", type = "CNAME"

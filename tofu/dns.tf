@@ -1,5 +1,5 @@
 resource "cloudflare_dns_record" "this" {
-  for_each = local.dns_records
+  for_each = { for k, v in local.dns_records : k => v if !contains(local.failover_cloudflare_keys, k) }
 
   zone_id  = local.cloudflare_zone_ids[each.value.zone]
   name     = each.value.name == "@" ? each.value.zone : "${each.value.name}.${each.value.zone}"

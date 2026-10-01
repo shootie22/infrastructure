@@ -47,7 +47,7 @@ resource "desec_domain" "standby" {
 }
 
 resource "desec_rrset" "standby" {
-  for_each = local.standby_rrsets
+  for_each = { for k, v in local.standby_rrsets : k => v if !contains(local.failover_desec_keys, k) }
 
   domain  = desec_domain.standby[each.value[0].zone].name
   subname = each.value[0].name == "@" ? "" : each.value[0].name
