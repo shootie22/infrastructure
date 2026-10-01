@@ -26,7 +26,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: api
-        image: SAVEHUB_IMAGE_DIGEST
+        image: "git.radunenu.com/radu/savehub@sha256:a7dc708db4e63580a3aea6ab062c9ff91b0a141d28cd7987f0826d61ea0614e8"
         command:
         - node
         - --import

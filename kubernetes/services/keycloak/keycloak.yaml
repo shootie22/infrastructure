@@ -20,7 +20,7 @@ spec:
         kubernetes.io/hostname: fuji
       containers:
         - name: keycloak
-          image: quay.io/keycloak/keycloak:26.5.5
+          image: "git.radunenu.com/radu/savehub-keycloak@sha256:c061fd4a61253871e2540f2694eeb53fe4f5501b18c2bd88789ef088d5e766c2"
           imagePullPolicy: IfNotPresent
           args:
             - start
