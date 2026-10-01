@@ -49,3 +49,11 @@ HAProxy on the edge now passes 80 and 443 through to Traefik, fuji first and the
 The health check caught something before any real traffic did: on the tailnet, fuji's 443 goes to the private tools proxy, so the edge would have sent visitors there. Checking Traefik with a made-up hostname over TLS marked fuji down until the edge was exempted from that redirect.
 
 Switching Traefik's service to node-local traffic recreated the port listeners, and the sites flickered for about 80 seconds. I expected nothing. Next time a change like that gets a heads-up.
+
+## 2026-10-01: The failover checker exists, in dry run
+
+The checker runs on the edge and only logs. It sees RO as healthy and waits for its partner on mixi. Before deploying it, I ran it on the laptop with RO's name pointed at a name that doesn't exist: three seconds of "RO is down", then exactly one line saying it would move ro to the edge. Nothing changed.
+
+The edge also relays the game ports now, using the same port list as fuji, so a Minecraft client pointed at the edge already reaches the server in DK.
+
+One surprise: comin hung on the edge when a new commit landed in the middle of a long build after the flake.lock update. It logged a store error and then did nothing for 20 minutes. Restarting it fixed it.
