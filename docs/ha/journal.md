@@ -41,3 +41,11 @@ The install itself was one command from a clean checkout of dotfiles. It wiped t
 ## 2026-10-01: How fast is the edge?
 
 Faster than I expected for a VPS. Over the tailnet it does about 760 Mbit/s with fuji (28 ms away) and 790 Mbit/s with the thinkcentre in DK (14 ms), both directions, both direct with no relay. So when RO is down and DK serves through the edge, it should hardly feel slower.
+
+## 2026-10-01: The edge passes traffic through
+
+HAProxy on the edge now passes 80 and 443 through to Traefik, fuji first and the thinkcentre as backup, and Traefik runs on both sites. Requests to the edge's public IP get the real sites with valid certificates. Nothing points at it yet; that's the failover checker's job.
+
+The health check caught something before any real traffic did: on the tailnet, fuji's 443 goes to the private tools proxy, so the edge would have sent visitors there. Checking Traefik with a made-up hostname over TLS marked fuji down until the edge was exempted from that redirect.
+
+Switching Traefik's service to node-local traffic recreated the port listeners, and the sites flickered for about 80 seconds. I expected nothing. Next time a change like that gets a heads-up.
