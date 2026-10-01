@@ -31,3 +31,9 @@ All five Porkbun domains now run multi-signer DNSSEC. byradu.com was the second 
 ## 2026-10-01: Everything down for a while
 
 All sites were down for about an hour because fuji lost its LAN address. Full write-up in [docs/incidents](../incidents/2026-10-01-all-sites-down.md). Two lessons for this project: nothing alerted me, and with one site and one entry point, one expired DHCP lease was enough to take everything down. That's what the edge and failover are for.
+
+## 2026-10-01: The edge exists
+
+The OVH VPS is now the edge, running NixOS. Before wiping it I archived the whole disk to fuji, checked the archive against the live disk file by file, and waited for it to land in Borg. Two finds along the way: fuji's Borg job had never covered Keycloak's database or Baikal, and the VPS still had the old Komodo-era age key, which now lives in Bitwarden.
+
+The install itself was one command from a clean checkout of dotfiles. It wiped the disk, installed, rebooted, and the box came back with the same SSH host key, so there was no host key warning, and it joined the tailnet by itself. That's the part that has to work again in February on the cheaper VPS.

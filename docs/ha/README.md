@@ -20,7 +20,7 @@ Tasks live in issues. Knowledge lives here. Problems found along the way get an 
 
 ## Status
 
-Phase 0 (DNS) done: all six domains in OpenTofu, multi-signer DNSSEC, deSEC standby. Phase 1 (edge) in progress: the NixOS config is written and passes a VM install test. Next: back up the OVH VPS ([#79](https://github.com/shootie22/infrastructure/issues/79)), then install.
+Phase 0 (DNS) done. Phase 1 (edge) in progress: the OVH VPS runs NixOS as the edge and is on the tailnet. Next: throughput tests ([#10](https://github.com/shootie22/infrastructure/issues/10)) and the replacement runbook ([#14](https://github.com/shootie22/infrastructure/issues/14)).
 
 ## A note on AI
 
