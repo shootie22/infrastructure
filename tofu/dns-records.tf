@@ -218,6 +218,11 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
+    # SaveHub, DNS only: Cloudflare's proxy caps uploads at 100 MB.
+    "radunenu.com/savehub/CNAME" = {
+      zone    = "radunenu.com", name = "savehub", type = "CNAME"
+      content = "ro.radunenu.com"
+    }
     "radunenu.com/share/CNAME" = {
       zone    = "radunenu.com", name = "share", type = "CNAME"
       content = "beacon.radunenu.com"
