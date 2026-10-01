@@ -7,10 +7,33 @@ spec:
   # Never uninstall the ingress serving Headscale after a failed upgrade.
   failurePolicy: abort
   valuesContent: |-
-    # Remote workers depend on Headscale to establish their tailnet paths.
-    # Keep its ingress on Fuji so worker failure cannot break coordination.
-    nodeSelector:
-      kubernetes.io/hostname: fuji
+    # One Traefik per site: fuji (RO) and thinkcentre (DK), so DK can serve its
+    # own services when RO is down (the edge forwards to 100.64.0.4 then).
+    # fuji keeps a copy, so Headscale always has an ingress in RO, which
+    # remote workers need to find their tailnet paths.
+    deployment:
+      replicas: 2
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: In
+                  values: [fuji, thinkcentre]
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: traefik
+    # Only two allowed nodes, each holding one copy, so there's no room for a
+    # surge pod: replace one at a time instead.
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 0
 
     api:
       dashboard: true
