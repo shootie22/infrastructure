@@ -89,3 +89,7 @@ Rollout: the edge first, then the desktops' sync, then fuji, mixi and minima one
 ## 2026-10-01: HA for a few services, tested restores for the rest
 
 Replicating every service would cost enough RAM, disk and cross-site bandwidth to need more servers, and Gitea alone is hundreds of GB. So services get one of three tiers: survives, stateless copy, or restore. Only small, important ones survive losing their site; the rest are covered by Borg and a restore that has been tested. Replicated block storage for everything (Longhorn and similar) is out for now. Which service lands in which tier is still open in [#88](https://github.com/shootie22/infrastructure/issues/88), details in [service-ha.md](service-ha.md).
+
+## 2026-10-01: Alerting with several detectors and one notification per event
+
+Detection from inside (Alertmanager) and outside (healthchecks.io as a dead man's switch, UptimeRobot for the public sites, the failover checker on the edge, later the LTE laptop), so the infrastructure going down doesn't take its own alerting with it. Delivery through a relay on the edge that tries Pushover, then ntfy, then Matrix, and stops at the first that accepts, so one event is one notification. SMS from the laptop as the last resort. Pushover over ntfy as primary for its track record and priorities; it costs about 5 € once. ntfy stays as the independent second channel. Telegram is out, I don't use it. Details in [alerting.md](alerting.md).
