@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# Copies everything worth keeping from the OVH VPS into a plain folder:
+#   <destination>/ovh-vps-<date>/files/...   the files, under their original paths
+#   <destination>/ovh-vps-<date>/meta/...    package list, services, permissions
+#   <destination>/ovh-vps-<date>/SHA256SUMS  checksums of everything in files/
+#
+# Read-only on the VPS: it only reads, through rsync with sudo.
+# Run it on the machine that should hold the copy, e.g. thinkcentre:
+#   sudo ./archive-ovh-vps /mnt/external-hdd
+# Running it again into the same folder only copies what changed.
+#
+# Needs: rsync on both ends, and SSH access to the VPS as a user with
+# passwordless sudo (SRC, default ubuntu@141.95.67.178). When run with sudo,
+# SSH uses root's key unless SSH_KEY points at another one.
+# DRY_RUN=1 lists what would be copied without copying it.
+set -euo pipefail
+
+src=${SRC:-ubuntu@141.95.67.178}
+dest_root=${1:?usage: archive-ovh-vps <destination folder>}
+dest="$dest_root/ovh-vps-$(date -u +%F)"
+ssh_cmd="ssh -o BatchMode=yes${SSH_KEY:+ -i $SSH_KEY}"
+
+# Everything with data in it. Left out on purpose: /usr (except
+# /usr/local/openvpn_as), /boot, /snap, /var/lib/snapd, apt and dpkg state
+# (the package list goes into meta/ instead), /var/cache, Docker image layers,
+# and the systemd journal.
+paths=(
+  /etc
+  /root
+  /home/ubuntu
+  /home/vintagestory
+  /home/jenkins
+  /var/www
+  /var/vintagestory
+  /var/backups
+  /var/lib/docker/volumes
+  /var/lib/letsencrypt
+  /usr/local/openvpn_as
+  /usr/local/bin
+  /var/log
+)
+excludes=(
+  # caches that rebuild themselves
+  --exclude=/home/ubuntu/.cache
+  --exclude=/home/ubuntu/.codex
+  --exclude=/home/ubuntu/.m2
+  --exclude=/home/ubuntu/Steam
+  --exclude=/home/ubuntu/.steam
+  --exclude=/home/ubuntu/snap
+  --exclude=/home/jenkins/caches
+  --exclude=/var/log/journal
+)
+
+# Keep owners, permissions, ACLs and xattrs when the destination can store
+# them (running as root on a Linux filesystem). Otherwise copy plain files;
+# meta/permissions.txt still records who owned what.
+fs=$(stat -f -c %T "$dest_root")
+if [[ $EUID -eq 0 && $fs =~ ^(ext2/ext3|btrfs|xfs|zfs)$ ]]; then
+  rsync_opts=(-aHAX --numeric-ids)
+else
+  rsync_opts=(-rlt --chmod=u+rwX)
+  printf 'Destination is %s (or not running as root): copying without owners and ACLs.\n' "$fs" >&2
+fi
+
+[[ -n ${DRY_RUN:-} ]] && rsync_opts+=(--dry-run --stats)
+
+mkdir -p "$dest/files" "$dest/meta"
+printf 'Copying from %s into %s\n' "$src" "$dest"
+
+for p in "${paths[@]}"; do
+  printf '\n== %s\n' "$p"
+  rsync "${rsync_opts[@]}" --relative --info=progress2 --rsync-path="sudo rsync" \
+    -e "$ssh_cmd" "${excludes[@]}" "$src:$p" "$dest/files/"
+done
+
+printf '\n== metadata\n'
+$ssh_cmd "$src" 'dpkg --get-selections' > "$dest/meta/packages.txt"
+$ssh_cmd "$src" 'systemctl list-unit-files --state=enabled --no-legend' > "$dest/meta/enabled-units.txt"
+$ssh_cmd "$src" 'df -hT; echo; lsblk; echo; ip addr; echo; lsb_release -a 2>/dev/null' > "$dest/meta/system.txt"
+$ssh_cmd "$src" "sudo find ${paths[*]} -xdev -printf '%m %u %g %p\n' 2>/dev/null" > "$dest/meta/permissions.txt"
+
+[[ -n ${DRY_RUN:-} ]] && { printf "\nDry run: nothing copied.\n"; exit 0; }
+
+printf '\n== checksums\n'
+(cd "$dest/files" && find . -type f -print0 | sort -z | xargs -0 sha256sum) > "$dest/SHA256SUMS"
+
+cat > "$dest/README.txt" <<EOF
+Copy of the OVH VPS ($src), made $(date -u +%FT%TZ) by scripts/archive-ovh-vps
+in the infrastructure repo, before the VPS was wiped for NixOS.
+
+files/       the data, under its original paths
+meta/        package list, enabled services, disks and network, permissions
+SHA256SUMS   check with: cd files && sha256sum -c ../SHA256SUMS
+EOF
+
+printf '\nDone: %s (%s)\n' "$dest" "$(du -sh "$dest" | cut -f1)"
