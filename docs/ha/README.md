@@ -20,7 +20,7 @@ Tasks live in issues. Knowledge lives here. Problems found along the way get an 
 
 ## Status
 
-Phase 0 (DNS) done apart from kronorite.com ([#76](https://github.com/shootie22/infrastructure/issues/76)). Phase 1 (edge) in progress: the NixOS config is written and passes a VM install test. Next: back up the OVH VPS ([#79](https://github.com/shootie22/infrastructure/issues/79)), then install.
+Phase 0 (DNS) done: all six domains in OpenTofu, multi-signer DNSSEC, deSEC standby. Phase 1 (edge) in progress: the NixOS config is written and passes a VM install test. Next: back up the OVH VPS ([#79](https://github.com/shootie22/infrastructure/issues/79)), then install.
 
 ## A note on AI
 
