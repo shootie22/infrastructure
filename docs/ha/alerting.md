@@ -12,7 +12,6 @@ Two separate questions: who notices, and how it gets to my phone. Each has more 
 | healthchecks.io | the monitoring itself dying: Alertmanager and the relay ping it every minute, silence is the alert | yes, external |
 | UptimeRobot | public sites unreachable from the internet | yes, external |
 | Failover checker on the edge ([failover.md](failover.md)) | RO down, failovers | yes, off-site |
-| Watchdog laptop with LTE (later) | the home internet down, everything else as a second opinion | yes, own uplink |
 
 ## How it reaches me
 
@@ -21,7 +20,7 @@ A small relay on the edge takes every alert and sends it once, through the first
 1. **Pushover**: primary. Run by a company since 2012, 10,000 messages a month, priorities.
 2. **ntfy.sh**: only if Pushover's API fails or times out. A different operator, so one outage doesn't hit both.
 3. **Matrix**: only if both failed. Also where the full details go, since the other two aren't end-to-end encrypted.
-4. **SMS** from the laptop's LTE stick: last resort, and for a few important events alongside the push, until that gets annoying.
+4. **SMS**: only if the optional LTE laptop gets built (below).
 
 The relay runs on the edge so it survives either site going down. If the relay dies, healthchecks.io notices and alerts through Pushover directly.
 
@@ -42,3 +41,7 @@ The relay runs on the edge so it survives either site going down. If the relay d
 ## Known shared dependency
 
 Pushover, ntfy and Matrix on the iPhone all depend on Apple's push service. It rarely fails, but the only paths around it are SMS and email.
+
+## The LTE laptop is optional
+
+healthchecks.io and UptimeRobot already notice "everything at home is down" from outside, so the old laptop with its own LTE uplink isn't needed for alerting. What it would still add: telling apart why RO is down, SMS as a path that doesn't depend on Apple's push service, and above all a way into the LAN when the home internet is out (power-cycling through the smart plugs, unlocking fuji's disk after a power cut). That's out-of-band access, kept as an optional project ([#101](https://github.com/shootie22/infrastructure/issues/101)).

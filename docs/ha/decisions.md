@@ -93,3 +93,7 @@ Replicating every service would cost enough RAM, disk and cross-site bandwidth t
 ## 2026-10-01: Alerting with several detectors and one notification per event
 
 Detection from inside (Alertmanager) and outside (healthchecks.io as a dead man's switch, UptimeRobot for the public sites, the failover checker on the edge, later the LTE laptop), so the infrastructure going down doesn't take its own alerting with it. Delivery through a relay on the edge that tries Pushover, then ntfy, then Matrix, and stops at the first that accepts, so one event is one notification. SMS from the laptop as the last resort. Pushover over ntfy as primary for its track record and priorities; it costs about 5 € once. ntfy stays as the independent second channel. Telegram is out, I don't use it. Details in [alerting.md](alerting.md).
+
+## 2026-10-01: The LTE laptop is optional, not part of alerting
+
+The external services (healthchecks.io, UptimeRobot) already cover "everything at home is down", which was the main reason for the laptop. It stays as an optional out-of-band access project: SMS, and a way into the LAN when the home internet is down. Details in [alerting.md](alerting.md#the-lte-laptop-is-optional).
