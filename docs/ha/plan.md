@@ -32,6 +32,7 @@ Each phase is a milestone with one issue per step.
 | [2. Thinkcentre on NixOS](https://github.com/shootie22/infrastructure/milestone/3) | The last Debian node, and the DK control plane server |
 | [3. HA control plane](https://github.com/shootie22/infrastructure/milestone/4) | etcd across fuji, thinkcentre and edge |
 | [4. Replicated Postgres](https://github.com/shootie22/infrastructure/milestone/5) | CNPG template, one instance per site |
+| [4b. Service HA](https://github.com/shootie22/infrastructure/milestone/12) | The services we pick keep running when their site is down ([service-ha.md](service-ha.md)) |
 | [5. Keycloak HA](https://github.com/shootie22/infrastructure/milestone/6) | Keycloak and Headscale survive losing a site |
 | [6. Failover path](https://github.com/shootie22/infrastructure/milestone/7) | Edge proxy and DNS failover |
 | [7. Failure drills](https://github.com/shootie22/infrastructure/milestone/8) | Break things on purpose, time the recovery |
