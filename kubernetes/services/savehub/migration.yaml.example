@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: savehub-migrate
+  namespace: savehub
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: '0'
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: savehub-migrate
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      containers:
+      - name: migrate
+        image: SAVEHUB_IMAGE_DIGEST
+        command:
+        - node
+        - --import
+        - tsx
+        - packages/database/src/migrate.ts
+        env:
+        - name: NODE_ENV
+          value: production
+        - name: APP_ORIGIN
+          value: https://savehub.radunenu.com
+        - name: STORAGE_ROOT
+          value: /storage
+        - name: OIDC_ISSUER
+          value: https://auth.radunenu.com/realms/main
+        - name: OIDC_CLIENT_ID
+          value: savehub
+        - name: TEST_AUTH
+          value: 'false'
+        envFrom:
+        - secretRef:
+            name: savehub-env
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: '1'
+            memory: 512Mi
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}

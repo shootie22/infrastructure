@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: savehub-api
+  namespace: savehub
+  annotations:
+    monitoring.radunenu.com/scrape: 'true'
+    monitoring.radunenu.com/path: /metrics
+    monitoring.radunenu.com/port: '80'
+spec:
+  selector:
+    app: savehub-api
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: savehub-postgres
+  namespace: savehub
+spec:
+  selector:
+    app: savehub-postgres
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: savehub-worker
+  namespace: savehub
+  annotations:
+    monitoring.radunenu.com/scrape: 'true'
+    monitoring.radunenu.com/path: /metrics
+    monitoring.radunenu.com/port: '3001'
+spec:
+  selector:
+    app: savehub-worker
+  ports:
+  - name: health
+    port: 3001
+    targetPort: 3001

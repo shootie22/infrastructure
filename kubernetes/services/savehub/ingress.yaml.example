@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: savehub
+  namespace: savehub
+  annotations:
+    gethomepage.dev/enabled: 'true'
+    gethomepage.dev/external: 'true'
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: SaveHub
+    gethomepage.dev/icon: mdi-archive-outline
+    gethomepage.dev/description: Your worlds, kept
+    gethomepage.dev/siteMonitor: http://savehub-api.savehub.svc.cluster.local/health/live
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - savehub.radunenu.com
+    secretName: savehub-radunenu-com-tls
+  rules:
+  - host: savehub.radunenu.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: savehub-api
+            port:
+              number: 80
