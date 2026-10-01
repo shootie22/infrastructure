@@ -69,6 +69,7 @@ data:
         "nixpad": "100.64.0.7",       "nixpad6": "fd7a:115c:a1e0::7/128",
         "minima": "100.64.0.8",       "minima6": "fd7a:115c:a1e0::8/128",
         "edge": "100.64.0.9",         "edge6": "fd7a:115c:a1e0::9/128",
+        "workstation": "100.64.0.10", "workstation6": "fd7a:115c:a1e0::a/128",
 
         // Fuji's LAN API address (the kubernetes Service endpoint), routed via
         // Fuji for remote K3s nodes. Approved on the node:
@@ -93,10 +94,11 @@ data:
           ],
         },
 
-        // Admin devices (the Mac doubles as a workstation) reach everything.
+        // Admin devices reach everything: nixpad, the phone, the workstation, and the
+        // Mac, which doubles as one.
         {
           "action": "accept",
-          "src": ["nixpad", "phon", "macminim4", "nixpad6", "phon6", "macminim46"],
+          "src": ["nixpad", "phon", "macminim4", "workstation", "nixpad6", "phon6", "macminim46", "workstation6"],
           "dst": ["*:*"],
         },
 
