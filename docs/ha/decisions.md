@@ -85,3 +85,7 @@ The desktops (nixpad, workstation) only keep their checkout in sync: fetch every
 New package versions only arrive when `flake.lock` changes, so a weekly job on the Gitea runner updates it, checks that every host still builds, and commits. A broken update fails the build and never reaches `main`.
 
 Rollout: the edge first, then the desktops' sync, then fuji, mixi and minima one at a time, thinkcentre once it runs NixOS.
+
+## 2026-10-01: HA for a few services, tested restores for the rest
+
+Replicating every service would cost enough RAM, disk and cross-site bandwidth to need more servers, and Gitea alone is hundreds of GB. So services get one of three tiers: survives, stateless copy, or restore. Only small, important ones survive losing their site; the rest are covered by Borg and a restore that has been tested. Replicated block storage for everything (Longhorn and similar) is out for now. Which service lands in which tier is still open in [#88](https://github.com/shootie22/infrastructure/issues/88), details in [service-ha.md](service-ha.md).
