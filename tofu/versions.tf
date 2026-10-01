@@ -10,6 +10,10 @@ terraform {
       source  = "hetznercloud/hcloud"
       version = "~> 1.54"
     }
+    healthchecksio = {
+      source  = "kristofferahl/healthchecksio"
+      version = "~> 2.0"
+    }
     desec = {
       source  = "Valodim/desec"
       version = "~> 0.6"

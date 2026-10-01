@@ -17,3 +17,8 @@ variable "desec_token" {
   type      = string
   sensitive = true
 }
+
+variable "healthchecks_api_key" {
+  type      = string
+  sensitive = true
+}

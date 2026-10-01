@@ -9,3 +9,7 @@ provider "hcloud" {
 provider "desec" {
   api_token = var.desec_token
 }
+
+provider "healthchecksio" {
+  api_key = var.healthchecks_api_key
+}
