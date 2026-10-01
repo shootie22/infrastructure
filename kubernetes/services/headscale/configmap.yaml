@@ -106,6 +106,9 @@ data:
         { "action": "accept", "src": ["hetzy", "hetzy6"], "dst": ["fuji:3101"] },
         { "action": "accept", "src": ["fuji"], "dst": ["hetzy:9100-9103"] },
 
+        // The edge passes web traffic through to Traefik at either site.
+        { "action": "accept", "src": ["edge", "edge6"], "dst": ["fuji:80,443", "thinkcentre:80,443", "fuji6:80,443", "thinkcentre6:80,443"] },
+
         // Tailnet DNS (split DNS for infra.radunenu.com, served on 100.64.0.1).
         { "action": "accept", "src": ["*"], "dst": ["fuji:53"] },
       ],

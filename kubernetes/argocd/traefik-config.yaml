@@ -34,6 +34,11 @@ spec:
       rollingUpdate:
         maxUnavailable: 1
         maxSurge: 0
+    # Each node's port listener only uses its own Traefik, so RO traffic never
+    # detours through DK, and Traefik sees the real client address.
+    service:
+      spec:
+        externalTrafficPolicy: Local
 
     api:
       dashboard: true
