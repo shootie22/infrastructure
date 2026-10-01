@@ -37,3 +37,7 @@ All sites were down for about an hour because fuji lost its LAN address. Full wr
 The OVH VPS is now the edge, running NixOS. Before wiping it I archived the whole disk to fuji, checked the archive against the live disk file by file, and waited for it to land in Borg. Two finds along the way: fuji's Borg job had never covered Keycloak's database or Baikal, and the VPS still had the old Komodo-era age key, which now lives in Bitwarden.
 
 The install itself was one command from a clean checkout of dotfiles. It wiped the disk, installed, rebooted, and the box came back with the same SSH host key, so there was no host key warning, and it joined the tailnet by itself. That's the part that has to work again in February on the cheaper VPS.
+
+## 2026-10-01: How fast is the edge?
+
+Faster than I expected for a VPS. Over the tailnet it does about 760 Mbit/s with fuji (28 ms away) and 790 Mbit/s with the thinkcentre in DK (14 ms), both directions, both direct with no relay. So when RO is down and DK serves through the edge, it should hardly feel slower.
