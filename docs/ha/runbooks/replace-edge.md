@@ -35,6 +35,7 @@ The edge has no data, so this is a reinstall, not a migration. Its identity (the
    ```
    `ssh edge@<new ip>` must then work with no host key warning. If it warns, the identity didn't carry over.
 5. **Check the box.** `systemctl is-system-running` should say `running`, `systemctl --failed` should be empty, and `tailscale ip` gives the new tailnet address.
+   comin takes over from here: `sudo comin status` should show the latest commit on `main`. From now on, changes to the edge are just commits.
 6. **Tailnet.** Remove the old edge in Headscale (`headscale nodes list`, then `headscale nodes delete -i <id>`). If the new edge got a different tailnet address, update `edge` and `edge6` in the ACL ([headscale configmap](../../../kubernetes/services/headscale/configmap.yaml)) and bump `config-revision` in the deployment.
 7. **Throughput,** while the VPS can still be refunded. Same test as [#10](https://github.com/shootie22/infrastructure/issues/10): a temporary ACL rule for port 5201, a runtime firewall rule and `iperf3 -s` on the edge, then `iperf3 -c <edge tailnet ip>` from fuji and thinkcentre, both directions. The OVH VPS did 700-800 Mbit/s each way. A cheap 2-core box may do less; anything above a few hundred Mbit/s is fine for failover.
 8. **Point things at the new IP.** Once the edge has jobs, these need the new address too:
