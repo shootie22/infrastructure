@@ -68,6 +68,7 @@ data:
         "phon": "100.64.0.6",         "phon6": "fd7a:115c:a1e0::6/128",
         "nixpad": "100.64.0.7",       "nixpad6": "fd7a:115c:a1e0::7/128",
         "minima": "100.64.0.8",       "minima6": "fd7a:115c:a1e0::8/128",
+        "edge": "100.64.0.9",         "edge6": "fd7a:115c:a1e0::9/128",
 
         // Fuji's LAN API address (the kubernetes Service endpoint), routed via
         // Fuji for remote K3s nodes. Approved on the node:
