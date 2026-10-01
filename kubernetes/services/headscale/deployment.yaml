@@ -17,7 +17,7 @@ spec:
       labels:
         app: headscale
       annotations:
-        config-revision: "acl-policy-7"
+        config-revision: "acl-policy-8"
     spec:
       # Tailnet coordination must not depend on a remote worker. Its data
       # volume (local-path) already lives on Fuji; make that explicit.
