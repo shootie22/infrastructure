@@ -28,8 +28,6 @@ cubi.tube is now signed by both Cloudflare and deSEC, with both DS records at th
 
 All five Porkbun domains now run multi-signer DNSSEC. byradu.com was the second one done by hand, and the `.com` registry turned out to want the exact opposite of `.tube`: DS values, not the public key. That was enough to switch to Porkbun's API, and after that each zone took minutes. For the three zones that already had DNSSEC, I checked Cloudflare's key and the DS at the registry before and after turning on multi-signer. Nothing changed, and they validated the whole time. Mail records validate too. kronorite.com is the only one left, waiting for its move to Porkbun.
 
-## 2026-10-01: Everything down for a while, and why
+## 2026-10-01: Everything down for a while
 
-Every site returned Cloudflare's 523. fuji was up and Traefik answered fine locally, but fuji had no LAN address anymore. The initrd that lets me unlock the disk over SSH gets an address by DHCP, and that address stayed on the card after boot. NetworkManager saw it, decided the card was configured by someone else, and never renewed the lease. Three days later the lease ran out and the address was gone, and with it every port forward. The tailnet kept working over IPv6, which is how I could get in and give NetworkManager a proper DHCP profile. The permanent fix drops the initrd's address before NetworkManager starts.
-
-Two lessons for this project: nothing alerted me, and with one site and one entry point, one expired DHCP lease was enough to take everything down. That's what the edge and failover are for.
+All sites were down for about an hour because fuji lost its LAN address. Full write-up in [docs/incidents](../incidents/2026-10-01-all-sites-down.md). Two lessons for this project: nothing alerted me, and with one site and one entry point, one expired DHCP lease was enough to take everything down. That's what the edge and failover are for.
