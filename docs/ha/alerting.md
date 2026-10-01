@@ -31,7 +31,12 @@ The relay runs on the edge so it survives either site going down. If the relay d
 
 - Grouped: one outage is one message, not twenty. Alertmanager groups, the relay rate-limits.
 - Terse: no secrets or internal details in Pushover, ntfy or SMS. Details in Matrix and Grafana.
-- Informational, not paging, except what's decided otherwise for a few critical events.
+- Informational, not paging, except for a few events that use Pushover's emergency priority: it repeats until acknowledged, and if nobody acknowledges within 15 minutes the relay tries the next channel. Those are:
+  - RO is down and traffic moved to the edge, or failover was needed and didn't happen
+  - both sites unreachable from outside
+  - a whole node down for more than 10 minutes
+  - the dead man's switch fired (the monitoring itself is dead)
+- Sleep wins: Critical Alerts stay off for Pushover on the iPhone, so emergency alerts respect Do Not Disturb and Sleep. They keep repeating silently (for up to an hour) and are waiting in the morning.
 - As code where the services allow it: healthchecks.io checks and UptimeRobot monitors in OpenTofu, the relay and Alertmanager in the repos. One-time UI setup (notification channels, app logins) in a runbook.
 
 ## Known shared dependency
