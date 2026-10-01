@@ -20,7 +20,7 @@ Tasks live in issues. Knowledge lives here. Problems found along the way get an 
 
 ## Status
 
-Phase 0 (DNS) done. Phase 1 (edge) in progress: the OVH VPS runs NixOS as the edge and is on the tailnet. Next: throughput tests ([#10](https://github.com/shootie22/infrastructure/issues/10)) and the replacement runbook ([#14](https://github.com/shootie22/infrastructure/issues/14)).
+Phase 0 (DNS) and Phase 1 (edge) done; the OVH VPS is the edge until the swap to a cheaper one in February ([#80](https://github.com/shootie22/infrastructure/issues/80)). Next: Phase 2, thinkcentre on NixOS.
 
 ## A note on AI
 
