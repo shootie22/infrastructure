@@ -106,9 +106,6 @@ data:
         { "action": "accept", "src": ["hetzy", "hetzy6"], "dst": ["fuji:3101"] },
         { "action": "accept", "src": ["fuji"], "dst": ["hetzy:9100-9103"] },
 
-        // TEMPORARY (#10): iperf3 from the sites to the edge. Remove after the test.
-        { "action": "accept", "src": ["fuji", "thinkcentre", "fuji6", "thinkcentre6"], "dst": ["edge:5201", "edge6:5201"] },
-
         // Tailnet DNS (split DNS for infra.radunenu.com, served on 100.64.0.1).
         { "action": "accept", "src": ["*"], "dst": ["fuji:53"] },
       ],
