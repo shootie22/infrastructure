@@ -12,6 +12,11 @@ data:
     rule_files:
       - /etc/prometheus/rules/*.rules
 
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: [alertmanager.monitoring.svc:9093]
+
     scrape_configs:
       - job_name: prometheus
         static_configs:
@@ -364,14 +369,24 @@ data:
 
       - name: homelab-actionable-alerts
         rules:
+          # Always firing. Alertmanager sends it to healthchecks.io every minute;
+          # if it stops, the alerting pipeline itself is broken.
+          - alert: Watchdog
+            expr: vector(1)
+            labels:
+              severity: none
+            annotations:
+              summary: The alerting pipeline is working
           - alert: KubernetesNodeUnavailable
             expr: kube_node_status_condition{job="kube-state-metrics", condition="Ready", status="true"} == 0
-            for: 5m
+            for: 10m
             labels:
               severity: critical
+              # Repeats on the phone until acknowledged (docs/ha/alerting.md).
+              page: "true"
             annotations:
               summary: Kubernetes node {{ $labels.node }} is unavailable
-              description: The node has not reported Ready for at least five minutes.
+              description: The node has not reported Ready for at least ten minutes.
           - alert: PrometheusTargetDown
             expr: up{job=~"prometheus|grafana|kubernetes-apiserver|kube-state-metrics|node-exporter|kubelet|kubelet-cadvisor|kubernetes-services"} == 0
             for: 10m

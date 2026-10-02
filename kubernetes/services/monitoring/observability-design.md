@@ -66,9 +66,10 @@ assumption is introduced.
   server is scraped through its authenticated Kubernetes Service; the embedded
   control-plane components remain a documented gap.
 - No etcd telemetry is configured because this cluster uses SQLite.
-- No notification system is introduced. Prometheus alert rules populate
-  `ALERTS` and establish semantics, but Alertmanager/contact-point delivery is a
-  separate operator decision.
+- Notifications: Alertmanager (alertmanager.yaml) sends alerts to the relay on
+  the edge, which puts them on the phone through Pushover or email
+  (docs/ha/alerting.md). Alerts labelled `page: "true"` repeat until
+  acknowledged. The always-firing Watchdog goes to healthchecks.io instead.
 - No broad host journal or authentication-log ingestion is enabled.
 - CPU throttling panels are omitted for now: the kubelet exposes the cAdvisor
   CFS metric names, but the live cluster has no current non-infrastructure
