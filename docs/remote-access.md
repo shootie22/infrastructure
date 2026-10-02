@@ -11,18 +11,13 @@ How I get into machines I'm not standing next to, mainly the ones in DK (mixi, t
 
 ## The workstation (DK)
 
-Usually off. Woken with a magic packet from inside the DK LAN, then unlocked over SSH in its initrd. Moving from mixi's own key to a jump through mixi: [#106](https://github.com/shootie22/infrastructure/issues/106).
-
-```sh
-workstation-wake     # magic packet, sent from mixi
-workstation-unlock   # ssh -J mixi to the initrd on 192.168.88.176:2222
-```
+Usually off. Woken from inside the DK LAN, then its disk is unlocked over SSH before it boots. The unlock goes through a jump host with an admin key, so no server holds a key for it ([#106](https://github.com/shootie22/infrastructure/issues/106)).
 
 ## The DK router (MikroTik)
 
 Not reachable from outside today. Options, best first:
 
-1. **Subnet route on the tailnet.** mixi and the thinkcentre both advertise a route to the router's LAN address (just that one address, a /32). Admin devices then open Winbox to the router's LAN IP as if they were in DK; one of the two Linux boxes forwards the traffic. Nothing new runs on the router. With two advertisers, Headscale fails over to the other when one is down. The ACL allows only admin devices to the router's management ports.
+1. **Subnet route on the tailnet.** mixi and the thinkcentre both advertise a route to the router's LAN address (just that one address, a /32). Admin devices then reach the router as if they were in DK; one of the two Linux boxes forwards the traffic. Nothing new runs on the router. With two advertisers, Headscale fails over to the other when one is down. The ACL allows only admin devices to the router's management ports.
 2. **MikroTik's Back To Home.** Built into RouterOS 7.12 and later (ARM, ARM64 and TILE CPUs): a WireGuard server on the router itself, reachable through MikroTik's relay when there's no public IP. End-to-end encrypted, and the relay can't read the traffic. It doesn't depend on mixi or the thinkcentre, which makes it a good second way in for when both are down, but it is a MikroTik cloud service.
 3. **Tailscale in a RouterOS container.** Possible on RouterOS 7.6 and later with the container package, using community images (there's no official one) that support a Headscale login server. More moving parts on the one box that must never break, so only if the first two don't fit.
 
