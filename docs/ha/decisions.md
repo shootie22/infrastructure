@@ -97,3 +97,7 @@ Detection from inside (Alertmanager) and outside (healthchecks.io as a dead man'
 ## 2026-10-01: The LTE laptop is optional, not part of alerting
 
 The external services (healthchecks.io, UptimeRobot) already cover "everything at home is down", which was the main reason for the laptop. It stays as an optional out-of-band access project: SMS, and a way into the LAN when the home internet is down. Details in [alerting.md](alerting.md#the-lte-laptop-is-optional).
+
+## 2026-10-02: Email instead of ntfy as the second alert channel
+
+ntfy's iOS app shows messages when opened but never notifies, with every setting right. That's a known, unfixed problem ([ntfy #1796](https://github.com/binwiederhier/ntfy/issues/1796), [#1844](https://github.com/binwiederhier/ntfy/issues/1844)), and a backup channel that fails silently is worse than none. Email replaces it. The relay delivers straight to Mailfence as alerts@radunenu.com with no login, because the Mailfence password is the main account's and must not sit on a public VPS. The edge's IP is in radunenu.com's SPF record instead, and DMARC was added in report-only mode.

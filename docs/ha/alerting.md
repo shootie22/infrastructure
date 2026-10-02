@@ -18,7 +18,7 @@ Two separate questions: who notices, and how it gets to my phone. Each has more 
 A small relay on the edge takes every alert and sends it once, through the first channel that accepts it:
 
 1. **Pushover**: primary. Run by a company since 2012, 10,000 messages a month, priorities.
-2. **ntfy.sh**: only if Pushover's API fails or times out. A different operator, so one outage doesn't hit both.
+2. **Email** to alerts@radunenu.com: only if Pushover's API fails or times out. The edge delivers straight to Mailfence's mail servers without a login; radunenu.com's SPF record allows the edge to send. A different path from Pushover, and it leaves a written record.
 3. **Matrix**: only if both failed. Also where the full details go, since the other two aren't end-to-end encrypted.
 4. **SMS**: only if the optional LTE laptop gets built (below).
 
@@ -29,7 +29,7 @@ The relay runs on the edge so it survives either site going down. If the relay d
 ## Rules
 
 - Grouped: one outage is one message, not twenty. Alertmanager groups, the relay rate-limits.
-- Terse: no secrets or internal details in Pushover, ntfy or SMS. Details in Matrix and Grafana.
+- Terse: no secrets or internal details in Pushover, email or SMS. Details in Matrix and Grafana.
 - Informational, not paging, except for a few events that use Pushover's emergency priority: it repeats until acknowledged, and if nobody acknowledges within 15 minutes the relay tries the next channel. Those are:
   - RO is down and traffic moved to the edge, or failover was needed and didn't happen
   - both sites unreachable from outside
@@ -40,7 +40,7 @@ The relay runs on the edge so it survives either site going down. If the relay d
 
 ## Known shared dependency
 
-Pushover, ntfy and Matrix on the iPhone all depend on Apple's push service. It rarely fails, but the only paths around it are SMS and email.
+Pushover and Matrix on the iPhone depend on Apple's push service. It rarely fails; email and SMS don't depend on it.
 
 ## The LTE laptop is optional
 
