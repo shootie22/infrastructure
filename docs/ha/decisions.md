@@ -101,3 +101,7 @@ The external services (healthchecks.io, UptimeRobot) already cover "everything a
 ## 2026-10-02: Email instead of ntfy as the second alert channel
 
 ntfy's iOS app shows messages when opened but never notifies, with every setting right. That's a known, unfixed problem ([ntfy #1796](https://github.com/binwiederhier/ntfy/issues/1796), [#1844](https://github.com/binwiederhier/ntfy/issues/1844)), and a backup channel that fails silently is worse than none. Email replaces it. The relay delivers straight to Mailfence as alerts@radunenu.com with no login, because the Mailfence password is the main account's and must not sit on a public VPS. The edge's IP is in radunenu.com's SPF record instead, and DMARC was added in report-only mode.
+
+## 2026-10-02: Mail protection on every domain
+
+radunenu.com and yeetus.net send mail through Mailfence (yeetus.net is the throwaway address for sign-ups) and get SPF, DKIM and DMARC, with DMARC in report-only mode until the reports look clean ([#104](https://github.com/shootie22/infrastructure/issues/104)). byradu.com only receives through Porkbun's forwarding and gets report-only DMARC too. kronorite.com, cubi.tube and cubtube.lol never send mail, so they say so: `v=spf1 -all` and DMARC `p=reject`, strict from day one since there's nothing legitimate to break. Domains without such records are the easiest to spoof. All reports go to alerts@radunenu.com, which radunenu.com explicitly allows for the other domains.

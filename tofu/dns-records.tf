@@ -325,5 +325,62 @@ locals {
       zone    = "yeetus.net", name = "bopl", type = "CNAME"
       content = "games.radunenu.com"
     }
+
+    # Mail protection (docs/ha/decisions.md, 2026-10-02). Domains that send
+    # mail publish DMARC in report-only mode first; domains that never send
+    # mail say so (SPF -all) and ask receivers to reject anything claiming
+    # otherwise. Reports for all of them go to alerts@radunenu.com.
+    "yeetus.net/_dmarc/TXT" = {
+      zone    = "yeetus.net", name = "_dmarc", type = "TXT"
+      content = "\"v=DMARC1; p=none; rua=mailto:alerts@radunenu.com; adkim=r; aspf=r\""
+    }
+    "byradu.com/_dmarc/TXT" = {
+      zone    = "byradu.com", name = "_dmarc", type = "TXT"
+      content = "\"v=DMARC1; p=none; rua=mailto:alerts@radunenu.com; adkim=r; aspf=r\""
+    }
+    "kronorite.com/@/TXT" = {
+      zone    = "kronorite.com", name = "@", type = "TXT"
+      content = "\"v=spf1 -all\""
+    }
+    "kronorite.com/_dmarc/TXT" = {
+      zone    = "kronorite.com", name = "_dmarc", type = "TXT"
+      content = "\"v=DMARC1; p=reject; rua=mailto:alerts@radunenu.com; adkim=s; aspf=s\""
+    }
+    "cubi.tube/@/TXT" = {
+      zone    = "cubi.tube", name = "@", type = "TXT"
+      content = "\"v=spf1 -all\""
+    }
+    "cubi.tube/_dmarc/TXT" = {
+      zone    = "cubi.tube", name = "_dmarc", type = "TXT"
+      content = "\"v=DMARC1; p=reject; rua=mailto:alerts@radunenu.com; adkim=s; aspf=s\""
+    }
+    "cubtube.lol/@/TXT" = {
+      zone    = "cubtube.lol", name = "@", type = "TXT"
+      content = "\"v=spf1 -all\""
+    }
+    "cubtube.lol/_dmarc/TXT" = {
+      zone    = "cubtube.lol", name = "_dmarc", type = "TXT"
+      content = "\"v=DMARC1; p=reject; rua=mailto:alerts@radunenu.com; adkim=s; aspf=s\""
+    }
+    "radunenu.com/yeetus.net._report._dmarc/TXT" = {
+      zone    = "radunenu.com", name = "yeetus.net._report._dmarc", type = "TXT"
+      content = "\"v=DMARC1\""
+    }
+    "radunenu.com/byradu.com._report._dmarc/TXT" = {
+      zone    = "radunenu.com", name = "byradu.com._report._dmarc", type = "TXT"
+      content = "\"v=DMARC1\""
+    }
+    "radunenu.com/kronorite.com._report._dmarc/TXT" = {
+      zone    = "radunenu.com", name = "kronorite.com._report._dmarc", type = "TXT"
+      content = "\"v=DMARC1\""
+    }
+    "radunenu.com/cubi.tube._report._dmarc/TXT" = {
+      zone    = "radunenu.com", name = "cubi.tube._report._dmarc", type = "TXT"
+      content = "\"v=DMARC1\""
+    }
+    "radunenu.com/cubtube.lol._report._dmarc/TXT" = {
+      zone    = "radunenu.com", name = "cubtube.lol._report._dmarc", type = "TXT"
+      content = "\"v=DMARC1\""
+    }
   }
 }
