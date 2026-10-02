@@ -10,6 +10,10 @@ terraform {
       source  = "hetznercloud/hcloud"
       version = "~> 1.54"
     }
+    uptimerobot = {
+      source  = "uptimerobot/uptimerobot"
+      version = "~> 1.0"
+    }
     healthchecksio = {
       source  = "kristofferahl/healthchecksio"
       version = "~> 2.0"

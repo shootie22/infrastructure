@@ -20,6 +20,8 @@ TF_VAR_hcloud_token=$(get hcloud_token)
 TF_VAR_state_passphrase=$(get state_passphrase)
 TF_VAR_desec_token=$(get desec_token)
 TF_VAR_healthchecks_api_key=$(get healthchecks_api_key)
-export TF_VAR_cloudflare_api_token TF_VAR_hcloud_token TF_VAR_state_passphrase TF_VAR_desec_token TF_VAR_healthchecks_api_key
+TF_VAR_uptimerobot_api_key=$(get uptimerobot_api_key)
+TF_VAR_pushover_email=$(get pushover_email)
+export TF_VAR_cloudflare_api_token TF_VAR_hcloud_token TF_VAR_state_passphrase TF_VAR_desec_token TF_VAR_healthchecks_api_key TF_VAR_uptimerobot_api_key TF_VAR_pushover_email
 
 exec tofu -chdir="$repo_root/tofu" "$@"

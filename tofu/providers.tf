@@ -13,3 +13,7 @@ provider "desec" {
 provider "healthchecksio" {
   api_key = var.healthchecks_api_key
 }
+
+provider "uptimerobot" {
+  api_key = var.uptimerobot_api_key
+}
