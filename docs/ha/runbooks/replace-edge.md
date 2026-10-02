@@ -39,7 +39,8 @@ The edge has no data, so this is a reinstall, not a migration. Its identity (the
 6. **Tailnet.** Remove the old edge in Headscale (`headscale nodes list`, then `headscale nodes delete -i <id>`). If the new edge got a different tailnet address, update `edge` and `edge6` in the ACL ([headscale configmap](../../../kubernetes/services/headscale/configmap.yaml)) and bump `config-revision` in the deployment.
 7. **Throughput,** while the VPS can still be refunded. Same test as [#10](https://github.com/shootie22/infrastructure/issues/10): a temporary ACL rule for port 5201, a runtime firewall rule and `iperf3 -s` on the edge, then `iperf3 -c <edge tailnet ip>` from fuji and thinkcentre, both directions. The OVH VPS did 700-800 Mbit/s each way. A cheap 2-core box may do less; anything above a few hundred Mbit/s is fine for failover.
 8. **Point things at the new IP.** Once the edge has jobs, these need the new address too:
-   - the edge record and the failover target in OpenTofu (`tofu/dns-records.tf`), Phase 6
+   - `edge.radunenu.com` in OpenTofu (`tofu/dns-records.tf`), and the `edge_ip` the failover checker writes to deSEC (dotfiles, `modules/nixos/failover-checker`)
+   - radunenu.com's SPF record, which allows the edge to send alert emails
    - etcd's member list, Phase 3
 9. **Cancel the old VPS** only after the new one has run for a day.
 10. **Journal entry,** with how long it took.
