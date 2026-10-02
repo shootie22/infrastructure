@@ -1,9 +1,10 @@
 # Dead man's switches on healthchecks.io (docs/ha/alerting.md): each one
 # expects a ping every minute and alerts when they stop. Notifications go
-# straight to the phone, not through the relay, since the relay may be what
-# died. Channels are set up once in the healthchecks.io web UI.
-data "healthchecksio_channel" "email" {
-  kind = "email"
+# straight to Pushover (emergency when down, normal when up again), not
+# through the relay, since the relay may be what died. The Pushover channel
+# is set up once in the healthchecks.io web UI.
+data "healthchecksio_channel" "pushover" {
+  kind = "po"
 }
 
 locals {
@@ -19,7 +20,7 @@ resource "healthchecksio_check" "this" {
   desc     = each.value
   timeout  = 60  # a ping every minute
   grace    = 300 # five minutes of silence before alerting
-  channels = [data.healthchecksio_channel.email.id]
+  channels = [data.healthchecksio_channel.pushover.id]
 }
 
 output "healthchecks_ping_urls" {
