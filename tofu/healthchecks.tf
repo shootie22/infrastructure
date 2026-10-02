@@ -19,7 +19,7 @@ resource "healthchecksio_check" "this" {
   name     = each.key
   desc     = each.value
   timeout  = 60  # a ping every minute
-  grace    = 300 # five minutes of silence before alerting
+  grace    = 120 # two missed pings before alerting
   channels = [data.healthchecksio_channel.pushover.id]
 }
 

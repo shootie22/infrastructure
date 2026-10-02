@@ -131,8 +131,16 @@ locals {
       priority = 10
     }
     "radunenu.com/@/TXT/spf" = {
+      # Mailfence, plus the edge, which sends alert emails directly (alert
+      # relay). When the edge moves to a new VPS, its IP changes here too.
       zone    = "radunenu.com", name = "@", type = "TXT"
-      content = "\"v=spf1 include:_spf.mailfence.com ~all\""
+      content = "\"v=spf1 include:_spf.mailfence.com ip4:141.95.67.178 ~all\""
+    }
+    # DMARC: what receivers should do with mail that claims to be from
+    # radunenu.com but fails SPF and DKIM. p=none only asks for reports for now.
+    "radunenu.com/_dmarc/TXT" = {
+      zone    = "radunenu.com", name = "_dmarc", type = "TXT"
+      content = "\"v=DMARC1; p=none; rua=mailto:alerts@radunenu.com; adkim=r; aspf=r\""
     }
     "radunenu.com/@/TXT/google" = {
       zone    = "radunenu.com", name = "@", type = "TXT"
