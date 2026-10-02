@@ -57,3 +57,9 @@ The checker runs on the edge and only logs. It sees RO as healthy and waits for 
 The edge also relays the game ports now, using the same port list as fuji, so a Minecraft client pointed at the edge already reaches the server in DK.
 
 One surprise: comin hung on the edge when a new commit landed in the middle of a long build after the flake.lock update. It logged a store error and then did nothing for 20 minutes. Restarting it fixed it.
+
+## 2026-10-02: Alerts reach the phone
+
+Alerts now come from three independent places and reach the phone through Pushover, with email as the fallback. Each path was tested for real: stopping the relay made healthchecks.io send a Pushover emergency six minutes later, a monitor on a closed port made UptimeRobot alert through Pushover's email gateway and by email, and a relay test with Pushover broken on purpose fell through to the next channel.
+
+ntfy was the original second channel, but its iOS app never showed a notification, which turned out to be a known, unfixed bug. Email replaced it. The relay delivers straight to Mailfence without a login; the edge's IP went into radunenu.com's SPF record instead of putting the main mail password on a public VPS. While at it, every domain got SPF and DMARC, and the three that never send mail now tell the world to reject anything claiming to come from them.
