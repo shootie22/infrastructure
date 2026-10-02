@@ -447,6 +447,33 @@ data:
             annotations:
               summary: Root filesystem on {{ $labels.node }} is critically low
               description: Less than 8% of the root filesystem has been available for fifteen minutes.
+          # Certificates from cert-manager. Renewal normally happens 30 days
+          # before expiry, so 14 days left means renewal has been failing.
+          - alert: CertificateExpiringSoon
+            expr: certmanager_certificate_expiration_timestamp_seconds - time() < 14 * 86400
+            for: 1h
+            labels:
+              severity: warning
+            annotations:
+              summary: "Certificate {{ $labels.namespace }}/{{ $labels.name }} expires in less than 14 days"
+              description: cert-manager hasn't renewed it. Check the Certificate and its CertificateRequest.
+          - alert: CertificateNotReady
+            expr: certmanager_certificate_ready_status{condition="False"} == 1
+            for: 1h
+            labels:
+              severity: warning
+            annotations:
+              summary: "Certificate {{ $labels.namespace }}/{{ $labels.name }} is not ready"
+              description: The certificate has been failing to issue or renew for an hour.
+          # Certificates the blackbox probes see, including ones outside cert-manager.
+          - alert: ProbedCertificateExpiringSoon
+            expr: probe_ssl_earliest_cert_expiry{job="blackbox-http"} - time() < 7 * 86400
+            for: 1h
+            labels:
+              severity: warning
+            annotations:
+              summary: "The certificate of {{ $labels.instance }} expires in less than 7 days"
+              description: Seen by the in-cluster blackbox probe.
           # Early warning, so a filling disk gets noticed days before it becomes
           # critical (thinkcentre's 31 GB root reached 92% unnoticed, 2026-10-02).
           - alert: NodeFilesystemFillingUp
