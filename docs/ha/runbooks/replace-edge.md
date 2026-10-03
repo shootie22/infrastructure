@@ -41,6 +41,7 @@ The edge has no data, so this is a reinstall, not a migration. Its identity (the
 8. **Point things at the new IP.** Once the edge has jobs, these need the new address too:
    - `edge.radunenu.com` in OpenTofu (`tofu/dns-records.tf`), and the `edge_ip` the failover checker writes to deSEC (dotfiles, `modules/nixos/failover-checker`)
    - radunenu.com's SPF record, which allows the edge to send alert emails
+   - `edgeAddress` in dotfiles `modules/nixos/edge-tunnel.nix`: the initrd tunnels connect by address (no DNS that early). fuji and mixi pick it up on their next rebuild, but their initrd only on the next boot, so check `unlock-via-edge` before relying on it
    - etcd's member list, Phase 3
 9. **Cancel the old VPS** only after the new one has run for a day.
 10. **Journal entry,** with how long it took.

@@ -9,6 +9,18 @@ How I get into machines I'm not standing next to, mainly the ones in DK (mixi, t
 - **Two independent ways into every site.** If the only way into DK depends on one box, that box being down means a trip.
 - **Management interfaces never on the internet.** No Winbox, SSH or web admin on public addresses. They're reachable over the tailnet, with ACLs that only let admin devices in.
 
+## When the tailnet is down: through the edge
+
+fuji and mixi each keep a reverse SSH tunnel open to the edge, so their SSH is reachable there on a loopback port. From an admin device, `via-edge mixi` or `via-edge fuji` jumps through the edge's public SSH (the edge is the one box whose SSH is on the internet, keys only) and logs in end to end with the device's own key. The host key is checked under the same name as on the tailnet, so a wrong machine at the end of a tunnel fails the check.
+
+The tunnel keys live on fuji and mixi and can only open their own listening port on the edge, nothing else. The edge has no keys for the sites.
+
+From there the rest of each site is one more jump: the thinkcentre and the workstation through mixi, minima through fuji.
+
+**Unlocking after a reboot.** fuji and mixi have encrypted disks and wait in the initrd for the passphrase. That works from the LAN (`mixi-unlock` jumps through the thinkcentre), and through the edge with `unlock-via-edge mixi|fuji` once the initrd tunnels are on. Tracked in [#103](https://github.com/shootie22/infrastructure/issues/103).
+
+Not covered yet: the thinkcentre gets its own tunnel when it moves to NixOS (Phase 2). Until then it's reachable through mixi.
+
 ## The workstation (DK)
 
 Usually off. Woken from inside the DK LAN, then its disk is unlocked over SSH before it boots. The unlock goes through a jump host with an admin key, so no server holds a key for it ([#106](https://github.com/shootie22/infrastructure/issues/106)).
