@@ -62,7 +62,7 @@ spec:
         kubernetes.io/hostname: thinkcentre
       containers:
         - name: joplin
-          image: joplin/server:3.5.2@sha256:5d9e7f9d31b436cb1b99d1a6a65d8c5bf760829094617e8ad1e956fd925de888
+          image: joplin/server:3.7.2@sha256:3f7b852959aac38da10e3a451823bf149cbae6e74d8258db5b6e6e7f0db50c26
           envFrom:
             - secretRef: {name: joplin-env}
           ports:
