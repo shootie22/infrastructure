@@ -97,7 +97,7 @@ spec:
         kubernetes.io/hostname: thinkcentre
       containers:
         - name: postgres
-          image: postgres:17.4-bookworm@sha256:304ab813518754228f9f792f79d6da36359b82d8ecf418096c636725f8c930ad
+          image: postgres:18.6-bookworm@sha256:3725f4e2499eef5134592b3b4ab79a543ed7f8e533b05b5b637af926630f6650
           env:
             - name: POSTGRES_DB
               valueFrom: {secretKeyRef: {name: rybbit-env, key: POSTGRES_DB}}
