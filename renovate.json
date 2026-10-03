@@ -1,0 +1,69 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommitsDisabled"
+  ],
+  "timezone": "Europe/Bucharest",
+  "schedule": [
+    "* 1-7 * * 6"
+  ],
+  "labels": [
+    "renovate"
+  ],
+  "prConcurrentLimit": 15,
+  "prHourlyLimit": 0,
+  "kubernetes": {
+    "managerFilePatterns": [
+      "/^kubernetes/.+\\.ya?ml$/"
+    ]
+  },
+  "argocd": {
+    "managerFilePatterns": [
+      "/^kubernetes/argocd/.+\\.ya?ml$/"
+    ]
+  },
+  "ignorePaths": [
+    "**/*.example",
+    "kubernetes/services/savehub/**",
+    "services/**"
+  ],
+  "packageRules": [
+    {
+      "description": "Pin images to tag@digest, so the version is readable and the build is exact",
+      "matchDatasources": [
+        "docker"
+      ],
+      "pinDigests": true
+    },
+    {
+      "description": "Fast lane, or updated by their own release workflow: these follow their newest build (docs/updates.md)",
+      "matchPackageNames": [
+        "docker.io/vectorim/element-web",
+        "git.radunenu.com/crosty/crosty-game-server",
+        "git.radunenu.com/radu/radunenu.com-minimal",
+        "git.radunenu.com/radu/radunenu.com-minimal-stats-updater",
+        "git.radunenu.com/radu/savehub-keycloak"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "The Minecraft server image tags its releases server-vX.Y.Z",
+      "matchPackageNames": [
+        "git.radunenu.com/radu/spigotmc-docker"
+      ],
+      "versioning": "regex:^server-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+    },
+    {
+      "description": "Major versions get their own label, they need reading before merging",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "labels": [
+        "renovate",
+        "major"
+      ]
+    }
+  ]
+}

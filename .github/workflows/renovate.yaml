@@ -1,0 +1,30 @@
+# Renovate (docs/updates.md): proposes a pull request per service when a new
+# image or chart version is out, with its release notes. Runs with GitHub's
+# built-in token only; it opens PRs and never merges them.
+name: Renovate
+
+on:
+  schedule:
+    - cron: "30 0 * * 6" # Saturday early morning, same day as the NixOS update PR
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: renovate
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: renovatebot/github-action@v46.3.6
+        with:
+          token: ${{ github.token }}
+        env:
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          RENOVATE_ONBOARDING: "false"
+          RENOVATE_REQUIRE_CONFIG: required
+          LOG_LEVEL: info
