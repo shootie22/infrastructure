@@ -105,3 +105,11 @@ ntfy's iOS app shows messages when opened but never notifies, with every setting
 ## 2026-10-02: Mail protection on every domain
 
 radunenu.com and yeetus.net send mail through Mailfence (yeetus.net is the throwaway address for sign-ups) and get SPF, DKIM and DMARC, with DMARC in report-only mode until the reports look clean ([#104](https://github.com/shootie22/infrastructure/issues/104)). byradu.com only receives through Porkbun's forwarding and gets report-only DMARC too. kronorite.com, cubi.tube and cubtube.lol never send mail, so they say so: `v=spf1 -all` and DMARC `p=reject`, strict from day one since there's nothing legitimate to break. Domains without such records are the easiest to spoof. All reports go to alerts@radunenu.com, which radunenu.com explicitly allows for the other domains.
+
+## 2026-10-03: A second way into both sites, through the edge
+
+The tailnet is the everyday way in, but it's one system, coordinated by Headscale on fuji. If it breaks, DK needs someone on site. So fuji and mixi each keep a reverse SSH tunnel open to the edge, and their sshd shows up there on a loopback port. Admin devices get in by jumping through the edge with their own keys, end to end; the edge holds no keys for the sites. The keys the tunnels use can only listen on their own port on the edge: no shell, no other ports, nothing reachable from outside the edge. Tested with a throwaway sshd before turning it on.
+
+The same goes for the initrd, so a rebooted fuji or mixi can be unlocked without the tailnet. Those keys sit unencrypted on /boot, which is fine for what they can do (listen on one port). The connection is still checked end to end against the initrd's host key, so someone holding a stolen tunnel key can't pretend to be the machine.
+
+Rejected: a VPN on the router (DK has no port forwarding, and the router stays as simple as possible) and Cloudflare Tunnel (no Cloudflare in the path, see the 2026-09-30 entry). mixi's old tunnels pointed at RO's public SSH port, which has been gone since the RO rework; they're replaced, not repaired. Tracked in [#103](https://github.com/shootie22/infrastructure/issues/103).
