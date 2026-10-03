@@ -74,7 +74,7 @@ spec:
         kubernetes.io/hostname: thinkcentre
       containers:
         - name: runner
-          image: gitea/act_runner@sha256:7940221bcfc9df16f3401ddafb2231bf98bba5517bc381224c7a2c504b558974
+          image: gitea/act_runner@sha256:b5c35d6bdbb9bb25e531230bfc7cc663cb751406cbec90a2a891b85fea54de86
           env:
             - name: CONFIG_FILE
               value: /config.yaml
