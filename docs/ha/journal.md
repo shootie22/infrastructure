@@ -87,3 +87,7 @@ etcd wants fsync to finish in under about 10 ms at the 99th percentile. Same fio
 | fuji | 4.3 ms | 9.5 to 14.5 ms |
 
 fuji is borderline. Its NVMe is the same class as the thinkcentre's, so the difference is btrfs (plus whatever fuji is busy with). Turning off copy-on-write for the test folder made no clear difference. With members spread over three sites, the network round trip is bigger than that anyway and the etcd timeouts get raised for it (#25). If fuji's disk turns out to matter, etcd gets its own small ext4 volume there.
+
+## 2026-10-03: The thinkcentre's NixOS config, and how to install it without going to DK
+
+The config is written and builds, from an inventory of the Debian install. The original plan was a reinstall, which with nobody in DK means one bad boot and the box stays down until someone gets there. So NixOS goes next to Debian instead: on a new volume made from the 24 GB swap space, with `/home` and the 4 TB disk shared and untouched. The firmware keeps booting Debian. NixOS gets started once with `BootNext`, and reboots itself if nobody unlocks it within 30 minutes or it can't reach fuji 20 minutes after boot. A reboot lands back in Debian. Debian's root only gets deleted once NixOS has run for a while.
