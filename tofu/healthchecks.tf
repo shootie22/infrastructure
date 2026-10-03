@@ -29,3 +29,19 @@ output "healthchecks_ping_urls" {
   value       = { for k, c in healthchecksio_check.this : k => c.ping_url }
   sensitive   = true
 }
+
+# The weekly NixOS update on fuji (dotfiles modules/nixos/weekly-update) pings
+# when it finishes, whether or not there was anything new. Build failures
+# already alert through the relay; this catches the job not running at all.
+resource "healthchecksio_check" "weekly_update" {
+  name     = "weekly-update"
+  desc     = "fuji's Saturday flake.lock update. Silence means the job didn't run or didn't finish: fuji down, the timer broken, or a hang."
+  timeout  = 7 * 86400 # weekly
+  grace    = 86400     # it starts at 02:00 and can take a few hours
+  channels = [data.healthchecksio_channel.pushover.id]
+}
+
+output "weekly_update_ping_url" {
+  value     = healthchecksio_check.weekly_update.ping_url
+  sensitive = true
+}
