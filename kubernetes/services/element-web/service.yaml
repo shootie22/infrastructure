@@ -1,8 +1,19 @@
+# Sticky sessions: the two replicas can run different develop builds for a
+# while (a pod recreated after a node reboot pulls whatever develop is then,
+# until the nightly updater restarts both). Each build only has its own
+# bundles, so a browser has to stay on one pod or half its files 404. That
+# happened on 2026-10-03.
 apiVersion: v1
 kind: Service
 metadata:
   name: element-web
   namespace: element-web
+  annotations:
+    traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.name: element_web_pod
+    traefik.ingress.kubernetes.io/service.sticky.cookie.secure: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.httponly: "true"
+    traefik.ingress.kubernetes.io/service.sticky.cookie.samesite: lax
 spec:
   selector:
     app.kubernetes.io/name: element-web
