@@ -1,0 +1,19 @@
+# Checks renovate.json whenever it changes. An invalid config makes Renovate
+# stop opening PRs without much noise (#135), so catch it before it lands.
+name: Renovate config
+
+on:
+  push:
+    paths: [renovate.json]
+  pull_request:
+    paths: [renovate.json]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: npx --yes --package renovate renovate-config-validator --strict --no-global renovate.json

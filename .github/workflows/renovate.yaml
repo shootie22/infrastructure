@@ -1,5 +1,5 @@
-# Renovate (docs/updates.md): proposes a pull request per service when a new
-# image or chart version is out, with its release notes. Runs with GitHub's
+# Renovate (docs/updates.md): proposes update PRs when a new
+# image or chart version is out, with release notes. Runs with GitHub's
 # built-in token only; it opens PRs and never merges them.
 name: Renovate
 
