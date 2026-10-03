@@ -17,7 +17,7 @@ spec:
         kubernetes.io/hostname: thinkcentre
       containers:
         - name: plantuml
-          image: plantuml/plantuml-server:v1.2026.2@sha256:cd3d67a3150ab9dbe3c77c2abce6796c7cbfb46819fa4c74c987b44ff2c10003
+          image: plantuml/plantuml-server:v1.2026.8@sha256:5f6f99ec2fc11c8236e80630d622b0ba22b8d9301b39b18db4bb2b95cae87781
           ports:
             - name: http
               containerPort: 8080
