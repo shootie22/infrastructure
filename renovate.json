@@ -31,6 +31,18 @@
   ],
   "packageRules": [
     {
+      "description": "Titles say what changes: 'Update gitea 1.27.3 \u2192 1.27.4'",
+      "matchDatasources": [
+        "docker",
+        "helm",
+        "github-releases",
+        "github-tags",
+        "terraform-provider"
+      ],
+      "commitMessageTopic": "{{depNameSanitized}}",
+      "commitMessageExtra": "{{#if isDigest}}(rebuilt image, same version {{currentValue}}){{else}}{{currentValue}} \u2192 {{newValue}}{{/if}}"
+    },
+    {
       "description": "Pin images to tag@digest, so the version is readable and the build is exact",
       "matchDatasources": [
         "docker"
@@ -152,7 +164,5 @@
       "sourceUrl": "https://github.com/ckulka/baikal-docker"
     }
   ],
-  "commitMessageTopic": "{{depName}}",
-  "commitMessageExtra": "{{#if isDigest}}(rebuilt image, same version {{currentValue}}){{else}}{{currentValue}} \u2192 {{newValue}}{{/if}}",
   "fetchChangeLogs": "pr"
 }
