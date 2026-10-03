@@ -172,6 +172,39 @@
         "ckulka/baikal"
       ],
       "sourceUrl": "https://github.com/ckulka/baikal-docker"
+    },
+    {
+      "description": "One weekly PR for every minor and patch update. Majors and the ones that need care stay separate.",
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "matchPackageNames": [
+        "*",
+        "!sops-secrets-operator",
+        "!cert-manager",
+        "!php",
+        "!postgres",
+        "!clickhouse/clickhouse-server",
+        "!ghcr.io/juanfont/headscale"
+      ],
+      "groupName": "service updates",
+      "groupSlug": "service-updates"
+    },
+    {
+      "description": "Need care: they hold or decrypt state, or everything depends on them. Always their own PR.",
+      "matchPackageNames": [
+        "sops-secrets-operator",
+        "cert-manager",
+        "php",
+        "postgres",
+        "clickhouse/clickhouse-server",
+        "ghcr.io/juanfont/headscale"
+      ],
+      "labels": [
+        "renovate",
+        "careful"
+      ]
     }
   ],
   "fetchChangeLogs": "pr"
