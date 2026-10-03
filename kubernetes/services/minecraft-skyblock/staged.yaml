@@ -26,7 +26,7 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
         - name: minecraft
-          image: git.radunenu.com/radu/spigotmc-docker@sha256:889d4d2f2a5c6523bed74a54b19cf155c9042ab0686032b7d6504f5b0359b0ec
+          image: git.radunenu.com/radu/spigotmc-docker:server-v0.0.8@sha256:889d4d2f2a5c6523bed74a54b19cf155c9042ab0686032b7d6504f5b0359b0ec
           stdin: true
           tty: true
           env:

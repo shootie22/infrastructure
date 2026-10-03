@@ -22,7 +22,7 @@ spec:
         kubernetes.io/hostname: thinkcentre
       containers:
         - name: picshare
-          image: git.radunenu.com/radu/picshare@sha256:2f3b5f6d730f32aa714dab137644651f28062720fb3f682470e3da33a3f59c2c
+          image: git.radunenu.com/radu/picshare:v0.1.8@sha256:2f3b5f6d730f32aa714dab137644651f28062720fb3f682470e3da33a3f59c2c
           envFrom:
             - secretRef: {name: picshare-env}
           ports:

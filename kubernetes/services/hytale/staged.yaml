@@ -28,7 +28,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: hytale
-          image: indifferentbroccoli/hytale-server-docker@sha256:01eb2f5807312119dd044476bd5132a5d0c0b73397392f7f91c143acd05f23ea
+          image: indifferentbroccoli/hytale-server-docker:v1.0.6@sha256:01eb2f5807312119dd044476bd5132a5d0c0b73397392f7f91c143acd05f23ea
           stdin: true
           tty: true
           env:

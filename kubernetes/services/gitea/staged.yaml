@@ -64,7 +64,7 @@ spec:
         kubernetes.io/hostname: thinkcentre
       containers:
         - name: gitea
-          image: docker.gitea.com/gitea@sha256:87a67ee09d3ae0d1df5fda5dcda3e2a1f9236a45b0a59025d6e00e46adc43bef
+          image: docker.gitea.com/gitea:1.27.3@sha256:87a67ee09d3ae0d1df5fda5dcda3e2a1f9236a45b0a59025d6e00e46adc43bef
           envFrom:
             - secretRef: {name: gitea-env}
           ports:

@@ -24,7 +24,7 @@ spec:
         fsGroup: 82
       containers:
         - name: privatebin
-          image: privatebin/unit-pdo@sha256:b990915e4621d1eabd4a83df773dbde6c434616e371124c90c74d058e25209b0
+          image: privatebin/unit-pdo:2.0.6@sha256:b990915e4621d1eabd4a83df773dbde6c434616e371124c90c74d058e25209b0
           env:
             - name: TZ
               value: UTC+1

@@ -26,7 +26,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: megabopl3d
-          image: git.radunenu.com/radu/megabopl3d-server@sha256:0c6c38d32d11075ca19af960a84dbb77910331098144bc5b149a9255eadf9cf0
+          image: git.radunenu.com/radu/megabopl3d-server:v0.1.40@sha256:0c6c38d32d11075ca19af960a84dbb77910331098144bc5b149a9255eadf9cf0
           ports:
             - name: game
               containerPort: 24545

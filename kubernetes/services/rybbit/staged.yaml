@@ -97,7 +97,7 @@ spec:
         kubernetes.io/hostname: thinkcentre
       containers:
         - name: postgres
-          image: postgres@sha256:304ab813518754228f9f792f79d6da36359b82d8ecf418096c636725f8c930ad
+          image: postgres:17.4-bookworm@sha256:304ab813518754228f9f792f79d6da36359b82d8ecf418096c636725f8c930ad
           env:
             - name: POSTGRES_DB
               valueFrom: {secretKeyRef: {name: rybbit-env, key: POSTGRES_DB}}
@@ -365,7 +365,7 @@ spec:
         kubernetes.io/hostname: thinkcentre
       containers:
         - name: caddy
-          image: caddy@sha256:133b5eb7ef9d42e34756ba206b06d84f4e3eb308044e268e182c2747083f09de
+          image: caddy:2.10.0@sha256:133b5eb7ef9d42e34756ba206b06d84f4e3eb308044e268e182c2747083f09de
           securityContext:
             allowPrivilegeEscalation: false
           args:

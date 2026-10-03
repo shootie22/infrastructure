@@ -22,7 +22,7 @@ spec:
         kubernetes.io/hostname: thinkcentre
       containers:
         - name: vaultwarden
-          image: vaultwarden/server@sha256:1587c45feaa479f1f5e8af3b00eded36bff77bcf1880cf8dbf0541706dd470e0
+          image: vaultwarden/server:1.37.3@sha256:1587c45feaa479f1f5e8af3b00eded36bff77bcf1880cf8dbf0541706dd470e0
           envFrom:
             - secretRef: {name: vaultwarden-env}
           ports:
