@@ -86,19 +86,25 @@ provider "registry.opentofu.org/kristofferahl/healthchecksio" {
 }
 
 provider "registry.opentofu.org/uptimerobot/uptimerobot" {
-  version     = "1.12.0"
-  constraints = "~> 1.0"
+  version     = "2.0.0"
+  constraints = "~> 2.0"
   hashes = [
-    "h1:nIvZS1Ubt1Rsk/BvjRSk0F++CwZPfNGmfjHInQd/Cow=",
-    "zh:0b5aebda79b11f4dc1b1fb3b1a964f05adf9b6dd9b24be6eadbe5a92f970da46",
-    "zh:2fc34a67cebc0c0566df6f4825895286532eb8563346d618ab3589bf3146b516",
-    "zh:72d25d208dbaa04f84e3f5311f8dfc16e5dffbd8548043e24315b658850aed59",
-    "zh:890df766e9b839623b1f0437355032a3c006226a6c200cd911e15ee1a9014e9f",
-    "zh:97555bce2cd1ce74b6e35bd549d1c67dc130419a13dd93df2a14492839cd2185",
-    "zh:cdd4b28515de6eb0a5aa0ccf3e48bc712d27bb3c8c8c3df83dc39450a67941a4",
-    "zh:e2af22771f78595c4a3f81e1d51dc9637a7e40a9e0149b9998bb493f1a965fee",
-    "zh:ecf51b51e6ddff60e1bf7f02552402d4a114e5347daa30f91db321069ac1a243",
-    "zh:f4183dcc7f872aef4bac55edb7064f7643240b6da4e9bc7b8451780acd416f65",
+    "h1:DZLr4r9GHMOP3Lp61yuGTg2VoSefw9gNvsqLxojZ/EI=",
+    "h1:DxlO0Zaaz2zXjtXZfR7ZdAqcsLjULL0uOAYDwgqP33Y=",
+    "h1:El5AThKiQhL6vSCxvFPOjnxl8XFsm/b22iclhfMr+Fw=",
+    "h1:GRvCtGmXz+Pts/5KD8vaXcnNn8kSYK0FerodsNH+my8=",
+    "h1:ISrVgoZV46Z+84vEajkYzO7TMWk85kiuOcimjkd6Dr8=",
+    "h1:KPPHigzKnevIrntR+eome0IssgK5jar/TD3fAWklBvA=",
+    "h1:RURIa1b3wxYgJ8XALU2hgJUIXt9vMNtg5ENEn7By7Tg=",
+    "h1:v15YVdIcBYPmE9kBuP5vJLbAzVXvLtaGy1Mc/3G8lE8=",
+    "zh:14f6edfc3b840fc224bd6f11114e9b20ab4dd131e1779627e247b06d3e612a18",
+    "zh:582d7ce79718fc8f7f022282770be2b6e545655e13de724c2c43f154983c7ae4",
+    "zh:5fba8285aedf99b2322e6953c4f827c347c22ed30cecaa67beb6ec8d2a617429",
+    "zh:6399f4fdaa837d7d3b08370bb15270e3358426e31b9ddab5104fbc846fc2dc7d",
+    "zh:8e48eafb39a99a4e560c6601f89bba9442f20fa6cfb2fc61b78e75e838a9705b",
+    "zh:b53eb8be053241f577b4307441f7f281ad87b2ea2860143edeb61fe903c185f9",
+    "zh:d3b932c5add7f067ad6ef9a2c1351cab842f6a69096e62925d68941611ca014d",
+    "zh:edb54d199efa97b74f842cdf62508eb5d9b3fd4ad2db7f92120c2d301912e448",
   ]
 }
 
