@@ -67,3 +67,23 @@ ntfy was the original second channel, but its iOS app never showed a notificatio
 ## 2026-10-03: An old experiment had been changing Keycloak
 
 While setting up Renovate I removed the SaveHub release workflow, a leftover from a project I'd tried to build with a much weaker LLM. Its manifests were never deployed, but the workflow ran every five minutes with push access to main, and on 1 October it had quietly swapped Keycloak's official image for its own themed build. Keycloak is back on the official 26.5.5 image now, and main on both repos only takes direct pushes from me; bots and keys can only open branches and pull requests.
+
+## 2026-10-03: A way in that doesn't need the tailnet
+
+fuji and mixi now keep a reverse SSH tunnel open to the edge, so I can get into either one through the edge's public SSH even if Headscale or the tailnet is broken. The tunnel keys can only listen on their own port on the edge and nothing else; I tried the restrictions on a throwaway sshd before turning it on. The same works from the initrd, for unlocking after a reboot.
+
+mixi got the first real test. It rebooted onto the new kernel, the unlock tunnel showed up on the edge 70 seconds later, and the passphrase went in through it. Then the boot sat in emergency mode anyway: I was slower than 90 seconds, and that's how long systemd waits for the root volume before giving up. The disk was already open, so one `systemctl default` through the same tunnel finished the boot. mixi now waits as long as the unlock takes. Also found on the way: mixi's /boot was readable by every user, initrd keys included. Not anymore.
+
+Element Call and yeetus.net were down for the six minutes, because their only copy runs on mixi. Good data for deciding which services get a second one.
+
+## 2026-10-03: Disk latency for etcd
+
+etcd wants fsync to finish in under about 10 ms at the 99th percentile. Same fio test on the three future members:
+
+| Host | p50 | p99 |
+|---|---|---|
+| edge | 0.5 ms | 0.9 ms |
+| thinkcentre | 0.7 ms | 1.5 ms |
+| fuji | 4.3 ms | 9.5 to 14.5 ms |
+
+fuji is borderline. Its NVMe is the same class as the thinkcentre's, so the difference is btrfs (plus whatever fuji is busy with). Turning off copy-on-write for the test folder made no clear difference. With members spread over three sites, the network round trip is bigger than that anyway and the etcd timeouts get raised for it (#25). If fuji's disk turns out to matter, etcd gets its own small ext4 volume there.
