@@ -180,11 +180,11 @@
         "patch"
       ],
       "matchPackageNames": [
-        "*",
         "!sops-secrets-operator",
         "!cert-manager",
         "!php",
         "!postgres",
+        "!docker.io/library/postgres",
         "!clickhouse/clickhouse-server",
         "!ghcr.io/juanfont/headscale"
       ],
