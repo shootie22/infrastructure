@@ -63,3 +63,7 @@ One surprise: comin hung on the edge when a new commit landed in the middle of a
 Alerts now come from three independent places and reach the phone through Pushover, with email as the fallback. Each path was tested for real: stopping the relay made healthchecks.io send a Pushover emergency six minutes later, a monitor on a closed port made UptimeRobot alert through Pushover's email gateway and by email, and a relay test with Pushover broken on purpose fell through to the next channel.
 
 ntfy was the original second channel, but its iOS app never showed a notification, which turned out to be a known, unfixed bug. Email replaced it. The relay delivers straight to Mailfence without a login; the edge's IP went into radunenu.com's SPF record instead of putting the main mail password on a public VPS. While at it, every domain got SPF and DMARC, and the three that never send mail now tell the world to reject anything claiming to come from them.
+
+## 2026-10-03: An old experiment had been changing Keycloak
+
+While setting up Renovate I removed the SaveHub release workflow, a leftover from a project I'd tried to build with a much weaker LLM. Its manifests were never deployed, but the workflow ran every five minutes with push access to main, and on 1 October it had quietly swapped Keycloak's official image for its own themed build. Keycloak is back on the official 26.5.5 image now, and main on both repos only takes direct pushes from me; bots and keys can only open branches and pull requests.
