@@ -365,7 +365,7 @@ spec:
         kubernetes.io/hostname: thinkcentre
       containers:
         - name: caddy
-          image: caddy:2.10.0@sha256:133b5eb7ef9d42e34756ba206b06d84f4e3eb308044e268e182c2747083f09de
+          image: caddy:2.11.6@sha256:907efba736324e43f891ccb9d760fe5abe545e313419b3d18d63d4ec670dad8d
           securityContext:
             allowPrivilegeEscalation: false
           args:
