@@ -22,7 +22,7 @@ spec:
         kubernetes.io/hostname: thinkcentre
       containers:
         - name: postgres
-          image: postgres@sha256:f30e3de0ac9cc938dac627ef2231099867c694b5f949fadb924c8c977428c399
+          image: postgres:15.17-trixie@sha256:f30e3de0ac9cc938dac627ef2231099867c694b5f949fadb924c8c977428c399
           envFrom:
             - secretRef: {name: joplin-env}
           ports:

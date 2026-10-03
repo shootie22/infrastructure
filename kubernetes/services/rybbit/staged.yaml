@@ -160,7 +160,7 @@ spec:
         kubernetes.io/hostname: thinkcentre
       containers:
         - name: clickhouse
-          image: clickhouse/clickhouse-server@sha256:5311f717b7a3ee1e8ed2c198fee498c636ba6c2da3e39dbe45769088ebc858d0
+          image: clickhouse/clickhouse-server:25.4.2.31@sha256:5311f717b7a3ee1e8ed2c198fee498c636ba6c2da3e39dbe45769088ebc858d0
           env:
             - name: CLICKHOUSE_DB
               valueFrom: {secretKeyRef: {name: rybbit-env, key: CLICKHOUSE_DB}}

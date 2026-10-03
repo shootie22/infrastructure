@@ -25,7 +25,7 @@ spec:
         kubernetes.io/hostname: fuji
       containers:
         - name: baikal
-          image: ckulka/baikal@sha256:045918423df00a3f9ec793a819b9acdb055d338b75387926b7d93d753ac1e93a
+          image: ckulka/baikal:0.10.1-nginx@sha256:045918423df00a3f9ec793a819b9acdb055d338b75387926b7d93d753ac1e93a
           ports:
             - name: http
               containerPort: 80

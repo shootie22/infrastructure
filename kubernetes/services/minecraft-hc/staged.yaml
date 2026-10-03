@@ -126,7 +126,7 @@ spec:
         kubernetes.io/hostname: thinkcentre
       containers:
         - name: sftp
-          image: atmoz/sftp@sha256:a81ea210713555be76075b4b2788a4addfaa54d137cd881f3a99ac539f0be2c5
+          image: atmoz/sftp:alpine@sha256:a81ea210713555be76075b4b2788a4addfaa54d137cd881f3a99ac539f0be2c5
           args:
             - "$(SFTP_USERNAME):$(SFTP_PASSWORD):1000"
           envFrom:

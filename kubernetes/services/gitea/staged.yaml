@@ -22,7 +22,7 @@ spec:
         kubernetes.io/hostname: thinkcentre
       containers:
         - name: postgres
-          image: postgres@sha256:156f0b253fd61366d5fc2107ad45955027d5612f695a8436ce20167f3fa79bff
+          image: postgres:14.24-trixie@sha256:156f0b253fd61366d5fc2107ad45955027d5612f695a8436ce20167f3fa79bff
           envFrom:
             - secretRef: {name: gitea-env}
           ports:
