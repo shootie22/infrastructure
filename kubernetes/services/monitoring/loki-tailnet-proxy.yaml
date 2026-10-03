@@ -52,7 +52,7 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: nginx
-          image: nginx:alpine
+          image: nginx:alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2
           ports:
             - name: loki-push
               containerPort: 3101
