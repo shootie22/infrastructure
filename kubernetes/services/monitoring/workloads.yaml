@@ -216,7 +216,7 @@ spec:
             - name: data
               mountPath: /prometheus
         - name: config-reloader
-          image: quay.io/prometheus-operator/prometheus-config-reloader:v0.94.0
+          image: quay.io/prometheus-operator/prometheus-config-reloader:v0.94.1@sha256:06b52bd4dbe3ed6dd5905aadaf8b9987d9da4c31d37bb86deaadae68cee2d26b
           args:
             - --watched-dir=/etc/prometheus
             - --reload-url=http://127.0.0.1:9090/-/reload
