@@ -64,6 +64,95 @@
         "renovate",
         "major"
       ]
+    },
+    {
+      "description": "Rebuilds of the same version (new digest, same tag) go into one weekly PR",
+      "matchUpdateTypes": [
+        "digest"
+      ],
+      "groupName": "rebuilt images (same versions)",
+      "commitMessageExtra": ""
+    },
+    {
+      "matchPackageNames": [
+        "docker.gitea.com/gitea"
+      ],
+      "sourceUrl": "https://github.com/go-gitea/gitea"
+    },
+    {
+      "matchPackageNames": [
+        "vaultwarden/server"
+      ],
+      "sourceUrl": "https://github.com/dani-garcia/vaultwarden"
+    },
+    {
+      "matchPackageNames": [
+        "joplin/server"
+      ],
+      "sourceUrl": "https://github.com/laurent22/joplin"
+    },
+    {
+      "matchPackageNames": [
+        "privatebin/unit-pdo"
+      ],
+      "sourceUrl": "https://github.com/PrivateBin/PrivateBin"
+    },
+    {
+      "matchPackageNames": [
+        "plantuml/plantuml-server"
+      ],
+      "sourceUrl": "https://github.com/plantuml/plantuml-server"
+    },
+    {
+      "matchPackageNames": [
+        "ghcr.io/juanfont/headscale"
+      ],
+      "sourceUrl": "https://github.com/juanfont/headscale"
+    },
+    {
+      "matchPackageNames": [
+        "ghcr.io/element-hq/element-call"
+      ],
+      "sourceUrl": "https://github.com/element-hq/element-call"
+    },
+    {
+      "matchPackageNames": [
+        "ghcr.io/advplyr/audiobookshelf"
+      ],
+      "sourceUrl": "https://github.com/advplyr/audiobookshelf"
+    },
+    {
+      "matchPackageNames": [
+        "ghcr.io/gethomepage/homepage"
+      ],
+      "sourceUrl": "https://github.com/gethomepage/homepage"
+    },
+    {
+      "matchPackageNames": [
+        "ghcr.io/headlamp-k8s/headlamp"
+      ],
+      "sourceUrl": "https://github.com/kubernetes-sigs/headlamp"
+    },
+    {
+      "matchPackageNames": [
+        "registry.gitlab.com/timvisee/send"
+      ],
+      "sourceUrl": "https://gitlab.com/timvisee/send"
+    },
+    {
+      "matchPackageNames": [
+        "clickhouse/clickhouse-server"
+      ],
+      "sourceUrl": "https://github.com/ClickHouse/ClickHouse"
+    },
+    {
+      "matchPackageNames": [
+        "ckulka/baikal"
+      ],
+      "sourceUrl": "https://github.com/ckulka/baikal-docker"
     }
-  ]
+  ],
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageExtra": "{{#if isDigest}}(rebuilt image, same version {{currentValue}}){{else}}{{currentValue}} \u2192 {{newValue}}{{/if}}",
+  "fetchChangeLogs": "pr"
 }
