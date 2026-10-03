@@ -115,8 +115,8 @@ data:
         // (dotfiles, modules/nixos/game-relay.nix).
         { "action": "accept", "src": ["edge", "edge6"], "dst": ["thinkcentre:6767,51751,25565,19132,24545,5520,7777", "thinkcentre6:6767,51751,25565,19132,24545,5520,7777"] },
 
-        // Prometheus on fuji scrapes the edge's HAProxy metrics.
-        { "action": "accept", "src": ["fuji", "fuji6"], "dst": ["edge:8404", "edge6:8404"] },
+        // Prometheus on fuji scrapes the edge's HAProxy and comin metrics.
+        { "action": "accept", "src": ["fuji", "fuji6"], "dst": ["edge:8404,4243", "edge6:8404,4243"] },
 
         // Alerts go to the relay on the edge (docs/ha/alerting.md).
         { "action": "accept", "src": ["fuji", "mixi", "thinkcentre", "fuji6", "mixi6", "thinkcentre6"], "dst": ["edge:9190", "edge6:9190"] },

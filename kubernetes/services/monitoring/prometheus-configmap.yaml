@@ -181,6 +181,18 @@ data:
               host: edge
               site: edge
 
+      # comin on each NixOS server (dotfiles modules/nixos/comin.nix).
+      - job_name: comin
+        static_configs:
+          - targets: [100.64.0.1:4243]
+            labels: { host: fuji }
+          - targets: [100.64.0.2:4243]
+            labels: { host: mixi }
+          - targets: [100.64.0.8:4243]
+            labels: { host: minima-vm }
+          - targets: [100.64.0.9:4243]
+            labels: { host: edge }
+
       - job_name: cadvisor
         static_configs:
           - targets: [100.64.0.5:9101]
@@ -473,6 +485,40 @@ data:
             annotations:
               summary: Prometheus can't reach the edge's HAProxy
               description: Either the edge or the tailnet path to it is down.
+          # comin deploys the dotfiles repo to the NixOS servers. A failure means
+          # a host stays on its old config while main has moved on.
+          - alert: CominDeploymentFailed
+            expr: comin_last_deployment_failed == 1
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "comin couldn't switch {{ $labels.host }} to the latest config"
+              description: Check `comin status` and `journalctl -u comin` on the host.
+          - alert: CominBuildFailed
+            expr: comin_last_build_failed == 1 or comin_last_eval_failed == 1
+            for: 30m
+            labels:
+              severity: warning
+            annotations:
+              summary: "main doesn't build for {{ $labels.host }}"
+              description: The host keeps running its previous config until a fixed commit lands.
+          - alert: CominFetchFailing
+            expr: comin_last_fetch_failed == 1
+            for: 2h
+            labels:
+              severity: warning
+            annotations:
+              summary: "comin on {{ $labels.host }} can't fetch the dotfiles repo"
+              description: No new config reaches this host until fetching works again.
+          - alert: CominUnreachable
+            expr: up{job="comin"} == 0
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Prometheus can't reach comin on {{ $labels.host }}"
+              description: Either comin stopped, or the host or the tailnet path to it is down.
           # Certificates from cert-manager. Renewal normally happens 30 days
           # before expiry, so 14 days left means renewal has been failing.
           - alert: CertificateExpiringSoon
