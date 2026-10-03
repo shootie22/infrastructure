@@ -26,7 +26,6 @@
   },
   "ignorePaths": [
     "**/*.example",
-    "kubernetes/services/savehub/**",
     "services/**"
   ],
   "packageRules": [
@@ -62,13 +61,12 @@
       "pinDigests": true
     },
     {
-      "description": "Fast lane, or updated by their own release workflow: these follow their newest build (docs/updates.md)",
+      "description": "Fast lane: these follow their newest build through in-cluster updaters (docs/updates.md)",
       "matchPackageNames": [
         "docker.io/vectorim/element-web",
         "git.radunenu.com/crosty/crosty-game-server",
         "git.radunenu.com/radu/radunenu.com-minimal",
-        "git.radunenu.com/radu/radunenu.com-minimal-stats-updater",
-        "git.radunenu.com/radu/savehub-keycloak"
+        "git.radunenu.com/radu/radunenu.com-minimal-stats-updater"
       ],
       "enabled": false
     },
