@@ -39,8 +39,20 @@
         "github-tags",
         "terraform-provider"
       ],
-      "commitMessageTopic": "{{depNameSanitized}}",
+      "commitMessageTopic": "{{depName}}",
       "commitMessageExtra": "{{#if isDigest}}(rebuilt image, same version {{currentValue}}){{else}}{{currentValue}} \u2192 {{newValue}}{{/if}}"
+    },
+    {
+      "description": "Database major versions need a dump/restore or pg_upgrade, never just a new image. Planned by hand.",
+      "matchPackageNames": [
+        "postgres",
+        "docker.io/library/postgres",
+        "clickhouse/clickhouse-server"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
     },
     {
       "description": "Pin images to tag@digest, so the version is readable and the build is exact",
