@@ -119,7 +119,7 @@ data:
         { "action": "accept", "src": ["fuji", "fuji6"], "dst": ["edge:8404,4243", "edge6:8404,4243"] },
 
         // Alerts go to the relay on the edge (docs/ha/alerting.md).
-        { "action": "accept", "src": ["fuji", "mixi", "thinkcentre", "fuji6", "mixi6", "thinkcentre6"], "dst": ["edge:9190", "edge6:9190"] },
+        { "action": "accept", "src": ["fuji", "mixi", "thinkcentre", "minima", "fuji6", "mixi6", "thinkcentre6", "minima6"], "dst": ["edge:9190", "edge6:9190"] },
 
         // Failover checkers read each other's votes (docs/ha/failover.md).
         { "action": "accept", "src": ["edge", "edge6"], "dst": ["mixi:9180", "mixi6:9180"] },
