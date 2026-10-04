@@ -4,6 +4,7 @@ Phase 2 ([#18](https://github.com/shootie22/infrastructure/issues/18)). The thin
 
 Untouched the whole time: `/home` (all service data) and the 4 TB disk. Debian's root volume stays until the last step, and gets archived into Borg before it's deleted.
 
+The config is in dotfiles under `hosts/thinkcentre/` (`configuration.nix`, `boot-safety.nix`, `hardware-configuration.nix`), and `rehearsal/` is a VM of the whole thing. The inventory of the Debian install is kept privately.
 
 ## Why it can't get stuck
 
@@ -21,12 +22,14 @@ The rehearsal VM checks all of this before the real thing.
 
 - [x] 4 TB keyfile and k3s token in SOPS, all age keys and the keyfile in the password manager
 - [x] Borg restore test ([#16](https://github.com/shootie22/infrastructure/issues/16))
-- [ ] Follow-up audit: GRUB's one-time boot in `grub.cfg`, root's Borg repositories, shell history
-- [ ] Minecraft HC's world from `/opt/docker-data` to `/home/main/services/`, hostPath changed in the same commit
+- [x] Audit and inventory ([#15](https://github.com/shootie22/infrastructure/issues/15), kept privately)
+- [x] Follow-up audit: GRUB supports one-time boots
+- [ ] Minecraft HC's world moved off Debian's root volume onto /home, hostPath changed in the same commit
 - [ ] Rehearsal on the workstation: every scenario passes
 
 ## 2. Prove Debian and GRUB (two reboots, ~10 minutes downtime each)
 
+Debian's fallback role only counts once it's shown to come back from a reboot on its current kernel, so it gets proven first.
 
 1. Take swap out of Debian, because its volume becomes the NixOS root: `swapoff`, comment the swap line in `/etc/fstab`, `RESUME=none` in `/etc/initramfs-tools/conf.d/resume`, `update-initramfs -u -k all`.
 2. **Reboot 1, one-time boot:** `grub-reboot` an older installed kernel from the "Advanced options" menu, then reboot. Unlock through mixi as usual (dropbear, port 2222). It must come up on that kernel (`uname -r`).
@@ -37,12 +40,14 @@ If either fails: stop. Debian still works, so nothing is lost; the plan gets ret
 ## 3. Install next to Debian (Debian keeps running)
 
 4. **Stop: confirmation needed.** Delete the swap volume and create `nixos` in its place: `lvremove thinkcentre-vg/swap_1`, `lvcreate -l 100%FREE -n nixos thinkcentre-vg`, `mkfs.ext4 -L nixos`.
+5. Nix on Debian, temporarily, with `/nix` bind-mounted from a folder on `/home` so it doesn't fill Debian's root.
 6. Mount `nixos` at `/mnt` and the ESP at `/mnt/boot`, and create `/home/rancher` and `/home/docker`. Then copy in:
    - `/etc/sops/age/keys.txt` → `/mnt/var/lib/sops-nix/key.txt`
    - `/etc/rancher/node/password`, so k3s rejoins as the same node with its labels
    - `/var/lib/tailscale/tailscaled.state`, for the same tailnet node and address
    - `/etc/ssh/ssh_host_*`, so every known_hosts entry stays valid
    - a new initrd host key in `/mnt/etc/secrets/initrd/`; note its fingerprint
+7. Back up the ESP's fallback loader (`EFI/BOOT/BOOTX64.EFI`) next to it. NixOS's systemd-boot replaces it.
 8. `nixos-install --flake github:shootie22/dotfiles#thinkcentre --no-root-passwd`, then set main's password with `nixos-enter`.
 9. A GRUB entry for NixOS in `/etc/grub.d/40_custom`, chainloading `/EFI/systemd/systemd-bootx64.efi` from the ESP, with `--id nixos`. Then `update-grub`, and check it's there.
 
@@ -79,4 +84,4 @@ While NixOS runs, any reboot lands in Debian (that's the point). During these da
     - `lvremove` Debian's root.
     - `lvextend -l +100%FREE` the `nixos` volume, then `resize2fs` (online).
     - Set `dotfiles.bootSafety.debianFallback = false`.
-19. Journal entry, close #18.
+18. Journal entry, close #18.
