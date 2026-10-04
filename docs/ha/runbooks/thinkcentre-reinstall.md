@@ -1,61 +1,82 @@
 # Move the thinkcentre to NixOS
 
-Phase 2 ([#18](https://github.com/shootie22/infrastructure/issues/18)). The thinkcentre is in DK and nobody is there, so nothing here may need someone on site. That's why NixOS doesn't replace Debian in one go: it's installed next to it, booted once, and Debian stays the default until NixOS has run for a while.
+Phase 2 ([#18](https://github.com/shootie22/infrastructure/issues/18)). The thinkcentre is in DK and nobody can get to it for months, so no step may end in a machine that needs someone on site. NixOS gets installed next to Debian, booted once, run for three days with Debian as the way back, and only then does Debian go.
 
-What stays untouched the whole time: `/home` (all service data), the 4 TB disk, and Debian's root volume until the very last step.
+Untouched the whole time: `/home` (all service data) and the 4 TB disk. Debian's root volume stays until the last step, and gets archived into Borg before it's deleted.
 
-The config is in dotfiles, `hosts/thinkcentre/`. The inventory it's based on is in [#15](https://github.com/shootie22/infrastructure/issues/15).
 
-## How the trial boot protects us
+## Why it can't get stuck
 
-- The firmware keeps booting Debian by default. NixOS is started with a one-time `BootNext`, so any reboot after that lands in Debian again.
-- In NixOS's initrd, a timer reboots after 30 minutes if nobody has unlocked the disk.
-- After boot, a check reboots 20 minutes in if fuji isn't reachable over the tailnet.
-- The hardware watchdog reboots if the kernel or systemd hangs.
+| Layer | Covers |
+|---|---|
+| Debian's GRUB starts NixOS once (`grub-reboot`). The firmware isn't involved: it keeps booting Debian's entry like it always has | a NixOS that doesn't work: the next reboot is Debian. Lenovo firmware is known to ignore or reorder boot entries, so the plan doesn't depend on it |
+| NixOS reboots by itself if nobody unlocks it within 45 minutes, if it has no LAN or SSH 15 minutes after boot, on a kernel panic, or when the hardware watchdog fires | every way of being stuck becomes a reboot, and so Debian |
+| Boot counting in systemd-boot, with Debian as the last entry | the firmware or GRUB doing something unexpected: three failed NixOS boots end in Debian anyway |
+| Data disks can't stop the boot; k3s waits for them | a disk that doesn't open means stopped services, never an unreachable machine or data on the wrong disk |
+| Two unlock paths: LAN through mixi (initrd SSH), and the edge tunnel once its keys exist | one path failing |
 
-The worst case is a reboot into Debian, then unlocking it the usual way.
+The rehearsal VM checks all of this before the real thing.
 
-## Before the window (no downtime)
+## 1. Before (no downtime)
 
-1. **Fresh Borg backup and a test restore** ([#16](https://github.com/shootie22/infrastructure/issues/16)).
-2. **Secrets into `secrets/thinkcentre.yaml`.** Only the thinkcentre's own age key can edit that file, so this is done on the thinkcentre with sudo:
-   - `k3s_agent_token`: the `K3S_TOKEN` from `/etc/systemd/system/k3s-agent.service.env`
-   - test that the stored key opens the disk: decrypt it to a file in `/run`, then `cryptsetup open --test-passphrase --key-file <file> /dev/sdb`, then delete the file
-   - turn `sops.validateSopsFiles` back on in the config
-3. **The 4 TB keyfile also goes into the password manager.** Without it, that disk only comes back from Borg.
-4. **Carry-over files** into a root-only folder on `/home` (it survives everything):
-   - `/etc/sops/age/keys.txt`: the age key the secrets are encrypted to
-   - `/etc/rancher/node/password`: so k3s rejoins as the same node, with its labels
-   - `/var/lib/tailscale/tailscaled.state`: same tailnet identity and address
-5. **Move Minecraft HC's data** from `/opt/docker-data/` (Debian's root) to `/home/main/services/`, and change the hostPath in `kubernetes/services/minecraft-hc/` in the same go. That's a short restart of that server.
-6. **The boot-only guard for the DHCP handover** (#81) is merged. Without it, NixOS's first live switch could drop the LAN address.
+- [x] 4 TB keyfile and k3s token in SOPS, all age keys and the keyfile in the password manager
+- [x] Borg restore test ([#16](https://github.com/shootie22/infrastructure/issues/16))
+- [ ] Follow-up audit: GRUB's one-time boot in `grub.cfg`, root's Borg repositories, shell history
+- [ ] Minecraft HC's world from `/opt/docker-data` to `/home/main/services/`, hostPath changed in the same commit
+- [ ] Rehearsal on the workstation: every scenario passes
 
-## The window (about an hour, Debian keeps running until the reboot)
+## 2. Prove Debian and GRUB (two reboots, ~10 minutes downtime each)
 
-7. **Make room for NixOS.** Swap off, delete the swap volume, create `nixos` in its place, `mkfs.ext4` it. Take swap out of Debian's fstab and set `RESUME=none` for its initramfs, then `update-initramfs -u`, or Debian's next boot waits for a swap device that's gone.
-   **Stop: confirmation needed.** This is the first step that deletes something (only swap).
-9. **Install.**
-   - Mount the `nixos` volume at `/mnt`, bind the ESP (`/boot/efi`) to `/mnt/boot`, and create `/home/rancher`. The bind mount for k3s needs that folder at boot.
-   - Copy in the carry-over files: the age key to `/mnt/var/lib/sops-nix/key.txt`, plus the node password and Tailscale state.
-   - Generate the initrd host key into `/mnt/etc/secrets/initrd/`.
-   - Run `nixos-install --flake github:shootie22/dotfiles#thinkcentre --no-root-passwd`, then set main's password with `nixos-enter`.
-10. **Boot entry.** Create it with `efibootmgr -c` for `\EFI\systemd\systemd-bootx64.efi`, then put Debian back first in `BootOrder`, because `-c` puts the new entry first. Then `efibootmgr -n <nixos>`. Check the output: Debian first in the order, NixOS only as `BootNext`.
-    **Stop: confirmation needed** before the reboot.
-11. **Trial boot.** Reboot. Unlock from the LAN through mixi (initrd SSH on 2222, host key alias `thinkcentre-initrd`; it's a new key, so compare the fingerprint printed during step 9). Then check:
-    - the node is Ready and Argo apps are Synced/Healthy
-    - Gitea (repos visible, so the 4 TB disk is open), Vaultwarden, Joplin, Audiobookshelf, the game servers
-    - Borg: run the job once by hand
+
+1. Take swap out of Debian, because its volume becomes the NixOS root: `swapoff`, comment the swap line in `/etc/fstab`, `RESUME=none` in `/etc/initramfs-tools/conf.d/resume`, `update-initramfs -u -k all`.
+2. **Reboot 1, one-time boot:** `grub-reboot` an older installed kernel from the "Advanced options" menu, then reboot. Unlock through mixi as usual (dropbear, port 2222). It must come up on that kernel (`uname -r`).
+3. **Reboot 2, back to default:** plain reboot. It must come up on the newest kernel. That proves the one-time boot reverts by itself, which is what the NixOS trial relies on.
+
+If either fails: stop. Debian still works, so nothing is lost; the plan gets rethought.
+
+## 3. Install next to Debian (Debian keeps running)
+
+4. **Stop: confirmation needed.** Delete the swap volume and create `nixos` in its place: `lvremove thinkcentre-vg/swap_1`, `lvcreate -l 100%FREE -n nixos thinkcentre-vg`, `mkfs.ext4 -L nixos`.
+6. Mount `nixos` at `/mnt` and the ESP at `/mnt/boot`, and create `/home/rancher` and `/home/docker`. Then copy in:
+   - `/etc/sops/age/keys.txt` → `/mnt/var/lib/sops-nix/key.txt`
+   - `/etc/rancher/node/password`, so k3s rejoins as the same node with its labels
+   - `/var/lib/tailscale/tailscaled.state`, for the same tailnet node and address
+   - `/etc/ssh/ssh_host_*`, so every known_hosts entry stays valid
+   - a new initrd host key in `/mnt/etc/secrets/initrd/`; note its fingerprint
+8. `nixos-install --flake github:shootie22/dotfiles#thinkcentre --no-root-passwd`, then set main's password with `nixos-enter`.
+9. A GRUB entry for NixOS in `/etc/grub.d/40_custom`, chainloading `/EFI/systemd/systemd-bootx64.efi` from the ESP, with `--id nixos`. Then `update-grub`, and check it's there.
+
+## 4. Trial boot (downtime starts here)
+
+10. Stop k3s on Debian and copy `/var/lib/rancher/k3s` to `/home/rancher/k3s`, so the ~15 GB of images don't get downloaded again.
+11. **Stop: confirmation needed.** `grub-reboot nixos`, reboot.
+12. Unlock through mixi (initrd SSH on 2222, the new host key from step 6). Then check:
+    - node Ready, Argo Synced/Healthy, Gitea shows its repositories (so the 4 TB disk is open), Vaultwarden, Joplin, Audiobookshelf, the game servers, the Gitea runner
+    - `systemctl --failed` is empty, and `boot-health` passed
     - the edge reaches Traefik and the game ports
+    - one Borg run by hand
 
-    If anything is off, `reboot`: Debian comes back.
+    Anything wrong: `reboot`, and Debian comes back on its own.
 
-## After a day or two on NixOS
+## 5. Three days on NixOS
 
-12. Make NixOS the default (`efibootmgr -o`), then remove the trial-fallback units from the config.
-13. Edge tunnel from the initrd: copy the two public keys from `/etc/ssh/edge-tunnel/` into `lib/edge-tunnels.nix`, then turn on `dotfiles.edgeTunnel.initrd`. Test `unlock-via-edge thinkcentre` on the next reboot.
-14. Move the DK failover vote from mixi to the thinkcentre, if wanted.
+While NixOS runs, any reboot lands in Debian (that's the point). During these days:
+- a scheduled Borg run
+- a DHCP lease renewal (the 2026-10-01 incident was a lease running out after 3 days)
+- normal use of the services and game servers
 
-## Retire Debian
+## 6. Make NixOS the default
 
-15. **Stop: double confirmation needed.** Delete Debian's root volume, grow `nixos` into the space (`lvextend` and `resize2fs`, both online), delete Debian's EFI entry and the old `/boot` partition.
-17. Journal entry, close #18.
+13. GRUB's default becomes the NixOS entry, and the firmware gets a systemd-boot entry first in its order. Either path now ends in systemd-boot.
+14. Reboot and unlock. This is the first boot where NixOS starts on its own.
+15. Edge tunnel from the initrd: public keys into `lib/edge-tunnels.nix`, `dotfiles.edgeTunnel.initrd = true`, then test `unlock-via-edge thinkcentre` on the next reboot.
+
+## 7. Retire Debian
+
+16. Archive Debian's root volume into Borg (its own archive, kept).
+17. **Stop: double confirmation needed.**
+    - Delete Debian's EFI entry and files, plus GRUB.
+    - `lvremove` Debian's root.
+    - `lvextend -l +100%FREE` the `nixos` volume, then `resize2fs` (online).
+    - Set `dotfiles.bootSafety.debianFallback = false`.
+19. Journal entry, close #18.
