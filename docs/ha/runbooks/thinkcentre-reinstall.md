@@ -26,14 +26,18 @@ The rehearsal VM checks all of this before the real thing.
 - [x] Follow-up audit: GRUB supports one-time boots
 - [x] Minecraft HC's world moved off Debian's root volume onto /home (4 Oct)
 - [x] Rehearsal on the workstation: all 8 scenarios pass (4 Oct). It found two real bugs first: the initrd network handover could leave NixOS without IPv4, and the boot health check relied on pings alone
+- [x] Unlocking over SSH into the NixOS initrd, rehearsed (4 Oct)
+- [x] `thinkcentre-unlock` (dotfiles, admin devices): finds the thinkcentre on the DK LAN by its MAC through mixi, whichever address the initrd got, and unlocks Debian or NixOS
+- [ ] Debian's real initrds booted in a VM on the workstation: network, dropbear with the real host key, admin key, unlock
 
 ## 2. Prove Debian and GRUB (two reboots, ~10 minutes downtime each)
 
-Debian's fallback role only counts once it's shown to come back from a reboot on its current kernel, so it gets proven first.
+Debian's remote unlock was set up after its last reboot, so it has never run for real, and the newest kernel has never booted. Both get proven before NixOS is involved.
 
-1. Take swap out of Debian, because its volume becomes the NixOS root: `swapoff`, comment the swap line in `/etc/fstab`, `RESUME=none` in `/etc/initramfs-tools/conf.d/resume`, `update-initramfs -u -k all`.
-2. **Reboot 1, one-time boot:** `grub-reboot` an older installed kernel from the "Advanced options" menu, then reboot. Unlock through mixi as usual (dropbear, port 2222). It must come up on that kernel (`uname -r`).
-3. **Reboot 2, back to default:** plain reboot. It must come up on the newest kernel. That proves the one-time boot reverts by itself, which is what the NixOS trial relies on.
+1. `debian-prep.sh` (no reboot): takes swap out of Debian (`swapoff`, the fstab line, `RESUME=none`), rebuilds both initrds and checks inside each that dropbear, the admin keys, port 2222, DHCP on the LAN card, the NIC driver, the root disk and LVM are there, then sets GRUB: default the running kernel, one-time the newest.
+2. The initrd VM test above passes for both kernels.
+3. **Stop: confirmation needed. Reboot 1:** boots the never-booted kernel once. If it fails and reboots, the known-good one comes up. Unlock with `thinkcentre-unlock`; it must come up on the new kernel.
+4. **Reboot 2:** plain reboot, back on the default kernel. That proves the one-time boot reverts by itself, which is what the NixOS trial relies on.
 
 If either fails: stop. Debian still works, so nothing is lost; the plan gets rethought.
 
@@ -55,7 +59,7 @@ If either fails: stop. Debian still works, so nothing is lost; the plan gets ret
 
 10. Stop k3s on Debian and copy `/var/lib/rancher/k3s` to `/home/rancher/k3s`, so the ~15 GB of images don't get downloaded again.
 11. **Stop: confirmation needed.** `grub-reboot nixos`, reboot.
-12. Unlock through mixi (initrd SSH on 2222, the new host key from step 6). Then check:
+12. Unlock with `thinkcentre-unlock` (initrd SSH on 2222, the new host key from step 6). Then check:
     - node Ready, Argo Synced/Healthy, Gitea shows its repositories (so the 4 TB disk is open), Vaultwarden, Joplin, Audiobookshelf, the game servers, the Gitea runner
     - `systemctl --failed` is empty, and `boot-health` passed
     - the edge reaches Traefik and the game ports
