@@ -31,3 +31,12 @@ Rehearsed in VMs: dotfiles `tests/etcd-migration.nix` (`nix build .#checks.x86_6
 
 - Step 5 fails and k3s won't come up: turn `clusterInit` off again and restore `state.db` from the copy taken in step 3.
 - A member that won't join: remove it with `etcdctl member remove`, wipe its `/var/lib/rancher/k3s/server/db`, and join it again. While only two members exist, don't take either one down.
+
+## Restoring a snapshot
+
+For when the cluster's data is lost or broken on every member. Rehearsed in the same VM test.
+
+1. Stop k3s on all three servers.
+2. On one of them (fuji in the rehearsal), run k3s once by hand with its usual flags plus `--cluster-reset --cluster-reset-restore-path=<snapshot>`. It restores and exits. Then start the service again. That server is now a one-member cluster with the snapshot's data. Everything written after the snapshot is gone.
+3. On the other two, delete `/var/lib/rancher/k3s/server/db` and start k3s. They join the restored cluster from scratch.
+4. Wait for three started members, then check Argo.
