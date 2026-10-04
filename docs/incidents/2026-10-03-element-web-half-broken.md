@@ -20,7 +20,7 @@ Element Web runs two replicas of `vectorim/element-web:develop` with `imagePullP
 ## Fix
 
 - Traefik keeps each browser on one pod with a cookie, so the page and its files always come from the same build ([7f7f67c](https://github.com/shootie22/infrastructure/commit/7f7f67c)).
-- `ElementWebFilesMissing` fires when more than 5% of Element's requests return 404 for ten minutes. Run against this day's data, it would have fired from the morning on.
+- A check loads Element like a fresh browser every 10 minutes (the page and every file), and `ElementWebBroken` fires when it hasn't passed for 30 minutes. The first version of the alert counted 404s in Traefik instead. It caught the incident, but also fired that afternoon for a single browser tab still holding the old build.
 
 ## What made it worse
 

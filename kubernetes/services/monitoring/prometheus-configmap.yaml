@@ -571,21 +571,17 @@ data:
             annotations:
               summary: The 4 TB storage disk on thinkcentre has less than 250 GiB free
               description: Check /home/main/storage/send-uploads; Send uploads expire within 14 days.
-          # The probe above only sees that the page loads. Element Web can load
-          # its page and still be broken when its files 404 (two replicas on
-          # different builds, 2026-10-03), so watch its 404s in Traefik too.
-          - alert: ElementWebFilesMissing
-            expr: |
-              sum(increase(traefik_service_requests_total{service=~"element-web-element-web-.*", code="404"}[15m])) > 10
-              and
-              sum(increase(traefik_service_requests_total{service=~"element-web-element-web-.*", code="404"}[15m]))
-                / sum(increase(traefik_service_requests_total{service=~"element-web-element-web-.*"}[15m])) > 0.05
-            for: 10m
+          # The public probes only see that the page loads; Element Web loaded its
+          # page while half its files 404'd on 2026-10-03. element-web-check
+          # loads everything every 10 minutes; three failed runs in a row alert.
+          - alert: ElementWebBroken
+            expr: time() - kube_cronjob_status_last_successful_time{namespace="element-web", cronjob="element-web-check"} > 1800
+            for: 1m
             labels:
               severity: critical
             annotations:
-              summary: Element Web is serving 404s for its own files
-              description: More than 5% of Element Web requests return 404 for ten minutes. Usually the replicas are on different builds; restarting the deployment fixes it.
+              summary: Element Web doesn't load completely
+              description: element-web-check hasn't passed for 30 minutes. Its job logs list the files that failed. Two replicas on different builds is the usual cause; restarting the deployment fixes that.
           - alert: PublicEndpointProbeFailed
             expr: probe_success{job="blackbox-http"} == 0
             for: 5m

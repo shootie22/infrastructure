@@ -1,0 +1,54 @@
+# Loads Element Web like a fresh browser every 10 minutes: the page, then
+# every script and stylesheet it references, three sessions in a row, through
+# the public URL. Fails if anything isn't a 200. Prometheus alerts when it
+# hasn't passed for 30 minutes (ElementWebBroken). The outside checks only see
+# that the page loads, which it did during the 2026-10-03 incident.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: element-web-check
+  namespace: element-web
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          containers:
+            - name: check
+              image: docker.io/alpine/k8s:1.35.9@sha256:b9cb6db0091a2327c0a56ecda69d37fa830c7a96ea669e7382b3ee778aa07a24
+              command: ["/bin/sh", "-euc"]
+              args:
+                - |
+                  site=https://c.nuke.zip
+                  failed=0
+                  for session in 1 2 3; do
+                    jar=$(mktemp)
+                    page=$(curl -fsS -m 20 -c "$jar" -b "$jar" "$site/")
+                    files=$(echo "$page" | grep -oE '(src|href)="[^"]+\.(js|css)"' | sed -E 's/.*="([^"]+)"/\1/')
+                    [ -n "$files" ] || { echo "session $session: page references no files"; failed=1; continue; }
+                    for f in $files; do
+                      code=$(curl -s -o /dev/null -m 20 -b "$jar" -w '%{http_code}' "$site/$f")
+                      [ "$code" = 200 ] || { echo "session $session: $code $f"; failed=1; }
+                    done
+                    echo "session $session: $(echo "$files" | wc -l) files checked"
+                  done
+                  exit $failed
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 16Mi
+                limits:
+                  memory: 64Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
