@@ -91,3 +91,9 @@ fuji is borderline. Its NVMe is the same class as the thinkcentre's, so the diff
 ## 2026-10-03: The thinkcentre's NixOS config, and how to install it without going to DK
 
 The config is written and builds, from an inventory of the Debian install. The original plan was a reinstall, which with nobody in DK means one bad boot and the box stays down until someone gets there. So NixOS goes next to Debian instead: on a new volume made from the 24 GB swap space, with `/home` and the 4 TB disk shared and untouched. The firmware keeps booting Debian. NixOS gets started once with `BootNext`, and reboots itself if nobody unlocks it within 30 minutes or it can't reach fuji 20 minutes after boot. A reboot lands back in Debian. Debian's root only gets deleted once NixOS has run for a while.
+
+## 2026-10-04: Rehearsing the thinkcentre move in a VM
+
+Before touching the real machine, the whole thing ran in a VM on the workstation: same disk layout scaled down, the same boot safety module, UEFI firmware, and a stand-in Debian that prints a marker when it boots. A script walked it through every way the switch could go wrong: nobody unlocking the disk, the firmware ignoring the boot order, no network, a kernel panic, a missing data disk, and a broken update after the switch. All eight end up somewhere reachable.
+
+It took four runs, and the first ones were worth it. The network handover from the initrd only dropped IPv4, so with IPv6 still on the card NetworkManager decided someone else was in charge and never asked for an address. The VM came up without IPv4 at all, the health check noticed and rebooted it, exactly as designed. fuji would have hit the same thing on its next reboot, since RO's LAN has IPv6. The health check also leaned on pings alone; it now accepts an ARP reply too, and only reboots a generation that hasn't proven itself, so a router that drops pings can't cause a reboot loop.

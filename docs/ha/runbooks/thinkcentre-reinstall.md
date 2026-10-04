@@ -25,7 +25,7 @@ The rehearsal VM checks all of this before the real thing.
 - [x] Audit and inventory ([#15](https://github.com/shootie22/infrastructure/issues/15), kept privately)
 - [x] Follow-up audit: GRUB supports one-time boots
 - [x] Minecraft HC's world moved off Debian's root volume onto /home (4 Oct)
-- [ ] Rehearsal on the workstation: every scenario passes
+- [x] Rehearsal on the workstation: all 8 scenarios pass (4 Oct). It found two real bugs first: the initrd network handover could leave NixOS without IPv4, and the boot health check relied on pings alone
 
 ## 2. Prove Debian and GRUB (two reboots, ~10 minutes downtime each)
 
