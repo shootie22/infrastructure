@@ -24,7 +24,7 @@ The rehearsal VM checks all of this before the real thing.
 - [x] Borg restore test ([#16](https://github.com/shootie22/infrastructure/issues/16))
 - [x] Audit and inventory ([#15](https://github.com/shootie22/infrastructure/issues/15), kept privately)
 - [x] Follow-up audit: GRUB supports one-time boots
-- [ ] Minecraft HC's world moved off Debian's root volume onto /home, hostPath changed in the same commit
+- [x] Minecraft HC's world moved off Debian's root volume onto /home (4 Oct)
 - [ ] Rehearsal on the workstation: every scenario passes
 
 ## 2. Prove Debian and GRUB (two reboots, ~10 minutes downtime each)
