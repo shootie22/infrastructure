@@ -22,10 +22,10 @@ It only showed up now because fuji had been up for exactly the length of one lea
 
 ## Fix
 
-- The rest of the initrd's IPv4 gets dropped before NetworkManager starts, so NetworkManager always manages eno1 itself ([616228c](https://github.com/shootie22/dotfiles/commit/616228c)).
-- eno1's DHCP profile is declared in the config instead of being made up at runtime ([3f9d39d](https://github.com/shootie22/dotfiles/commit/3f9d39d)).
+- The rest of the initrd's IPv4 gets dropped before NetworkManager starts, so NetworkManager always manages eno1 itself ([e22fff5](https://github.com/shootie22/dotfiles/commit/e22fff5)).
+- eno1's DHCP profile is declared in the config instead of being made up at runtime ([3f78920](https://github.com/shootie22/dotfiles/commit/3f78920)).
 
-While checking the rebuild, a second, older problem turned up: fuji's config listed an encrypted swap partition that was never unlocked at boot. fuji has never had swap, and every boot and rebuild left systemd waiting for that device forever, which also held up the new network profile. The swap entry is gone ([57b7aa2](https://github.com/shootie22/dotfiles/commit/57b7aa2)).
+While checking the rebuild, a second, older problem turned up: fuji's config listed an encrypted swap partition that was never unlocked at boot. fuji has never had swap, and every boot and rebuild left systemd waiting for that device forever, which also held up the new network profile. The swap entry is gone ([c5606df](https://github.com/shootie22/dotfiles/commit/c5606df)).
 
 ## What made it worse
 
