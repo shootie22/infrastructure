@@ -195,6 +195,21 @@ data:
           - targets: [100.64.0.9:4243]
             labels: { host: edge }
 
+      # Nebula on each server (dotfiles modules/nixos/nebula-mesh.nix), scraped
+      # over the mesh itself: a host that can't be reached there is down here.
+      - job_name: nebula
+        static_configs:
+          - targets: [10.99.0.1:8101]
+            labels: { host: edge }
+          - targets: [10.99.0.2:8101]
+            labels: { host: fuji }
+          - targets: [10.99.0.3:8101]
+            labels: { host: thinkcentre }
+          - targets: [10.99.0.4:8101]
+            labels: { host: mixi }
+          - targets: [10.99.0.5:8101]
+            labels: { host: minima }
+
       - job_name: cadvisor
         static_configs:
           - targets: [100.64.0.5:9101]
@@ -523,6 +538,16 @@ data:
             annotations:
               summary: "comin on {{ $labels.host }} hasn't fetched in over an hour"
               description: Restart it (`systemctl restart comin`); comin-unstick should do that by itself.
+          # The servers' own overlay (dotfiles lib/nebula.nix, #141). Scraped from
+          # fuji over the mesh, so this also means fuji can't reach the host there.
+          - alert: NebulaHostUnreachable
+            expr: up{job="nebula"} == 0
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "{{ $labels.host }} isn't reachable over Nebula"
+              description: Check `systemctl status nebula@mesh` on the host, and whether fuji or the edge (the lighthouses) are up.
           - alert: CominUnreachable
             expr: up{job="comin"} == 0
             for: 15m
