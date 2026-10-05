@@ -11,15 +11,15 @@ How I get into machines I'm not standing next to, mainly the ones in DK (mixi, t
 
 ## When the tailnet is down: through the edge
 
-fuji and mixi each keep a reverse SSH tunnel open to the edge, so their SSH is reachable there on a loopback port. From an admin device, `via-edge mixi` or `via-edge fuji` jumps through the edge's public SSH (the edge is the one box whose SSH is on the internet, keys only) and logs in end to end with the device's own key. The host key is checked under the same name as on the tailnet, so a wrong machine at the end of a tunnel fails the check.
+fuji, mixi and the thinkcentre each keep a reverse SSH tunnel open to the edge, so their SSH is reachable there on a loopback port. From an admin device, `via-edge mixi`, `via-edge fuji` or `via-edge thinkcentre` jumps through the edge's public SSH (the edge is the one box whose SSH is on the internet, keys only) and logs in end to end with the device's own key. The host key is checked under the same name as on the tailnet, so a wrong machine at the end of a tunnel fails the check.
 
 The tunnel keys live on fuji and mixi and can only open their own listening port on the edge, nothing else. The edge has no keys for the sites.
 
-From there the rest of each site is one more jump: the thinkcentre and the workstation through mixi, minima through fuji.
+From there the rest of each site is one more jump: the workstation through mixi, minima through fuji.
 
 **Unlocking after a reboot.** fuji and mixi have encrypted disks and wait in the initrd for the passphrase. That works from the LAN (`mixi-unlock` jumps through the thinkcentre), and through the edge with `unlock-via-edge mixi|fuji` once the initrd tunnels are on. Tracked in [#103](https://github.com/shootie22/infrastructure/issues/103).
 
-Not covered yet: the thinkcentre gets its own tunnel when it moves to NixOS (Phase 2). Until then it's reachable through mixi.
+The thinkcentre's tunnel works since its NixOS trial (5 Oct). Its initrd tunnel gets turned on once NixOS is its default; until then it's unlocked from the LAN with `thinkcentre-unlock`.
 
 ## The workstation (DK)
 

@@ -73,6 +73,14 @@ Done 5 Oct. One snag: the installed generation's edge tunnel key step ran before
 
     Anything wrong: `reboot`, and Debian comes back on its own.
 
+Done 5 Oct. All checks passed. What the first real boot turned up, all fixed since:
+- The NixOS initrd got a different LAN address than Debian. `thinkcentre-unlock` finds it by MAC, so it only matters when typing the address by hand.
+- Probing the initrd's SSH port from mixi without logging in made OpenSSH stop answering mixi for a while, which locked out the real unlock. The initrd's sshd no longer does that.
+- Debian keeps the hardware clock in local time and NixOS read it as UTC, so it booted two hours ahead until NTP pulled it back. k3s restarted a few times over it and comin stopped fetching until restarted. NixOS now treats the clock as local time too, until Debian is gone.
+- The initrd's unlock timer survived the switch to the real system and showed up failed there. It's stopped at the switch now.
+- The edge tunnel failed until its key was registered on the edge; that part of step 15 is done.
+- The trial script first stopped because CI jobs run in Debian's Docker. It now waits for running CI steps to finish before stopping k3s.
+
 ## 5. Three days on NixOS
 
 While NixOS runs, any reboot lands in Debian (that's the point). During these days:
@@ -84,7 +92,7 @@ While NixOS runs, any reboot lands in Debian (that's the point). During these da
 
 13. GRUB's default becomes the NixOS entry, and the firmware gets a systemd-boot entry first in its order. Either path now ends in systemd-boot.
 14. Reboot and unlock. This is the first boot where NixOS starts on its own.
-15. Edge tunnel from the initrd: public keys into `lib/edge-tunnels.nix`, `dotfiles.edgeTunnel.initrd = true`, then test `unlock-via-edge thinkcentre` on the next reboot.
+15. Edge tunnel from the initrd: `dotfiles.edgeTunnel.initrd = true` (both keys are already registered), then test `unlock-via-edge thinkcentre` on the next reboot.
 
 ## 7. Retire Debian
 

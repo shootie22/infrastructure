@@ -97,3 +97,16 @@ The config is written and builds, from an inventory of the Debian install. The o
 Before touching the real machine, the whole thing ran in a VM on the workstation: same disk layout scaled down, the same boot safety module, UEFI firmware, and a stand-in Debian that prints a marker when it boots. A script walked it through every way the switch could go wrong: nobody unlocking the disk, the firmware ignoring the boot order, no network, a kernel panic, a missing data disk, and a broken update after the switch. All eight end up somewhere reachable.
 
 It took four runs, and the first ones were worth it. The network handover from the initrd only dropped IPv4, so with IPv6 still on the card NetworkManager decided someone else was in charge and never asked for an address. The VM came up without IPv4 at all, the health check noticed and rebooted it, exactly as designed. fuji would have hit the same thing on its next reboot, since RO's LAN has IPv6. The health check also leaned on pings alone; it now accepts an ARP reply too, and only reboots a generation that hasn't proven itself, so a router that drops pings can't cause a reboot loop.
+
+## 2026-10-05: The thinkcentre runs NixOS (trial)
+
+First two plain Debian reboots, to prove the parts NixOS would lean on: Debian's own remote unlock had never run for real, and GRUB's one-time boot had never been used. Both worked. The newest kernel came up once and the next reboot went back to the default by itself.
+
+Then NixOS went onto the old swap volume, next to Debian. It was built on the workstation and copied over as a store archive, so Debian never needed Nix installed. Before the real boot I tested the one hop the rehearsal had skipped, Debian's GRUB handing over to systemd-boot, in a VM with Debian's actual shim and GRUB. That found a trap: if the handover fails, GRUB goes back to its menu with NixOS still picked and tries it forever. The entry now reboots instead, which lands in Debian.
+
+The first real boot came up with everything running, but not cleanly:
+- The initrd got a different LAN address than Debian does, and my port checks from mixi made OpenSSH stop answering mixi for a few minutes. So the unlock was locked out until that wore off. The initrd doesn't do that anymore.
+- Debian keeps the hardware clock in local time and NixOS assumed UTC, so it booted two hours in the future until NTP corrected it. k3s restarted a few times and comin stopped fetching. NixOS uses local time too now, until Debian is gone.
+- A CI job got cut off when k3s stopped the first time, because the jobs run in the host's Docker. The script waits for them now.
+
+Three days on NixOS from here. Any reboot lands back in Debian.
