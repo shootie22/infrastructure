@@ -17,7 +17,7 @@ Config: dotfiles `lib/nebula.nix` (hosts and addresses) and `modules/nixos/nebul
 
 ## What's been tested
 
-In VMs (both sites behind NAT, like the real ones): full mesh, the edge down, fuji down, a cold start of everything. On the real servers: full mesh on all 20 paths, and the edge's Nebula stopped while another host restarted its own; everything still found everything through fuji.
+In VMs (both sites behind NAT, like the real ones): full mesh, the edge down, fuji down, a cold start of everything. On the real servers: full mesh on all 20 paths; the edge's Nebula stopped while another host restarted its own, and everything still found everything through fuji; the same with fuji's stopped, through the edge.
 
 Things the real test found that the VMs didn't: minima's packets to fuji went over the tailnet (tailscale routes fuji's LAN address for DK), and mixi could only resolve names through tailscale. Both fixed.
 
