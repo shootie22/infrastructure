@@ -28,7 +28,7 @@ The rehearsal VM checks all of this before the real thing.
 - [x] Rehearsal on the workstation: all 8 scenarios pass (4 Oct). It found two real bugs first: the initrd network handover could leave NixOS without IPv4, and the boot health check relied on pings alone
 - [x] Unlocking over SSH into the NixOS initrd, rehearsed (4 Oct)
 - [x] `thinkcentre-unlock` (dotfiles, admin devices): finds the thinkcentre on the DK LAN by its MAC through mixi, whichever address the initrd got, and unlocks Debian or NixOS
-- [ ] Debian's real initrds booted in a VM on the workstation: network, dropbear with the real host key, admin key, unlock
+- [x] Debian's real initrds booted in a VM on the workstation: network, dropbear with the real host key, admin key, unlock
 
 ## 2. Prove Debian and GRUB (two reboots, ~10 minutes downtime each)
 
@@ -40,6 +40,8 @@ Debian's remote unlock was set up after its last reboot, so it has never run for
 4. **Reboot 2:** plain reboot, back on the default kernel. That proves the one-time boot reverts by itself, which is what the NixOS trial relies on.
 
 If either fails: stop. Debian still works, so nothing is lost; the plan gets rethought.
+
+Done 5 Oct: reboot 1 came up on the new kernel after a remote unlock through mixi, reboot 2 went back to the default kernel by itself.
 
 ## 3. Install next to Debian (Debian keeps running)
 
