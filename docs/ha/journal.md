@@ -110,3 +110,9 @@ The first real boot came up with everything running, but not cleanly:
 - A CI job got cut off when k3s stopped the first time, because the jobs run in the host's Docker. The script waits for them now.
 
 Three days on NixOS from here. Any reboot lands back in Debian.
+
+## 2026-10-05: The servers got their own network
+
+While planning etcd it turned out the cluster would need the tailnet to start, and the tailnet needs Headscale, which runs in the cluster. I tested it: a node that reboots while Headscale is down doesn't get back on the tailnet at all. So the servers now also have Nebula between them, with no control server: certificates on disk, the edge and fuji as lighthouses. Tailscale stays for my devices.
+
+Rehearsed in VMs with both sites behind NAT first, then rolled out to all five servers. The VMs caught a port clash on the RO router. The real thing caught two more that the VMs couldn't: minima talked to fuji over the tailnet without anyone noticing (tailscale routes fuji's LAN address, and that route wins), and mixi could only resolve names through tailscale. Both fixed, and with the edge's Nebula switched off everything still found everything through fuji.
