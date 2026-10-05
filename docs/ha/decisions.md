@@ -22,6 +22,8 @@ Failover and a second provider both need the records in one place that can push 
 
 Moving it to the edge would make the edge matter. Headscale can't run more than one copy, so it stays in the cluster with its data somewhere replicated, and restarts in the other site if its site dies. How exactly is [#37](https://github.com/shootie22/infrastructure/issues/37).
 
+Replaced on 2026-10-05, see below.
+
 ## 2026-09-30: Tracking in GitHub, not a self-hosted tool
 
 The plan involves taking the cluster down on purpose. Notes about how to bring it back can't live on the cluster. Tasks go in GitHub Issues and the board; knowledge goes in these Markdown files.
@@ -113,3 +115,11 @@ The tailnet is the everyday way in, but it's one system, coordinated by Headscal
 The same goes for the initrd, so a rebooted fuji or mixi can be unlocked without the tailnet. Those keys sit unencrypted on /boot, which is fine for what they can do (listen on one port). The connection is still checked end to end against the initrd's host key, so someone holding a stolen tunnel key can't pretend to be the machine.
 
 Rejected: a VPN on the router (DK has no port forwarding, and the router stays as simple as possible) and Cloudflare Tunnel (no Cloudflare in the path, see the 2026-09-30 entry). mixi's old tunnels pointed at RO's public SSH port, which has been gone since the RO rework; they're replaced, not repaired. Tracked in [#103](https://github.com/shootie22/infrastructure/issues/103).
+
+## 2026-10-05: The servers talk over Nebula, the tailnet is for devices
+
+With etcd across the sites, the members can only reach each other over an overlay network. Tailscale needs Headscale to come up after a reboot (tested: a node that reboots while Headscale is down gets no tailnet address), and Headscale runs in the cluster. So a fuji reboot, or a power cut everywhere, could never finish on its own.
+
+The servers (fuji, the thinkcentre, the edge, mixi, minima) get a second overlay just for themselves: Nebula. Each node has its own certificate on disk and finds the others through two lighthouses, the edge and fuji, so it comes up at boot without asking anyone. etcd, the k3s API and flannel run over it. Tailscale and Headscale stay for my devices, admin access and the private services, and Headscale becomes an ordinary HA service in the cluster (Phase 5).
+
+Also on the table: Headscale outside the cluster on the edge or on fuji (removes the loop, but Headscale stays a single copy and the edge starts to matter), or Headscale in the cluster with a manual cold-start procedure (keeps the loop). Disk unlock after a reboot stays manual for now. Replaces "Headscale stays in the cluster" above.
