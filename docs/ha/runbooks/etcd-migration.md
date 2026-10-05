@@ -2,40 +2,48 @@
 
 Phase 3 ([#20](https://github.com/shootie22/infrastructure/issues/20)-[#26](https://github.com/shootie22/infrastructure/issues/26)). Today fuji is the only k3s server and keeps the cluster in SQLite. Afterwards fuji, the thinkcentre and the edge each hold a copy in etcd, and any one of them can go away.
 
-Rehearsed in VMs: dotfiles `tests/etcd-migration.nix` (`nix build .#checks.x86_64-linux.etcd-migration -L`), same k3s version as fuji, flannel over WireGuard, latency like the real tailnet. All steps pass (2026-10-04).
+The servers talk over Nebula ([nebula.md](../nebula.md)), not the tailnet. The tailnet needs Headscale to come back after a reboot, and Headscale runs in the cluster; Nebula needs nothing from the cluster ([#37](https://github.com/shootie22/infrastructure/issues/37), decision 2026-10-05).
+
+Rehearsed in VMs: dotfiles `tests/etcd-over-nebula.nix`, with RO and DK behind NAT, Nebula like the real one, and a tailnet that gets switched off. The older `tests/etcd-migration.nix` covers snapshot restore.
 
 ## What the rehearsal showed
 
-- Switching fuji to etcd took about 20 seconds of API downtime. The ConfigMap and the running workload were untouched.
-- A second server joined in under a minute and a half. The etcd-only member got its taint and no pods.
-- With fuji crashed, the thinkcentre kept serving the API, including writes. The agent stayed Ready: k3s agents remember all servers, not just the one they joined through. fuji rejoined by itself and caught up on the write it had missed.
-- Round trips between the three members are 13-55 ms. etcd's defaults (100 ms heartbeat, 1 s election timeout) are comfortably above that, so no tuning is needed for now ([#25](https://github.com/shootie22/infrastructure/issues/25)).
+- fuji moves to etcd and onto its Nebula address in one switch. The data stays, pods keep running and reach each other.
+- The thinkcentre goes from agent to server in place, the edge joins as the etcd-only third member, and every etcd member is on a Nebula address.
+- With the tailnet switched off: the API, writes and the pod network keep working.
+- fuji crashes and comes back with no tailnet: it rejoins etcd and is Ready about 25 seconds after booting. This is the case that couldn't work over the tailnet.
+- A cold start of everything with no tailnet comes back on its own.
+- flannel's WireGuard runs inside Nebula. With `--flannel-iface nebula.mesh` it sizes its packets to fit; the rehearsal pings with big packets at every step to prove it.
+- After a node reboots, its flannel WireGuard key is new (k3s keeps it in /run). The other nodes pick it up by themselves.
 
 ## Before
 
-1. Phase 2 done: the thinkcentre runs NixOS.
-2. **Headscale doesn't depend on etcd anymore** ([#37](https://github.com/shootie22/infrastructure/issues/37)). A node that reboots while Headscale is down gets no tailnet address (tested, dotfiles `tests/tailscale-without-headscale.nix`), and etcd members only reach each other over the tailnet. With Headscale pinned to fuji, a fuji reboot could never finish: tailscale waits for Headscale, Headscale for fuji's k3s, k3s for its etcd peers. Also decide which address each member advertises: today fuji's and minima's node addresses are public IPv6 and the thinkcentre's is a DHCP LAN address; none of those is reachable from every member.
-3. The tailnet lets the three servers reach each other: etcd 2379-2380, the API 6443, the kubelet 10250, flannel's WireGuard 51820/udp. The Headscale ACL has to allow fuji, the thinkcentre and the edge to reach each other on these, and each host's firewall has to accept them on `tailscale0`. The VM test doesn't cover this part.
-4. Backups: a Borg run on fuji, plus a copy of `/var/lib/rancher/k3s/server/db/state.db` taken while k3s is stopped.
-5. A quiet hour. The API is down for a moment during step 6. Workloads keep running, but Argo and kubectl wait.
+1. Nebula on all servers, both lighthouses tested ([#141](https://github.com/shootie22/infrastructure/issues/141)). Done 5 Oct.
+2. k3s waits for the node's Nebula address before it starts, like it waits for the tailnet today (dotfiles `modules/nixos/k3s-tailnet-guard.nix`), so a reboot doesn't start k3s on an address that isn't there yet.
+3. Backups: a Borg run on fuji, plus a copy of `/var/lib/rancher/k3s/server/db/state.db` taken while k3s is stopped.
+4. A quiet hour. The API is down for a moment during step 5. Workloads keep running, but Argo and kubectl wait.
+
+Nothing to open in the Headscale ACL or the host firewalls: Nebula's interface is trusted on the servers, and only our certificates get onto it.
 
 ## Steps
 
-6. **fuji to etcd:** `services.k3s.clusterInit = true` on fuji, deploy. Check: `/var/lib/rancher/k3s/server/db/etcd` exists, `kubectl get nodes` and every Argo app look like before.
-7. **thinkcentre as the second server:** `role = "server"`, `serverAddr` pointing at fuji, the server token. Wait until it's Ready and `etcdctl member list` shows two started members.
-8. **Straight on: the edge as the third member.** Two members are worse than one: losing either one loses the majority. So this window stays short. The edge gets `--disable-apiserver --disable-controller-manager --disable-scheduler` and the taint `node-role.kubernetes.io/etcd=true:NoExecute`. Wait for three started members.
-9. Agents (mixi, minima) need nothing: they learn the new servers by themselves. A fixed registration address for joining while fuji is down is [#21](https://github.com/shootie22/infrastructure/issues/21).
-10. **Snapshots:** k3s's scheduled etcd snapshots on, and their folder (`/var/lib/rancher/k3s/server/db/snapshots`) in Borg ([#26](https://github.com/shootie22/infrastructure/issues/26)).
-11. **Test:** stop k3s on fuji for a few minutes. The API keeps answering from the thinkcentre, and the edge's HAProxy keeps sending web traffic to DK's Traefik. Then start it again.
+5. **fuji, in one switch:** `services.k3s.clusterInit = true`, and its node address, external address and advertised API address all its Nebula address, plus `--flannel-iface nebula.mesh` instead of `--flannel-external-ip`. Check: `/var/lib/rancher/k3s/server/db/etcd` exists, `kubectl get nodes -o wide` shows fuji on its Nebula address, every Argo app looks like before.
+6. **thinkcentre as the second server:** `role = "server"`, `serverAddr` fuji's Nebula address, the same flags on its own Nebula address, the server token. Wait until it's Ready and `etcdctl member list` shows two started members.
+7. **Straight on: the edge as the third member.** Two members are worse than one: losing either one loses the majority. So this window stays short. The edge gets its Nebula flags, `--disable-apiserver --disable-controller-manager --disable-scheduler` and the taint `node-role.kubernetes.io/etcd=true:NoExecute`. Wait for three started members, all with peer URLs on Nebula addresses.
+8. **Agents, one at a time** (mixi, minima): `serverAddr` fuji's Nebula address, node and external address their Nebula address, `--flannel-iface nebula.mesh`. After each: the node is Ready on its new address, and its pods reach pods on another node. A fixed registration address for joining while fuji is down is [#21](https://github.com/shootie22/infrastructure/issues/21).
+9. **Snapshots:** k3s's scheduled etcd snapshots on, and their folder (`/var/lib/rancher/k3s/server/db/snapshots`) in Borg ([#26](https://github.com/shootie22/infrastructure/issues/26)).
+10. **Test:** stop k3s on fuji for a few minutes. The API keeps answering from the thinkcentre, and the edge's HAProxy keeps sending web traffic to DK's Traefik. Then start it again.
+11. **Later, once all of this is settled:** fuji's tailnet route for its LAN address (used today so DK reaches the API) isn't needed anymore. The API is on Nebula.
 
 ## If it goes wrong
 
-- Step 6 fails and k3s won't come up: turn `clusterInit` off again and restore `state.db` from the copy taken in step 4.
+- Step 5 fails and k3s won't come up: back to the previous flags, `clusterInit` off, and restore `state.db` from the copy taken in step 3.
 - A member that won't join: remove it with `etcdctl member remove`, wipe its `/var/lib/rancher/k3s/server/db`, and join it again. While only two members exist, don't take either one down.
+- An agent that doesn't come back after step 8: its previous flags and `serverAddr` still work while fuji is up, and it rejoins as before.
 
 ## Restoring a snapshot
 
-For when the cluster's data is lost or broken on every member. Rehearsed in the same VM test.
+For when the cluster's data is lost or broken on every member. Rehearsed in `tests/etcd-migration.nix`.
 
 1. Stop k3s on all three servers.
 2. On one of them (fuji in the rehearsal), run k3s once by hand with its usual flags plus `--cluster-reset --cluster-reset-restore-path=<snapshot>`. It restores and exits. Then start the service again. That server is now a one-member cluster with the snapshot's data. Everything written after the snapshot is gone.
