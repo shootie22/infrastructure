@@ -58,6 +58,7 @@ Two scripts, run with sudo (kept on the thinkcentre, not in a repo).
 7. It saves the firmware's boot entries, a tar of the whole ESP and the old `40_custom` to `/root`, and the ESP's fallback loader (`EFI/BOOT/BOOTX64.EFI`) next to itself. NixOS's systemd-boot replaces the fallback loader. The firmware boots `\EFI\debian\shimx64.efi`, so that doesn't change what starts.
 8. `nixos-install --system <the built system> --no-root-passwd`, then main's password with `nixos-enter`. systemd-boot goes on with `--no-variables`; the script checks that the firmware's entries are the same afterwards.
 9. A GRUB entry for NixOS in `/etc/grub.d/40_custom`, chainloading `/EFI/systemd/systemd-bootx64.efi` from the ESP, with `--id nixos`. If the chainload fails, it reboots: GRUB has already cleared the one-time entry by then, so that lands in Debian. Without the `reboot`, GRUB would go back to its menu with NixOS still the default and try it again forever. Tested in a VM with Debian's real shim and GRUB (dotfiles `hosts/thinkcentre/rehearsal/grub-chain-test.sh`). Then `update-grub` and `grub-script-check`.
+Done 5 Oct. One snag: the installed generation's edge tunnel key step ran before the users existed and failed. It makes the key on the first real boot instead; fixed in dotfiles for next time.
 
 ## 4. Trial boot (downtime starts here)
 
