@@ -65,6 +65,7 @@
       "matchPackageNames": [
         "docker.io/vectorim/element-web",
         "git.radunenu.com/crosty/crosty-game-server",
+        "git.radunenu.com/radu/bopl-2d-server",
         "git.radunenu.com/radu/radunenu.com-minimal",
         "git.radunenu.com/radu/radunenu.com-minimal-stats-updater"
       ],

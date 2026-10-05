@@ -1,0 +1,106 @@
+# Every 5 minutes: compare the registry's :latest digest with what the pod
+# runs and restart the Deployment only if it moved. A restart drops players
+# who are in a match, so pushing a new build ends the current game.
+# Run by hand: kubectl -n bopl2d create job --from=cronjob/bopl2d-updater manual-1
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bopl2d-updater
+  namespace: bopl2d
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: bopl2d-updater
+  namespace: bopl2d
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["bopl2d"]
+    verbs: ["get", "patch"]
+  # rollout status watches the ReplicaSets.
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bopl2d-updater
+  namespace: bopl2d
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: bopl2d-updater
+subjects:
+  - kind: ServiceAccount
+    name: bopl2d-updater
+    namespace: bopl2d
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: bopl2d-updater
+  namespace: bopl2d
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 240
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 600
+      template:
+        spec:
+          serviceAccountName: bopl2d-updater
+          restartPolicy: Never
+          containers:
+            - name: updater
+              image: docker.io/alpine/k8s:1.35.9@sha256:b9cb6db0091a2327c0a56ecda69d37fa830c7a96ea669e7382b3ee778aa07a24
+              command: ["/bin/sh", "-euc"]
+              args:
+                - |
+                  repo=radu/bopl-2d-server
+                  token=$(curl -fsS "https://git.radunenu.com/v2/token?service=container_registry&scope=repository:$repo:pull" | jq -r .token)
+                  latest=$(curl -fsSI \
+                    -H "Authorization: Bearer $token" \
+                    -H "Accept: application/vnd.oci.image.index.v1+json" \
+                    -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json" \
+                    -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+                    -H "Accept: application/vnd.oci.image.manifest.v1+json" \
+                    "https://git.radunenu.com/v2/$repo/manifests/latest" \
+                    | tr -d '\r' | awk -F': ' 'tolower($1) == "docker-content-digest" { print $2 }')
+                  [ -n "$latest" ] || { echo "no digest from registry"; exit 1; }
+
+                  running=$(kubectl get pods -l app=bopl2d \
+                    -o jsonpath='{range .items[*]}{.status.containerStatuses[0].imageID}{"\n"}{end}' \
+                    | sed -n 's/.*@//p' | sort -u)
+                  echo "registry latest: $latest"
+                  echo "running: $(echo $running)"
+
+                  if [ -z "$running" ]; then
+                    echo "no running pod, nothing to compare"
+                    exit 0
+                  fi
+                  if [ "$running" = "$latest" ]; then
+                    echo "up to date"
+                    exit 0
+                  fi
+                  echo "new build, restarting"
+                  kubectl rollout restart deployment/bopl2d
+                  kubectl rollout status deployment/bopl2d --timeout=5m
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
