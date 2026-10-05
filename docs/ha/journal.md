@@ -116,3 +116,9 @@ Three days on NixOS from here. Any reboot lands back in Debian.
 While planning etcd it turned out the cluster would need the tailnet to start, and the tailnet needs Headscale, which runs in the cluster. I tested it: a node that reboots while Headscale is down doesn't get back on the tailnet at all. So the servers now also have Nebula between them, with no control server: certificates on disk, the edge and fuji as lighthouses. Tailscale stays for my devices.
 
 Rehearsed in VMs with both sites behind NAT first, then rolled out to all five servers. The VMs caught a port clash on the RO router. The real thing caught two more that the VMs couldn't: minima talked to fuji over the tailnet without anyone noticing (tailscale routes fuji's LAN address, and that route wins), and mixi could only resolve names through tailscale. Both fixed, and with the edge's Nebula switched off everything still found everything through fuji.
+
+## 2026-10-05: The cluster isn't only on fuji anymore
+
+Phase 3 done in one evening. fuji moved from SQLite to etcd and onto its Nebula address in one switch (the API was away for about 20 seconds), the thinkcentre joined as the second server, the edge as the third etcd member that only votes, and mixi and minima moved their pod network onto Nebula. Then the real test: k3s on fuji stopped for three minutes. The thinkcentre kept answering, nothing on the websites noticed, and fuji rejoined by itself.
+
+The rehearsal paid for itself twice before the real thing even started, but the real cluster still had two surprises: the migration kept a never-expiring API endpoint for fuji's old LAN address, and fuji's backup job was still copying the SQLite file nobody writes to anymore. Both fixed.

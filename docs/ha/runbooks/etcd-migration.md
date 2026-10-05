@@ -35,6 +35,16 @@ Nothing to open in the Headscale ACL or the host firewalls: Nebula's interface i
 10. **Test:** stop k3s on fuji for a few minutes. The API keeps answering from the thinkcentre, and the edge's HAProxy keeps sending web traffic to DK's Traefik. Then start it again.
 11. **Later, once all of this is settled:** fuji's tailnet route for its LAN address (used today so DK reaches the API) isn't needed anymore. The API is on Nebula.
 
+## Done 5 Oct
+
+All steps in about an hour, no outage beyond the API pausing for ~20 seconds at fuji's switch. Three things the real cluster had that the first rehearsal didn't:
+
+- The agents' node addresses were LAN or public IPv6, not the tailnet. Dropping `--flannel-external-ip` at fuji's switch would have sent flannel to addresses the other site can't reach. The servers keep it (it now points at their Nebula addresses), and the rehearsal starts from the real setup.
+- The migration from SQLite copied the API's lease for fuji's old LAN address without its expiry, so the `kubernetes` service kept that address as an endpoint forever (only reachable from DK over the tailnet). Deleted by hand from etcd: `etcdctl del /registry/masterleases/<old address>`. After any migration, check `etcdctl get /registry/masterleases/ --prefix --keys-only` only lists live servers.
+- fuji's Borg job backed up a copy of the SQLite file, which stopped changing. It backs up the etcd snapshots now.
+
+Test afterwards: k3s on fuji stopped for 3 minutes. The thinkcentre kept serving the API, the cluster state kept updating, all sites answered, and fuji rejoined by itself.
+
 ## If it goes wrong
 
 - Step 5 fails and k3s won't come up: back to the previous flags, `clusterInit` off, and restore `state.db` from the copy taken in step 3.
