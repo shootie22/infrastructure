@@ -45,21 +45,23 @@ Done 5 Oct: reboot 1 came up on the new kernel after a remote unlock through mix
 
 ## 3. Install next to Debian (Debian keeps running)
 
-4. **Stop: confirmation needed.** Delete the swap volume and create `nixos` in its place: `lvremove thinkcentre-vg/swap_1`, `lvcreate -l 100%FREE -n nixos thinkcentre-vg`, `mkfs.ext4 -L nixos`.
-5. Nix on Debian, temporarily, with `/nix` bind-mounted from a folder on `/home` so it doesn't fill Debian's root.
-6. Mount `nixos` at `/mnt` and the ESP at `/mnt/boot`, and create `/home/rancher` and `/home/docker`. Then copy in:
-   - `/etc/sops/age/keys.txt` → `/mnt/var/lib/sops-nix/key.txt`
+Two scripts, run with sudo (kept on the thinkcentre, not in a repo).
+
+4. **Stop: confirmation needed.** `nixos-volume.sh`: deletes the swap volume and creates `nixos` in its place (`lvremove thinkcentre-vg/swap_1`, `lvcreate -l 100%FREE -n nixos`, `mkfs.ext4 -L nixos`). It refuses if anything still uses or points at swap.
+5. No Nix on Debian. The NixOS system is built on the workstation and copied over as an archive of its store (1.8 GB, 786 paths). The script unpacks it onto the `nixos` volume and bind-mounts it at `/nix` only while installing.
+6. `nixos-install.sh` mounts `nixos` at `/target` and the ESP at `/target/boot`, and creates `/home/rancher` and `/home/docker`. Then it copies in:
+   - `/etc/sops/age/keys.txt` → `/target/var/lib/sops-nix/key.txt`
    - `/etc/rancher/node/password`, so k3s rejoins as the same node with its labels
    - `/var/lib/tailscale/tailscaled.state`, for the same tailnet node and address
-   - `/etc/ssh/ssh_host_*`, so every known_hosts entry stays valid
-   - a new initrd host key in `/mnt/etc/secrets/initrd/`; note its fingerprint
-7. Back up the ESP's fallback loader (`EFI/BOOT/BOOTX64.EFI`) next to it. NixOS's systemd-boot replaces it.
-8. `nixos-install --flake github:shootie22/dotfiles#thinkcentre --no-root-passwd`, then set main's password with `nixos-enter`.
-9. A GRUB entry for NixOS in `/etc/grub.d/40_custom`, chainloading `/EFI/systemd/systemd-bootx64.efi` from the ESP, with `--id nixos`. Then `update-grub`, and check it's there.
+   - the ed25519 and RSA host keys from `/etc/ssh`, so every known_hosts entry stays valid
+   - a new initrd host key in `/target/etc/secrets/initrd/`; note its fingerprint
+7. It saves the firmware's boot entries, a tar of the whole ESP and the old `40_custom` to `/root`, and the ESP's fallback loader (`EFI/BOOT/BOOTX64.EFI`) next to itself. NixOS's systemd-boot replaces the fallback loader. The firmware boots `\EFI\debian\shimx64.efi`, so that doesn't change what starts.
+8. `nixos-install --system <the built system> --no-root-passwd`, then main's password with `nixos-enter`. systemd-boot goes on with `--no-variables`; the script checks that the firmware's entries are the same afterwards.
+9. A GRUB entry for NixOS in `/etc/grub.d/40_custom`, chainloading `/EFI/systemd/systemd-bootx64.efi` from the ESP, with `--id nixos`. If the chainload fails, it reboots: GRUB has already cleared the one-time entry by then, so that lands in Debian. Without the `reboot`, GRUB would go back to its menu with NixOS still the default and try it again forever. Tested in a VM with Debian's real shim and GRUB (dotfiles `hosts/thinkcentre/rehearsal/grub-chain-test.sh`). Then `update-grub` and `grub-script-check`.
 
 ## 4. Trial boot (downtime starts here)
 
-10. Stop k3s on Debian and copy `/var/lib/rancher/k3s` to `/home/rancher/k3s`, so the ~15 GB of images don't get downloaded again.
+10. Stop k3s on Debian and copy `/var/lib/rancher/k3s` to `/home/rancher/k3s`, so the ~15 GB of images don't get downloaded again. Copy `tailscaled.state` onto `nixos` again too, since Debian kept using it after step 6.
 11. **Stop: confirmation needed.** `grub-reboot nixos`, reboot.
 12. Unlock with `thinkcentre-unlock` (initrd SSH on 2222, the new host key from step 6). Then check:
     - node Ready, Argo Synced/Healthy, Gitea shows its repositories (so the 4 TB disk is open), Vaultwarden, Joplin, Audiobookshelf, the game servers, the Gitea runner
