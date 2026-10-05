@@ -90,7 +90,7 @@ While NixOS runs, any reboot lands in Debian (that's the point). During these da
 
 ## 6. Make NixOS the default
 
-13. GRUB's default becomes the NixOS entry, and the firmware gets a systemd-boot entry first in its order. Either path now ends in systemd-boot.
+13. **Stop: confirmation needed.** `nixos-default.sh`: the firmware gets a new first boot entry for `\EFI\systemd\systemd-bootx64.efi` (`efibootmgr --create`, which puts it first). GRUB's default stays Debian on purpose: systemd-boot's Debian entry goes through GRUB, so a GRUB defaulting to NixOS would send three failed NixOS boots straight back into systemd-boot, forever. This way they end in Debian. If the firmware ignores the new order, Debian starts, which is still reachable.
 14. Reboot and unlock. This is the first boot where NixOS starts on its own.
 15. Edge tunnel from the initrd: `dotfiles.edgeTunnel.initrd = true` (both keys are already registered), then test `unlock-via-edge thinkcentre` on the next reboot.
 
