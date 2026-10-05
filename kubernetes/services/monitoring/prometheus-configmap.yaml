@@ -188,6 +188,8 @@ data:
             labels: { host: fuji }
           - targets: [100.64.0.2:4243]
             labels: { host: mixi }
+          - targets: [100.64.0.4:4243]
+            labels: { host: thinkcentre }
           - targets: [100.64.0.8:4243]
             labels: { host: minima-vm }
           - targets: [100.64.0.9:4243]
@@ -511,6 +513,16 @@ data:
             annotations:
               summary: "comin on {{ $labels.host }} can't fetch the dotfiles repo"
               description: No new config reaches this host until fetching works again.
+          # Fetching that stopped without failing: the thinkcentre's comin went
+          # quiet after the clock jumped back on its first NixOS boot (2026-10-05).
+          - alert: CominNotFetching
+            expr: sum by (host) (increase(comin_fetch_count[1h])) == 0
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: "comin on {{ $labels.host }} hasn't fetched in over an hour"
+              description: Restart it (`systemctl restart comin`); comin-unstick should do that by itself.
           - alert: CominUnreachable
             expr: up{job="comin"} == 0
             for: 15m
