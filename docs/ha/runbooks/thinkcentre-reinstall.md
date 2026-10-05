@@ -94,6 +94,8 @@ While NixOS runs, any reboot lands in Debian (that's the point). During these da
 14. Reboot and unlock. This is the first boot where NixOS starts on its own.
 15. Edge tunnel from the initrd: `dotfiles.edgeTunnel.initrd = true` (both keys are already registered), then test `unlock-via-edge thinkcentre` on the next reboot.
 
+Done 5 Oct, after the manual Borg run came back clean. The firmware booted NixOS through its new entry, the initrd tunnel showed up on the edge about a minute later, and the unlock went through the edge. Boot marked good, no failed units, no k3s restarts, clock right.
+
 ## 7. Retire Debian
 
 16. Archive Debian's root volume into Borg (its own archive, kept).
