@@ -14,22 +14,23 @@ Rehearsed in VMs: dotfiles `tests/etcd-migration.nix` (`nix build .#checks.x86_6
 ## Before
 
 1. Phase 2 done: the thinkcentre runs NixOS.
-2. The tailnet lets the three servers reach each other: etcd 2379-2380, the API 6443, the kubelet 10250, flannel's WireGuard 51820/udp. The Headscale ACL has to allow fuji, the thinkcentre and the edge to reach each other on these, and each host's firewall has to accept them on `tailscale0`. The VM test doesn't cover this part.
-3. Backups: a Borg run on fuji, plus a copy of `/var/lib/rancher/k3s/server/db/state.db` taken while k3s is stopped.
-4. A quiet hour. The API is down for a moment during step 5. Workloads keep running, but Argo and kubectl wait.
+2. **Headscale doesn't depend on etcd anymore** ([#37](https://github.com/shootie22/infrastructure/issues/37)). A node that reboots while Headscale is down gets no tailnet address (tested, dotfiles `tests/tailscale-without-headscale.nix`), and etcd members only reach each other over the tailnet. With Headscale pinned to fuji, a fuji reboot could never finish: tailscale waits for Headscale, Headscale for fuji's k3s, k3s for its etcd peers. Also decide which address each member advertises: today fuji's and minima's node addresses are public IPv6 and the thinkcentre's is a DHCP LAN address; none of those is reachable from every member.
+3. The tailnet lets the three servers reach each other: etcd 2379-2380, the API 6443, the kubelet 10250, flannel's WireGuard 51820/udp. The Headscale ACL has to allow fuji, the thinkcentre and the edge to reach each other on these, and each host's firewall has to accept them on `tailscale0`. The VM test doesn't cover this part.
+4. Backups: a Borg run on fuji, plus a copy of `/var/lib/rancher/k3s/server/db/state.db` taken while k3s is stopped.
+5. A quiet hour. The API is down for a moment during step 6. Workloads keep running, but Argo and kubectl wait.
 
 ## Steps
 
-5. **fuji to etcd:** `services.k3s.clusterInit = true` on fuji, deploy. Check: `/var/lib/rancher/k3s/server/db/etcd` exists, `kubectl get nodes` and every Argo app look like before.
-6. **thinkcentre as the second server:** `role = "server"`, `serverAddr` pointing at fuji, the server token. Wait until it's Ready and `etcdctl member list` shows two started members.
-7. **Straight on: the edge as the third member.** Two members are worse than one: losing either one loses the majority. So this window stays short. The edge gets `--disable-apiserver --disable-controller-manager --disable-scheduler` and the taint `node-role.kubernetes.io/etcd=true:NoExecute`. Wait for three started members.
-8. Agents (mixi, minima) need nothing: they learn the new servers by themselves. A fixed registration address for joining while fuji is down is [#21](https://github.com/shootie22/infrastructure/issues/21).
-9. **Snapshots:** k3s's scheduled etcd snapshots on, and their folder (`/var/lib/rancher/k3s/server/db/snapshots`) in Borg ([#26](https://github.com/shootie22/infrastructure/issues/26)).
-10. **Test:** stop k3s on fuji for a few minutes. The API keeps answering from the thinkcentre, and the edge's HAProxy keeps sending web traffic to DK's Traefik. Then start it again.
+6. **fuji to etcd:** `services.k3s.clusterInit = true` on fuji, deploy. Check: `/var/lib/rancher/k3s/server/db/etcd` exists, `kubectl get nodes` and every Argo app look like before.
+7. **thinkcentre as the second server:** `role = "server"`, `serverAddr` pointing at fuji, the server token. Wait until it's Ready and `etcdctl member list` shows two started members.
+8. **Straight on: the edge as the third member.** Two members are worse than one: losing either one loses the majority. So this window stays short. The edge gets `--disable-apiserver --disable-controller-manager --disable-scheduler` and the taint `node-role.kubernetes.io/etcd=true:NoExecute`. Wait for three started members.
+9. Agents (mixi, minima) need nothing: they learn the new servers by themselves. A fixed registration address for joining while fuji is down is [#21](https://github.com/shootie22/infrastructure/issues/21).
+10. **Snapshots:** k3s's scheduled etcd snapshots on, and their folder (`/var/lib/rancher/k3s/server/db/snapshots`) in Borg ([#26](https://github.com/shootie22/infrastructure/issues/26)).
+11. **Test:** stop k3s on fuji for a few minutes. The API keeps answering from the thinkcentre, and the edge's HAProxy keeps sending web traffic to DK's Traefik. Then start it again.
 
 ## If it goes wrong
 
-- Step 5 fails and k3s won't come up: turn `clusterInit` off again and restore `state.db` from the copy taken in step 3.
+- Step 6 fails and k3s won't come up: turn `clusterInit` off again and restore `state.db` from the copy taken in step 4.
 - A member that won't join: remove it with `etcdctl member remove`, wipe its `/var/lib/rancher/k3s/server/db`, and join it again. While only two members exist, don't take either one down.
 
 ## Restoring a snapshot
