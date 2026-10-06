@@ -156,8 +156,15 @@ spec:
         app: rybbit-clickhouse
     spec:
       automountServiceAccountToken: false
+      # Runs on whichever of fuji and the thinkcentre holds the label; the
+      # other has a copy (merges stopped while it's taken, so the parts on
+      # disk hold still) and takes over when this site is gone (dotfiles
+      # modules/nixos/site-failover).
       nodeSelector:
-        kubernetes.io/hostname: thinkcentre
+        ha.radunenu.com/rybbit-clickhouse: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: clickhouse
           image: clickhouse/clickhouse-server:25.4.2.31@sha256:5311f717b7a3ee1e8ed2c198fee498c636ba6c2da3e39dbe45769088ebc858d0
@@ -201,7 +208,7 @@ spec:
       volumes:
         - name: data
           hostPath:
-            path: /home/main/services/rybbit/clickhouse
+            path: /srv/ha/rybbit-clickhouse
             type: Directory
         - name: config
           configMap:
@@ -241,8 +248,17 @@ spec:
         app: rybbit-backend
     spec:
       automountServiceAccountToken: false
-      nodeSelector:
-        kubernetes.io/hostname: thinkcentre
+      # Nothing on disk: fuji or the thinkcentre, moving 30 s after its node
+      # stops answering.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: In, values: [fuji, thinkcentre]}
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: backend
           image: git.radunenu.com/radu/rybbit-backend:migration-20260924
@@ -313,8 +329,17 @@ spec:
         app: rybbit-client
     spec:
       automountServiceAccountToken: false
-      nodeSelector:
-        kubernetes.io/hostname: thinkcentre
+      # Nothing on disk: fuji or the thinkcentre, moving 30 s after its node
+      # stops answering.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: In, values: [fuji, thinkcentre]}
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: client
           image: git.radunenu.com/radu/rybbit-client:migration-20260924
@@ -361,8 +386,17 @@ spec:
         app: rybbit-caddy
     spec:
       automountServiceAccountToken: false
-      nodeSelector:
-        kubernetes.io/hostname: thinkcentre
+      # Nothing on disk: fuji or the thinkcentre, moving 30 s after its node
+      # stops answering.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: In, values: [fuji, thinkcentre]}
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: caddy
           image: caddy:2.10.0@sha256:133b5eb7ef9d42e34756ba206b06d84f4e3eb308044e268e182c2747083f09de
