@@ -151,3 +151,9 @@ Keycloak, Joplin, Rybbit and Gitea moved to CNPG the same afternoon, one after a
 Gitea's repos and Rybbit's ClickHouse still only live on the thinkcentre. The old Postgres containers stay a few days in case something turns up.
 
 While at it: signups were open on both Vaultwarden and Rybbit. Closed.
+
+## 2026-10-06: Copies to the other site
+
+The file side of #142. A small NixOS module pushes folders to the other site every 10 minutes with rsync over Nebula. The VM test found three things before it went live: nixpkgs keeps rrsync in its own package, SQLite needs a busy timeout or the snapshot fails while the app writes, and a test of mine was checking the wrong thing. The real hosts found one more: rrsync lets only one copy into a folder at a time, so the second and third job from the thinkcentre bounced. Fixed and covered by the test now.
+
+PrivateBin, Send's uploads and Audiobookshelf go to fuji's standby SSD, Baikal to the thinkcentre. Gitea's 105 GB comes next.

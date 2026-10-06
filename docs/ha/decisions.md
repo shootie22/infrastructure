@@ -150,3 +150,11 @@ Each CNPG instance keeps its data on its own node's disk, through k3s' local-pat
 Backups go the same way as everything else: every hour a job dumps each database from the replica into a folder on fuji, and fuji's nightly Borg job picks it up, so it ends up on the Mac's 10 TB disk and from there in Backblaze. No WAL archive and no restore to a point in time. Losing both instances at once still leaves the last hourly dump on fuji; losing fuji's disk too falls back to the nightly copy. Fine for what runs here.
 
 Also on the table: Longhorn or another replicated volume under CNPG (two layers doing the same job over the WAN), and CNPG's own backups to object storage (would mean B2 or MinIO just for this, next to a Borg setup that already works).
+
+## 2026-10-06: Files reach the other site by rsync every 10 minutes (#142)
+
+Everything with files (Gitea's repos, Audiobookshelf, PrivateBin, Send, Baikal, Headscale, the game worlds) gets copied to the other site by the hosts themselves: a NixOS module in dotfiles (`modules/nixos/standby-copy.nix`) runs rsync over SSH on the Nebula mesh every 10 minutes. DK's services land on fuji's standby SSD, RO's on the thinkcentre. SQLite files are copied from a `sqlite3 .backup` snapshot, never mid-write. The receiving side only lets the sender's key write into that sender's own folder, and refuses when the standby disk isn't mounted. A Prometheus alert fires when a copy is more than an hour old.
+
+A failover can lose up to the last 10 minutes of files. Starting the standby when a site is gone is the failover controller's job (Phase 6), not this.
+
+Also on the table: Syncthing (continuous, but two-way with conflict files, and live SQLite or git files can arrive half-written), Longhorn (every write waits on the other site over the internet, ruled out for Postgres already), and Litestream to S3 storage for the SQLite apps (about a second of loss instead of 10 minutes, but one more stateful service per site, and a second restore path, for three apps that rarely write). Litestream can still go on top later if one of them turns out to need it; it would use Garage rather than MinIO, which stopped shipping its community builds.
