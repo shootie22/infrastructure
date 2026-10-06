@@ -29,7 +29,8 @@ The service doesn't move back by itself. That's deliberate: no second outage.
 For example to put it back on its usual node after a failover. Only with both nodes up, and at a quiet moment:
 
 1. On the active node, `systemctl start standby-copy-<service>` and check it succeeded.
-2. Right after, move the label: `kubectl label node <active> ha.radunenu.com/<service>-` then `kubectl label node <other> ha.radunenu.com/<service>=active`. The old node stops the service within seconds (its fence), and it starts on the other one.
+2. Right after, move the label: `kubectl label node <active> ha.radunenu.com/<service>-` then `kubectl label node <other> ha.radunenu.com/<service>=active`. The old node stops the service within seconds (its fence).
+3. Delete the service's pod (`kubectl -n <namespace> delete pod -l <its labels>`). With both nodes up, nothing evicts it by itself; its replacement starts on the other node.
 
 Whatever was written in the seconds between the copy and the move is lost. (Scaling the Deployment down first doesn't work: Argo puts it straight back.)
 
