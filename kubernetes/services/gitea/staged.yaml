@@ -58,6 +58,8 @@ spec:
   template:
     metadata:
       labels: {app: gitea}
+      # Bump to restart Gitea (e.g. after its folder's mounts change).
+      annotations: {restart: "1"}
     spec:
       automountServiceAccountToken: false
       # Runs on whichever of fuji and the thinkcentre holds the label; the
