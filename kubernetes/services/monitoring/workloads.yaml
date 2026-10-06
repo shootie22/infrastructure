@@ -364,6 +364,8 @@ spec:
             - --path.sysfs=/host/sys
             - --path.rootfs=/host/root
             - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($|/)
+            # Metrics the hosts write themselves (dotfiles standby-copy, #142).
+            - --collector.textfile.directory=/host/root/var/lib/node-exporter-textfile
           ports:
             - name: metrics
               containerPort: 9100

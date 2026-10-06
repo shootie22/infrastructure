@@ -538,6 +538,17 @@ data:
             annotations:
               summary: "comin on {{ $labels.host }} hasn't fetched in over an hour"
               description: Restart it (`systemctl restart comin`); comin-unstick should do that by itself.
+          # Copies of service folders to the other site (dotfiles standby-copy,
+          # #142). Every 10 minutes normally; a stale copy means a failover
+          # would lose more than that.
+          - alert: StandbyCopyStale
+            expr: time() - standby_copy_last_success_timestamp_seconds > 3600
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Standby copy {{ $labels.copy }} to {{ $labels.to }} is over an hour old"
+              description: Check `journalctl -u standby-copy-{{ $labels.copy }}` on the sending host.
           # The servers' own overlay (dotfiles lib/nebula.nix, #141). Scraped from
           # fuji over the mesh, so this also means fuji can't reach the host there.
           - alert: NebulaHostUnreachable
