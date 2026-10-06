@@ -22,6 +22,18 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: cloudnative-pg
+        # With one pod per site there's nowhere for an extra pod to go during
+        # an upgrade, so replace them one at a time instead.
+        updateStrategy:
+          type: RollingUpdate
+          rollingUpdate:
+            maxSurge: 0
+            maxUnavailable: 1
+        # Both pods started on minima before the nodes had site labels, and
+        # the anti-affinity only applies when scheduling. Changing this
+        # rolls them out again.
+        podAnnotations:
+          radunenu.com/rolled: "2026-10-06"
 
   destination:
     server: https://kubernetes.default.svc
