@@ -122,3 +122,12 @@ Rehearsed in VMs with both sites behind NAT first, then rolled out to all five s
 Phase 3 done in one evening. fuji moved from SQLite to etcd and onto its Nebula address in one switch (the API was away for about 20 seconds), the thinkcentre joined as the second server, the edge as the third etcd member that only votes, and mixi and minima moved their pod network onto Nebula. Then the real test: k3s on fuji stopped for three minutes. The thinkcentre kept answering, nothing on the websites noticed, and fuji rejoined by itself.
 
 The rehearsal paid for itself twice before the real thing even started, but the real cluster still had two surprises: the migration kept a never-expiring API endpoint for fuji's old LAN address, and fuji's backup job was still copying the SQLite file nobody writes to anymore. Both fixed.
+
+## 2026-10-06: Postgres across both sites, rehearsed
+
+Before putting any database on CNPG I ran it in VMs set up like the real cluster: etcd on fuji, the thinkcentre and the edge, everything over Nebula, both sites behind NAT. One Postgres instance per site. Times, from the moment the primary goes away until a write goes through again:
+- primary's pod deleted: about 10 seconds
+- primary's machine crashed: about 2 minutes (Kubernetes needs a while to decide a node is gone). It came back as a replica by itself.
+- RO and DK cut off from each other: RO took writes after about 80 seconds, and the old primary in DK stopped taking writes at the same moment, so there were never two primaries. After the link came back both were in sync and no rows were missing.
+
+The hourly dump from the replica also works. Took a few runs to get there: the operator's own manifest wants to pull its image every start, and the dump folder and test table had the wrong owners.

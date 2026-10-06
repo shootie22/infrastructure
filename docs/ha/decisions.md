@@ -142,3 +142,11 @@ Almost everything. Bandwidth and disk are there, and the point of all this is th
 Three building blocks cover it: replicated Postgres (CNPG, Phase 4), one file-copy mechanism over Nebula for everything with files (repos, worlds, audiobooks, uploads), and failover control that promotes the standby when a site is gone (Phase 6). Copies are asynchronous: a failover can miss the last minute or two of writes (a push, a few minutes of a game world). Synchronous replication over the WAN would slow every write; not worth it.
 
 Standby copies in RO go on fuji's spare 1 TB SSD, not the Mac's external drive (a macOS USB disk that's also the Borg target).
+
+## 2026-10-06: Postgres storage and backups (#30, #32)
+
+Each CNPG instance keeps its data on its own node's disk, through k3s' local-path provisioner. CNPG does the replication, so the storage underneath doesn't need to. One instance on fuji, one on the thinkcentre, never both in the same site. They can only run on nodes labelled for databases, which keeps them off mixi, minima and the edge.
+
+Backups go the same way as everything else: every hour a job dumps each database from the replica into a folder on the node, and that node's Borg job picks it up, so it ends up on the Mac's 10 TB disk and from there in Backblaze. No WAL archive and no restore to a point in time. Between the replica in the other site and hourly dumps, the worst case is an hour of writes lost in a real disaster, which is fine for what runs here.
+
+Also on the table: Longhorn or another replicated volume under CNPG (two layers doing the same job over the WAN), and CNPG's own backups to object storage (would mean B2 or MinIO just for this, next to a Borg setup that already works).
