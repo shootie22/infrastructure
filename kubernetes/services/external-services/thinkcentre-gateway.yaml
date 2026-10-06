@@ -11,7 +11,8 @@ data:
     }
 
     :18081 {
-        reverse_proxy http://100.64.0.4:18080
+        # Rybbit's Caddy through its Service, wherever it runs (#146).
+        reverse_proxy http://caddy.rybbit.svc.cluster.local:8080
     }
 ---
 apiVersion: apps/v1
