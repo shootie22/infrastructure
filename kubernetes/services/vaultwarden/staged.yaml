@@ -20,79 +20,6 @@ spec:
       automountServiceAccountToken: false
       nodeSelector:
         kubernetes.io/hostname: thinkcentre
-      # The one-time move from SQLite to Postgres (#31), as rehearsed in
-      # migration-dryrun.yaml. Skipped once Postgres has a user. Recreate
-      # means the old pod has let go of the SQLite file by now. The log ends
-      # up in /home/main/services/vaultwarden-migration on the thinkcentre.
-      initContainers:
-        - name: check
-          image: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              exec >>/result/cutover.log 2>&1
-              echo "== check $(date -Is)"
-              n=$(psql -h vaultwarden-db-rw -U vaultwarden -d vaultwarden -At -c "select count(*) from users" 2>/dev/null)
-              if [ "${n:-0}" -gt 0 ]; then echo "Postgres has $n users, nothing to move"; touch /scratch/skip; fi
-              true
-          env:
-            - name: PGPASSWORD
-              valueFrom:
-                secretKeyRef: {name: vaultwarden-db-app, key: password}
-          securityContext:
-            runAsUser: 0
-          volumeMounts:
-            - {name: scratch, mountPath: /scratch}
-            - {name: result, mountPath: /result}
-        - name: schema
-          image: vaultwarden/server:1.37.3@sha256:1587c45feaa479f1f5e8af3b00eded36bff77bcf1880cf8dbf0541706dd470e0
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              [ -e /scratch/skip ] && exit 0
-              exec >>/result/cutover.log 2>&1
-              echo "== copy and schema $(date -Is)"
-              cp -v /data/db.sqlite3* /scratch/
-              timeout 30 /start.sh
-              echo "vaultwarden exited with $? (124 is the timeout, expected)"
-          env:
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef: {name: vaultwarden-db-app, key: uri}
-            - {name: DATA_FOLDER, value: /scratch/vw}
-            - {name: ROCKET_PORT, value: "8081"}
-            - {name: I_REALLY_WANT_VOLATILE_STORAGE, value: "true"}
-          volumeMounts:
-            - {name: data, mountPath: /data, readOnly: true}
-            - {name: scratch, mountPath: /scratch}
-            - {name: result, mountPath: /result}
-        - name: load
-          image: ghcr.io/dimitri/pgloader:latest@sha256:a1d4a78e78a64e46cd3fc7dfc57d24eb91ffb1a5520f2b1f55631815e3658d6e
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              [ -e /scratch/skip ] && exit 0
-              exec >>/result/cutover.log 2>&1
-              echo "== load $(date -Is)"
-              cat >/scratch/load <<EOF
-              LOAD DATABASE
-                FROM sqlite:///scratch/db.sqlite3
-                INTO postgresql://vaultwarden@vaultwarden-db-rw:5432/vaultwarden
-                WITH data only, include no drop, reset sequences
-                EXCLUDING TABLE NAMES LIKE '__diesel_schema_migrations'
-                ALTER SCHEMA 'bitwarden' RENAME TO 'public';
-              EOF
-              pgloader /scratch/load
-              rc=$?
-              echo "pgloader exited with $rc"
-              exit $rc
-          env:
-            - name: PGPASSWORD
-              valueFrom:
-                secretKeyRef: {name: vaultwarden-db-app, key: password}
-          volumeMounts:
-            - {name: scratch, mountPath: /scratch}
-            - {name: result, mountPath: /result}
       containers:
         - name: vaultwarden
           image: vaultwarden/server:1.37.3@sha256:1587c45feaa479f1f5e8af3b00eded36bff77bcf1880cf8dbf0541706dd470e0
@@ -115,12 +42,6 @@ spec:
           hostPath:
             path: /home/main/services/vaultwarden
             type: Directory
-        - name: scratch
-          emptyDir: {}
-        - name: result
-          hostPath:
-            path: /home/main/services/vaultwarden-migration
-            type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
