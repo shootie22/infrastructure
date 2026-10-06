@@ -143,3 +143,11 @@ Moving the data was a dry run into a scratch database first, then the real thing
 Vaultwarden itself still only runs on the thinkcentre, because of the key it signs logins with. That's next.
 
 Later the same day: the signing key went into a SOPS secret and Vaultwarden lost its pin to the thinkcentre. It came back up on mixi about 10 seconds later, and the phone synced without asking me to log in again, so the key carried over. Attachments and file Sends are off, since those would live on one node's disk. Files go through Send anyway.
+
+## 2026-10-06: The other databases
+
+Keycloak, Joplin, Rybbit and Gitea moved to CNPG the same afternoon, one after another. CNPG can import straight from a running Postgres, so no pgloader this time, and Gitea went from Postgres 14 to 18 on the way. Each one was down for somewhere between 20 seconds and a minute and a half. Keycloak and Joplin had nothing else on disk, so they can now run on fuji or the thinkcentre and move by themselves 30 seconds after their node stops answering.
+
+Gitea's repos and Rybbit's ClickHouse still only live on the thinkcentre. The old Postgres containers stay a few days in case something turns up.
+
+While at it: signups were open on both Vaultwarden and Rybbit. Closed.
