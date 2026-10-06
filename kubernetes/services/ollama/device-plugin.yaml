@@ -17,8 +17,13 @@ spec:
       labels:
         app.kubernetes.io/name: gpu-device-plugin
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: minima
+      # minima, and mixi (the M1's GPU under Asahi, #150).
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: In, values: [minima, mixi]}
       priorityClassName: system-node-critical
       containers:
         - name: plugin
