@@ -50,7 +50,7 @@ Decided 6 Oct ([#88](https://github.com/shootie22/infrastructure/issues/88), [de
 | Gitea runners | thinkcentre, mixi | caches | already one per site | |
 | github-commit-sync | mixi | none | Stateless copy | |
 | Pinga | thinkcentre | 2.3 GB | Retire | radunenu.com's status page reads from Prometheus instead |
-| picshare | thinkcentre | small | Retire | |
+| picshare | thinkcentre | small | Retired 6 Oct | Manifests removed; data left in /home/main/services/picshare and in Borg |
 
 ### Building blocks
 
