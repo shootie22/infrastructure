@@ -12,6 +12,9 @@ spec:
     metadata:
       labels:
         app: radunenu-com
+      # The images are :latest; bump this to roll out a new site release.
+      annotations:
+        release: v0.1.36
     spec:
       containers:
         - name: website
