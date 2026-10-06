@@ -31,7 +31,6 @@ spec:
             - name: game
               containerPort: 24545
               hostPort: 24545
-              hostIP: 100.64.0.4
               protocol: UDP
 ---
 apiVersion: v1

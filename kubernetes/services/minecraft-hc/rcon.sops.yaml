@@ -1,0 +1,34 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: minecraft-rcon
+    namespace: minecraft-hc
+spec:
+    secretTemplates:
+        - name: ENC[AES256_GCM,data:TZw9VrvpBqXd9pZ/u44=,iv:4hR5sHzXKAqpa5HvTYlnl+N9Y5U5Nli5PMDnF2TuRb0=,tag:01bWELSznqEa5+fwAJaQiQ==,type:str]
+          stringData:
+            password: ENC[AES256_GCM,data:+7Of0d+eIoZRy1CthhBTQV4Jxe0QymCOlm+5t7qOp70=,iv:+Q37BHYdru7/Z3bKa5E6tjfpCrqYtP4U3fTO+kfQdSU=,tag:iQOm5Br4bhHBA57ROT7YOQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBvY1FJNTgxakoySTN4ZE5Q
+            by9YNzd5Z2NpL1UraDRGN1htQVFxTmxvYUY4CjJ0UllXWVBwcmFJc3dwSSttUjdo
+            ZUVtRGpBS3A3eDZ3d2ROTTBuQjNnNGcKLS0tIHNVU0lzWGxudi9GOEJJWERyNFZC
+            RzNMMkJibXFGMjBnWWFBWmdGODZCa1EKCk05inYDBwzbOgNKJAwNRDD35T4fR9Y7
+            lG3sxQKGA+oUfIsLI3EtnI65OwUnxpAxsgWDAiqqoeSFhzIQdKbR+A==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA2OVY4ZkJIU0RLOXB2d0FE
+            MmxHWHdUcEtsUHRxOWlHQzg0RWYrb2VWckRzCk9VTFlEL25OUXVDdmVmK1VlZkdK
+            cUloOWJpd1NEMEhFbldPZ0hmb0ZxL0EKLS0tIG56cG5YbWlPSTlUbXBPbGhwVUpL
+            SUNveGVRL1hyRktvUS93WlpNQXVSUUEKxhU+PIxEXHWjclsTo2FUvjV4GX5kDGH/
+            bkAbSfS9c9h73uJCraRZdRlOSa9XA0v8SyELPeNUmfXpkdzbxge5Fw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
+    encrypted_suffix: Templates
+    lastmodified: "2026-10-06T16:45:13Z"
+    mac: ENC[AES256_GCM,data:04Qw1ZUSKfomU/4QwPe2verbbHIFZCFYnp8rKE9+p6D1l0w5leKsEnwJRY1vMyt+fVfv4jsYEMBvturNoIIpidgJpLgLa4UXxxcdZtAD4RQM9DfygmXFaGan9GnfBxBUWjb+JMM6kV6CsNDUZhefTC/yyzYm4u0zT+qrLS0MSm4=,iv:S88KDRj3etlO6/bq1s0IyAUfOrqXL1Ui67KCtrXuHZA=,tag:92/6X/e5aJO5dK4gKOLXPg==,type:str]
+    version: 3.13.3
