@@ -157,11 +157,6 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
-    "radunenu.com/api/CNAME" = {
-      zone    = "radunenu.com", name = "api", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
     "radunenu.com/archive/CNAME" = {
       zone    = "radunenu.com", name = "archive", type = "CNAME"
       content = "beacon.radunenu.com"
@@ -201,11 +196,6 @@ locals {
       zone    = "radunenu.com", name = "hs", type = "CNAME"
       content = "ro.radunenu.com"
     }
-    "radunenu.com/img/CNAME" = {
-      zone    = "radunenu.com", name = "img", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
     "radunenu.com/mon/CNAME" = {
       zone    = "radunenu.com", name = "mon", type = "CNAME"
       content = "beacon.radunenu.com"
@@ -213,11 +203,6 @@ locals {
     }
     "radunenu.com/pbin/CNAME" = {
       zone    = "radunenu.com", name = "pbin", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/pinga/CNAME" = {
-      zone    = "radunenu.com", name = "pinga", type = "CNAME"
       content = "beacon.radunenu.com"
       proxied = true
     }
