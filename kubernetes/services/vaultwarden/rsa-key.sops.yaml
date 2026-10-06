@@ -1,0 +1,34 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: vaultwarden-rsa-key
+    namespace: vaultwarden
+spec:
+    secretTemplates:
+        - name: ENC[AES256_GCM,data:hwVl6sYze8dLqRUNnMsE3MfItQ==,iv:bP16kkGq1Dg/1HtvLbCDLa2xiX30JxI2fQ9CDurtXKk=,tag:yb+K4F0SaKRkWT6ztBgdxg==,type:str]
+          stringData:
+            rsa_key.pem: ENC[AES256_GCM,data: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,iv:AF+ItNFrWlG9wkSeg5eg9Jm828aPJ6ExHTodpYb1DTI=,tag:CGbZW2oYMQkyoTuGULVcNA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAxOWo4V1R4U2dUM2ZXN0NW
+            d3MzYUVEWGdSVHhrd2c5TUVYalF4MDFtTm1RCmtycXpUMGg5aVpieWZHdm9ieTJD
+            bkZBRDNPWjBkVkVJK3M1dUlHQ2tKZWcKLS0tIGtWTU5sdWNxZkhzVU1naTB0NEtz
+            NFB5MmdjU1VFcXpQVEx3bkNqb3M0UmMK26QU4s/JM01Vjtj4RQhEr2dQSQZO9q7X
+            ETUMAARXb/xdAhFa6QYBLOBUOZ1eThJNeKEO90FQuYmv92EFbNDLGA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBSTENwWklXbys2TFdmeS9K
+            L2VuVjBTcUVGeFJGb2UzT2ErdGd6dlVSK253CjR5NkorQW0yMmIwUi9lRnc5YXZH
+            dFU5YlJoVk5oQXk0RzNOZ3JuMFRqNWsKLS0tIE42dVZOWjJlWldBR2t1OHE1eVRX
+            d3JLUWd4RDROOExzZGp5eGRVZTFYUkEKzoFP7m8t+iJXCbsjezSBylcwxZ067VBe
+            v2uXAoN2qZqyYb12cWXXzgWU/LMIMzV+kWgrhW00AAssATNUB9hH5g==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
+    encrypted_suffix: Templates
+    lastmodified: "2026-10-06T10:47:07Z"
+    mac: ENC[AES256_GCM,data:DOfpZ4NYKCMcZZjR65tJVokNcoQv5bnZ/0FDvej4i3S4B+IGO4SRKnfR26muWcP9OFfb350vI4sS8H2nIK3pUkqcB+jWMNZPGgiHeXsQweYeaGFbbuxgVcTKGST6gNb4MFBKurNLEWKqO4Xh47+bKM4lbdQtZA0Pk5EGJ2s7CpU=,iv:C08P2dLRfJw0FMVKuv7/7jhqVh4UtOoEyNP4CDxD+2Q=,tag:9Rtrn0YEPxWaQ7Pzhw3ivg==,type:str]
+    version: 3.13.3
