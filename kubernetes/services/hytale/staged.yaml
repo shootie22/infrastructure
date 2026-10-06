@@ -21,8 +21,15 @@ spec:
         app: hytale
     spec:
       automountServiceAccountToken: false
+      # Runs on whichever of fuji and the thinkcentre holds the label; the
+      # other has a copy of the world and takes over when this site is gone
+      # (dotfiles modules/nixos/site-failover). Copied live, without a save
+      # step: no console to ask for one yet.
       nodeSelector:
-        kubernetes.io/hostname: thinkcentre
+        ha.radunenu.com/hytale: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       terminationGracePeriodSeconds: 30
@@ -62,7 +69,7 @@ spec:
       volumes:
         - name: server-files
           hostPath:
-            path: /home/main/game_servers/hytale
+            path: /srv/ha/hytale
             type: Directory
 ---
 apiVersion: v1

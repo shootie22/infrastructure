@@ -40,7 +40,8 @@ Decided 6 Oct ([#88](https://github.com/shootie22/infrastructure/issues/88), [de
 | Audiobookshelf | thinkcentre | 14 GB library, 34 MB database | Survives | file copy |
 | Legacy web (old API, Kronorite) | fuji, minima | 2 GB of files | Survives | file copy |
 | Rybbit | thinkcentre | Postgres + ClickHouse | Survives | Postgres replica; ClickHouse to work out |
-| Minecraft HC, Skyblock, Vintage Story | thinkcentre | worlds, up to 96 GB | Survives | world copied after a save, every few minutes |
+| Minecraft HC, Skyblock, Hytale | thinkcentre | worlds, up to 8 GB | Survives | site-failover; Minecraft saves over RCON before each copy, Hytale is copied live |
+| Vintage Story | (not running) | 96 GB world | Retired 6 Oct | not played in a while; the world stays in /home/main/game_servers/vintage_story and in Borg |
 | Bopl 2D, Crosty, MegaBopl3D | thinkcentre | none | Stateless copy | can run in either site |
 | radunenu.com, yeetus.net, redirect domains | fuji, minima, mixi | none | Stateless copy | a replica per site |
 | Element Web, Element Call | minima, mixi | none | Stateless copy | a replica per site |
