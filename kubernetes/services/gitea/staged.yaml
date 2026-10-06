@@ -67,6 +67,15 @@ spec:
           image: docker.gitea.com/gitea:1.27.3@sha256:87a67ee09d3ae0d1df5fda5dcda3e2a1f9236a45b0a59025d6e00e46adc43bef
           envFrom:
             - secretRef: {name: gitea-env}
+          # Postgres on CNPG since Oct 2026 (#31); overrides the database settings
+          # in gitea-env, and Gitea writes them into app.ini at start.
+          env:
+            - {name: GITEA__database__HOST, value: "gitea-pg-rw:5432"}
+            - {name: GITEA__database__NAME, value: gitea}
+            - name: GITEA__database__USER
+              valueFrom: {secretKeyRef: {name: gitea-pg-app, key: username}}
+            - name: GITEA__database__PASSWD
+              valueFrom: {secretKeyRef: {name: gitea-pg-app, key: password}}
           ports:
             - {name: http, containerPort: 3000}
             - {name: ssh, containerPort: 22, hostPort: 222}

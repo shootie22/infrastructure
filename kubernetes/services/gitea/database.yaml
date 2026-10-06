@@ -1,0 +1,85 @@
+# Gitea's Postgres: one instance in each site (#31, #144). Imported from the
+# old single Postgres 14 (gitea-postgres in staged.yaml), which stays until the
+# move is checked. The repos are files and still only on the thinkcentre (#142).
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: gitea-pg
+  namespace: gitea
+spec:
+  instances: 2
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+  bootstrap:
+    initdb:
+      database: gitea
+      owner: gitea
+      import:
+        type: microservice
+        databases: [gitea_db]
+        source:
+          externalCluster: old
+  externalClusters:
+    - name: old
+      connectionParameters:
+        host: db
+        user: gitea_dbusr
+        dbname: gitea_db
+        sslmode: disable
+      password: {name: gitea-env, key: POSTGRES_PASSWORD}
+  storage:
+    size: 20Gi
+    storageClass: local-path
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: required
+    topologyKey: topology.kubernetes.io/zone
+    nodeSelector:
+      db: "true"
+  probes:
+    liveness:
+      isolationCheck:
+        enabled: true
+---
+# Hourly dump into fuji's Borg folder (#32), as for the others.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gitea-pg-dump
+  namespace: gitea
+spec:
+  schedule: "25 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          nodeSelector:
+            kubernetes.io/hostname: fuji
+          containers:
+            - name: dump
+              image: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+              command: ["/bin/sh", "-ec"]
+              args:
+                - |
+                  host=gitea-pg-ro
+                  pg_isready -q -h $host || host=gitea-pg-r
+                  pg_dump -h $host -U gitea -d gitea -Fc -f /backup/gitea.dump.tmp
+                  mv /backup/gitea.dump.tmp /backup/gitea.dump
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef: {name: gitea-pg-app, key: password}
+              securityContext:
+                allowPrivilegeEscalation: false
+              volumeMounts:
+                - {name: backup, mountPath: /backup}
+          volumes:
+            - name: backup
+              hostPath:
+                path: /var/lib/pg-dumps
+                type: Directory
