@@ -34,6 +34,11 @@ data:
     TOKEN = os.environ["STATUS_API_TOKEN"]
     PROMETHEUS = os.environ.get("PROMETHEUS", "http://prometheus.monitoring.svc:9090,http://prometheus-dk.monitoring.svc:9090").split(",")
     JOBS = 'job=~"status-ingress|status-extra"'
+    # How long the service takes to answer, without DNS, connecting and the
+    # TLS handshake: the probes go out and back through RO's router with a
+    # fresh handshake every time, which says more about the path than about
+    # the service.
+    ANSWER = f'probe_http_duration_seconds{{{JOBS},phase=~"processing|transfer"}}'
     STEP = 60  # the probes' interval
 
 
@@ -61,7 +66,7 @@ data:
 
     def services():
         up = query("query", {"query": f"probe_success{{{JOBS}}}"})
-        took = {r["metric"]["instance"]: r["value"] for r in query("query", {"query": f"probe_duration_seconds{{{JOBS}}}"})}
+        took = {r["metric"]["instance"]: r["value"] for r in query("query", {"query": f"sum by (instance) ({ANSWER})"})}
         rows, seen = [], set()
         for r in sorted(up, key=lambda r: r["metric"].get("status_name", "")):
             target = r["metric"]["instance"]
@@ -86,7 +91,7 @@ data:
         span = {"start": end - STEP * limit, "end": end, "step": STEP}
         sel = f'{{{JOBS},instance="{target}"}}'
         success = query("query_range", {"query": f"max(probe_success{sel})", **span})
-        took = query("query_range", {"query": f"max(probe_duration_seconds{sel})", **span})
+        took = query("query_range", {"query": f'sum(probe_http_duration_seconds{{{JOBS},instance="{target}",phase=~"processing|transfer"}})', **span})
         durations = {ts: v for ts, v in (took[0]["values"] if took else [])}
         out = []
         for ts, v in (success[0]["values"] if success else []):
@@ -151,7 +156,7 @@ spec:
         app.kubernetes.io/name: status-api
       annotations:
         # Bump when status-api.py changes.
-        config-revision: "1"
+        config-revision: "2"
     spec:
       automountServiceAccountToken: false
       affinity:
