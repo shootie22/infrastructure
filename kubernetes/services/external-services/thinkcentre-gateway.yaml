@@ -29,6 +29,9 @@ spec:
     metadata:
       labels:
         app: thinkcentre-http-relay
+      # Caddy reads its config at start; bump this when the Caddyfile changes.
+      annotations:
+        config-revision: "2"
     spec:
       # Any node: whatever it relays to is on the thinkcentre anyway (#149).
       containers:
