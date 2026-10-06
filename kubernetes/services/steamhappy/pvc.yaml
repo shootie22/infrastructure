@@ -1,3 +1,5 @@
+# Not mounted anymore: steamhappy's data moved to fuji (site-failover, #150).
+# Kept as it was, the way back; deleting the claim would delete the data.
 # The bot's Matrix session (session.txt) and E2EE keys (store/). Losing them
 # means a new device that has to be verified again. local-path on Minima:
 # covered by the daily VM image backup.

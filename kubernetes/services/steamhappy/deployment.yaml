@@ -18,9 +18,15 @@ spec:
       labels:
         app.kubernetes.io/name: steamhappy
     spec:
-      # Next to Ollama, on the node whose storage is backed up as a VM image.
+      # On whichever of fuji and the thinkcentre holds the label (home: fuji,
+      # in RO like the big Ollama); the other has a copy of its session and
+      # keys and takes over when this site is gone (dotfiles site-failover,
+      # #150). One pod, one node: it never answers twice.
       nodeSelector:
-        kubernetes.io/hostname: minima
+        ha.radunenu.com/steamhappy: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -31,7 +37,7 @@ spec:
         # First start only: restore the session the bot had on the Mac (already
         # verified), so it needs no new device verification. Never overwrites.
         - name: restore-session
-          image: git.radunenu.com/radu/steamhappy:v1.2.0-rc3@sha256:1e5e1970d98c02cd5bfbb94ed0a0532dbdeb91ca632670e883dcfa654b9c0adb
+          image: git.radunenu.com/radu/steamhappy:v1.2.0-rc5@sha256:041958227dbb481b2887a514d27971c4c5512001a1b9e34fe73fc9d7a91be446
           command:
             - sh
             - -c
@@ -53,7 +59,7 @@ spec:
               readOnly: true
       containers:
         - name: steamhappy
-          image: git.radunenu.com/radu/steamhappy:v1.2.0-rc3@sha256:1e5e1970d98c02cd5bfbb94ed0a0532dbdeb91ca632670e883dcfa654b9c0adb
+          image: git.radunenu.com/radu/steamhappy:v1.2.0-rc5@sha256:041958227dbb481b2887a514d27971c4c5512001a1b9e34fe73fc9d7a91be446
           env:
             # Python buffers stdout without a terminal: logs would never show.
             - name: PYTHONUNBUFFERED
@@ -93,9 +99,11 @@ spec:
             - name: data
               mountPath: /data
       volumes:
+        # Moved off the volume on minima (move.yaml, pvc.yaml).
         - name: data
-          persistentVolumeClaim:
-            claimName: steamhappy-data
+          hostPath:
+            path: /srv/ha/steamhappy
+            type: Directory
         - name: seed
           secret:
             secretName: steamhappy-seed
