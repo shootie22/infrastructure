@@ -1,6 +1,6 @@
 # Services with files: where they run, and moving them
 
-How the services tied to files (PrivateBin, Send, Audiobookshelf, Baikal, Headscale, legacy-web, Gitea) move between fuji and the thinkcentre. The design is in [decisions.md](../decisions.md) (6 Oct, "Services with files fail over by themselves"); the code is dotfiles `modules/nixos/site-failover/` and `modules/nixos/standby-copy.nix`; the rehearsal is dotfiles `tests/site-failover.nix`.
+How the services tied to files (PrivateBin, Send, Audiobookshelf, Baikal, Headscale, legacy-web, Gitea, and the game worlds: Minecraft HC, Skyblock, Hytale) move between fuji and the thinkcentre. The design is in [decisions.md](../decisions.md) (6 Oct, "Services with files fail over by themselves"); the code is dotfiles `modules/nixos/site-failover/` and `modules/nixos/standby-copy.nix`; the rehearsal is dotfiles `tests/site-failover.nix`.
 
 Nothing here needs doing by hand for a failover. This is for checking, and for the rare deliberate move.
 
@@ -9,7 +9,7 @@ Nothing here needs doing by hand for a failover. This is for checking, and for t
 The node with the label `ha.radunenu.com/<service>=active` runs it:
 
 ```sh
-kubectl get nodes -L ha.radunenu.com/privatebin,ha.radunenu.com/send-uploads,ha.radunenu.com/audiobookshelf,ha.radunenu.com/baikal,ha.radunenu.com/headscale,ha.radunenu.com/legacy-web,ha.radunenu.com/gitea
+kubectl get nodes -L ha.radunenu.com/privatebin,ha.radunenu.com/send-uploads,ha.radunenu.com/audiobookshelf,ha.radunenu.com/baikal,ha.radunenu.com/headscale,ha.radunenu.com/legacy-web,ha.radunenu.com/gitea,ha.radunenu.com/minecraft-hc,ha.radunenu.com/minecraft-skyblock,ha.radunenu.com/hytale
 ```
 
 On fuji or the thinkcentre, the site-failover daemon's own view (cluster reachable, label here, a whole copy here, who holds the label) is in `journalctl -u site-failover` and on its local status page (the port is in the module).
@@ -37,3 +37,7 @@ Whatever was written in the seconds between the copy and the move is lost. (Scal
 ## Alerts
 
 - `StandbyCopyStale`: a copy hasn't succeeded for an hour. After a failover this is expected until the old node is back (there's nowhere to copy to).
+
+## Game servers
+
+The game relay (dotfiles `modules/nixos/game-relay.nix`, on fuji and the edge) sends each game's port to whichever node holds the game's label, asking the site-failover status pages every 10 seconds. Minecraft's copies save over RCON first and turn saving off while copying (saving is back on right after, whatever happens to the copy). A copy's log shows "Automatic saving is now disabled" and "...enabled" around it.
