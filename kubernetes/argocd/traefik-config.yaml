@@ -40,6 +40,18 @@ spec:
       spec:
         externalTrafficPolicy: Local
 
+    # Traefik cuts off a request body after 60 s by default. Image pushes to
+    # Gitea's registry over Nebula (the CI runners, #150) take longer for a
+    # big layer, so give uploads 30 minutes.
+    ports:
+      web:
+        transport:
+          respondingTimeouts:
+            readTimeout: 30m
+      websecure:
+        transport:
+          respondingTimeouts:
+            readTimeout: 30m
     api:
       dashboard: true
 
