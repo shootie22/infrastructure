@@ -16,8 +16,14 @@ spec:
         app: privatebin
     spec:
       automountServiceAccountToken: false
+      # Runs on whichever of fuji and the thinkcentre holds the label; the
+      # other has a copy of the pastes and takes over when this site is gone
+      # (dotfiles modules/nixos/site-failover).
       nodeSelector:
-        kubernetes.io/hostname: thinkcentre
+        ha.radunenu.com/privatebin: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       securityContext:
         runAsUser: 65534
         runAsGroup: 82
@@ -56,7 +62,7 @@ spec:
       volumes:
         - name: data
           hostPath:
-            path: /home/main/services/privatebin/data
+            path: /srv/ha/privatebin
             type: Directory
         - name: run
           emptyDir: {}
