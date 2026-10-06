@@ -12,6 +12,10 @@ rules:
   - apiGroups: [""]
     resources: [nodes, nodes/metrics, nodes/proxy, services, endpoints, pods]
     verbs: [get, list, watch]
+  # The status page's probes follow the Ingresses (#151).
+  - apiGroups: [networking.k8s.io]
+    resources: [ingresses]
+    verbs: [get, list, watch]
   - nonResourceURLs: [/metrics]
     verbs: [get]
 ---

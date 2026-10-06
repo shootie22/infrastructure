@@ -176,6 +176,79 @@ data:
           - target_label: __address__
             replacement: blackbox-exporter.monitoring.svc:9115
 
+      # The public status page (radunenu.com/status/, through status-api, #151):
+      # every Ingress with a homepage name, probed under that name, so services
+      # appear and disappear with their deployments. The annotation
+      # radunenu.com/status: hidden keeps one off the page.
+      - job_name: status-ingress
+        metrics_path: /probe
+        scrape_interval: 60s
+        scrape_timeout: 15s
+        params:
+          module: [http_reachable]
+        kubernetes_sd_configs:
+          - role: ingress
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_ingress_annotation_gethomepage_dev_name]
+            regex: .+
+            action: keep
+          - source_labels: [__meta_kubernetes_ingress_annotation_radunenu_com_status]
+            regex: hidden
+            action: drop
+          - source_labels: [__meta_kubernetes_ingress_scheme, __address__, __meta_kubernetes_ingress_path]
+            regex: (.+);(.+);(.+)
+            replacement: ${1}://${2}${3}
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - source_labels: [__meta_kubernetes_ingress_annotation_gethomepage_dev_name]
+            target_label: status_name
+          - target_label: __address__
+            replacement: blackbox-exporter.monitoring.svc:9115
+
+      # The rest of the status page: what has no Ingress with a homepage name
+      # (the old APIs' endpoints, the Matrix front ends on hetzy).
+      - job_name: status-extra
+        metrics_path: /probe
+        scrape_interval: 60s
+        scrape_timeout: 15s
+        params:
+          module: [http_reachable]
+        static_configs:
+          - targets: [https://kronorite.com]
+            labels: {status_name: Kronorite.com}
+          - targets: [https://news.kronorite.com/news.php]
+            labels: {status_name: "Legacy API v1 - Kronorite News"}
+          - targets: [https://stats.kronorite.com/mazegame/leaderboard.php]
+            labels: {status_name: "Legacy API v2 - Quickmaze"}
+          - targets: [https://stats.kronorite.com/cowo/leaderboard.php]
+            labels: {status_name: "Legacy API v2 - Cowo Bot"}
+          - targets: [https://stats.kronorite.com/cowo-igad/leaderboard.php]
+            labels: {status_name: "Legacy API v2 - Cowo IGAD Bot"}
+          - targets: [https://stats.kronorite.com/polyspace/leaderboard.php]
+            labels: {status_name: "Legacy API v2 - Polyspace"}
+          - targets: [https://stats.kronorite.com/vtol/2/leaderboard.php]
+            labels: {status_name: "Legacy API v2.5 - VTOL"}
+          - targets: [https://stats.kronorite.com/vtol/1/leaderboard.php]
+            labels: {status_name: "Legacy API v2.5 - VTOL (Divided Skies)"}
+          - targets: [https://api.byradu.com/dicekatana/leaderboard.php]
+            labels: {status_name: "Legacy API v3 - Dice Katana"}
+          - targets: [https://api.byradu.com/fsp/downloads/latest.php]
+            labels: {status_name: "Legacy API v3 - Feedback Survey Plugin"}
+          - targets: [https://api-old.radunenu.com/health-check.html]
+            labels: {status_name: Old Legacy API}
+          - targets: [https://nuke.zip]
+            labels: {status_name: "Matrix (nuke.zip)"}
+          - targets: [https://a.nuke.zip/livekit/sfu/]
+            labels: {status_name: Element Call stack}
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - target_label: __address__
+            replacement: blackbox-exporter.monitoring.svc:9115
+
       # The edge's HAProxy: can it still reach Traefik in RO and DK?
       - job_name: edge-haproxy
         static_configs:
