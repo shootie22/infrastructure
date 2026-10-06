@@ -131,3 +131,13 @@ Before putting any database on CNPG I ran it in VMs set up like the real cluster
 - RO and DK cut off from each other: RO took writes after about 80 seconds, and the old primary in DK stopped taking writes at the same moment, so there were never two primaries. After the link came back both were in sync and no rows were missing.
 
 The hourly dump from the replica also works. Took a few runs to get there: the operator's own manifest wants to pull its image every start, and the dump folder and test table had the wrong owners.
+
+## 2026-10-06: Vaultwarden on Postgres
+
+Phase 4 went live. Every node has a site label now (k3s restarted one server at a time, nobody noticed), the CNPG operator runs once in each site, and Vaultwarden's database has one instance on the thinkcentre and one on fuji.
+
+The labels went on after the operator had already started, so both of its pods landed on minima. The one-per-site rule only counts when a pod gets scheduled. Rolled them again and they spread out. Upgrades now replace one pod at a time, since a surge pod would have nowhere to go.
+
+Moving the data was a dry run into a scratch database first, then the real thing in one commit: the old pod stops, Vaultwarden makes its own tables in Postgres, pgloader copies the rows. About 45 seconds without Vaultwarden. Same row counts as in SQLite, no errors, and the apps synced as if nothing happened. The SQLite file stays where it was in case I need to go back.
+
+Vaultwarden itself still only runs on the thinkcentre, because of the key it signs logins with. That's next.
