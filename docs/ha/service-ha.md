@@ -23,32 +23,42 @@ Replicated block storage for everything (Longhorn and similar) was ruled out for
 
 ## Status
 
-Updated 5 Oct, after Phase 3. To be decided in [#88](https://github.com/shootie22/infrastructure/issues/88).
-
-Since Phase 3 the cluster itself survives losing a site. What that doesn't cover is the services: most are pinned to one node and keep their data on its disk, so they stop with it. A service with no data and no pinning already moves by itself: Kubernetes restarts it on another node about five minutes after its node is gone. That's marked as "moves by itself" below.
+Decided 6 Oct ([#88](https://github.com/shootie22/infrastructure/issues/88), [decisions.md](decisions.md)). Since Phase 3 the cluster itself survives losing a site; this is about the services on it.
 
 ### Services
 
-| Service | Runs on | Data | Proposed tier |
-|---|---|---|---|
-| Keycloak | fuji | Postgres + files, a few MB | Survives (Phase 5) |
-| Headscale | fuji | SQLite | Survives (Phase 5). Since 5 Oct the cluster doesn't need it, so it's an ordinary HA service now |
-| Vaultwarden | thinkcentre | SQLite + attachments, ~7 MB | Survives |
-| Baikal | fuji | files, <1 MB | Survives |
-| radunenu.com, yeetus.net, redirect domains | fuji, minima, mixi | none | Stateless copy |
-| Element Web, Element Call | minima, mixi | none | Stateless copy |
-| PrivateBin | thinkcentre | small files | Stateless copy or Survives |
-| Joplin | thinkcentre | Postgres | to decide |
-| Pinga | thinkcentre | files, 2.3 GB | to decide |
-| Legacy web (old API, Kronorite) | fuji, minima | 2 GB of files | to decide |
-| Gitea | thinkcentre | Postgres + 61 GB of repos | Restore |
-| Gitea runners | thinkcentre, mixi | caches | Restore (one per site already) |
-| Game servers (Minecraft ×2, crosty, megabopl3d, Hytale) | thinkcentre | worlds, up to ~8 GB each | Restore |
-| Ollama, SearXNG, steamhappy | minima | models, caches | Restore (needs the Mac's GPU) |
-| Audiobookshelf | thinkcentre | 14 GB | Restore |
-| picshare, Send, Rybbit | thinkcentre | small to 100 MB | Restore |
-| homepage, Headlamp | fuji (pinned) | none | Restore, or unpinned to move by itself |
-| github-commit-sync | mixi | none | Restore |
+| Service | Runs on | Data | Tier | How |
+|---|---|---|---|---|
+| Keycloak | fuji | Postgres + files, a few MB | Survives | Postgres replica (Phase 4/5) |
+| Headscale | fuji | SQLite | Survives | moves to Postgres, replica |
+| Vaultwarden | thinkcentre | SQLite + attachments, ~7 MB | Survives | moves to Postgres, attachments copied |
+| Baikal | fuji | files, <1 MB | Survives | file copy |
+| Joplin | thinkcentre | Postgres | Survives | Postgres replica |
+| PrivateBin | thinkcentre | small files | Survives | file copy |
+| Send | thinkcentre | uploads on the 4 TB disk, ~100 MB | Survives | file copy, so shared links keep working |
+| Gitea | thinkcentre | Postgres + 61 GB of repos | Survives | Postgres replica, repos/LFS/packages copied every few minutes |
+| Audiobookshelf | thinkcentre | 14 GB library, 34 MB database | Survives | file copy |
+| Legacy web (old API, Kronorite) | fuji, minima | 2 GB of files | Survives | file copy |
+| Rybbit | thinkcentre | Postgres + ClickHouse | Survives | Postgres replica; ClickHouse to work out |
+| Minecraft HC, Skyblock, Vintage Story | thinkcentre | worlds, up to 96 GB | Survives | world copied after a save, every few minutes |
+| Bopl 2D, Crosty, MegaBopl3D | thinkcentre | none | Stateless copy | can run in either site |
+| radunenu.com, yeetus.net, redirect domains | fuji, minima, mixi | none | Stateless copy | a replica per site |
+| Element Web, Element Call | minima, mixi | none | Stateless copy | a replica per site |
+| homepage, Headlamp, tailnet DNS, external-services | fuji, on its tailnet address | none | Survives | a second copy on the thinkcentre's address, DNS lists both |
+| Monitoring (Prometheus, Grafana, Loki, Alertmanager) | fuji | metrics and logs | Survives | a second Prometheus and Alertmanager in DK, scraping the same targets |
+| Ollama, SearXNG, steamhappy | minima (Mac M4 VM) | models, caches | Survives if mixi's GPU works | replica on mixi (M1, Asahi GPU), to test |
+| Gitea runners | thinkcentre, mixi | caches | already one per site | |
+| github-commit-sync | mixi | none | Stateless copy | |
+| Pinga | thinkcentre | 2.3 GB | Retire | radunenu.com's status page reads from Prometheus instead |
+| picshare | thinkcentre | small | Retire | |
+
+### Building blocks
+
+1. **Replicated Postgres** (CNPG, Phase 4): one primary, a replica in the other site.
+2. **File copy over Nebula**: one mechanism for every service with files, a copy every few minutes into the other site (in RO on fuji's spare 1 TB SSD). For game worlds and Git, in an order that keeps the copy consistent (save first; objects before refs).
+3. **Failover control** (Phase 6): decides a site is gone and promotes the standby: Postgres replica to primary, the app started on the copy, traffic sent there.
+
+Copies are asynchronous, so a failover can miss the last minute or two of writes.
 
 ### Platform
 
@@ -58,5 +68,3 @@ Since Phase 3 the cluster itself survives losing a site. What that doesn't cover
 | Traefik | fuji and thinkcentre, one per site | both sites already; which one gets the traffic is the failover path (Phase 6) |
 | Argo CD | fuji (not pinned) | its state is in etcd; moves by itself |
 | cert-manager, the SOPS operator | minima (not pinned) | same |
-| tailnet DNS, external-services | fuji (pinned) | no data; unpinning or a second copy is cheap |
-| Monitoring (Prometheus, Grafana, Loki, Alertmanager) | fuji | Restore. While fuji is down, the edge's alert relay and the healthchecks.io dead-man switch still notice |
