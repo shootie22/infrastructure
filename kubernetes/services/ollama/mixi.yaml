@@ -57,6 +57,8 @@ spec:
               ollama pull huihui_ai/deepseek-r1-abliterated:1.5b \
                 && ollama cp huihui_ai/deepseek-r1-abliterated:1.5b huihui_ai/deepseek-r1-abliterated \
                 || echo "couldn't pull the fallback model; serving what's there"
+              # The same as on minima: small enough for mixi's GPU.
+              ollama pull qwen3:4b-instruct || echo "couldn't pull qwen3:4b-instruct"
               wait $pid
           env:
             - {name: OLLAMA_MAX_LOADED_MODELS, value: "1"}
