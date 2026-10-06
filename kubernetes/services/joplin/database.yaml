@@ -1,0 +1,85 @@
+# Joplin's Postgres, notes and attachments included: one instance in each
+# site (#31). Imported from the old single Postgres (joplin-postgres in
+# staged.yaml), which stays until the move is checked.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: joplin-pg
+  namespace: joplin
+spec:
+  instances: 2
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+  bootstrap:
+    initdb:
+      database: joplin
+      owner: joplin
+      import:
+        type: microservice
+        databases: [joplin_db]
+        source:
+          externalCluster: old
+  externalClusters:
+    - name: old
+      connectionParameters:
+        host: joplin-db
+        user: joplin_usr
+        dbname: joplin_db
+        sslmode: disable
+      password: {name: joplin-env, key: POSTGRES_PASSWORD}
+  storage:
+    size: 10Gi
+    storageClass: local-path
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: required
+    topologyKey: topology.kubernetes.io/zone
+    nodeSelector:
+      db: "true"
+  probes:
+    liveness:
+      isolationCheck:
+        enabled: true
+---
+# Hourly dump into fuji's Borg folder (#32), as for Vaultwarden.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: joplin-pg-dump
+  namespace: joplin
+spec:
+  schedule: "21 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          nodeSelector:
+            kubernetes.io/hostname: fuji
+          containers:
+            - name: dump
+              image: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+              command: ["/bin/sh", "-ec"]
+              args:
+                - |
+                  host=joplin-pg-ro
+                  pg_isready -q -h $host || host=joplin-pg-r
+                  pg_dump -h $host -U joplin -d joplin -Fc -f /backup/joplin.dump.tmp
+                  mv /backup/joplin.dump.tmp /backup/joplin.dump
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef: {name: joplin-pg-app, key: password}
+              securityContext:
+                allowPrivilegeEscalation: false
+              volumeMounts:
+                - {name: backup, mountPath: /backup}
+          volumes:
+            - name: backup
+              hostPath:
+                path: /var/lib/pg-dumps
+                type: Directory

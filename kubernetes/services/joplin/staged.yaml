@@ -58,8 +58,6 @@ spec:
       labels: {app: joplin}
     spec:
       automountServiceAccountToken: false
-      nodeSelector:
-        kubernetes.io/hostname: thinkcentre
       containers:
         - name: joplin
           image: joplin/server:3.5.2@sha256:5d9e7f9d31b436cb1b99d1a6a65d8c5bf760829094617e8ad1e956fd925de888
@@ -69,6 +67,43 @@ spec:
             - {name: http, containerPort: 22300}
           securityContext:
             allowPrivilegeEscalation: false
+          env:
+            - name: POSTGRES_HOST
+              value: joplin-pg-rw
+            - name: POSTGRES_DATABASE
+              value: joplin
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: joplin-pg-app
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: joplin-pg-app
+                  key: password
+      # Fuji or the thinkcentre, moving 30 s after its node stops answering.
+      # Everything is in Postgres; the env above overrides the old database
+      # settings in joplin-env.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - fuji
+                      - thinkcentre
+      tolerations:
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 30
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 30
 ---
 apiVersion: v1
 kind: Service
