@@ -1,0 +1,93 @@
+# The second Ollama, on mixi's M1 GPU (Asahi, Mesa's Honeykrisp driver,
+# tested 6 Oct: 100% GPU, ~54 tok/s on qwen3:0.6b), for when minima or RO is
+# gone (#150). The same image as minima's.
+#
+# mixi has 8 GB and the GPU sees 3.7 GB, so it can't hold steamhappy's model
+# (the 8B). It pulls the 1.5B under the same name instead: during a failover
+# steamhappy works, just less clever. The front (front.yaml) only sends here
+# when minima's copy is gone.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models-mixi
+  namespace: ollama
+spec:
+  storageClassName: local-path
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama-mixi
+  namespace: ollama
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ollama-mixi
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ollama-mixi
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: mixi
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ollama
+          image: git.radunenu.com/radu/ollama-vulkan:v0.34.4-3@sha256:cbe467d4b34be4297a1da9426937f713f5728bf75b51c63284cfab2381bf0d9e
+          command: [/bin/sh, -c]
+          args:
+            - |
+              ollama serve &
+              pid=$!
+              until ollama list >/dev/null 2>&1; do sleep 1; done
+              # steamhappy's model, as the 1.5B (see above). Kept on the volume,
+              # so this is quick after the first time.
+              ollama pull huihui_ai/deepseek-r1-abliterated:1.5b \
+                && ollama cp huihui_ai/deepseek-r1-abliterated:1.5b huihui_ai/deepseek-r1-abliterated \
+                || echo "couldn't pull the fallback model; serving what's there"
+              wait $pid
+          env:
+            - {name: OLLAMA_MAX_LOADED_MODELS, value: "1"}
+            - {name: OLLAMA_NUM_PARALLEL, value: "1"}
+          ports:
+            - name: http
+              containerPort: 11434
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              memory: 4Gi
+              devic.es/gpu: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          readinessProbe:
+            httpGet: {path: /api/version, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /api/version, port: http}
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          volumeMounts:
+            - name: models
+              mountPath: /models
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: ollama-models-mixi

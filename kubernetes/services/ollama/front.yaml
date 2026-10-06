@@ -1,0 +1,81 @@
+# What the `ollama` Service points at (#150): minima's Ollama first, mixi's
+# only when minima's isn't there. A plain Service would split requests
+# between the big model on minima and the small one on mixi.
+# A connection that fails before the request is sent (no endpoints: the pod
+# or its node is gone) goes to mixi straight away.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ollama-front
+  namespace: ollama
+data:
+  default.conf: |
+    upstream ollama {
+      server ollama-minima.ollama.svc.cluster.local:11434 max_fails=1 fail_timeout=15s;
+      server ollama-mixi.ollama.svc.cluster.local:11434 backup;
+    }
+    server {
+      listen 11434;
+      client_max_body_size 0;
+      location / {
+        proxy_pass http://ollama;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        # Model pulls and long generations stream for minutes.
+        proxy_buffering off;
+        proxy_read_timeout 1h;
+        proxy_send_timeout 1h;
+        proxy_connect_timeout 3s;
+        proxy_next_upstream error timeout;
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama-front
+  namespace: ollama
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 0, maxUnavailable: 1}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ollama-front
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ollama-front
+      annotations:
+        # Bump when default.conf changes.
+        config-revision: "1"
+    spec:
+      automountServiceAccountToken: false
+      # One per site.
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: ollama-front
+      containers:
+        - name: nginx
+          image: docker.io/library/nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+          ports:
+            - name: http
+              containerPort: 11434
+          readinessProbe:
+            tcpSocket: {port: http}
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {memory: 64Mi}
+          volumeMounts:
+            - {name: config, mountPath: /etc/nginx/conf.d, readOnly: true}
+      volumes:
+        - name: config
+          configMap:
+            name: ollama-front

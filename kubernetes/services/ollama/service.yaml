@@ -2,6 +2,9 @@
 # Open WebUI, other workloads). From the tailnet: https://ollama.infra.radunenu.com
 # via the infra proxy (headlamp/tailnet-proxy-*). No public ingress: the API has
 # no authentication.
+#
+# It points at the front (front.yaml), which prefers minima's Ollama and falls
+# back to mixi's (#150).
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,7 +12,33 @@ metadata:
   namespace: ollama
 spec:
   selector:
+    app.kubernetes.io/name: ollama-front
+  ports:
+    - name: http
+      port: 11434
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama-minima
+  namespace: ollama
+spec:
+  selector:
     app.kubernetes.io/name: ollama
+  ports:
+    - name: http
+      port: 11434
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama-mixi
+  namespace: ollama
+spec:
+  selector:
+    app.kubernetes.io/name: ollama-mixi
   ports:
     - name: http
       port: 11434
