@@ -60,8 +60,14 @@ spec:
       labels: {app: gitea}
     spec:
       automountServiceAccountToken: false
+      # Runs on whichever of fuji and the thinkcentre holds the label; the
+      # other has a copy of the repos and packages and takes over when this
+      # site is gone (dotfiles modules/nixos/site-failover).
       nodeSelector:
-        kubernetes.io/hostname: thinkcentre
+        ha.radunenu.com/gitea: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: gitea
           image: docker.gitea.com/gitea:1.27.3@sha256:87a67ee09d3ae0d1df5fda5dcda3e2a1f9236a45b0a59025d6e00e46adc43bef
@@ -76,16 +82,20 @@ spec:
               valueFrom: {secretKeyRef: {name: gitea-pg-app, key: username}}
             - name: GITEA__database__PASSWD
               valueFrom: {secretKeyRef: {name: gitea-pg-app, key: password}}
+            # No SSH: it was never reachable from outside (it advertised port 22
+            # on RO, where nothing forwarded it), nobody used it, and a port on
+            # one node is what kept Gitea from moving. HTTPS only; SSH could
+            # come back as a TCP route through Traefik.
+            - {name: GITEA__server__DISABLE_SSH, value: "true"}
           ports:
             - {name: http, containerPort: 3000}
-            - {name: ssh, containerPort: 22, hostPort: 222}
           volumeMounts:
             - {name: data, mountPath: /data}
             - {name: localtime, mountPath: /etc/localtime, readOnly: true}
       volumes:
         - name: data
           hostPath:
-            path: /home/main/services/gitea
+            path: /srv/ha/gitea
             type: Directory
         - name: localtime
           hostPath: {path: /etc/localtime, type: File}
