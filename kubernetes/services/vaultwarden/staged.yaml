@@ -21,6 +21,11 @@ spec:
       # Runs in either site (#88). Nothing on disk matters any more: the
       # database is in Postgres and the key that signs logins comes from a
       # secret. The old folder on the thinkcentre still has db.sqlite3.
+      # Moves after 30 seconds instead of Kubernetes' default 5 minutes when
+      # its node stops answering (#90).
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: vaultwarden
           image: vaultwarden/server:1.37.3@sha256:1587c45feaa479f1f5e8af3b00eded36bff77bcf1880cf8dbf0541706dd470e0

@@ -4,7 +4,7 @@ metadata:
   name: yeetus-net
   namespace: yeetus-net
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: yeetus-net
@@ -37,3 +37,17 @@ spec:
         - name: site
           configMap:
             name: yeetus-net-site
+      # One copy per site, so either site can serve it alone (#89).
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchLabels:
+                  app: yeetus-net
+  # No third site for a surge pod, so replace one at a time.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1

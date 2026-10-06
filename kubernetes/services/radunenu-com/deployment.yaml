@@ -4,7 +4,7 @@ metadata:
   name: radunenu-com
   namespace: radunenu-com
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: radunenu-com
@@ -35,7 +35,6 @@ spec:
               port: 1310
             initialDelaySeconds: 10
             periodSeconds: 30
-
         - name: stats-updater
           image: git.radunenu.com/radu/radunenu.com-minimal-stats-updater:latest
           imagePullPolicy: Always
@@ -62,7 +61,20 @@ spec:
           volumeMounts:
             - name: live
               mountPath: /data
-
       volumes:
         - name: live
           emptyDir: {}
+      # One copy per site, so either site can serve it alone (#89).
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchLabels:
+                  app: radunenu-com
+  # No third site for a surge pod, so replace one at a time.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1

@@ -9,11 +9,12 @@ metadata:
   namespace: element-web
 spec:
   replicas: 2
+  # No third site for a surge pod, so replace one at a time.
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: element-web
@@ -66,3 +67,11 @@ spec:
         - name: config
           configMap:
             name: element-web
+      # One copy per site, so either site can serve it alone (#89).
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: element-web
