@@ -11,6 +11,8 @@ spec:
   cluster: {name: vaultwarden-db}
   name: vw_dryrun
   owner: vaultwarden
+  # Dropped when this file goes away after the real move.
+  databaseReclaimPolicy: delete
 ---
 apiVersion: batch/v1
 kind: Job
