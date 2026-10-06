@@ -268,7 +268,7 @@ spec:
               valueFrom: {secretKeyRef: {name: rybbit-env, key: BETTER_AUTH_SECRET}}
             - {name: BASE_URL, value: "https://analytics.radunenu.com"}
             - {name: DOMAIN_NAME, value: analytics.radunenu.com}
-            - {name: DISABLE_SIGNUP, value: "false"}
+            - {name: DISABLE_SIGNUP, value: "true"}
             - {name: DISABLE_TELEMETRY, value: "true"}
             - name: MAPBOX_TOKEN
               valueFrom: {secretKeyRef: {name: rybbit-env, key: MAPBOX_TOKEN}}
@@ -324,7 +324,7 @@ spec:
           env:
             - {name: NODE_ENV, value: production}
             - {name: NEXT_PUBLIC_BACKEND_URL, value: "https://analytics.radunenu.com"}
-            - {name: NEXT_PUBLIC_DISABLE_SIGNUP, value: "false"}
+            - {name: NEXT_PUBLIC_DISABLE_SIGNUP, value: "true"}
             - {name: DOMAIN_NAME, value: analytics.radunenu.com}
           ports:
             - name: http
