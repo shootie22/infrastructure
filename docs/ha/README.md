@@ -15,12 +15,13 @@ I'm also trying to keep VPS costs low. The only VPS in this plan is a cheap edge
 - [journal.md](journal.md): notes and learnings as it goes
 - [runbooks/](runbooks/): procedures, written as they get tested
 - [keycloak-sso.md](keycloak-sso.md): the follow-up project, putting services behind Keycloak
+- [ideas.md](ideas.md): improvements that might be worth doing later, not part of the plan
 
 Tasks live in issues. Knowledge lives here. Problems found along the way get an issue with the `problem` label.
 
 ## Status
 
-Phase 0 (DNS) and Phase 1 (edge) done; the OVH VPS is the edge until the swap to a cheaper one in February ([#80](https://github.com/shootie22/infrastructure/issues/80)). Next: Phase 2, thinkcentre on NixOS.
+Phases 0 to 4 done: DNS, the edge, the thinkcentre on NixOS (Debian still there as a fallback until Phase 7), etcd across fuji, the thinkcentre and the edge over Nebula, and replicated Postgres. Phase 4b is underway: the services move onto Postgres in both sites and their files get copied to the other site. Next: Phase 6, starting the standbys when a site is gone. The OVH VPS is the edge until the swap to a cheaper one in February ([#80](https://github.com/shootie22/infrastructure/issues/80)).
 
 ## A note on AI
 
