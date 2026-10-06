@@ -21,8 +21,14 @@ spec:
         app: baikal
     spec:
       automountServiceAccountToken: false
+      # Runs on whichever of fuji and the thinkcentre holds the label; the
+      # other has a copy and takes over when this site is gone (dotfiles
+      # modules/nixos/site-failover).
       nodeSelector:
-        kubernetes.io/hostname: fuji
+        ha.radunenu.com/baikal: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: baikal
           image: ckulka/baikal:0.10.1-nginx@sha256:045918423df00a3f9ec793a819b9acdb055d338b75387926b7d93d753ac1e93a
@@ -44,11 +50,11 @@ spec:
       volumes:
         - name: specific
           hostPath:
-            path: /home/fuji/services/baikal/Specific
+            path: /srv/ha/baikal/Specific
             type: Directory
         - name: config
           hostPath:
-            path: /home/fuji/services/baikal/config
+            path: /srv/ha/baikal/config
             type: Directory
 ---
 apiVersion: v1
