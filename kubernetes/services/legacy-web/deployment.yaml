@@ -13,8 +13,14 @@ spec:
       labels:
         app: legacy-api
     spec:
+      # Runs on whichever of fuji and the thinkcentre holds the label; the
+      # other has a copy and takes over when this site is gone (dotfiles
+      # modules/nixos/site-failover).
       nodeSelector:
-        kubernetes.io/hostname: fuji
+        ha.radunenu.com/legacy-web: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       securityContext:
         fsGroup: 33
         fsGroupChangePolicy: OnRootMismatch
@@ -46,9 +52,10 @@ spec:
               mountPath: /etc/apache2/sites-enabled
               readOnly: true
       volumes:
+        # The local-path volume's folder (pvc.yaml) on fuji, the copy on the
+        # thinkcentre.
         - name: data
-          persistentVolumeClaim:
-            claimName: legacy-api-data
+          hostPath: {path: /srv/ha/legacy-web, type: Directory}
         - name: apache-sites
           configMap:
             name: legacy-api-apache

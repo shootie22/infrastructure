@@ -1,3 +1,6 @@
+# Not mounted anymore: the pod uses its folder through /srv/ha (site-failover).
+# Kept, because deleting the claim would make local-path delete the folder,
+# which is the live data on fuji.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
