@@ -4,7 +4,11 @@ metadata:
   name: searxng
   namespace: searxng
 spec:
-  replicas: 1
+  replicas: 2
+  # No third site for a surge pod, so replace one at a time.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 0, maxUnavailable: 1}
   selector:
     matchLabels:
       app.kubernetes.io/name: searxng
@@ -16,8 +20,15 @@ spec:
         config-revision: "1"
     spec:
       # Searches leave from the home connection (Minima), next to steamhappy.
-      nodeSelector:
-        kubernetes.io/hostname: minima
+      # One copy per site, so either site can serve it alone (#150). Nothing
+      # on disk: the config is a ConfigMap and the limiter is off.
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: searxng
       containers:
         - name: searxng
           image: docker.io/searxng/searxng:2026.9.25-12f8b6515@sha256:5286edb35782454ab8a102c5eff6b54bff745853191b46aeead95f225aa6dfb6
