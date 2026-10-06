@@ -38,6 +38,10 @@ spec:
             preStop:
               sleep:
                 seconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            periodSeconds: 2
       volumes:
         - name: site
           configMap:
