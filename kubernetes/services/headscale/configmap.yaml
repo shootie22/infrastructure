@@ -29,8 +29,10 @@ data:
           - 1.1.1.1
           - 1.0.0.1
         split:
+          # fuji and the thinkcentre each serve it (#149).
           infra.radunenu.com:
             - 100.64.0.1
+            - 100.64.0.4
 
     # Default-deny access policy (acl.hujson below).
     policy:
@@ -125,7 +127,8 @@ data:
         { "action": "accept", "src": ["edge", "edge6"], "dst": ["mixi:9180", "mixi6:9180"] },
         { "action": "accept", "src": ["mixi", "mixi6"], "dst": ["edge:9180", "edge6:9180"] },
 
-        // Tailnet DNS (split DNS for infra.radunenu.com, served on 100.64.0.1).
-        { "action": "accept", "src": ["*"], "dst": ["fuji:53"] },
+        // Tailnet DNS (split DNS for infra.radunenu.com, served on fuji and the
+        // thinkcentre).
+        { "action": "accept", "src": ["*"], "dst": ["fuji:53", "thinkcentre:53"] },
       ],
     }

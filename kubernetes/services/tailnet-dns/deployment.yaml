@@ -1,12 +1,9 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 metadata:
   name: tailnet-dns
   namespace: tailnet-dns
 spec:
-  replicas: 1
-  strategy:
-    type: Recreate
   selector:
     matchLabels:
       app: tailnet-dns
@@ -14,9 +11,17 @@ spec:
     metadata:
       labels:
         app: tailnet-dns
+      annotations:
+        config-revision: "1"
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: fuji
+      # Both API servers, one copy each (#149); Headscale's split DNS lists
+      # both tailnet addresses.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: In, values: [fuji, thinkcentre]}
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       automountServiceAccountToken: false
@@ -26,11 +31,30 @@ spec:
         runAsGroup: 65532
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        # This node's tailnet address into the Corefile. Fails (and retries)
+        # until tailscale0 has one.
+        - name: corefile
+          image: docker.io/library/busybox:1.37@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              ip=$(ip -4 addr show dev tailscale0 | awk '/inet /{split($2, a, "/"); print a[1]; exit}')
+              [ -n "$ip" ]
+              sed "s/TAILNET_IP/$ip/g" /config/Corefile > /run/coredns/Corefile
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - {name: config, mountPath: /config, readOnly: true}
+            - {name: corefile, mountPath: /run/coredns}
       containers:
         - name: coredns
           image: coredns/coredns:1.14.7@sha256:7efd3c635b03efd68c4e8398fc45f0d993d0e9ab016f72c1cefb0fd6d01aa286
           imagePullPolicy: IfNotPresent
-          args: ["-conf", "/etc/coredns/Corefile"]
+          args: ["-conf", "/run/coredns/Corefile"]
           ports:
             - name: dns-udp
               containerPort: 53
@@ -64,10 +88,12 @@ spec:
               drop: [ALL]
               add: [NET_BIND_SERVICE]
           volumeMounts:
-            - name: config
-              mountPath: /etc/coredns
+            - name: corefile
+              mountPath: /run/coredns
               readOnly: true
       volumes:
         - name: config
           configMap:
             name: tailnet-dns
+        - name: corefile
+          emptyDir: {}

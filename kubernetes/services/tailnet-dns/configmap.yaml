@@ -4,15 +4,20 @@ metadata:
   name: tailnet-dns
   namespace: tailnet-dns
 data:
+  # One copy on fuji and one on the thinkcentre (#149). Each listens on its
+  # own node's tailnet address and answers with it, so whichever copy a
+  # device asks sends it to the tools proxy on that same node. The pod's init
+  # container writes this out with TAILNET_IP replaced; a change here takes a
+  # restart (bump config-revision in deployment.yaml).
   Corefile: |
     infra.radunenu.com:53 {
-      bind 100.64.0.1
+      bind TAILNET_IP
       errors
       health 127.0.0.1:8081
       ready 127.0.0.1:8181
       reload
       hosts {
-        100.64.0.1 hl.infra.radunenu.com hub.infra.radunenu.com ollama.infra.radunenu.com sxng.infra.radunenu.com
+        TAILNET_IP hl.infra.radunenu.com hub.infra.radunenu.com ollama.infra.radunenu.com sxng.infra.radunenu.com
         ttl 60
       }
     }

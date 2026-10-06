@@ -8,7 +8,9 @@ data:
     {
       admin 127.0.0.1:12019
       auto_https disable_redirects
-      # The host forwards tailnet TCP 443 to this internal listener.
+      # The host forwards tailnet TCP 443 to this internal listener
+      # (dotfiles modules/nixos/tailnet-https.nix). One copy on fuji and one
+      # on the thinkcentre (#149), each on its own node's tailnet address.
       https_port 8443
       servers {
         protocols h1 h2
@@ -16,18 +18,18 @@ data:
     }
 
     https://hl.infra.radunenu.com {
-      bind 100.64.0.1
+      bind {$TAILNET_IP}
       tls /certs/tls.crt /certs/tls.key
       reverse_proxy headlamp.headlamp.svc.cluster.local:80
     }
 
     https://hub.infra.radunenu.com {
-      bind 100.64.0.1
+      bind {$TAILNET_IP}
       tls /certs/tls.crt /certs/tls.key
       reverse_proxy homepage.homepage.svc.cluster.local:3000
     }
     https://ollama.infra.radunenu.com {
-      bind 100.64.0.1
+      bind {$TAILNET_IP}
       tls /certs/tls.crt /certs/tls.key
       # Model pulls and long generations stream for minutes.
       reverse_proxy ollama.ollama.svc.cluster.local:11434 {
@@ -35,7 +37,7 @@ data:
       }
     }
     https://sxng.infra.radunenu.com {
-      bind 100.64.0.1
+      bind {$TAILNET_IP}
       tls /certs/tls.crt /certs/tls.key
       reverse_proxy searxng.searxng.svc.cluster.local:8080
     }

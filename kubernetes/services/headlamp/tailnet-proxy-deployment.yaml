@@ -1,12 +1,9 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 metadata:
   name: headlamp-tailnet-proxy
   namespace: headlamp
 spec:
-  replicas: 1
-  strategy:
-    type: Recreate
   selector:
     matchLabels:
       app: headlamp-tailnet-proxy
@@ -15,8 +12,13 @@ spec:
       labels:
         app: headlamp-tailnet-proxy
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: fuji
+      # Both API servers, one copy each (#149).
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: In, values: [fuji, thinkcentre]}
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       automountServiceAccountToken: false
@@ -34,6 +36,11 @@ spec:
           command: [/bin/sh, -ec]
           args:
             - |
+              # This node's tailnet address, for the Caddyfile's binds. Fails
+              # (and restarts) until tailscale0 has one.
+              TAILNET_IP=$(ip -4 addr show dev tailscale0 | awk '/inet /{split($2, a, "/"); print a[1]; exit}')
+              [ -n "$TAILNET_IP" ]
+              export TAILNET_IP
               caddy run --config /etc/caddy/Caddyfile &
               proxy_pid=$!
               trap 'kill -TERM "$proxy_pid" 2>/dev/null || true; wait "$proxy_pid" 2>/dev/null || true; exit 0' TERM INT
@@ -58,15 +65,12 @@ spec:
             - name: https
               containerPort: 8443
               protocol: TCP
+          # Caddy's admin endpoint; the listener's address differs per node.
           readinessProbe:
-            tcpSocket:
-              host: 100.64.0.1
-              port: https
+            httpGet: {host: 127.0.0.1, port: 12019, path: /config/}
             periodSeconds: 10
           livenessProbe:
-            tcpSocket:
-              host: 100.64.0.1
-              port: https
+            httpGet: {host: 127.0.0.1, port: 12019, path: /config/}
             periodSeconds: 30
           resources:
             requests:
