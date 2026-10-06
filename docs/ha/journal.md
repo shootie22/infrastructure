@@ -157,3 +157,14 @@ While at it: signups were open on both Vaultwarden and Rybbit. Closed.
 The file side of #142. A small NixOS module pushes folders to the other site every 10 minutes with rsync over Nebula. The VM test found three things before it went live: nixpkgs keeps rrsync in its own package, SQLite needs a busy timeout or the snapshot fails while the app writes, and a test of mine was checking the wrong thing. The real hosts found one more: rrsync lets only one copy into a folder at a time, so the second and third job from the thinkcentre bounced. Fixed and covered by the test now.
 
 PrivateBin, Send's uploads and Audiobookshelf go to fuji's standby SSD, Baikal to the thinkcentre. Gitea's 105 GB comes next.
+
+## 2026-10-06: Services with files move by themselves
+
+Phase 6 for the services tied to folders. Each one runs on whichever of fuji and the thinkcentre holds its label, and a small daemon on both moves the label when the node holding it is gone, but only to a node a whole copy has reached. A node that loses the cluster kills the service's container and removes its folder after 45 seconds, so a site that's only cut off stops before the other one starts.
+
+The VM rehearsal earned its keep again. A crash moved the counter to fuji in about 85 seconds, carrying on from the copy, and a cut-off fuji stopped at about 50 seconds while the thinkcentre took over at about 100. On the way it showed:
+- Python's ismount doesn't see a bind mount on the same filesystem, so the daemon stacked binds until the kernel refused.
+- A server cut off from etcd's majority keeps restarting k3s, and containerd goes with it. The first fence asked containerd to stop the container, which only worked when it happened to be up. Now it kills the container's process directly, found through the runtime's files.
+- Crashing a VM a few minutes after k3s unpacked its images leaves containerd broken. A real server unpacked them long ago, so the test syncs the disks first.
+
+Then live, one at a time: PrivateBin, Send, Audiobookshelf and Baikal, each down for 10 to 40 seconds while it switched to its new path. One more snag from the copies: a first Gitea copy held up a config switch for hours, because the switch wanted to restart it. Copy jobs aren't restarted by switches anymore.
