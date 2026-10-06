@@ -50,7 +50,8 @@ spec:
                   name: radunenu-com-stats
                   key: STATUS_API_TOKEN
             - name: STATUS_API_BASE
-              value: https://api.radunenu.com
+              # status-api in monitoring (#151), from Prometheus; Pinga is retired.
+              value: http://status-api.monitoring.svc:8080
             - name: STATUS_REFRESH_INTERVAL
               value: 300s
             - name: STATUS_REQUEST_TIMEOUT
