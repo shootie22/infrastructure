@@ -129,3 +129,16 @@ Also on the table: Headscale outside the cluster on the edge or on fuji (removes
 A new node, or one restarting with an outdated list of servers, needs an address that works when fuji is gone ([#21](https://github.com/shootie22/infrastructure/issues/21)). It's the name `k3s-api`, in every server's hosts file, pointing at the Nebula address of each server running the API (fuji and the thinkcentre), generated from dotfiles `lib/nebula.nix`. The API servers carry the name in their certificate. No DNS and no tailnet involved, so it works in the same situations the cluster itself does. Rehearsed (a node that had never been in the cluster joined with fuji crashed) and rolled out on 6 Oct.
 
 Also on the table: a DNS name with both addresses (adds a dependency on DNS at join time), or a virtual IP (needs something to move it).
+
+## 2026-10-06: Which services survive losing their site (#88)
+
+Almost everything. Bandwidth and disk are there, and the point of all this is that a site going down doesn't take what I use with it.
+
+- **Survives** (a standby in the other site takes over): Keycloak, Headscale, Vaultwarden, Baikal, Joplin, PrivateBin, Send (shared links keep working), Gitea (the hub for my projects), Audiobookshelf, legacy web, Rybbit, the Minecraft and Vintage Story servers, monitoring (a second Prometheus and Alertmanager in DK), and the admin tools (homepage, Headlamp, tailnet DNS, external-services: a second copy on the thinkcentre).
+- **Stateless copy** (runs in both sites): radunenu.com, yeetus.net, the redirect domains, Element Web and Call, and the stateless game servers (Bopl 2D, Crosty, MegaBopl3D).
+- **GPU services** (Ollama, SearXNG, steamhappy): the replica goes on mixi (M1, GPU available under Asahi), once tested there.
+- **Retired:** Pinga (only radunenu.com's status page uses it; replaced by a status feed from Prometheus, which knows every service already), picshare.
+
+Three building blocks cover it: replicated Postgres (CNPG, Phase 4), one file-copy mechanism over Nebula for everything with files (repos, worlds, audiobooks, uploads), and failover control that promotes the standby when a site is gone (Phase 6). Copies are asynchronous: a failover can miss the last minute or two of writes (a push, a few minutes of a game world). Synchronous replication over the WAN would slow every write; not worth it.
+
+Standby copies in RO go on fuji's spare 1 TB SSD, not the Mac's external drive (a macOS USB disk that's also the Borg target).
