@@ -1,6 +1,6 @@
 # Services with files: where they run, and moving them
 
-How the services tied to files (PrivateBin, Send, Audiobookshelf, Baikal, and more to come) move between fuji and the thinkcentre. The design is in [decisions.md](../decisions.md) (6 Oct, "Services with files fail over by themselves"); the code is dotfiles `modules/nixos/site-failover/` and `modules/nixos/standby-copy.nix`; the rehearsal is dotfiles `tests/site-failover.nix`.
+How the services tied to files (PrivateBin, Send, Audiobookshelf, Baikal, Headscale, legacy-web; Gitea to come) move between fuji and the thinkcentre. The design is in [decisions.md](../decisions.md) (6 Oct, "Services with files fail over by themselves"); the code is dotfiles `modules/nixos/site-failover/` and `modules/nixos/standby-copy.nix`; the rehearsal is dotfiles `tests/site-failover.nix`.
 
 Nothing here needs doing by hand for a failover. This is for checking, and for the rare deliberate move.
 
@@ -9,10 +9,10 @@ Nothing here needs doing by hand for a failover. This is for checking, and for t
 The node with the label `ha.radunenu.com/<service>=active` runs it:
 
 ```sh
-kubectl get nodes -L ha.radunenu.com/privatebin,ha.radunenu.com/send-uploads,ha.radunenu.com/audiobookshelf,ha.radunenu.com/baikal
+kubectl get nodes -L ha.radunenu.com/privatebin,ha.radunenu.com/send-uploads,ha.radunenu.com/audiobookshelf,ha.radunenu.com/baikal,ha.radunenu.com/headscale,ha.radunenu.com/legacy-web
 ```
 
-On fuji or the thinkcentre, the site-failover daemon's own view (cluster reachable, label here, a whole copy here) is in `journalctl -u site-failover` and on its local status page (the port is in the module).
+On fuji or the thinkcentre, the site-failover daemon's own view (cluster reachable, label here, a whole copy here, who holds the label) is in `journalctl -u site-failover` and on its local status page (the port is in the module).
 
 The service's folder on the active node is `/srv/ha/<service>`. On the other node that path doesn't exist, on purpose: nothing can run there by mistake.
 
