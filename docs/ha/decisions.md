@@ -123,3 +123,9 @@ With etcd across the sites, the members can only reach each other over an overla
 The servers (fuji, the thinkcentre, the edge, mixi, minima) get a second overlay just for themselves: Nebula. Each node has its own certificate on disk and finds the others through two lighthouses, the edge and fuji, so it comes up at boot without asking anyone. etcd, the k3s API and flannel run over it. Tailscale and Headscale stay for my devices, admin access and the private services, and Headscale becomes an ordinary HA service in the cluster (Phase 5).
 
 Also on the table: Headscale outside the cluster on the edge or on fuji (removes the loop, but Headscale stays a single copy and the edge starts to matter), or Headscale in the cluster with a manual cold-start procedure (keeps the loop). Disk unlock after a reboot stays manual for now. Replaces "Headscale stays in the cluster" above.
+
+## 2026-10-06: Nodes join the cluster through k3s-api
+
+A new node, or one restarting with an outdated list of servers, needs an address that works when fuji is gone ([#21](https://github.com/shootie22/infrastructure/issues/21)). It's the name `k3s-api`, in every server's hosts file, pointing at the Nebula address of each server running the API (fuji and the thinkcentre), generated from dotfiles `lib/nebula.nix`. The API servers carry the name in their certificate. No DNS and no tailnet involved, so it works in the same situations the cluster itself does. Rehearsed (a node that had never been in the cluster joined with fuji crashed) and rolled out on 6 Oct.
+
+Also on the table: a DNS name with both addresses (adds a dependency on DNS at join time), or a virtual IP (needs something to move it).

@@ -55,7 +55,7 @@ Order: Nebula first (it needs nothing), then one server restored from an etcd sn
    ```
    Hand over to Git: `kubectl apply -f kubernetes/bootstrap/root.yaml`. Argo CD then installs everything under `kubernetes/argocd` and `kubernetes/services`, Headscale included.
 4. **The thinkcentre and the edge:** install, sign their Nebula keys, deploy. With no `/var/lib/rancher/k3s/server/db` they join the restored cluster as new members.
-5. **Agents:** mixi and minima from their NixOS configs, Nebula keys signed. They join through fuji's Nebula address.
+5. **Agents:** mixi and minima from their NixOS configs, Nebula keys signed. They join through `k3s-api` (every API server, from the hosts file), so this works with either API server up.
 6. **The tailnet** comes back with Headscale, once the cluster runs it again.
 
 ## Checks
