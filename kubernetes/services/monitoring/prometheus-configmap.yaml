@@ -89,6 +89,26 @@ data:
           - source_labels: [__meta_kubernetes_pod_name]
             target_label: pod
 
+      # CloudNativePG's exporter on every database instance (#49).
+      - job_name: cnpg
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_cnpg_io_cluster]
+            regex: .+
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            regex: metrics
+            action: keep
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_pod_label_cnpg_io_cluster]
+            target_label: cnpg_cluster
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: node
+
       - job_name: kubelet
         scheme: https
         kubernetes_sd_configs:
@@ -618,6 +638,65 @@ data:
             annotations:
               summary: "comin on {{ $labels.host }} hasn't fetched in over an hour"
               description: Restart it (`systemctl restart comin`); comin-unstick should do that by itself.
+          # Site failover (dotfiles site-failover, #49): each service runs on
+          # exactly one of fuji and the thinkcentre.
+          - alert: SiteFailoverServiceNotRunning
+            expr: sum by (service) (site_failover_active) == 0
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "{{ $labels.service }} runs on neither fuji nor the thinkcentre"
+              description: No node holds its label, or the one that does can't run it (cluster lost, folder missing). docs/ha/runbooks/site-failover.md
+          - alert: SiteFailoverServiceTwice
+            expr: sum by (service) (site_failover_active) > 1
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "{{ $labels.service }} runs on both fuji and the thinkcentre"
+              description: Should never happen (the fence and the label). Check the labels and stop one by hand.
+          - alert: SiteFailoverMoved
+            expr: site_failover_active == 1 and changes(site_failover_active[15m]) > 0
+            labels:
+              severity: warning
+            annotations:
+              summary: "{{ $labels.service }} moved to {{ $labels.node }}"
+              description: Its node or site went away and the other one took over on the last copy. It stays there; the old node is the standby once it's back.
+          - alert: SiteFailoverClusterLost
+            expr: site_failover_cluster_reachable == 0
+            for: 2m
+            labels:
+              severity: warning
+            annotations:
+              summary: "{{ $labels.node }} can't reach the cluster"
+              description: Its services with files are fenced (stopped) there; the other site takes them over.
+
+          # Replicated Postgres (CNPG, #49).
+          - alert: PostgresInstanceMissing
+            expr: count by (namespace, cnpg_cluster) (cnpg_collector_up == 1) < 2
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "{{ $labels.namespace }}/{{ $labels.cnpg_cluster }} has only one Postgres instance up"
+              description: The database runs without its copy in the other site; a second failure would take it down.
+          - alert: PostgresReplicationLag
+            expr: max by (namespace, cnpg_cluster) (cnpg_pg_replication_lag) > 300
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "{{ $labels.namespace }}/{{ $labels.cnpg_cluster }}'s replica is {{ $value | humanizeDuration }} behind"
+              description: A failover now would lose that much.
+          - alert: PostgresPrimarySwitched
+            expr: changes(cnpg_pg_replication_in_recovery[15m]) > 0 and cnpg_pg_replication_in_recovery == 0
+            labels:
+              severity: warning
+            annotations:
+              summary: "{{ $labels.namespace }}/{{ $labels.cnpg_cluster }}: {{ $labels.pod }} is the primary now"
+              description: CNPG promoted the replica (its site or node went away, or a switchover). Nothing to do if that was expected.
+
           # Copies of service folders to the other site (dotfiles standby-copy,
           # #142). Every 10 minutes normally; a stale copy means a failover
           # would lose more than that.
