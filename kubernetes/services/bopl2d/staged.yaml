@@ -26,8 +26,14 @@ spec:
         app: bopl2d
     spec:
       automountServiceAccountToken: false
+      # On whichever of fuji and the thinkcentre holds the label; the other
+      # takes over when this site is gone, and the game relay follows
+      # (dotfiles site-failover, stateless: nothing to copy).
       nodeSelector:
-        kubernetes.io/hostname: thinkcentre
+        ha.radunenu.com/bopl2d: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       terminationGracePeriodSeconds: 30
       securityContext:
         runAsNonRoot: true
