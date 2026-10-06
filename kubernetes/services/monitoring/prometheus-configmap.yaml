@@ -15,7 +15,10 @@ data:
     alerting:
       alertmanagers:
         - static_configs:
-            - targets: [alertmanager.monitoring.svc:9093]
+            # Both, so either site alone still gets alerts out (#148).
+            - targets:
+                - alertmanager-0.alertmanager-peers.monitoring.svc:9093
+                - alertmanager-1.alertmanager-peers.monitoring.svc:9093
 
     scrape_configs:
       - job_name: prometheus

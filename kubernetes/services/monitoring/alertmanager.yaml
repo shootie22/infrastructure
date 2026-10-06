@@ -25,22 +25,25 @@ data:
     receivers:
       - name: relay
         webhook_configs:
-          - url: http://100.64.0.9:9190/alertmanager
+          # The edge over Nebula, so alerts don't depend on Headscale.
+          - url: http://10.99.0.1:9190/alertmanager
             send_resolved: true
       - name: healthchecks
         webhook_configs:
           - url_file: /etc/alertmanager/secret/healthchecks_url
             send_resolved: false
 ---
+# Two, one on fuji and one on the thinkcentre (#148), clustered: both
+# Prometheuses send every alert to both, and the cluster sends it once.
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: alertmanager
   namespace: monitoring
 spec:
-  replicas: 1
-  strategy:
-    type: Recreate
+  serviceName: alertmanager-peers
+  replicas: 2
+  podManagementPolicy: Parallel
   selector:
     matchLabels:
       app.kubernetes.io/name: alertmanager
@@ -49,11 +52,21 @@ spec:
       labels:
         app.kubernetes.io/name: alertmanager
       annotations:
-        config-revision: "1"
+        config-revision: "2"
     spec:
       automountServiceAccountToken: false
-      nodeSelector:
-        kubernetes.io/hostname: fuji
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: In, values: [fuji, thinkcentre]}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: alertmanager
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534
@@ -67,10 +80,23 @@ spec:
             - --config.file=/etc/alertmanager/alertmanager.yml
             - --storage.path=/alertmanager
             - --web.listen-address=:9093
-            - --cluster.listen-address=
+            - --cluster.listen-address=0.0.0.0:9094
+            - --cluster.advertise-address=$(POD_IP):9094
+            - --cluster.peer=alertmanager-0.alertmanager-peers.monitoring.svc:9094
+            - --cluster.peer=alertmanager-1.alertmanager-peers.monitoring.svc:9094
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef: {fieldPath: status.podIP}
           ports:
             - name: http
               containerPort: 9093
+            - name: cluster-tcp
+              containerPort: 9094
+              protocol: TCP
+            - name: cluster-udp
+              containerPort: 9094
+              protocol: UDP
           resources:
             requests:
               cpu: 10m
@@ -123,3 +149,18 @@ spec:
     - name: http
       port: 9093
       targetPort: http
+---
+# Lets the two find each other by name.
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-peers
+  namespace: monitoring
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: alertmanager
+  ports:
+    - {name: cluster-tcp, port: 9094, protocol: TCP}
+    - {name: cluster-udp, port: 9094, protocol: UDP}
