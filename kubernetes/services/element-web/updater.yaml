@@ -26,6 +26,12 @@ rules:
   - apiGroups: ["apps"]
     resources: ["replicasets"]
     verbs: ["get", "list", "watch"]
+  # It lists and watches the Deployment too. A list can't be limited to one
+  # name, so this covers the namespace, which only holds this Deployment.
+  # Without it the job failed after every successful restart.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -47,7 +53,9 @@ metadata:
   name: element-web-updater
   namespace: element-web
 spec:
-  schedule: "0 4 * * *"
+  # Between two element-web-check runs (every 10 minutes), so a restart
+  # doesn't land on one.
+  schedule: "3 4 * * *"
   timeZone: Europe/Berlin
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 1800
