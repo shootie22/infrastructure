@@ -105,10 +105,11 @@ data:
         },
 
         // hetzy (Matrix VPS, outside the cluster) ships logs to Loki's tailnet
-        // proxy (listens on 100.64.0.1 only), and Prometheus on Fuji scrapes its
-        // exporters (the scrape targets are IPv4).
+        // proxy (listens on 100.64.0.1 only), and Prometheus (fuji, and the second
+        // one on the thinkcentre, #148) scrapes its exporters (the scrape targets
+        // are IPv4).
         { "action": "accept", "src": ["hetzy", "hetzy6"], "dst": ["fuji:3101"] },
-        { "action": "accept", "src": ["fuji"], "dst": ["hetzy:9100-9103"] },
+        { "action": "accept", "src": ["fuji", "thinkcentre"], "dst": ["hetzy:9100-9103"] },
 
         // The edge passes web traffic through to Traefik at either site.
         { "action": "accept", "src": ["edge", "edge6"], "dst": ["fuji:80,443", "thinkcentre:80,443", "fuji6:80,443", "thinkcentre6:80,443"] },
@@ -117,8 +118,9 @@ data:
         // (dotfiles, modules/nixos/game-relay.nix).
         { "action": "accept", "src": ["edge", "edge6"], "dst": ["thinkcentre:6767,51751,25565,19132,24545,5520,7777", "thinkcentre6:6767,51751,25565,19132,24545,5520,7777"] },
 
-        // Prometheus on fuji scrapes the edge's HAProxy and comin metrics.
-        { "action": "accept", "src": ["fuji", "fuji6"], "dst": ["edge:8404,4243", "edge6:8404,4243"] },
+        // Prometheus (fuji and the thinkcentre) scrapes the edge's HAProxy and
+        // comin metrics.
+        { "action": "accept", "src": ["fuji", "fuji6", "thinkcentre", "thinkcentre6"], "dst": ["edge:8404,4243", "edge6:8404,4243"] },
 
         // Alerts go to the relay on the edge (docs/ha/alerting.md).
         { "action": "accept", "src": ["fuji", "mixi", "thinkcentre", "minima", "fuji6", "mixi6", "thinkcentre6", "minima6"], "dst": ["edge:9190", "edge6:9190"] },
