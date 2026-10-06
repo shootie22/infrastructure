@@ -158,3 +158,16 @@ Everything with files (Gitea's repos, Audiobookshelf, PrivateBin, Send, Baikal, 
 A failover can lose up to the last 10 minutes of files. Starting the standby when a site is gone is the failover controller's job (Phase 6), not this.
 
 Also on the table: Syncthing (continuous, but two-way with conflict files, and live SQLite or git files can arrive half-written), Longhorn (every write waits on the other site over the internet, ruled out for Postgres already), and Litestream to S3 storage for the SQLite apps (about a second of loss instead of 10 minutes, but one more stateful service per site, and a second restore path, for three apps that rarely write). Litestream is written up in [ideas.md](ideas.md) in case it's ever needed.
+
+## 2026-10-06: Services with files fail over by themselves, and stay where they land (Phase 6)
+
+For the services tied to files on one node (Gitea, Audiobookshelf, PrivateBin, Send, Baikal, Headscale, legacy-web, and the game worlds once their copies exist), each one has a pair of nodes, one per site, and exactly one of them is active, marked by a label on the node. The Deployment only runs where the label is. Both nodes see the service's folder at the same path: the active one has the live data, the other the copy.
+
+- **Failing over:** when the active node has stopped answering for about a minute, a small controller moves the label to the other node, and Kubernetes starts the service there on the copy. Changing the label goes through the cluster's API, so only the side that still has the cluster can do it.
+- **Fencing:** a node that loses the cluster for about 20 seconds stops these services itself. A site that's only cut off, not dead, has shut its copy down before the other site starts one, so the two never run at once.
+- **Copy direction:** the copies always go from the active node to the other one. A node that can't confirm with the API that it's active doesn't send, so a cut-off site can never overwrite newer data when it comes back.
+- **No moving back:** the service stays where it landed, and the copy direction reverses with it. Nothing to run by hand afterwards, and no second outage to move it home.
+
+A failover can lose up to the last copy interval of files (10 minutes, less for the small services if it turns out to matter). Game worlds get a save-and-pause before each copy, through the server console, so the copy is never caught mid-save.
+
+Also on the table: failing over by hand with one command (safe, but someone has to be awake), and building the decision into the DNS failover checker's voting (duplicates what the cluster already decides). Moving services back home automatically was dropped: it adds a second outage and a second copy to get right, for nothing.
