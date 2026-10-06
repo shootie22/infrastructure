@@ -1,0 +1,117 @@
+# Dry run of the move from SQLite to Postgres, into a scratch database.
+# Vaultwarden keeps running on SQLite meanwhile. The log ends up in
+# /home/main/services/vaultwarden-migration on the thinkcentre.
+# Removed again after the real move.
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: vw-dryrun
+  namespace: vaultwarden
+spec:
+  cluster: {name: vaultwarden-db}
+  name: vw_dryrun
+  owner: vaultwarden
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vw-migration-dryrun
+  namespace: vaultwarden
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      initContainers:
+        # A copy of the live files; good enough for a dry run.
+        - name: copy
+          image: vaultwarden/server:1.37.3@sha256:1587c45feaa479f1f5e8af3b00eded36bff77bcf1880cf8dbf0541706dd470e0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              exec >>/result/dryrun.log 2>&1
+              echo "== copy $(date -Is)"
+              cp -v /data/db.sqlite3* /scratch/
+          volumeMounts:
+            - {name: data, mountPath: /data, readOnly: true}
+            - {name: scratch, mountPath: /scratch}
+            - {name: result, mountPath: /result}
+        # Vaultwarden creates its own schema at startup; give it a minute.
+        - name: schema
+          image: vaultwarden/server:1.37.3@sha256:1587c45feaa479f1f5e8af3b00eded36bff77bcf1880cf8dbf0541706dd470e0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              exec >>/result/dryrun.log 2>&1
+              echo "== schema $(date -Is)"
+              export DATABASE_URL="postgresql://vaultwarden:${PW}@vaultwarden-db-rw:5432/vw_dryrun"
+              timeout 60 /start.sh
+              echo "vaultwarden exited with $? (124 is the timeout, expected)"
+          env:
+            - name: PW
+              valueFrom:
+                secretKeyRef: {name: vaultwarden-db-app, key: password}
+            - {name: DATA_FOLDER, value: /scratch/vw}
+            - {name: ROCKET_PORT, value: "8081"}
+            - {name: I_REALLY_WANT_VOLATILE_STORAGE, value: "true"}
+          volumeMounts:
+            - {name: scratch, mountPath: /scratch}
+            - {name: result, mountPath: /result}
+        - name: load
+          image: ghcr.io/dimitri/pgloader:latest@sha256:a1d4a78e78a64e46cd3fc7dfc57d24eb91ffb1a5520f2b1f55631815e3658d6e
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              exec >>/result/dryrun.log 2>&1
+              echo "== load $(date -Is)"
+              cat >/scratch/load <<EOF
+              LOAD DATABASE
+                FROM sqlite:///scratch/db.sqlite3
+                INTO postgresql://vaultwarden@vaultwarden-db-rw:5432/vw_dryrun
+                WITH data only, include no drop, reset sequences
+                EXCLUDING TABLE NAMES LIKE '__diesel_schema_migrations'
+                ALTER SCHEMA 'bitwarden' RENAME TO 'public';
+              EOF
+              pgloader /scratch/load
+              echo "pgloader exited with $?"
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef: {name: vaultwarden-db-app, key: password}
+          volumeMounts:
+            - {name: scratch, mountPath: /scratch}
+            - {name: result, mountPath: /result}
+      containers:
+        - name: count
+          image: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              exec >>/result/dryrun.log 2>&1
+              echo "== rows in Postgres $(date -Is)"
+              for t in users ciphers folders organizations users_organizations devices; do
+                printf '%s ' $t; psql -h vaultwarden-db-rw -U vaultwarden -d vw_dryrun -At -c "select count(*) from $t"
+              done
+              echo "== done"
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef: {name: vaultwarden-db-app, key: password}
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - {name: result, mountPath: /result}
+      volumes:
+        - name: data
+          hostPath:
+            path: /home/main/services/vaultwarden
+            type: Directory
+        - name: scratch
+          emptyDir: {}
+        - name: result
+          hostPath:
+            path: /home/main/services/vaultwarden-migration
+            type: DirectoryOrCreate
