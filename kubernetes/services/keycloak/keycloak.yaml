@@ -16,8 +16,6 @@ spec:
         app: keycloak
     spec:
       automountServiceAccountToken: false
-      nodeSelector:
-        kubernetes.io/hostname: fuji
       containers:
         - name: keycloak
           image: quay.io/keycloak/keycloak:26.5.5@sha256:a7b0cb7a43a1235a61872883414d3f1d9a3ceac9df6e5907bd12202778a6265c
@@ -41,22 +39,19 @@ spec:
                   name: keycloak-env
                   key: KC_DB
             - name: KC_DB_URL_HOST
-              value: postgres
+              value: keycloak-db-rw
             - name: KC_DB_URL_DATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: keycloak-env
-                  key: KC_DB_URL_DATABASE
+              value: keycloak
             - name: KC_DB_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: keycloak-env
-                  key: KC_DB_USERNAME
+                  name: keycloak-db-app
+                  key: username
             - name: KC_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: keycloak-env
-                  key: KC_DB_PASSWORD
+                  name: keycloak-db-app
+                  key: password
             - name: KC_HOSTNAME
               value: https://auth.radunenu.com
             - name: KC_HTTP_ENABLED
@@ -86,9 +81,28 @@ spec:
               mountPath: /opt/keycloak/data
       volumes:
         - name: data
-          hostPath:
-            path: /home/fuji/services/keycloak/data
-            type: Directory
+          emptyDir: {}
+      # Either API server, so a site going down doesn't take logins with it;
+      # moves 30 s after its node stops answering. Nothing on disk to keep.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - fuji
+                      - thinkcentre
+      tolerations:
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 30
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 30
 ---
 apiVersion: v1
 kind: Service
