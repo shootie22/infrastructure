@@ -9,7 +9,7 @@ live in PrivateBin.
   work for anyone who has them.
 - Max 50 GiB per upload. The uploader picks expiry (1h to 14 days) and
   download limit (1 to 100); change the lists in `deployment.yaml`.
-- Files (ciphertext only) live in `/home/main/storage/send-uploads` on
+- Files (ciphertext only) live in `/home/main/storage/send-uploads` (mounted at `/srv/ha/send-uploads`, copied to fuji by site-failover) on
   thinkcentre, the 4 TB LUKS disk. `send-cleanup` deletes anything older
   than 14 days every hour. The folder is not backed up and must not be.
 - Cloudflare: `share.radunenu.com` is DNS only (grey cloud).

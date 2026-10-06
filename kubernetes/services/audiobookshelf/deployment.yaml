@@ -16,8 +16,14 @@ spec:
         app: audiobookshelf
     spec:
       automountServiceAccountToken: false
+      # Runs on whichever of fuji and the thinkcentre holds the label; the
+      # other has a copy and takes over when this site is gone (dotfiles
+      # modules/nixos/site-failover).
       nodeSelector:
-        kubernetes.io/hostname: thinkcentre
+        ha.radunenu.com/audiobookshelf: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: audiobookshelf
           image: ghcr.io/advplyr/audiobookshelf:2.36.1@sha256:3528a93b6442ffe54bd46771bbbab7c97084e1101071586d9dc2254f30bb4358
@@ -51,17 +57,17 @@ spec:
       volumes:
         - name: audiobooks
           hostPath:
-            path: /home/main/services/audiobookshelf/audiobooks
+            path: /srv/ha/audiobookshelf/audiobooks
             type: Directory
         - name: config
           hostPath:
-            path: /home/main/services/audiobookshelf/config
+            path: /srv/ha/audiobookshelf/config
             type: Directory
         - name: metadata
           hostPath:
-            path: /home/main/services/audiobookshelf/metadata
+            path: /srv/ha/audiobookshelf/metadata
             type: Directory
         - name: podcasts
           hostPath:
-            path: /home/main/services/audiobookshelf/podcasts
+            path: /srv/ha/audiobookshelf/podcasts
             type: Directory

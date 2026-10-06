@@ -24,8 +24,14 @@ spec:
         app.kubernetes.io/name: send
     spec:
       automountServiceAccountToken: false
+      # Runs on whichever of fuji and the thinkcentre holds the label; the
+      # other has a copy and takes over when this site is gone (dotfiles
+      # modules/nixos/site-failover).
       nodeSelector:
-        kubernetes.io/hostname: thinkcentre
+        ha.radunenu.com/send-uploads: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       initContainers:
         # Native sidecar: started, and ready, before Send connects to it.
         - name: redis
@@ -104,8 +110,9 @@ spec:
       volumes:
         - name: redis-data
           emptyDir: {sizeLimit: 16Mi}
-        # On the 4 TB LUKS disk. type: Directory refuses to start the pod if
-        # the disk is not unlocked and mounted, instead of filling the system
-        # SSD. Create it once, owned by 1000:1000 (the image's app user).
+        # The uploads folder (on the thinkcentre the 4 TB LUKS disk, on fuji
+        # the standby copy). /srv/ha/send-uploads only exists while the folder
+        # is there, so a locked disk never fills the system SSD. Owned by
+        # 1000:1000 (the image's app user).
         - name: uploads
-          hostPath: {path: /home/main/storage/send-uploads, type: Directory}
+          hostPath: {path: /srv/ha/send-uploads, type: Directory}

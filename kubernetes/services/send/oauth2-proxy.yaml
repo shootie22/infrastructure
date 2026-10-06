@@ -22,8 +22,17 @@ spec:
         app.kubernetes.io/name: oauth2-proxy
     spec:
       automountServiceAccountToken: false
-      nodeSelector:
-        kubernetes.io/hostname: thinkcentre
+      # Nothing on disk: fuji or the thinkcentre, moving 30 s after its node
+      # stops answering.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: In, values: [fuji, thinkcentre]}
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: oauth2-proxy
           image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.4@sha256:b1b2021fe8f4004573e8d690dec6c7bb29cc44364572cf8510a05bf3a0ae2ded

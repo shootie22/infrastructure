@@ -22,8 +22,9 @@ spec:
         spec:
           automountServiceAccountToken: false
           restartPolicy: Never
+          # Wherever Send runs (site-failover).
           nodeSelector:
-            kubernetes.io/hostname: thinkcentre
+            ha.radunenu.com/send-uploads: active
           containers:
             - name: cleanup
               image: docker.io/library/busybox:1.37@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e
@@ -58,4 +59,4 @@ spec:
                 - {name: uploads, mountPath: /uploads}
           volumes:
             - name: uploads
-              hostPath: {path: /home/main/storage/send-uploads, type: Directory}
+              hostPath: {path: /srv/ha/send-uploads, type: Directory}
