@@ -252,7 +252,7 @@ spec:
           env:
             - {name: NODE_ENV, value: production}
             - {name: CLICKHOUSE_HOST, value: "http://clickhouse:8123"}
-            - {name: POSTGRES_HOST, value: postgres}
+            - {name: POSTGRES_HOST, value: rybbit-pg-rw}
             - {name: POSTGRES_PORT, value: "5432"}
             - name: CLICKHOUSE_DB
               valueFrom: {secretKeyRef: {name: rybbit-env, key: CLICKHOUSE_DB}}
@@ -263,7 +263,7 @@ spec:
             - name: POSTGRES_USER
               valueFrom: {secretKeyRef: {name: rybbit-env, key: POSTGRES_USER}}
             - name: POSTGRES_PASSWORD
-              valueFrom: {secretKeyRef: {name: rybbit-env, key: POSTGRES_PASSWORD}}
+              valueFrom: {secretKeyRef: {name: rybbit-pg-app, key: password}}
             - name: BETTER_AUTH_SECRET
               valueFrom: {secretKeyRef: {name: rybbit-env, key: BETTER_AUTH_SECRET}}
             - {name: BASE_URL, value: "https://analytics.radunenu.com"}
