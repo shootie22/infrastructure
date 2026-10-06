@@ -195,6 +195,10 @@ data:
           - source_labels: [__meta_kubernetes_ingress_annotation_radunenu_com_status]
             regex: hidden
             action: drop
+          # www. names are the same site twice.
+          - source_labels: [__address__]
+            regex: www\..*
+            action: drop
           - source_labels: [__meta_kubernetes_ingress_scheme, __address__, __meta_kubernetes_ingress_path]
             regex: (.+);(.+);(.+)
             replacement: ${1}://${2}${3}
