@@ -63,6 +63,11 @@ spec:
               mountPath: /app/config.json
               subPath: config.json
               readOnly: true
+          # Traefik needs a moment to stop sending requests here (#89).
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
       volumes:
         - name: config
           configMap:

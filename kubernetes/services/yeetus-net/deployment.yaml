@@ -33,6 +33,11 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
+          # Traefik needs a moment to stop sending requests here (#89).
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
       volumes:
         - name: site
           configMap:

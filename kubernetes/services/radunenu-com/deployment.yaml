@@ -35,6 +35,11 @@ spec:
               port: 1310
             initialDelaySeconds: 10
             periodSeconds: 30
+          # Traefik needs a moment to stop sending requests here (#89).
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
         - name: stats-updater
           image: git.radunenu.com/radu/radunenu.com-minimal-stats-updater:latest
           imagePullPolicy: Always
