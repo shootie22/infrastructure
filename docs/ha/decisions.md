@@ -147,6 +147,6 @@ Standby copies in RO go on fuji's spare 1 TB SSD, not the Mac's external drive (
 
 Each CNPG instance keeps its data on its own node's disk, through k3s' local-path provisioner. CNPG does the replication, so the storage underneath doesn't need to. One instance on fuji, one on the thinkcentre, never both in the same site. They can only run on nodes labelled for databases, which keeps them off mixi, minima and the edge.
 
-Backups go the same way as everything else: every hour a job dumps each database from the replica into a folder on the node, and that node's Borg job picks it up, so it ends up on the Mac's 10 TB disk and from there in Backblaze. No WAL archive and no restore to a point in time. Between the replica in the other site and hourly dumps, the worst case is an hour of writes lost in a real disaster, which is fine for what runs here.
+Backups go the same way as everything else: every hour a job dumps each database from the replica into a folder on fuji, and fuji's nightly Borg job picks it up, so it ends up on the Mac's 10 TB disk and from there in Backblaze. No WAL archive and no restore to a point in time. Losing both instances at once still leaves the last hourly dump on fuji; losing fuji's disk too falls back to the nightly copy. Fine for what runs here.
 
 Also on the table: Longhorn or another replicated volume under CNPG (two layers doing the same job over the WAN), and CNPG's own backups to object storage (would mean B2 or MinIO just for this, next to a Borg setup that already works).

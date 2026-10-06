@@ -1,0 +1,75 @@
+# Vaultwarden's Postgres: one instance in each site, CNPG fails over between
+# them (#31). Rehearsed in dotfiles tests/cnpg-across-sites.nix.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: vaultwarden-db
+  namespace: vaultwarden
+spec:
+  instances: 2
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+  bootstrap:
+    initdb:
+      database: vaultwarden
+      owner: vaultwarden
+  storage:
+    size: 2Gi
+    storageClass: local-path
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: required
+    topologyKey: topology.kubernetes.io/zone
+    nodeSelector:
+      db: "true"
+  probes:
+    liveness:
+      # A primary that can't see the operator or the other instance stops
+      # taking writes, so a site cut off from the rest never has a second
+      # primary.
+      isolationCheck:
+        enabled: true
+---
+# Hourly dump into a folder on fuji that its nightly Borg job picks up (#32).
+# Taken from the replica when there is one.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vaultwarden-db-dump
+  namespace: vaultwarden
+spec:
+  schedule: "17 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          nodeSelector:
+            kubernetes.io/hostname: fuji
+          containers:
+            - name: dump
+              image: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+              command: ["/bin/sh", "-ec"]
+              args:
+                - |
+                  host=vaultwarden-db-ro
+                  pg_isready -q -h $host || host=vaultwarden-db-r
+                  pg_dump -h $host -U vaultwarden -d vaultwarden -Fc -f /backup/vaultwarden.dump.tmp
+                  mv /backup/vaultwarden.dump.tmp /backup/vaultwarden.dump
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef: {name: vaultwarden-db-app, key: password}
+              securityContext:
+                allowPrivilegeEscalation: false
+              volumeMounts:
+                - {name: backup, mountPath: /backup}
+          volumes:
+            - name: backup
+              hostPath:
+                path: /var/lib/pg-dumps
+                type: Directory
