@@ -141,3 +141,5 @@ The labels went on after the operator had already started, so both of its pods l
 Moving the data was a dry run into a scratch database first, then the real thing in one commit: the old pod stops, Vaultwarden makes its own tables in Postgres, pgloader copies the rows. About 45 seconds without Vaultwarden. Same row counts as in SQLite, no errors, and the apps synced as if nothing happened. The SQLite file stays where it was in case I need to go back.
 
 Vaultwarden itself still only runs on the thinkcentre, because of the key it signs logins with. That's next.
+
+Later the same day: the signing key went into a SOPS secret and Vaultwarden lost its pin to the thinkcentre. It came back up on mixi about 10 seconds later, and the phone synced without asking me to log in again, so the key carried over. Attachments and file Sends are off, since those would live on one node's disk. Files go through Send anyway.
