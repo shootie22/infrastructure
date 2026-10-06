@@ -8,5 +8,7 @@ Written:
 
 - [site-failover.md](site-failover.md): where the services with files run, what happens when a site goes, and moving one on purpose. Rehearsed in VMs; no real failover yet.
 
+- [drills.md](drills.md): the failure drills (#43-#46): what goes down, what should happen and how fast, how to get back. Not run yet.
+
 Planned:
 - `etcd-migration.md`: switching fuji from SQLite to etcd ([#20](https://github.com/shootie22/infrastructure/issues/20))
