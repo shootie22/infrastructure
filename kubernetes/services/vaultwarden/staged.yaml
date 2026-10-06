@@ -41,6 +41,8 @@ spec:
             - {name: USER_ATTACHMENT_LIMIT, value: "0"}
             - {name: ORG_ATTACHMENT_LIMIT, value: "0"}
             - {name: USER_SEND_LIMIT, value: "0"}
+            # Just me; nobody else gets an account by finding the address.
+            - {name: SIGNUPS_ALLOWED, value: "false"}
           ports:
             - {name: http, containerPort: 80}
           securityContext:
