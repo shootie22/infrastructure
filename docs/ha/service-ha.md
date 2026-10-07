@@ -27,19 +27,21 @@ Decided 6 Oct ([#88](https://github.com/shootie22/infrastructure/issues/88), [de
 
 ### Services
 
+"Home" is where a service runs when nothing is wrong. After a failover it stays on the other site until something moves it again; nothing moves back by itself.
+
 | Service | Runs on | Data | Tier | How |
 |---|---|---|---|---|
-| Keycloak | fuji | Postgres + files, a few MB | Survives | Postgres replica (Phase 4/5) |
-| Headscale | fuji | SQLite | Survives | moves to Postgres, replica |
-| Vaultwarden | thinkcentre | SQLite + attachments, ~7 MB | Survives | moves to Postgres, attachments copied |
-| Baikal | fuji | files, <1 MB | Survives | file copy |
-| Joplin | thinkcentre | Postgres | Survives | Postgres replica |
-| PrivateBin | thinkcentre | small files | Survives | file copy |
-| Send | thinkcentre | uploads on the 4 TB disk, ~100 MB | Survives | file copy, so shared links keep working |
-| Gitea | thinkcentre | Postgres + 61 GB of repos | Survives | Postgres replica, repos/LFS/packages copied every few minutes |
-| Audiobookshelf | thinkcentre | 14 GB library, 34 MB database | Survives | file copy |
-| Legacy web (old API, Kronorite) | fuji, minima | 2 GB of files | Survives | file copy |
-| Rybbit | thinkcentre | Postgres + ClickHouse | Survives | Postgres replica; ClickHouse to work out |
+| Keycloak | fuji or the thinkcentre | Postgres | Survives | CNPG, moves 30 s after its node is gone, waits for its database at start |
+| Headscale | fuji (home) | SQLite | Survives | file copy and site-failover |
+| Vaultwarden | fuji or the thinkcentre | Postgres, attachments off | Survives | CNPG, moves 30 s after its node is gone |
+| Baikal | fuji (home) | files, <1 MB | Survives | file copy and site-failover |
+| Joplin | fuji or the thinkcentre | Postgres | Survives | CNPG, moves 30 s after its node is gone |
+| PrivateBin | thinkcentre (home) | small files | Survives | file copy and site-failover |
+| Send | thinkcentre (home) | uploads on the 4 TB disk, ~100 MB | Survives | file copy and site-failover, so shared links keep working |
+| Gitea | thinkcentre (home) | Postgres + 61 GB of repos | Survives | CNPG, repos/LFS/packages copied every 10 minutes, site-failover |
+| Audiobookshelf | thinkcentre (home) | 14 GB library, 34 MB database | Survives | file copy and site-failover |
+| Legacy web (old API, Kronorite) | fuji (home) | 2 GB of files | Survives | file copy and site-failover |
+| Rybbit | thinkcentre (home) | Postgres + ClickHouse | Survives | CNPG; ClickHouse copied with merges paused, site-failover |
 | Minecraft HC, Skyblock, Hytale | thinkcentre | worlds, up to 8 GB | Survives | site-failover; Minecraft saves over RCON before each copy, Hytale is copied live |
 | Vintage Story | (not running) | 96 GB world | Retired 6 Oct | not played in a while; the world stays in /home/main/game_servers/vintage_story and in Borg |
 | Bopl 2D, Crosty, MegaBopl3D | thinkcentre | none | Stateless copy | can run in either site |
@@ -47,7 +49,9 @@ Decided 6 Oct ([#88](https://github.com/shootie22/infrastructure/issues/88), [de
 | Element Web, Element Call | minima, mixi | none | Stateless copy | a replica per site |
 | homepage, Headlamp, tailnet DNS, external-services | fuji, on its tailnet address | none | Survives | a second copy on the thinkcentre's address, DNS lists both |
 | Monitoring (Prometheus, Grafana, Loki, Alertmanager) | both sites | metrics and logs | Survives | one of each per site: the Prometheuses scrape the same targets (DK keeps 3 days), Alloy writes logs to both Lokis, the Alertmanagers are clustered, Grafana has two replicas on a CNPG database and each asks its own site's Prometheus and Loki (#148) |
-| Ollama, SearXNG, steamhappy | minima (Mac M4 VM) | models, caches | Survives if mixi's GPU works | replica on mixi (M1, Asahi GPU), to test |
+| Ollama | minima, mixi | models | Survives | minima first, mixi's M1 GPU (smaller model) when minima is gone |
+| SearXNG | two replicas | caches | Stateless copy | |
+| steamhappy | fuji (home) | Matrix session, small | Survives | file copy and site-failover, multi-arch image |
 | Gitea runners | thinkcentre, mixi | caches | already one per site | |
 | github-commit-sync | mixi | none | Stateless copy | |
 | Pinga | thinkcentre | 2.3 GB | Retired 6 Oct | radunenu.com's status page reads from Prometheus (status-api) instead; data left in /home/main/services/pinga and in Borg |
@@ -66,6 +70,6 @@ Copies are asynchronous, so a failover can miss the last minute or two of writes
 | Piece | Runs on | Today |
 |---|---|---|
 | etcd, the API | fuji, thinkcentre, the edge (etcd only) | survives losing any one (Phase 3) |
-| Traefik | fuji and thinkcentre, one per site | both sites already; which one gets the traffic is the failover path (Phase 6) |
+| Traefik | fuji and thinkcentre, one per site, on hostPort 80/443 | each site's traffic stays on its own Traefik (#158); the edge forwards to whichever node is in the cluster when DNS fails over |
 | Argo CD | fuji (not pinned) | its state is in etcd; moves by itself |
 | cert-manager, the SOPS operator | minima (not pinned) | same |
