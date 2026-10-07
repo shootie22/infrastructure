@@ -105,3 +105,5 @@ Done 5 Oct, after the manual Borg run came back clean. The firmware booted NixOS
     - `lvextend -l +100%FREE` the `nixos` volume, then `resize2fs` (online).
     - Set `dotfiles.bootSafety.debianFallback = false`.
 18. Journal entry, close #18.
+
+Done 7 Oct: Debian's root archived (`debian-root-final-2026-10-07` in the thinkcentre's Borg repository, 18 GB, 4.4 GB deduplicated), its boot entries and EFI files deleted, its volume removed, NixOS's root grown from 24 to 55 GB online, and the fallback entry gone from the boot menu. Debian's old 1 GB `/boot` partition (`nvme0n1p2`) is still there, unused.

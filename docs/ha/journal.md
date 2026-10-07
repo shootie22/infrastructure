@@ -200,3 +200,5 @@ Later that day:
 - **Real visitor addresses** through the edge (PROXY protocol).
 - **fuji unlocked through the edge** for the first time.
 - **The last few single-copy services** move within 30 seconds like the rest.
+
+In the evening Debian went off the thinkcentre for good: one last Borg archive of its root (18 GB, 4.4 GB after deduplication), then its boot entries, its files and its volume. NixOS's root grew from 24 to 55 GB without a reboot. The database restore got its first real test too: Gitea's hourly dump into a scratch Postgres in 8 seconds, every table count matching.
