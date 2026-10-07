@@ -33,6 +33,30 @@ spec:
       tolerations:
         - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      # oauth2-proxy reads Keycloak's settings once at startup and exits if
+      # Keycloak doesn't answer, then sits out Kubernetes' restart backoff
+      # (5 minutes after a failover, drill on 2026-10-07). Start it only once
+      # Keycloak answers.
+      initContainers:
+        - name: wait-for-keycloak
+          image: docker.io/library/busybox:1.37@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e
+          command: ["sh", "-c"]
+          args:
+            - until wget -q -T 5 -O /dev/null "$OAUTH2_PROXY_OIDC_ISSUER_URL/.well-known/openid-configuration"; do sleep 5; done
+          env:
+            - name: OAUTH2_PROXY_OIDC_ISSUER_URL
+              valueFrom:
+                secretKeyRef: {name: send-oauth2, key: OAUTH2_PROXY_OIDC_ISSUER_URL}
+          resources:
+            requests: {cpu: 5m, memory: 8Mi}
+            limits: {memory: 32Mi}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
       containers:
         - name: oauth2-proxy
           image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.4@sha256:b1b2021fe8f4004573e8d690dec6c7bb29cc44364572cf8510a05bf3a0ae2ded
