@@ -17,9 +17,9 @@ The edge runs no services. It has three jobs: the third etcd vote, a TCP pass-th
 
 ## Traffic
 
-Web traffic goes through the Cloudflare proxy to RO. Health checkers on the edge and in DK watch RO. If RO stops answering, they point the origin records at the edge, which forwards to DK over the tailnet. For proxied names that takes seconds. For DNS-only names (games, Headscale), it depends on the 60s TTL.
+Web traffic goes through the Cloudflare proxy to RO, where each site's Traefik serves it. Failover checkers on the edge and in DK watch RO. If it stops answering for 3 minutes, they point `ro` at the edge, which forwards to DK over Nebula ([failover.md](failover.md)). Element Web and Element Call go to the edge all the time, which serves them itself, with RO as the fallback if the edge is down.
 
-Cloudflare is the only active nameserver. OpenTofu in this repo also keeps a DNS-only copy of the zones at Hetzner as a cold standby.
+Cloudflare is the active nameserver. deSEC holds a full standby copy of the zones (multi-signer DNSSEC), and checkers on three hosts switch the nameservers to it if Cloudflare's DNS is down for 45 minutes (#77, in dry run for now).
 
 ## Phases
 
