@@ -69,7 +69,7 @@ The times below are what the VM rehearsals measured (dotfiles `tests/cnpg-across
 
 **Back:** power fuji on, unlock it. DNS fails back after RO has been healthy for 10 minutes. The moved services stay on the thinkcentre.
 
-**Result:**
+**Result:** not done on its own. Drill 4 cut fuji off too (2026-10-07), which covers everything here except minima staying online.
 
 ## 4. Cut RO's internet (#44)
 
@@ -87,4 +87,12 @@ The times below are what the VM rehearsals measured (dotfiles `tests/cnpg-across
 
 **Back:** plug the uplink back in. fuji rejoins as the standby for what moved; DNS fails back after 10 healthy minutes.
 
-**Result:**
+**Result (2026-10-07):** the cable from RO's switch to the router instead of the router's WAN: fuji and minima cut off from everything but each other, the router itself still reachable. Out at about 12:22:00, back in at about 12:44. Passed, but coming back needed a fix by hand.
+- etcd: the thinkcentre became leader right away, with the edge as the majority.
+- fuji fenced itself: after it was back on the network, its gates answered 503 for every service with files, and nothing ran twice.
+- Postgres: all five primaries in DK, and every service labelled to the thinkcentre, by 12:23:33 (1.5 minutes).
+- DNS on the edge at 12:25:33 (3.5 minutes). Back for visitors: Vaultwarden and Audiobookshelf at 3.5 minutes, radunenu.com, PrivateBin and Baikal at 4, Headscale and Rybbit at 6.5, Gitea and Joplin at 6.7, Keycloak at 9 (it restarted five times while its database moved).
+- Send stayed down for a while longer: its oauth2-proxy asks Keycloak for its settings at startup, crashed while Keycloak was down, and then waited out Kubernetes' 5-minute restart backoff.
+- Coming back, fuji couldn't rejoin. Nebula found fuji by `ro.radunenu.com`, which the failover had just pointed at the edge, so the thinkcentre couldn't reach fuji, fuji's etcd had no leader, fuji's Traefik came and went, and the checkers kept seeing RO flap, so DNS never failed back. A loop that only a person could break. Fixed during the drill: Nebula now uses the router's own dynamic name, which failover never touches. Within a minute of the change fuji was back in etcd, Ready at 12:50, and DNS failed back at 13:00, 10 minutes after RO was steady.
+- While fuji was half back, hs.radunenu.com answered 502 through the edge: the edge's HAProxy prefers fuji whenever fuji's Traefik answers, even though fuji couldn't reach the pods in DK. This and the two above are in #159.
+- After: all Postgres replicas back on fuji by 12:58, everything stays on the thinkcentre.
