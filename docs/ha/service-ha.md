@@ -31,7 +31,7 @@ Decided 6 Oct ([#88](https://github.com/shootie22/infrastructure/issues/88), [de
 
 | Service | Runs on | Data | Tier | How |
 |---|---|---|---|---|
-| Keycloak | fuji or the thinkcentre | Postgres | Survives | CNPG, moves 30 s after its node is gone, waits for its database at start |
+| Keycloak | fuji and the thinkcentre | Postgres | Survives | two replicas sharing sessions (#36), CNPG |
 | Headscale | fuji (home) | SQLite | Survives | file copy and site-failover |
 | Vaultwarden | fuji or the thinkcentre | Postgres, attachments off | Survives | CNPG, moves 30 s after its node is gone |
 | Baikal | fuji (home) | files, <1 MB | Survives | file copy and site-failover |
