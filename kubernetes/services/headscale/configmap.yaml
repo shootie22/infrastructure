@@ -48,13 +48,34 @@ data:
       server:
         enabled: false
 
+      # Tailscale's public relays, plus our own on the edge (#38, derp.yaml
+      # below). Devices pick the closest that answers; with the edge down
+      # they use Tailscale's as before.
       urls:
         - https://controlplane.tailscale.com/derpmap/default
 
-      paths: []
+      paths:
+        - /etc/headscale/derp.yaml
 
       auto_update_enabled: true
       update_frequency: 3h
+
+  # The relay on the edge (dotfiles hosts/edge/derp.nix): only devices in
+  # this tailnet may use it.
+  derp.yaml: |
+    regions:
+      900:
+        regionid: 900
+        regioncode: edge
+        regionname: Edge
+        nodes:
+          - name: 900a
+            regionid: 900
+            hostname: derp.radunenu.com
+            ipv4: 141.95.67.178
+            stunport: 3478
+            stunonly: false
+            derpport: 443
 
   acl.hujson: |
     {
