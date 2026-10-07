@@ -25,6 +25,15 @@ spec:
     liveness:
       isolationCheck:
         enabled: true
+  # hub-public's login: it may only read the two public views (Hub grants
+  # that itself after its migrations).
+  managed:
+    roles:
+      - name: hub_public
+        ensure: present
+        login: true
+        passwordSecret:
+          name: hub-public-db
 ---
 # Hourly dump into a folder on fuji that its nightly Borg job picks up.
 apiVersion: batch/v1
