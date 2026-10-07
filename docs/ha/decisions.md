@@ -171,3 +171,29 @@ For the services tied to files on one node (Gitea, Audiobookshelf, PrivateBin, S
 A failover can lose up to the last copy interval of files (10 minutes, less for the small services if it turns out to matter). Game worlds get a save-and-pause before each copy, through the server console, so the copy is never caught mid-save.
 
 Also on the table: failing over by hand with one command (safe, but someone has to be awake), and building the decision into the DNS failover checker's voting (duplicates what the cluster already decides). Moving services back home automatically was dropped: it adds a second outage and a second copy to get right, for nothing.
+
+## 2026-10-07: Traefik holds 80 and 443 itself on each node (#158)
+
+k3s puts a port listener (svclb) in front of Traefik. It's a pod, and kube-proxy spreads traffic coming from pods over every Traefik, whatever the Service's traffic policy says. So half of RO's visitors were served by DK's Traefik, and stalled for about 70 seconds when DK went away. Traefik now takes 80 and 443 on its own node (hostPort), and its Service is internal only. A site's traffic stays on that site's Traefik, and Traefik sees the visitor's real address. The Ingresses carry ro.radunenu.com as their address, which Argo CD needs to call them healthy.
+
+Also on the table: `internalTrafficPolicy: Local` on the Service (tried; kube-proxy's rule for pod traffic ignores it), and Traefik on the host network (would also work, but the pods then see every host port and interface).
+
+## 2026-10-07: A short connect timeout and a retry in front of every service (#160)
+
+Traefik gives up connecting to a pod after 2 seconds and retries on another replica, up to three times, for every request on both entry points. Before, a request that went to a pod on a node that had just died waited until Kubernetes noticed the node was gone, 40 seconds or more. Only failed connections are retried, so nothing that reached a pod is sent twice.
+
+## 2026-10-07: Element Web's front door is the edge, with RO as the fallback (#160)
+
+Element Web has to keep working, with at most a few seconds of trouble, whatever goes down. DNS can't switch that fast, so the address the browser has must stay up: the edge. c.nuke.zip and call.nuke.zip are CNAMEs to element.radunenu.com, which normally points at the edge. The edge runs its own copies of Element Web and Element Call (k3s pods, same image and config as in the sites) and serves them itself, with the certificates cert-manager renews in the cluster. If its copy fails, HAProxy uses the home sites' Traefiks within a second or two. So losing RO, DK or both doesn't touch Element Web.
+
+If the edge itself goes down, front checkers on mixi and fuji point element.radunenu.com at RO's front door after a minute, and back once the edge has been healthy for 10 minutes. That one case costs a minute or two.
+
+Also on the table: Cloudflare's static hosting or its load balancer (fast, but Element Web would then depend on Cloudflare), and a floating IP between two VPSes at one provider (5-15 s even when the edge dies, but a second VPS and a provider API in the path). The edge with DNS as the fallback was chosen, a minute being fine for the rare case.
+
+## 2026-10-07: A second alert relay on mixi (#156)
+
+With the edge down, Prometheus's alerts had nowhere to go. mixi runs the same relay as a standby: Alertmanager and the checkers send to both, and the standby only passes an alert on while the edge's relay doesn't answer its health check. No double alerts, and no gap.
+
+## 2026-10-07: The nameservers switch to deSEC by themselves (#77)
+
+The edge, mixi and fuji each ask Cloudflare's nameservers for every zone (not nuke.zip, which belongs to the Matrix stack). When two of them agree a zone has been unanswered for 45 minutes, while deSEC answers fine, they switch that zone's nameservers at Porkbun to deSEC. Back after 6 hours of Cloudflare answering everyone, at most once a day per zone. It runs as a dry run first, reporting what it would do.
