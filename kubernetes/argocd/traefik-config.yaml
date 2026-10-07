@@ -51,11 +51,17 @@ spec:
     ports:
       web:
         hostPort: 80
+        # The edge's HAProxy says who the visitor is with a PROXY header
+        # (#95). Only it may; from it, a connection without one still works.
+        proxyProtocol:
+          trustedIPs: [10.99.0.1/32]
         transport:
           respondingTimeouts:
             readTimeout: 30m
       websecure:
         hostPort: 443
+        proxyProtocol:
+          trustedIPs: [10.99.0.1/32]
         transport:
           respondingTimeouts:
             readTimeout: 30m
