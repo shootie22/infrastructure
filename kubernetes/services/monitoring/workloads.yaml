@@ -112,6 +112,15 @@ spec:
               memory: 256Mi
             limits:
               memory: 512Mi
+          # Up to 10 minutes to start: after an upgrade Grafana migrates its
+          # database first, and from the site without the primary every
+          # statement crosses the WAN. The liveness probe killed it halfway.
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 60
           readinessProbe:
             httpGet:
               path: /api/health
