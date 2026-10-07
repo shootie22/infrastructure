@@ -1,0 +1,15 @@
+# Retry for every request through Traefik (#160), used by both entry points
+# (traefik-config.yaml). Together with the 2 s dial timeout there: a request
+# that goes to a pod on a node that has just died fails to connect within
+# 2 s and goes to another replica, instead of hanging until Kubernetes
+# notices the node is gone (40 s and more). Only connection errors are
+# retried, so a request that reached a pod is never sent twice.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: retry
+  namespace: kube-system
+spec:
+  retry:
+    attempts: 3
+    initialInterval: 100ms
