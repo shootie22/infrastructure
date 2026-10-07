@@ -1,0 +1,57 @@
+# Element Call's copy on the edge (#160), like Element Web's: the edge's
+# HAProxy serves call.nuke.zip from it, so it keeps loading with both home
+# sites down. Same image and config as the main Deployment; Renovate bumps
+# both together.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: element-call-edge
+  namespace: element-call
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: element-call-edge
+  template:
+    metadata:
+      labels:
+        app: element-call-edge
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: edge
+      tolerations:
+        - {key: node-role.kubernetes.io/etcd, operator: Exists, effect: NoExecute}
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute}
+      # On the host's network: HAProxy reaches it on 127.0.0.1:8080, which
+      # the edge's firewall doesn't open.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: element-call
+          image: ghcr.io/element-hq/element-call:v0.26.0@sha256:fadd44a69565b2db9320b011c2d0ab01f7305cac0a51ee196ba6ffcf8e226199
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.json
+              subPath: config.json
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            periodSeconds: 2
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      volumes:
+        - name: config
+          configMap:
+            name: element-call-config
