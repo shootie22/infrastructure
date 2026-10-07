@@ -1,0 +1,107 @@
+# Hub's web app, API and discovery: one copy per site, both serving.
+# Background work runs on one of them at a time (the lease in rbac.yaml).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hub
+  namespace: hub
+  annotations:
+    hub.radunenu.com/description: The web app, the API and everything Hub reads
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 0, maxUnavailable: 1}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hub
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hub
+    spec:
+      serviceAccountName: hub
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: hub
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: hub
+          # Fast lane (docs/updates.md): CI only publishes :main after the
+          # tests and a smoke test pass; updater.yaml restarts both copies
+          # together when it changes.
+          image: git.radunenu.com/radu/infra-hub:main
+          imagePullPolicy: Always
+          args: [serve]
+          env:
+            - {name: HUB_URL, value: "https://hub-new.infra.radunenu.com"}
+            - name: HUB_NODE_NAME
+              valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
+            - name: HUB_POD_NAME
+              valueFrom: {fieldRef: {fieldPath: metadata.name}}
+            - {name: HUB_KUBE, value: "true"}
+            - {name: HUB_LEASE_NAMESPACE, value: hub}
+            # site=URL: each copy asks its own site's first.
+            - {name: HUB_PROMETHEUS, value: "ro=http://prometheus.monitoring.svc:9090,dk=http://prometheus-dk.monitoring.svc:9090"}
+            - {name: HUB_LOKI, value: "ro=http://loki.monitoring.svc:3100,dk=http://loki-dk.monitoring.svc:3100"}
+            - {name: HUB_ALERTMANAGER, value: "http://alertmanager.monitoring.svc:9093"}
+            - {name: HUB_OIDC_ISSUER, value: "https://auth.radunenu.com/realms/infra"}
+            - {name: HUB_OIDC_CLIENT_ID, value: hub}
+            - {name: HUB_OIDC_CLIENT_SECRET_FILE, value: /secrets/oidc/client-secret}
+            - name: HUB_DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: hub-db-app, key: uri}
+          ports:
+            - {name: http, containerPort: 8080}
+          # Up to 2.5 minutes to start: it waits for the cluster watch and for
+          # the database, which may be switching primaries.
+          startupProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: {path: /readyz, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 20
+          lifecycle:
+            preStop:
+              sleep: {seconds: 3}
+          resources:
+            requests: {cpu: 20m, memory: 96Mi}
+            limits: {memory: 384Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - {name: oidc, mountPath: /secrets/oidc, readOnly: true}
+      volumes:
+        - name: oidc
+          secret:
+            secretName: hub-oidc
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: hub
+  namespace: hub
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hub

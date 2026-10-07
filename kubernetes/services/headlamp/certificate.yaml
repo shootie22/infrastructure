@@ -8,6 +8,7 @@ spec:
   dnsNames:
     - hl.infra.radunenu.com
     - hub.infra.radunenu.com
+    - hub-new.infra.radunenu.com
     - ollama.infra.radunenu.com
     - sxng.infra.radunenu.com
   issuerRef:

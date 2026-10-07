@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub
+  namespace: hub
+spec:
+  selector:
+    app.kubernetes.io/name: hub
+  ports:
+    - {name: http, port: 80, targetPort: http}
+---
+# The tools proxy (headlamp/tailnet-proxy-configmap.yaml) talks to the pods
+# directly through this one, so it can keep a browser on one copy.
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub-pods
+  namespace: hub
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: hub
+  ports:
+    - {name: http, port: 8080, targetPort: http}

@@ -1,0 +1,100 @@
+# Fast lane (docs/updates.md): every 5 minutes, compare the registry's
+# infra-hub:main digest with what the pods run, and restart both copies
+# together when it moved, so they never run two different builds for long.
+# CI only publishes :main after the tests and a smoke test passed.
+# Run by hand: kubectl -n hub create job --from=cronjob/hub-updater manual-1
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hub-updater
+  namespace: hub
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hub-updater
+  namespace: hub
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["hub"]
+    verbs: ["get", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  # rollout status lists and watches the Deployment too; a list can't be
+  # limited by name, and this namespace only holds Hub.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hub-updater
+  namespace: hub
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: hub-updater
+subjects:
+  - kind: ServiceAccount
+    name: hub-updater
+    namespace: hub
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hub-updater
+  namespace: hub
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 240
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 600
+      template:
+        spec:
+          serviceAccountName: hub-updater
+          restartPolicy: Never
+          containers:
+            - name: updater
+              image: docker.io/alpine/k8s:1.35.9@sha256:b9cb6db0091a2327c0a56ecda69d37fa830c7a96ea669e7382b3ee778aa07a24
+              command: ["/bin/sh", "-euc"]
+              args:
+                - |
+                  repo=radu/infra-hub
+                  token=$(curl -fsS "https://git.radunenu.com/v2/token?service=container_registry&scope=repository:$repo:pull" | jq -r .token)
+                  latest=$(curl -fsSI \
+                    -H "Authorization: Bearer $token" \
+                    -H "Accept: application/vnd.oci.image.index.v1+json" \
+                    -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json" \
+                    "https://git.radunenu.com/v2/$repo/manifests/main" \
+                    | tr -d '\r' | awk -F': ' 'tolower($1) == "docker-content-digest" { print $2 }')
+                  [ -n "$latest" ] || { echo "no digest from the registry"; exit 1; }
+                  running=$(kubectl get pods -l app.kubernetes.io/name=hub \
+                    -o jsonpath='{range .items[*]}{.status.containerStatuses[0].imageID}{"\n"}{end}' \
+                    | sed -n 's/.*@//p' | sort -u)
+                  echo "registry main: $latest"
+                  echo "running: $(echo $running)"
+                  if [ "$running" = "$latest" ]; then
+                    echo "up to date"
+                    exit 0
+                  fi
+                  echo "new build, restarting"
+                  kubectl rollout restart deployment/hub
+                  kubectl rollout status deployment/hub --timeout=8m
+              resources:
+                requests: {cpu: 10m, memory: 32Mi}
+                limits: {memory: 128Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
