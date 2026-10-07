@@ -104,9 +104,13 @@ data:
       forward_to = [loki.write.default.receiver]
     }
 
+    // Both Lokis, fuji's and DK's (#148).
     loki.write "default" {
       endpoint {
         url = "http://loki.monitoring.svc:3100/loki/api/v1/push"
+      }
+      endpoint {
+        url = "http://loki-dk.monitoring.svc:3100/loki/api/v1/push"
       }
     }
 ---
@@ -123,9 +127,13 @@ data:
       forward_to = [loki.write.default.receiver]
     }
 
+    // Both Lokis, fuji's and DK's (#148).
     loki.write "default" {
       endpoint {
         url = "http://loki.monitoring.svc:3100/loki/api/v1/push"
+      }
+      endpoint {
+        url = "http://loki-dk.monitoring.svc:3100/loki/api/v1/push"
       }
     }
 ---

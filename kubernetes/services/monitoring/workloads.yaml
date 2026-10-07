@@ -325,6 +325,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: loki
+        # Both Lokis, for loki-local (services.yaml).
+        monitoring.radunenu.com/loki: "true"
     spec:
       nodeSelector:
         kubernetes.io/hostname: fuji

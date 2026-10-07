@@ -1,0 +1,81 @@
+# Loki's copy in DK (#148), so logs are still there when RO is down. Same
+# config as fuji's (loki-config); Alloy sends every line to both, and each
+# site's Grafana reads its own (loki-local in services.yaml). A Loki that
+# was down misses what was sent meanwhile, so the two can differ a little.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: loki-dk
+  namespace: monitoring
+spec:
+  serviceName: loki-dk
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: loki-dk
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: loki-dk
+        # Both Lokis, for loki-local (services.yaml).
+        monitoring.radunenu.com/loki: "true"
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      securityContext:
+        fsGroup: 10001
+      containers:
+        - name: loki
+          image: grafana/loki:2.9.8@sha256:8b5bd7748d0e4da66cd741ac276e485517514af0bea32167e27c0e1a95bcf8aa
+          args: [-config.file=/etc/loki/config.yml]
+          ports:
+            - name: http
+              containerPort: 3100
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: http
+          volumeMounts:
+            - name: config
+              mountPath: /etc/loki
+              readOnly: true
+            - name: data
+              mountPath: /loki
+      volumes:
+        - name: config
+          configMap:
+            name: loki-config
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loki-dk
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: loki-dk
+spec:
+  selector:
+    app.kubernetes.io/name: loki-dk
+  ports:
+    - name: http
+      port: 3100
+      targetPort: http

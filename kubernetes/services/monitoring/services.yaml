@@ -147,3 +147,18 @@ spec:
     - name: http
       port: 9090
       targetPort: 9090
+---
+# Whichever Loki runs on the asking node, like prometheus-local (#148).
+apiVersion: v1
+kind: Service
+metadata:
+  name: loki-local
+  namespace: monitoring
+spec:
+  selector:
+    monitoring.radunenu.com/loki: "true"
+  internalTrafficPolicy: Local
+  ports:
+    - name: http
+      port: 3100
+      targetPort: 3100

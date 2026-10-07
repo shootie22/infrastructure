@@ -27,7 +27,7 @@ data:
         uid: loki
         type: loki
         access: proxy
-        url: http://loki.monitoring.svc:3100
+        url: http://loki-local.monitoring.svc:3100
         editable: false
 ---
 apiVersion: v1
