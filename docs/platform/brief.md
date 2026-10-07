@@ -1,6 +1,6 @@
 # Infra platform: brief
 
-The starting point for designing the platform. Nothing gets built until the design is written down and agreed (milestone [Platform 0](https://github.com/shootie22/infrastructure/milestone/14), [#163](https://github.com/shootie22/infrastructure/issues/163)).
+The starting point for designing the platform. Nothing gets built until the design is written down and agreed (milestone [Platform 0](https://github.com/shootie22/infrastructure/milestone/14), [#163](https://github.com/shootie22/infrastructure/issues/163)). The agreed design is in [design.md](design.md).
 
 ## What it is
 
