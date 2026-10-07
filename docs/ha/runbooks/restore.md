@@ -14,7 +14,7 @@ Not tested yet: the test plan at the end is [#92](https://github.com/shootie22/i
 | Services with files, wherever they are active | the thinkcentre's job (`server-backups`, all of `/home`): its own services in `/home/main/services`, fuji's in `/home/standby/fuji` | Tue, Thu, Sat, Sun 03:00 UTC | see its prune settings |
 | Grafana's database | not backed up on purpose: nothing in it has to survive (decisions.md) | | |
 
-Both repositories are on the Mac's 10 TB disk (`/Volumes/Expansion/borg_repos`), and from there in Backblaze. The passphrases are in the hosts' sops files; see [bootstrap.md](../../bootstrap.md) for the keys that live outside Git.
+Both repositories are on the Mac's 10 TB disk (`/Volumes/Expansion/borg_repos`), and from there in Backblaze, the only offsite copy (decisions.md, 2026-10-07). The passphrases are in the hosts' sops files; see [bootstrap.md](../../bootstrap.md) for the keys that live outside Git.
 
 The services with files always have their live data on one node and a copy at most 10 minutes old on the other, and the thinkcentre's Borg job sees both: it backs up its own active folders and the copies it receives from fuji. So whichever node a service is on, its files reach Borg.
 

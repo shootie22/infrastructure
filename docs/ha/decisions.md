@@ -201,3 +201,7 @@ The edge, mixi and fuji each ask Cloudflare's nameservers for every zone (not nu
 ## 2026-10-07: Our own tailnet relay on the edge, Tailscale's as fallback (#38)
 
 When two devices can't reach each other directly, their traffic goes through a relay (DERP). That used to be only Tailscale's public ones, the tailnet's last dependency on an outside company. derper now runs on the edge (derp.radunenu.com), behind its HAProxy, and only serves devices in our tailnet. Headscale lists it next to Tailscale's; devices use whichever is closest, so with the edge down nothing changes. Only on the edge: RO would need more port forwards and a share of fuji's 443, and DK takes no incoming connections at all.
+
+## 2026-10-07: Backups go to the Mac only, and from there to Backblaze
+
+Considered: a second Borg repository in the other site for each host. Not done: two sets of backups means two places to choose from when restoring, for a case Backblaze already covers. The Mac's external disk keeps the local history, Backblaze the offsite copy of all of it.
