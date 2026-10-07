@@ -426,6 +426,10 @@ spec:
       labels:
         app.kubernetes.io/name: node-exporter
     spec:
+      # The edge too (it only runs etcd, hence the taint), so its CPU, memory,
+      # disk and host facts are known like the others'.
+      tolerations:
+        - {key: node-role.kubernetes.io/etcd, operator: Exists, effect: NoExecute}
       containers:
         - name: node-exporter
           image: quay.io/prometheus/node-exporter:v1.9.1@sha256:d00a542e409ee618a4edc67da14dd48c5da66726bbd5537ab2af9c1dfc442c8a
