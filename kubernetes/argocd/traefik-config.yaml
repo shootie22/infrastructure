@@ -34,21 +34,28 @@ spec:
       rollingUpdate:
         maxUnavailable: 1
         maxSurge: 0
-    # Each node's port listener only uses its own Traefik, so RO traffic never
-    # detours through DK, and Traefik sees the real client address.
+    # Each Traefik takes 80 and 443 on its own node (hostPort), and the Service
+    # is only for inside the cluster. With k3s' port listener (svclb) in front
+    # instead, kube-proxy spread the listener's traffic over both Traefiks
+    # whatever the traffic policies said: half of RO's visitors went through
+    # DK, and hung for about 70 s when the thinkcentre went away
+    # (infrastructure #158). This way RO's traffic stays in RO, DK's in DK,
+    # and Traefik sees the real client address.
     service:
       spec:
-        externalTrafficPolicy: Local
+        type: ClusterIP
 
     # Traefik cuts off a request body after 60 s by default. Image pushes to
     # Gitea's registry over Nebula (the CI runners, #150) take longer for a
     # big layer, so give uploads 30 minutes.
     ports:
       web:
+        hostPort: 80
         transport:
           respondingTimeouts:
             readTimeout: 30m
       websecure:
+        hostPort: 443
         transport:
           respondingTimeouts:
             readTimeout: 30m
