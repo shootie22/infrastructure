@@ -17,6 +17,9 @@ spec:
       app.kubernetes.io/name: grafana
   template:
     metadata:
+      # Bump when its ConfigMaps change: it only reads them at start.
+      annotations:
+        config-revision: "2"
       labels:
         app.kubernetes.io/name: grafana
     spec:
@@ -471,6 +474,9 @@ spec:
       app.kubernetes.io/name: alloy
   template:
     metadata:
+      # Bump when its ConfigMaps change: it only reads them at start.
+      annotations:
+        config-revision: "2"
       labels:
         app.kubernetes.io/name: alloy
     spec:
@@ -537,6 +543,9 @@ spec:
       app.kubernetes.io/name: alloy-events
   template:
     metadata:
+      # Bump when its ConfigMaps change: it only reads them at start.
+      annotations:
+        config-revision: "2"
       labels:
         app.kubernetes.io/name: alloy-events
     spec:
