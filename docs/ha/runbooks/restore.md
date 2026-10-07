@@ -43,7 +43,7 @@ For the services on site-failover. The live folder is on whichever node holds `h
 
 Each test restores into a scratch place, never over live data, and notes the time it took.
 
-1. **A database:** Gitea's dump from last night's `fuji-k3s` archive into a scratch CNPG cluster (one instance, a `restore-test` namespace); compare row counts of a few tables with the live one; delete the namespace.
+1. **A database:** Gitea's dump into a scratch CNPG cluster (one instance, a `restore-test` namespace); compare row counts of a few tables with the live one; delete the namespace. Done 2026-10-07 with the hourly dump straight from `/var/lib/pg-dumps` (a Job on fuji mounting it read-only, `pg_restore --no-owner --role=gitea`): 7.6 MB, restored in 8 s, repositories, users, issues and actions all matching live. Left: the same from a Borg archive, which only adds the extract.
 2. **Files:** PrivateBin's folder from the thinkcentre's latest archive into `/tmp/restore-test` on the thinkcentre; `diff -r` against the live folder (only the last days' pastes should differ).
 3. **A game world:** Minecraft Skyblock's world the same way, then start a throwaway server on it on the workstation to see it loads.
 4. **The cluster:** an etcd snapshot restored in a VM on the workstation (`--cluster-reset-restore-path`), checking `kubectl get ns` lists everything.
