@@ -59,6 +59,16 @@ spec:
         transport:
           respondingTimeouts:
             readTimeout: 30m
+    # The address written into each Ingress's status. It used to come from the
+    # LoadBalancer Service; the internal-only one has none, and Argo CD keeps
+    # an Ingress without an address at Progressing. ro is where visitors
+    # actually come in (the edge during a failover).
+    providers:
+      kubernetesIngress:
+        publishedService:
+          enabled: false
+        ingressEndpoint:
+          hostname: ro.radunenu.com
     api:
       dashboard: true
 
