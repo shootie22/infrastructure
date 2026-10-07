@@ -109,6 +109,16 @@ data:
           - source_labels: [__meta_kubernetes_pod_node_name]
             target_label: node
 
+      # The etcd members (k3s --etcd-expose-metrics), over Nebula (#49).
+      - job_name: etcd
+        static_configs:
+          - targets: [10.99.0.1:2381]
+            labels: {member: edge}
+          - targets: [10.99.0.2:2381]
+            labels: {member: fuji}
+          - targets: [10.99.0.3:2381]
+            labels: {member: thinkcentre}
+
       - job_name: kubelet
         scheme: https
         kubernetes_sd_configs:
@@ -638,6 +648,39 @@ data:
             annotations:
               summary: "comin on {{ $labels.host }} hasn't fetched in over an hour"
               description: Restart it (`systemctl restart comin`); comin-unstick should do that by itself.
+          # etcd across the three sites (#49, #25).
+          - alert: EtcdMemberDown
+            expr: up{job="etcd"} == 0
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "etcd on {{ $labels.member }} doesn't answer"
+              description: The cluster still has its majority with the other two; one more gone and the API stops.
+          - alert: EtcdNoLeader
+            expr: etcd_server_has_leader{job="etcd"} == 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "etcd on {{ $labels.member }} has no leader"
+              description: Cut off from the majority, or the majority is gone.
+          - alert: EtcdFrequentLeaderChanges
+            expr: increase(etcd_server_leader_changes_seen_total{job="etcd"}[1h]) > 4
+            labels:
+              severity: warning
+            annotations:
+              summary: "etcd changed leaders {{ $value | humanize }} times in an hour ({{ $labels.member }})"
+              description: Usually the links between the sites; see the etcd timeouts (#25).
+          - alert: EtcdSlowDisk
+            expr: histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job="etcd"}[10m])) > 0.5
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: "etcd's disk on {{ $labels.member }} is slow ({{ $value | humanizeDuration }} at the 99th percentile)"
+              description: etcd waits for every write to reach the disk; slow disks cause leader changes.
+
           # Site failover (dotfiles site-failover, #49): each service runs on
           # exactly one of fuji and the thinkcentre.
           - alert: SiteFailoverServiceNotRunning
