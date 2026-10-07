@@ -198,6 +198,34 @@ data:
               - https://call.nuke.zip
               - https://c.nuke.zip
               - https://share.radunenu.com/__lbheartbeat__
+              # The tailnet's relay on the edge (#38).
+              - https://derp.radunenu.com/generate_204
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - target_label: __address__
+            replacement: blackbox-exporter.monitoring.svc:9115
+
+      # The failover checkers' status pages and the alert relays' health, over
+      # Nebula. Each one only matters on the day it's needed, so a dead one
+      # has to show up before that.
+      - job_name: ha-checkers
+        metrics_path: /probe
+        scrape_interval: 60s
+        scrape_timeout: 15s
+        params:
+          module: [http_reachable]
+        static_configs:
+          - targets: [http://10.99.0.1:9180/, http://10.99.0.4:9180/]
+            labels: {checker: ro-failover}
+          - targets: [http://10.99.0.1:9181/, http://10.99.0.4:9181/, http://10.99.0.2:9181/]
+            labels: {checker: nameservers}
+          - targets: [http://10.99.0.4:9182/, http://10.99.0.2:9182/]
+            labels: {checker: element-front}
+          - targets: [http://10.99.0.1:9190/health, http://10.99.0.4:9190/health]
+            labels: {checker: alert-relay}
         relabel_configs:
           - source_labels: [__address__]
             target_label: __param_target
@@ -832,6 +860,14 @@ data:
             annotations:
               summary: Element Web doesn't load completely
               description: element-web-check hasn't passed for 30 minutes. Its job logs list the files that failed. Two replicas on different builds is the usual cause; restarting the deployment fixes that.
+          - alert: HACheckerDown
+            expr: probe_success{job="ha-checkers"} == 0
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "{{ $labels.checker }} at {{ $labels.instance }} doesn't answer"
+              description: A failover checker or alert relay is down, so that switch (or that way out for alerts) won't happen when it's needed. Check its service with systemctl and journalctl on that host.
           - alert: PublicEndpointProbeFailed
             expr: probe_success{job="blackbox-http"} == 0
             for: 5m
