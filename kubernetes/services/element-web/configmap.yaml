@@ -1,4 +1,4 @@
-# Element Web config for c.nuke.zip. Bump config-revision in deployment.yaml
+# Element Web config for c.nuke.zip. Bump config-revision in deployment.yaml and edge.yaml
 # after editing so the pods pick it up (the image copies it at startup).
 # "features" locks a labs flag for everyone (users cannot toggle it);
 # "setting_defaults" only changes the default, users can still toggle it.

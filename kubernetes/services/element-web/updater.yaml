@@ -20,7 +20,7 @@ rules:
     verbs: ["get", "list"]
   - apiGroups: ["apps"]
     resources: ["deployments"]
-    resourceNames: ["element-web"]
+    resourceNames: ["element-web", "element-web-edge"]
     verbs: ["get", "patch"]
   # rollout status watches the ReplicaSets.
   - apiGroups: ["apps"]
@@ -87,7 +87,7 @@ spec:
                     | tr -d '\r' | awk -F': ' 'tolower($1) == "docker-content-digest" { print $2 }')
                   [ -n "$latest" ] || { echo "no digest from registry"; exit 1; }
 
-                  running=$(kubectl get pods -l app.kubernetes.io/name=element-web \
+                  running=$(kubectl get pods -l 'app.kubernetes.io/name in (element-web,element-web-edge)' \
                     -o jsonpath='{range .items[*]}{.status.containerStatuses[0].imageID}{"\n"}{end}' \
                     | sed -n 's/.*@//p' | sort -u)
                   echo "registry develop: $latest"
@@ -98,8 +98,10 @@ spec:
                     exit 0
                   fi
                   echo "new build, restarting"
-                  kubectl rollout restart deployment/element-web
+                  # The edge's copy too (edge.yaml), so all three stay on one build.
+                  kubectl rollout restart deployment/element-web deployment/element-web-edge
                   kubectl rollout status deployment/element-web --timeout=10m
+                  kubectl rollout status deployment/element-web-edge --timeout=10m
               resources:
                 requests:
                   cpu: 10m

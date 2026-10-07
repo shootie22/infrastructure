@@ -1,0 +1,77 @@
+# Element Web's copy on the edge (#160). The edge serves c.nuke.zip itself
+# (its HAProxy hands that name to this pod), so Element Web keeps loading
+# with both home sites down, and it doesn't depend on Traefik or the WAN.
+# A Deployment of its own, so it stays out of the Service the home sites'
+# Traefiks use. Same image, config and updater as the main one.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: element-web-edge
+  namespace: element-web
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: element-web-edge
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: element-web-edge
+      annotations:
+        config-revision: "3"
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: edge
+      tolerations:
+        - {key: node-role.kubernetes.io/etcd, operator: Exists, effect: NoExecute}
+        # Stay on the edge even when it's cut off from the cluster: it's the
+        # copy that matters most then.
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute}
+      # On the host's network, so HAProxy reaches it on 127.0.0.1:8085. The
+      # edge's firewall only opens 80 and 443.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: element-web
+          image: docker.io/vectorim/element-web:develop
+          imagePullPolicy: Always
+          env:
+            - name: ELEMENT_WEB_PORT
+              value: "8085"
+          ports:
+            - name: http
+              containerPort: 8085
+          readinessProbe:
+            httpGet:
+              path: /version
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /version
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.json
+              subPath: config.json
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: element-web
