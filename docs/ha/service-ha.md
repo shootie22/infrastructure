@@ -46,16 +46,25 @@ Decided 6 Oct ([#88](https://github.com/shootie22/infrastructure/issues/88), [de
 | Vintage Story | (not running) | 96 GB world | Retired 6 Oct | not played in a while; the world stays in /home/main/game_servers/vintage_story and in Borg |
 | Bopl 2D, Crosty, MegaBopl3D | thinkcentre | none | Stateless copy | can run in either site |
 | radunenu.com, yeetus.net, redirect domains | fuji, minima, mixi | none | Stateless copy | a replica per site |
-| Element Web, Element Call | minima, mixi | none | Stateless copy | a replica per site |
-| homepage, Headlamp, tailnet DNS, external-services | fuji, on its tailnet address | none | Survives | a second copy on the thinkcentre's address, DNS lists both |
+| Element Web, Element Call | the edge, plus one per site | none | Survives | the edge serves its own copy, the sites' copies behind it; RO's front door if the edge is down (#160) |
+| homepage, Headlamp | fuji or the thinkcentre | none | Survives | moves 30 s after its node is gone |
+| Tailnet DNS, the tailnet proxies | fuji and the thinkcentre, on their tailnet addresses | none | Survives | a copy on each, DNS lists both |
+| PlantUML | two replicas | none | Stateless copy | one per site |
+| Rybbit relay (external-services) | any node | none | Survives | moves 30 s after its node is gone |
 | Monitoring (Prometheus, Grafana, Loki, Alertmanager) | both sites | metrics and logs | Survives | one of each per site: the Prometheuses scrape the same targets (DK keeps 3 days), Alloy writes logs to both Lokis, the Alertmanagers are clustered, Grafana has two replicas on a CNPG database and each asks its own site's Prometheus and Loki (#148) |
 | Ollama | minima, mixi | models | Survives | minima first, mixi's M1 GPU (smaller model) when minima is gone |
 | SearXNG | two replicas | caches | Stateless copy | |
 | steamhappy | fuji (home) | Matrix session, small | Survives | file copy and site-failover, multi-arch image |
 | Gitea runners | thinkcentre, mixi | caches | already one per site | |
-| github-commit-sync | mixi | none | Stateless copy | |
+| github-commit-sync | mixi or minima (arm64 image) | none | Survives | moves 30 s after its node is gone |
 | Pinga | thinkcentre | 2.3 GB | Retired 6 Oct | radunenu.com's status page reads from Prometheus (status-api) instead; data left in /home/main/services/pinga and in Borg |
 | picshare | thinkcentre | small | Retired 6 Oct | Manifests removed; data left in /home/main/services/picshare and in Borg |
+
+### Not covered yet
+
+- **Matrix** (nuke.zip's homeserver, on the Hetzner VPS): one server. If it's down, Element loads but can't log in. nuke.zip's DNS is only on Cloudflare too. Both wait until the HA work is done ([#139](https://github.com/shootie22/infrastructure/issues/139)).
+- **The edge and RO down at the same time:** DK has no way in from outside ([#107](https://github.com/shootie22/infrastructure/issues/107)).
+- **The nameserver switch** ([#77](https://github.com/shootie22/infrastructure/issues/77)) only reports what it would do until it has run clean for a while.
 
 ### Building blocks
 
