@@ -17,7 +17,8 @@ spec:
   tls:
     - hosts:
         - auth.radunenu.com
-      secretName: auth-radunenu-com-tls
+      # Renewed by cert-manager (certificate.yaml).
+      secretName: auth-radunenu-com-le
   rules:
     - host: auth.radunenu.com
       http:
