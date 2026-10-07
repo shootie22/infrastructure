@@ -43,7 +43,14 @@ The times below are what the VM rehearsals measured (dotfiles `tests/cnpg-across
 
 **Back:** power on, unlock the disk through the edge. The thinkcentre comes back as the standby: the services stay on fuji (nothing moves back by itself), and the copies now go fuji → thinkcentre. Check `StandbyCopyStale` clears.
 
-**Result:**
+**Result (2026-10-07):** a reboot instead of a poweroff (nobody at DK could switch it back on if Wake-on-LAN failed; it sat at the unlock prompt, which is the same to the cluster). Gone at 10:21:25, unlocked at 10:34. Passed, with one service down.
+- etcd: fuji took over as leader.
+- Postgres: all five primaries were on fuji within 1.5 minutes.
+- The file services were labelled to fuji at 10:22:59 (1.5 minutes). Back for visitors: Vaultwarden under 1 minute, Gitea and PrivateBin 2.3, Audiobookshelf 2.6, Keycloak 2.8, Send and Joplin 4.
+- radunenu.com and yeetus.net stayed up, except for one round of checks at 10:21:30 where every site timed out, including those. fuji's Traefik never saw those requests, so it was most likely on the checking side.
+- Rybbit's dashboard stayed down: its backend and client images only existed on the thinkcentre (`imagePullPolicy: Never`), so fuji couldn't start them. ClickHouse and Postgres moved fine. The images are in Gitea's registry now.
+- The unlock looked dead: `thinkcentre-unlock` reported nothing on port 2222. OpenSSH 10.5 waits for the client to speak first, and the script's check waited for the server. A real `unlock-via-edge` worked. The check is fixed.
+- After the unlock: all Postgres replicas back on the thinkcentre within 6 minutes, and fuji's copies of every moved service there within 5 minutes. Everything stays on fuji.
 
 ## 3. Unplug fuji (#43)
 
