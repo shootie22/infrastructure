@@ -4,9 +4,15 @@ For moving the edge to a different VPS. The first real run is planned for Februa
 
 The edge has no data, so this is a reinstall, not a migration. Its identity (the SSH host key) comes from `secrets/edge-bootstrap.yaml` in dotfiles, and the whole config is `hosts/edge`.
 
+What it runs since 7 Oct 2026, all of which comes back by itself from the config and the cluster:
+- an etcd member (the third vote), Nebula lighthouse and relay
+- HAProxy: the way in for failover, and Element Web/Call's front door, served from its own copies (k3s pods) with certificates copied from the cluster every 15 minutes
+- the main alert relay (mixi's is the standby), the RO failover checker, the nameserver checker
+- the tailnet's relay (derper, derp.radunenu.com)
+
 ## Before buying
 
-- Criteria: about 5 €/month, 2 decent cores, 2-4 GB RAM, gigabit port, public IPv4, generous traffic, Germany or Austria. At least 1.5 GB RAM, or the installer can't boot.
+- Criteria: about 5 €/month, 2 decent cores, 2-4 GB RAM (2 GB is the floor with everything above), an SSD (etcd waits on its disk), gigabit port, public IPv4, generous traffic, Germany or Austria.
 - Buy one with a trial or refund period, because of step 7.
 - Note the disk device. Most providers use `/dev/sda` or `/dev/vda`. If it isn't `/dev/sda`, change it in `hosts/edge/configuration.nix` before installing.
 
@@ -42,6 +48,10 @@ The edge has no data, so this is a reinstall, not a migration. Its identity (the
    - `edge.radunenu.com` in OpenTofu (`tofu/dns-records.tf`), and the `edge_ip` the failover checker writes to deSEC (dotfiles, `modules/nixos/failover-checker`)
    - radunenu.com's SPF record, which allows the edge to send alert emails
    - `edgeAddress` in dotfiles `modules/nixos/edge-tunnel.nix`: the initrd tunnels connect by address (no DNS that early). fuji and mixi pick it up on their next rebuild, but their initrd only on the next boot, so check `unlock-via-edge` before relying on it
-   - etcd's member list, Phase 3
+   - Nebula: the edge's `reach` address in dotfiles `lib/nebula.nix` (every host finds the mesh through it), and the new host key signed into `lib/nebula/edge.crt` ([bootstrap.md](../../bootstrap.md), "One server lost")
+   - etcd: remove the old edge member first, then let the new one join empty (bootstrap.md, "One server lost", step 3). Never both at once: two of three must stay up meanwhile.
+   - `edge_ip` for the front checker (dotfiles `modules/nixos/failover-checker`, frontSettings)
+   - the relay's `ipv4` in Headscale's `derp.yaml` ([configmap](../../../kubernetes/services/headscale/configmap.yaml)), and `config-revision`
+   - the scrape targets for the edge in `prometheus-configmap.yaml` (its tailnet address, if that changed)
 9. **Cancel the old VPS** only after the new one has run for a day.
 10. **Journal entry,** with how long it took.
