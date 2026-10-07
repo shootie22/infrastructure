@@ -36,17 +36,9 @@ spec:
         maxSurge: 0
     # Each node's port listener only uses its own Traefik, so RO traffic never
     # detours through DK, and Traefik sees the real client address.
-    #
-    # Both are needed. The port listener (svclb) is a pod, and kube-proxy sends
-    # traffic from pods by the internal policy, not the external one. With
-    # only externalTrafficPolicy Local, half of RO's visitors went through
-    # the thinkcentre's Traefik, and hung for about 70 s when the thinkcentre
-    # went away (infrastructure #158). Nothing in the cluster calls Traefik's
-    # service address, so the internal policy costs nothing.
     service:
       spec:
         externalTrafficPolicy: Local
-        internalTrafficPolicy: Local
 
     # Traefik cuts off a request body after 60 s by default. Image pushes to
     # Gitea's registry over Nebula (the CI runners, #150) take longer for a
