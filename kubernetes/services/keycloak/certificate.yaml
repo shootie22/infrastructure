@@ -1,0 +1,15 @@
+# auth.radunenu.com's certificate, renewed by cert-manager (#34). It used to
+# be a Let's Encrypt certificate kept by hand in tls.sops.yaml, which nothing
+# renewed. HTTP-01, like the other sites.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: auth-radunenu-com
+  namespace: keycloak
+spec:
+  secretName: auth-radunenu-com-le
+  dnsNames:
+    - auth.radunenu.com
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
