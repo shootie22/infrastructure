@@ -1,6 +1,6 @@
 # Failover
 
-How traffic moves to the edge when RO goes down, and back. Design for [#41](https://github.com/shootie22/infrastructure/issues/41), not built yet.
+How traffic moves to the edge when RO goes down, and back. [#41](https://github.com/shootie22/infrastructure/issues/41). Live since 2026-10-07, checkers in dotfiles `modules/nixos/failover-checker/`.
 
 ## What gets switched
 
@@ -37,9 +37,11 @@ Total outage before traffic moves: about 3 minutes of detection plus up to a min
 
 ## Rollout
 
-1. dry run: checkers log what they would do, nothing changes
-2. a forced test: block the edge's check of RO for 5 minutes, watch it fail over and back
-3. live
+1. dry run: checkers log what they would do, nothing changes. Ran from 2 Oct through the edge and thinkcentre drills; the votes went over Nebula fine.
+2. a forced test (2026-10-07): RO's 443 blocked on both checkers' side only, RO itself stayed up. Both voted RO down at 11:01:36 and both switched `ro` and the deSEC records to the edge at 11:04:35, three minutes later as designed. The edge carried the traffic (to fuji over Nebula) and no site check failed. Unblocked at 11:07:15, back on RO at 11:17:16. "RO is down" reached the phone.
+3. live since 2026-10-07.
+
+After any switch the checkers won't fail over again for an hour.
 
 ## Not covered
 
