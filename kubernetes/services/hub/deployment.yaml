@@ -21,6 +21,8 @@ spec:
         app.kubernetes.io/name: hub
     spec:
       serviceAccountName: hub
+      # The account has automounting off; only this pod needs the token.
+      automountServiceAccountToken: true
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
