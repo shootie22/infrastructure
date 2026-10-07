@@ -4,9 +4,14 @@ metadata:
   name: grafana
   namespace: monitoring
 spec:
-  replicas: 1
+  # One in each site (#148), sharing their database, so Grafana is there
+  # whichever site is down. Each one asks the Prometheus in its own site.
+  replicas: 2
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: grafana
@@ -15,8 +20,38 @@ spec:
       labels:
         app.kubernetes.io/name: grafana
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: fuji
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: In, values: [fuji, thinkcentre]}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: grafana
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      # Start once the database answers, instead of crashing into restart
+      # backoff after a failover (as Keycloak did, #159).
+      initContainers:
+        - name: wait-for-db
+          image: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+          command: ["sh", "-c"]
+          args:
+            - until pg_isready -q -h grafana-db-rw -p 5432 -d grafana; do sleep 2; done
+          resources:
+            requests: {cpu: 5m, memory: 16Mi}
+            limits: {memory: 64Mi}
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
       securityContext:
         fsGroup: 472
       containers:
@@ -54,6 +89,20 @@ spec:
               value: "true"
             - name: GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH
               value: /var/lib/grafana/dashboards/observability/platform-overview.json
+            - name: GF_DATABASE_TYPE
+              value: postgres
+            - name: GF_DATABASE_HOST
+              value: grafana-db-rw:5432
+            - name: GF_DATABASE_NAME
+              value: grafana
+            - name: GF_DATABASE_SSL_MODE
+              value: require
+            - name: GF_DATABASE_USER
+              valueFrom:
+                secretKeyRef: {name: grafana-db-app, key: username}
+            - name: GF_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: grafana-db-app, key: password}
           envFrom:
             - secretRef:
                 name: grafana-auth
@@ -84,9 +133,10 @@ spec:
               mountPath: /var/lib/grafana/dashboards
               readOnly: true
       volumes:
+        # Only plugins and caches now; the old SQLite file stays in the
+        # grafana-data claim (pvc.yaml) for a while, unused.
         - name: data
-          persistentVolumeClaim:
-            claimName: grafana-data
+          emptyDir: {}
         - name: datasources
           configMap:
             name: grafana-datasources
@@ -177,6 +227,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: prometheus
+        # Both Prometheuses, for prometheus-local (services.yaml).
+        monitoring.radunenu.com/prometheus: "true"
     spec:
       serviceAccountName: prometheus
       nodeSelector:

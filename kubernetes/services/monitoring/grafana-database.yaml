@@ -1,0 +1,29 @@
+# Grafana's database: users, sessions and preferences, one instance in each
+# site (#148). Nothing in it has to survive: dashboards and datasources come
+# from ConfigMaps and roles from Keycloak, so it started empty and has no
+# dumps.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: grafana-db
+  namespace: monitoring
+spec:
+  instances: 2
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+  bootstrap:
+    initdb:
+      database: grafana
+      owner: grafana
+  storage:
+    size: 1Gi
+    storageClass: local-path
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: required
+    topologyKey: topology.kubernetes.io/zone
+    nodeSelector:
+      db: "true"
+  probes:
+    liveness:
+      isolationCheck:
+        enabled: true

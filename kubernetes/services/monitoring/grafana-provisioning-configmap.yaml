@@ -14,7 +14,7 @@ data:
         uid: prometheus
         type: prometheus
         access: proxy
-        url: http://prometheus.monitoring.svc:9090
+        url: http://prometheus-local.monitoring.svc:9090
         isDefault: true
         editable: false
   loki.yml: |

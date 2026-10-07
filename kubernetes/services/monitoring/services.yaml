@@ -130,3 +130,20 @@ spec:
     - name: http
       port: 9115
       targetPort: http
+---
+# Whichever Prometheus runs on the asking node: Grafana in RO gets fuji's,
+# Grafana in DK the thinkcentre's (#148). Both scrape the same targets; DK's
+# keeps 3 days.
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-local
+  namespace: monitoring
+spec:
+  selector:
+    monitoring.radunenu.com/prometheus: "true"
+  internalTrafficPolicy: Local
+  ports:
+    - name: http
+      port: 9090
+      targetPort: 9090
