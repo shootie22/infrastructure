@@ -2,7 +2,7 @@
 
 For what HA doesn't cover: data that went bad and got copied to the other site with it (a wrong delete, a broken upgrade), or both copies gone. Every service runs in both sites now (service-ha.md), so this is about bringing back an older state, not about a site being down.
 
-Partly tested: the thinkcentre's archive on 4 Oct (#16), an etcd snapshot in VMs. The rest is [#92](https://github.com/shootie22/infrastructure/issues/92).
+Tested: the thinkcentre's archive on 4 Oct (#16), an etcd snapshot in VMs, and fuji's archive plus a CNPG dump restore on 7 Oct (#92).
 
 ## What is where
 
@@ -43,7 +43,7 @@ For the services on site-failover. The live folder is on whichever node holds `h
 
 Each test restores into a scratch place, never over live data, and notes the time it took.
 
-1. **A database:** Gitea's dump into a scratch CNPG cluster (one instance, a `restore-test` namespace); compare row counts of a few tables with the live one; delete the namespace. Done 2026-10-07 with the hourly dump straight from `/var/lib/pg-dumps` (a Job on fuji mounting it read-only, `pg_restore --no-owner --role=gitea`): 7.6 MB, restored in 8 s, repositories, users, issues and actions all matching live. Left: the same from a Borg archive, which only adds the extract.
+1. **A database:** Gitea's dump into a scratch CNPG cluster (one instance, a `restore-test` namespace); compare row counts of a few tables with the live one; delete the namespace. Done 2026-10-07 with the hourly dump straight from `/var/lib/pg-dumps` (a Job on fuji mounting it read-only, `pg_restore --no-owner --role=gitea`): 7.6 MB, restored in 8 s, repositories, users, issues and actions all matching live. The extract from Borg, the same evening: Gitea's dump out of last night's `fuji-k3s` archive (`borg-job-k3s extract`) in 2.3 s, 7.4 MB from 03:25. Together: a database is back within a minute or two of starting, plus the data written since the dump.
 2. **Files:** PrivateBin's folder from the thinkcentre's latest archive into `/tmp/restore-test` on the thinkcentre; `diff -r` against the live folder (only the last days' pastes should differ).
 3. **A game world:** Minecraft Skyblock's world the same way, then start a throwaway server on it on the workstation to see it loads.
 4. **The cluster:** an etcd snapshot restored in a VM on the workstation (`--cluster-reset-restore-path`), checking `kubectl get ns` lists everything.
