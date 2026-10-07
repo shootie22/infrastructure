@@ -30,6 +30,18 @@ The common case, and the one the setup is built for: the other two etcd members 
 
 An agent (mixi, minima) only needs steps 1 and 2; it rejoins by itself.
 
+## Two servers lost (only one site left)
+
+For example RO and the edge down at the same time, with the thinkcentre alone. One etcd member out of three has no majority, so the cluster stops taking changes. Pods that run keep running, but site-failover stops every service with files on a node that has lost the cluster (after about 45 seconds), the survivor included: it can't tell "the others are dead" from "I'm the one cut off". Postgres can't promote either. That's the price of never running anything twice.
+
+If the other two will be back soon, wait. If not, and **only when they're known to be off** (powered down, or unreachable for good), make the survivor a cluster of one:
+
+1. On the surviving server, as root: `systemctl stop k3s`, then run k3s once by hand with its usual flags plus `--cluster-reset`. It drops the other members, keeps the data, and exits. `systemctl start k3s`.
+2. The cluster takes changes again. site-failover moves the services with files to this site, and CNPG promotes the local Postgres instances.
+3. When the others come back, each one must join as a new member: before starting its k3s, move its `/var/lib/rancher/k3s/server/db` aside (as in "One server lost", step 3). Started with its old data, it would try to rejoin a cluster that no longer exists.
+
+Doing this while another server is still running somewhere makes two clusters that each think they're the only one, and both would run everything. That's why it's a manual step.
+
 ## Everything lost
 
 Order: Nebula first (it needs nothing), then one server restored from an etcd snapshot, then the other two join it, then the agents.
