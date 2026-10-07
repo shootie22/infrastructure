@@ -47,7 +47,7 @@ The times below are what the VM rehearsals measured (dotfiles `tests/cnpg-across
 - etcd: fuji took over as leader.
 - Postgres: all five primaries were on fuji within 1.5 minutes.
 - The file services were labelled to fuji at 10:22:59 (1.5 minutes). Back for visitors: Vaultwarden under 1 minute, Gitea and PrivateBin 2.3, Audiobookshelf 2.6, Keycloak 2.8, Send and Joplin 4.
-- radunenu.com and yeetus.net stayed up, except for one round of checks at 10:21:30 where every site timed out, including those. fuji's Traefik never saw those requests, so it was most likely on the checking side.
+- radunenu.com and yeetus.net were up except for about 70 s right after the thinkcentre went (10:21:38 to 10:22:49), when nothing got through to fuji from outside, not even the failover checkers going straight to RO's address. Not fuji's CPU. Open in #158.
 - Rybbit's dashboard stayed down: its backend and client images only existed on the thinkcentre (`imagePullPolicy: Never`), so fuji couldn't start them. ClickHouse and Postgres moved fine. The images are in Gitea's registry now.
 - The unlock looked dead: `thinkcentre-unlock` reported nothing on port 2222. OpenSSH 10.5 waits for the client to speak first, and the script's check waited for the server. A real `unlock-via-edge` worked. The check is fixed.
 - After the unlock: all Postgres replicas back on the thinkcentre within 6 minutes, and fuji's copies of every moved service there within 5 minutes. Everything stays on fuji.
