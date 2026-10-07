@@ -174,3 +174,19 @@ Later that evening, the rest of the services with files: Gitea (its SSH turned o
 One self-inflicted outage: Rybbit's analytics was down for 11 minutes because I let its Caddy run on either node without checking how traffic reached it. It was a hostPort on the thinkcentre's tailnet address, with a relay pointing there. Now the relay goes through Caddy's Service. Lesson: before unpinning anything, look for hostPorts and hardcoded addresses pointing at it.
 
 Late that night, the GPU services. Ollama runs on mixi's M1 GPU too: Fedora's Mesa has Asahi's Vulkan driver, so the same image I built for minima worked first try, at about 54 tokens a second on a small model. mixi only has 8 GB, so it keeps a 1.5B version of steamhappy's model under the same name, and a small nginx in front sends everything to minima until minima's copy is gone. steamhappy itself had only ever been built for arm64; it builds for both now and lives on fuji with the other services with files. Getting there took two fixes in CI: Traefik cut image uploads off after 60 seconds once they went over Nebula, and `docker manifest` can't combine images that are already manifest lists, so it's buildx's imagetools now.
+
+## 2026-10-07: Breaking things on purpose
+
+Drill day. Every failure the HA work is meant to survive, done for real, with a log running from outside. Details per drill in [runbooks/drills.md](runbooks/drills.md).
+
+The edge went off first. Nobody would have noticed: the sites never failed a check and etcd kept the same leader. It did show that Prometheus's alerts had only one way out, the relay on the edge, so with the edge off they went nowhere. mixi runs a standby relay now that only speaks up when the edge's doesn't answer.
+
+The thinkcentre was next, rebooted rather than switched off: if Wake-on-LAN failed, nobody in DK could press the button. Postgres and the services with files were on fuji within a minute and a half, every site back within four. Rybbit wasn't, because its images had only ever existed on the thinkcentre. The unlock looked dead afterwards too, but only to my script: OpenSSH 10.5 waits for the client to say hello first, and the script waited for the server.
+
+DNS failover went live after a forced test, both checkers blocked from seeing RO while RO itself stayed up. DNS moved to the edge 3 minutes later and came back 10 minutes after the block was gone, without a single failed check.
+
+Then RO lost its internet: the cable from the switch to the router, so fuji and minima were cut off from everything but each other. fuji fenced its services after 50 seconds and DK had everything 1.5 minutes in. Coming back was the interesting part. Nebula found fuji by `ro.radunenu.com`, which the failover had just pointed at the edge. So the thinkcentre couldn't reach fuji, fuji's Traefik came and went, the checkers saw RO flapping and never moved DNS back. A loop only a person could break. Nebula uses the router's own name now. The fence also turned out to miss containers that mount a folder inside the service's (Audiobookshelf, Baikal), and Send and Keycloak each wasted minutes crashing on startup while their dependencies moved. All fixed.
+
+The one that took digging: when the thinkcentre went away, RO's sites stalled for about 70 seconds. RO shouldn't care about DK at all. The cause was k3s' port listener in front of Traefik. It's a pod, and kube-proxy spreads traffic from pods over every Traefik, whatever the traffic policy says. So half of RO's visitors had been going through DK all along, and hung when DK went. Sending 40 marked requests through the router showed a 20/20 split. Traefik now holds 80 and 443 on its own node, and the same 40 requests all land on fuji.
+
+Also found on the way: the steamhappy images I'd built for both architectures came from the wrong branch, without anything since rc1. The bot had been restarting every 6 minutes since. Fixed in rc6.
