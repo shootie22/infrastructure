@@ -40,6 +40,10 @@ spec:
     namespace: cnpg-system
 
   syncPolicy:
+    # Hub's description of the namespace (CreateNamespace makes it).
+    managedNamespaceMetadata:
+      annotations:
+        hub.radunenu.com/description: "CloudNativePG operator, runs every Postgres cluster and its failover"
     automated:
       prune: true
       selfHeal: true

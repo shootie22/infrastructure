@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: rybbit
+  annotations:
+    hub.radunenu.com/description: Rybbit's backend, the analytics database and ClickHouse
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -33,19 +35,16 @@ data:
             }
         }
     }
-
   network.xml: |
     <clickhouse>
         <listen_host>0.0.0.0</listen_host>
     </clickhouse>
-
   enable_json.xml: |
     <clickhouse>
         <settings>
             <enable_json_type>1</enable_json_type>
         </settings>
     </clickhouse>
-
   logging_rules.xml: |
     <clickhouse>
         <logger>
@@ -63,7 +62,6 @@ data:
         <latency_log remove="remove"/>
         <processors_profile_log remove="remove"/>
     </clickhouse>
-
   user_logging.xml: |
     <clickhouse>
         <profiles>

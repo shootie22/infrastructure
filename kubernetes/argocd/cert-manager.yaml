@@ -23,6 +23,10 @@ spec:
     namespace: cert-manager
 
   syncPolicy:
+    # Hub's description of the namespace (CreateNamespace makes it).
+    managedNamespaceMetadata:
+      annotations:
+        hub.radunenu.com/description: "Gets and renews the TLS certificates"
     automated:
       prune: true
       selfHeal: true

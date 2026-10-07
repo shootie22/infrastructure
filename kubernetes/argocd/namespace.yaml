@@ -1,0 +1,8 @@
+# Argo CD's own namespace (installed at bootstrap), here only to carry Hub's
+# description of it.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+  annotations:
+    hub.radunenu.com/description: Argo CD, applies this repo to the cluster
