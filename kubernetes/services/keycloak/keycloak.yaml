@@ -4,9 +4,15 @@ metadata:
   name: keycloak
   namespace: keycloak
 spec:
-  replicas: 1
+  # One per site (#36). They find each other through the database (JGroups
+  # JDBC_PING, encrypted) and share sessions, so either one can go away and
+  # Traefik's retry sends the next request to the other.
+  replicas: 2
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: keycloak
@@ -113,6 +119,12 @@ spec:
                     values:
                       - fuji
                       - thinkcentre
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app: keycloak
       tolerations:
         - key: node.kubernetes.io/unreachable
           operator: Exists
