@@ -190,3 +190,13 @@ Then RO lost its internet: the cable from the switch to the router, so fuji and 
 The one that took digging: when the thinkcentre went away, RO's sites stalled for about 70 seconds. RO shouldn't care about DK at all. The cause was k3s' port listener in front of Traefik. It's a pod, and kube-proxy spreads traffic from pods over every Traefik, whatever the traffic policy says. So half of RO's visitors had been going through DK all along, and hung when DK went. Sending 40 marked requests through the router showed a 20/20 split. Traefik now holds 80 and 443 on its own node, and the same 40 requests all land on fuji.
 
 Also found on the way: the steamhappy images I'd built for both architectures came from the wrong branch, without anything since rc1. The bot had been restarting every 6 minutes since. Fixed in rc6.
+
+Later that day:
+- **#158, the 70-second stall:** found and fixed (see above). Traefik also gives up on an unreachable pod after 2 seconds now and retries on another one, so a dead node costs a request a couple of seconds, not a minute.
+- **Element Web** was down for the whole fuji reboot, which a user noticed. c.nuke.zip pointed straight at RO's router, so no failover ever moved it. Now the edge runs its own copy of Element Web and Element Call and serves both itself, with the home sites behind it. Killing the edge's copy under load: 684 of 684 requests answered, the slowest in 1.2 seconds (after two small HAProxy fixes the first two runs turned up). If the edge itself dies, mixi and fuji move Element to RO within a minute. Tested that too, by hiding the edge from them.
+- **Monitoring is in both sites** now: a second Loki, two Grafanas on their own Postgres, each one asking its own site's Prometheus.
+- **A standby alert relay on mixi,** for when the edge is down.
+- **The nameserver checkers** for a Cloudflare DNS outage, in dry run.
+- **Real visitor addresses** through the edge (PROXY protocol).
+- **fuji unlocked through the edge** for the first time.
+- **The last few single-copy services** move within 30 seconds like the rest.
