@@ -6,7 +6,7 @@ The starting point for designing the platform. Nothing gets built until the desi
 
 One self-hosted web platform that becomes the home of the whole setup: a hub page, with modules behind it. It will be extended for years, so the core has to stay small and the modules have to plug in without touching it.
 
-The move from Komodo to Kubernetes and HA added layers the owner can't fully picture yet: sites, front doors, Traefik, Services, pods, replicas, failover, copies. The platform is how he understands and trusts the setup, from the top-level overview down to one pod's log output.
+The move from Komodo to Kubernetes and HA added layers the owner can't fully picture yet: sites, front doors, Traefik, Services, pods, replicas, failover, copies. The platform is how the owner understands and trusts the setup, from the top-level overview down to one pod's log output.
 
 ## What matters most
 
