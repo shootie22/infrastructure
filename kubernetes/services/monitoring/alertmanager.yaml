@@ -56,7 +56,7 @@ spec:
       labels:
         app.kubernetes.io/name: alertmanager
       annotations:
-        config-revision: "2"
+        config-revision: "3"
     spec:
       automountServiceAccountToken: false
       affinity:
