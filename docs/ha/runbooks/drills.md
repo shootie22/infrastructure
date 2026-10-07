@@ -99,3 +99,11 @@ The times below are what the VM rehearsals measured (dotfiles `tests/cnpg-across
 - Coming back, fuji couldn't rejoin. Nebula found fuji by `ro.radunenu.com`, which the failover had just pointed at the edge, so the thinkcentre couldn't reach fuji, fuji's etcd had no leader, fuji's Traefik came and went, and the checkers kept seeing RO flap, so DNS never failed back. A loop that only a person could break. Fixed during the drill: Nebula now uses the router's own dynamic name, which failover never touches. Within a minute of the change fuji was back in etcd, Ready at 12:50, and DNS failed back at 13:00, 10 minutes after RO was steady.
 - While fuji was half back, hs.radunenu.com answered 502 through the edge: the edge's HAProxy prefers fuji whenever fuji's Traefik answers, even though fuji couldn't reach the pods in DK. This and the two above are in #159.
 - After: all Postgres replicas back on fuji by 12:58, everything stays on the thinkcentre.
+
+## 5. Element Web's front door (#160)
+
+c.nuke.zip and call.nuke.zip are CNAMEs to element.radunenu.com, which points at the edge. The edge serves both from its own copies (k3s pods on the edge), with the home sites' Traefiks as backup in HAProxy. If the edge stops serving Element Web, the front checkers on mixi and fuji point element.radunenu.com at RO's front door after a minute, and back 10 minutes after the edge is healthy again.
+
+**Result (2026-10-07):**
+- The edge's Element Web pod deleted while three loops loaded c.nuke.zip: 684 of 684 requests answered, the slowest in 1.2 s, while fuji's Traefik stood in for the 12 s the pod took to come back. The first two tries each lost one request, which led to two HAProxy fixes: mark a server down on its first failed connection, and don't cut short HTTP requests when a server goes down.
+- The edge blocked for the two checkers only (visitors unaffected): both saw it down at 16:35:44, element.radunenu.com pointed at RO at 16:36:36 on Cloudflare, deSEC about 30 s later. RO served c.nuke.zip. Unblocked at 16:38:12, back on the edge at 16:48:42.
