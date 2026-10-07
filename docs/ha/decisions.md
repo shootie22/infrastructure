@@ -197,3 +197,7 @@ With the edge down, Prometheus's alerts had nowhere to go. mixi runs the same re
 ## 2026-10-07: The nameservers switch to deSEC by themselves (#77)
 
 The edge, mixi and fuji each ask Cloudflare's nameservers for every zone (not nuke.zip, which belongs to the Matrix stack). When two of them agree a zone has been unanswered for 45 minutes, while deSEC answers fine, they switch that zone's nameservers at Porkbun to deSEC. Back after 6 hours of Cloudflare answering everyone, at most once a day per zone. It runs as a dry run first, reporting what it would do.
+
+## 2026-10-07: Our own tailnet relay on the edge, Tailscale's as fallback (#38)
+
+When two devices can't reach each other directly, their traffic goes through a relay (DERP). That used to be only Tailscale's public ones, the tailnet's last dependency on an outside company. derper now runs on the edge (derp.radunenu.com), behind its HAProxy, and only serves devices in our tailnet. Headscale lists it next to Tailscale's; devices use whichever is closest, so with the edge down nothing changes. Only on the edge: RO would need more port forwards and a share of fuji's 443, and DK takes no incoming connections at all.
