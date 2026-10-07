@@ -28,6 +28,10 @@ data:
           # The edge over Nebula, so alerts don't depend on Headscale.
           - url: http://10.99.0.1:9190/alertmanager
             send_resolved: true
+          # mixi's standby relay gets everything too, and sends it on only
+          # while the edge's doesn't answer (#156).
+          - url: http://10.99.0.4:9190/alertmanager
+            send_resolved: true
       - name: healthchecks
         webhook_configs:
           - url_file: /etc/alertmanager/secret/healthchecks_url
