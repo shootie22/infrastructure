@@ -211,6 +211,12 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
+    # Hub's public incident API (hub-public, #181), later the status page.
+    "radunenu.com/status/CNAME" = {
+      zone    = "radunenu.com", name = "status", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
     "radunenu.com/share/CNAME" = {
       zone    = "radunenu.com", name = "share", type = "CNAME"
       content = "beacon.radunenu.com"
