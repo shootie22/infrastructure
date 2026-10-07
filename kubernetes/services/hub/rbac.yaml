@@ -1,0 +1,82 @@
+# Hub reads the cluster and changes nothing in it (docs/platform/design.md,
+# "Where the data comes from"). Exactly the kinds it shows, get/list/watch
+# only: no Secrets, no ConfigMaps, no pod logs (those come from Loki), no
+# exec. The only thing it may write is its own leader lease.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hub
+  namespace: hub
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: hub-reader
+rules:
+  - apiGroups: [""]
+    resources: [nodes, namespaces, pods, services, persistentvolumeclaims, events]
+    verbs: [get, list, watch]
+  - apiGroups: [apps]
+    resources: [deployments, statefulsets, daemonsets, replicasets]
+    verbs: [get, list, watch]
+  - apiGroups: [batch]
+    resources: [jobs, cronjobs]
+    verbs: [get, list, watch]
+  - apiGroups: [discovery.k8s.io]
+    resources: [endpointslices]
+    verbs: [get, list, watch]
+  - apiGroups: [networking.k8s.io]
+    resources: [ingresses]
+    verbs: [get, list, watch]
+  - apiGroups: [postgresql.cnpg.io]
+    resources: [clusters]
+    verbs: [get, list, watch]
+  - apiGroups: [argoproj.io]
+    resources: [applications]
+    verbs: [get, list, watch]
+  - apiGroups: [cert-manager.io]
+    resources: [certificates]
+    verbs: [get, list, watch]
+  - apiGroups: [traefik.io]
+    resources: [ingressroutes, middlewares]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: hub-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: hub-reader
+subjects:
+  - kind: ServiceAccount
+    name: hub
+    namespace: hub
+---
+# One copy at a time runs the background work (reading the relays' journals,
+# snapshots, incidents).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hub-leader
+  namespace: hub
+rules:
+  - apiGroups: [coordination.k8s.io]
+    resources: [leases]
+    verbs: [get, create, update]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hub-leader
+  namespace: hub
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: hub-leader
+subjects:
+  - kind: ServiceAccount
+    name: hub
+    namespace: hub
