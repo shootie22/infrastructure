@@ -2,7 +2,7 @@
 
 Agreed on 2026-10-07 ([#163](https://github.com/shootie22/infrastructure/issues/163)). The starting point was [brief.md](brief.md). The build is split into the Platform 1-4 milestones, one issue per step.
 
-Hub lives at `hub.infra.radunenu.com`, on the tailnet only. Its home page is the Overview. It takes over from [Homepage](../../kubernetes/services/homepage/), which goes away once Hub covers what it does.
+Hub lives at `hub.infra.radunenu.com`, on the tailnet only. Its home page is the Overview. It took over from Homepage on 8 Oct.
 
 ## Decided with me
 

@@ -147,12 +147,6 @@
     },
     {
       "matchPackageNames": [
-        "ghcr.io/gethomepage/homepage"
-      ],
-      "sourceUrl": "https://github.com/gethomepage/homepage"
-    },
-    {
-      "matchPackageNames": [
         "ghcr.io/headlamp-k8s/headlamp"
       ],
       "sourceUrl": "https://github.com/kubernetes-sigs/headlamp"

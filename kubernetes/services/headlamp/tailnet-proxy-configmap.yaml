@@ -23,14 +23,10 @@ data:
       reverse_proxy headlamp.headlamp.svc.cluster.local:80
     }
 
-    https://hub.infra.radunenu.com {
-      bind {$TAILNET_IP}
-      tls /certs/tls.crt /certs/tls.key
-      reverse_proxy homepage.homepage.svc.cluster.local:3000
-    }
-    # Hub (#169): straight to its pods, so a browser stays on one copy (the
-    # cookie) and both copies serve. hub-new until it takes over hub (#170).
-    https://hub-new.infra.radunenu.com {
+    # Hub (#169, #170): straight to its pods, so a browser stays on one copy
+    # (the cookie) and both copies serve. hub-new is the name it had while
+    # Homepage still had this one.
+    https://hub.infra.radunenu.com, https://hub-new.infra.radunenu.com {
       bind {$TAILNET_IP}
       tls /certs/tls.crt /certs/tls.key
       reverse_proxy {

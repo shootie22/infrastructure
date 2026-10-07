@@ -48,7 +48,7 @@ spec:
           imagePullPolicy: Always
           args: [serve]
           env:
-            - {name: HUB_URL, value: "https://hub-new.infra.radunenu.com"}
+            - {name: HUB_URL, value: "https://hub.infra.radunenu.com"}
             - name: HUB_NODE_NAME
               valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
             - name: HUB_POD_NAME

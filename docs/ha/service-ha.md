@@ -47,7 +47,8 @@ Decided 6 Oct ([#88](https://github.com/shootie22/infrastructure/issues/88), [de
 | Bopl 2D, Crosty, MegaBopl3D | thinkcentre | none | Stateless copy | can run in either site |
 | radunenu.com, yeetus.net, redirect domains | fuji, minima, mixi | none | Stateless copy | a replica per site |
 | Element Web, Element Call | the edge, plus one per site | none | Survives | the edge serves its own copy, the sites' copies behind it; RO's front door if the edge is down (#160) |
-| homepage, Headlamp | fuji or the thinkcentre | none | Survives | moves 30 s after its node is gone |
+| Hub | fuji and the thinkcentre (or minima, mixi) | Postgres | Survives | a copy per site, CNPG; replaced Homepage on 8 Oct |
+| Headlamp | fuji or the thinkcentre | none | Survives | moves 30 s after its node is gone |
 | Tailnet DNS, the tailnet proxies | fuji and the thinkcentre, on their tailnet addresses | none | Survives | a copy on each, DNS lists both |
 | PlantUML | two replicas | none | Stateless copy | one per site |
 | Rybbit relay (external-services) | any node | none | Survives | moves 30 s after its node is gone |
