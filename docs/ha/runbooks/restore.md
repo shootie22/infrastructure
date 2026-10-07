@@ -2,7 +2,7 @@
 
 For what HA doesn't cover: data that went bad and got copied to the other site with it (a wrong delete, a broken upgrade), or both copies gone. Every service runs in both sites now (service-ha.md), so this is about bringing back an older state, not about a site being down.
 
-Not tested yet: the test plan at the end is [#92](https://github.com/shootie22/infrastructure/issues/92).
+Partly tested: the thinkcentre's archive on 4 Oct (#16), an etcd snapshot in VMs. The rest is [#92](https://github.com/shootie22/infrastructure/issues/92).
 
 ## What is where
 
