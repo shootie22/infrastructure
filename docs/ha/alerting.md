@@ -24,6 +24,8 @@ A small relay on the edge takes every alert and sends it once, through the first
 
 The relay runs on the edge so it survives either site going down. If the relay dies, healthchecks.io notices and alerts through Pushover directly.
 
+mixi runs a standby copy of the relay ([#156](https://github.com/shootie22/infrastructure/issues/156)). Alertmanager and the failover checkers send to both, and the standby only passes an alert on while the edge's relay doesn't answer its health check, so nothing arrives twice. Found missing in the edge drill: with the edge off, Prometheus's alerts went nowhere until it was back. Tested 2026-10-07: with the edge's relay up the standby stayed quiet, with it stopped the standby delivered.
+
 "Accepted by the service" is all that can be checked for normal messages. Whether it reached the phone isn't visible.
 
 ## Rules
