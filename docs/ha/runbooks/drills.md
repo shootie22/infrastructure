@@ -21,7 +21,11 @@ The times below are what the VM rehearsals measured (dotfiles `tests/cnpg-across
 
 **Back:** start it; it rejoins etcd by itself.
 
-**Result:**
+**Result (2026-10-07):** off for 12 minutes, 09:53:30 to 10:05:45. Passed.
+- The sites never failed a single check (one every 8-10 s).
+- etcd: fuji and the thinkcentre kept the thinkcentre as leader the whole time, no election.
+- After 2 minutes on the console it was Ready again and back in etcd, with nothing to do by hand.
+- What reached me while it was off: healthchecks.io ("relay down", through Pushover directly) and UptimeRobot (email). Prometheus's own alerts (EtcdMemberDown, the node down) had nowhere to go, because Alertmanager only sends to the relay on the edge. They came all at once when the edge was back. A second way out for Alertmanager is in #156.
 
 ## 2. Stop the thinkcentre (#46)
 
