@@ -386,6 +386,10 @@ spec:
         app.kubernetes.io/name: kube-state-metrics
     spec:
       serviceAccountName: kube-state-metrics
+      # Any node; moves 30 s after its node stops answering.
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: kube-state-metrics
           image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.19.1@sha256:85108987d044b18a098126732f98602df408888c0f7d456241f5abefb9744bc1
@@ -550,8 +554,16 @@ spec:
         app.kubernetes.io/name: alloy-events
     spec:
       serviceAccountName: alloy
-      nodeSelector:
-        kubernetes.io/hostname: fuji
+      # Either server; moves 30 s after its node stops answering.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: In, values: [fuji, thinkcentre]}
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: alloy
           image: grafana/alloy:v1.8.3@sha256:ab04df3936e4d71d31b6f55e0c58a7e749091f59635dd8c2bc731ba1b6c93701
@@ -588,7 +600,13 @@ metadata:
   name: blackbox-exporter
   namespace: monitoring
 spec:
-  replicas: 1
+  # One per site, so DK's Prometheus can still probe with fuji gone.
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: blackbox-exporter
@@ -597,8 +615,21 @@ spec:
       labels:
         app.kubernetes.io/name: blackbox-exporter
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: fuji
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: In, values: [fuji, thinkcentre]}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: blackbox-exporter
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: blackbox-exporter
           image: quay.io/prometheus/blackbox-exporter:v0.28.0@sha256:e753ff9f3fc458d02cca5eddab5a77e1c175eee484a8925ac7d524f04366c2fc

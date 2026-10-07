@@ -4,7 +4,13 @@ metadata:
   name: plantuml
   namespace: plantuml
 spec:
-  replicas: 1
+  # Nothing on disk: one per site, either serves alone.
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: plantuml
@@ -13,8 +19,16 @@ spec:
       labels:
         app: plantuml
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: thinkcentre
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchLabels:
+                  app: plantuml
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: plantuml
           image: plantuml/plantuml-server:v1.2026.2@sha256:cd3d67a3150ab9dbe3c77c2abce6796c7cbfb46819fa4c74c987b44ff2c10003

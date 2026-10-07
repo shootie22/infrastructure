@@ -21,8 +21,17 @@ spec:
         app: github-commit-sync
     spec:
       automountServiceAccountToken: false
-      nodeSelector:
-        kubernetes.io/hostname: mixi
+      # The image is arm64 only: mixi or minima, moving 30 s after its node
+      # stops answering.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: In, values: [mixi, minima]}
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       dnsPolicy: None
       dnsConfig:
         nameservers:

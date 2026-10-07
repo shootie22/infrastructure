@@ -33,7 +33,10 @@ spec:
       annotations:
         config-revision: "2"
     spec:
-      # Any node: whatever it relays to is on the thinkcentre anyway (#149).
+      # Any node; moves 30 s after its node stops answering.
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: caddy
           image: caddy:2.10.0-alpine@sha256:ae4458638da8e1a91aafffb231c5f8778e964bca650c8a8cb23a7e8ac557aa3c
