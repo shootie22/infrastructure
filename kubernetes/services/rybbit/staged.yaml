@@ -264,7 +264,8 @@ spec:
           image: git.radunenu.com/radu/rybbit-backend:migration-20260924
           securityContext:
             allowPrivilegeEscalation: false
-          imagePullPolicy: Never
+          # In Gitea's registry, so fuji and the thinkcentre can both pull it.
+          imagePullPolicy: IfNotPresent
           env:
             - {name: NODE_ENV, value: production}
             - {name: CLICKHOUSE_HOST, value: "http://clickhouse:8123"}
@@ -345,7 +346,8 @@ spec:
           image: git.radunenu.com/radu/rybbit-client:migration-20260924
           securityContext:
             allowPrivilegeEscalation: false
-          imagePullPolicy: Never
+          # In Gitea's registry, so fuji and the thinkcentre can both pull it.
+          imagePullPolicy: IfNotPresent
           env:
             - {name: NODE_ENV, value: production}
             - {name: NEXT_PUBLIC_BACKEND_URL, value: "https://analytics.radunenu.com"}
