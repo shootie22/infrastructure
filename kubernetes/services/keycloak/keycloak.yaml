@@ -16,6 +16,25 @@ spec:
         app: keycloak
     spec:
       automountServiceAccountToken: false
+      # Keycloak exits when its database doesn't answer at startup, and each
+      # exit doubles Kubernetes' restart backoff. After a failover the pod is
+      # often up before the new Postgres primary, and the backoff alone made
+      # it 9 minutes (drill on 2026-10-07). Start it once the database answers.
+      initContainers:
+        - name: wait-for-db
+          image: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+          command: ["sh", "-c"]
+          args:
+            - until pg_isready -q -h keycloak-db-rw -p 5432 -d keycloak; do sleep 2; done
+          resources:
+            requests: {cpu: 5m, memory: 16Mi}
+            limits: {memory: 64Mi}
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
       containers:
         - name: keycloak
           image: quay.io/keycloak/keycloak:26.5.5@sha256:a7b0cb7a43a1235a61872883414d3f1d9a3ceac9df6e5907bd12202778a6265c
