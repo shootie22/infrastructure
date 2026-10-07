@@ -46,7 +46,7 @@ Decided 6 Oct ([#88](https://github.com/shootie22/infrastructure/issues/88), [de
 | radunenu.com, yeetus.net, redirect domains | fuji, minima, mixi | none | Stateless copy | a replica per site |
 | Element Web, Element Call | minima, mixi | none | Stateless copy | a replica per site |
 | homepage, Headlamp, tailnet DNS, external-services | fuji, on its tailnet address | none | Survives | a second copy on the thinkcentre's address, DNS lists both |
-| Monitoring (Prometheus, Grafana, Loki, Alertmanager) | fuji | metrics and logs | Survives | a second Prometheus and Alertmanager in DK, scraping the same targets |
+| Monitoring (Prometheus, Grafana, Loki, Alertmanager) | both sites | metrics and logs | Survives | one of each per site: the Prometheuses scrape the same targets (DK keeps 3 days), Alloy writes logs to both Lokis, the Alertmanagers are clustered, Grafana has two replicas on a CNPG database and each asks its own site's Prometheus and Loki (#148) |
 | Ollama, SearXNG, steamhappy | minima (Mac M4 VM) | models, caches | Survives if mixi's GPU works | replica on mixi (M1, Asahi GPU), to test |
 | Gitea runners | thinkcentre, mixi | caches | already one per site | |
 | github-commit-sync | mixi | none | Stateless copy | |
