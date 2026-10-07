@@ -69,7 +69,10 @@ The times below are what the VM rehearsals measured (dotfiles `tests/cnpg-across
 
 **Back:** power fuji on, unlock it. DNS fails back after RO has been healthy for 10 minutes. The moved services stay on the thinkcentre.
 
-**Result:** not done on its own. Drill 4 cut fuji off too (2026-10-07), which covers everything here except minima staying online.
+**Result:** drill 4 cut fuji off too (2026-10-07), which covers the fence. Then a plain reboot the same afternoon, mainly to test unlocking fuji through the edge (#103):
+- Gone at about 15:30:15. DNS on the edge at 15:33:47, 3.5 minutes. radunenu.com, Gitea and PrivateBin back by 15:34:21, Keycloak at 15:34:42.
+- The initrd's tunnel showed up on the edge at 15:32:34, about 2 minutes after the reboot, and `unlock-via-edge fuji` worked at 15:34:12. fuji was Ready at 15:35:05, and RO healthy for the checkers at 15:35:08.
+- DNS back on RO at 15:45:19, ten minutes later, with no failed checks after fuji was back.
 
 ## 4. Cut RO's internet (#44)
 
