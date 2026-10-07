@@ -3,13 +3,15 @@
 # failover isn't undone by the next apply:
 # - ro.radunenu.com, on Cloudflare and deSEC: noc-studios.go.ro normally,
 #   edge.radunenu.com during a failover
+# - element.radunenu.com, on Cloudflare and deSEC: edge.radunenu.com
+#   normally, noc-studios.go.ro while the edge is down (#160)
 # - the zone apexes on deSEC, which can't be CNAMEs there: RO's address
 #   normally, the edge's during a failover. The checkers also keep them on
 #   RO's current address when it changes.
 locals {
-  failover_cloudflare_keys = toset(["radunenu.com/ro/CNAME"])
+  failover_cloudflare_keys = toset(["radunenu.com/ro/CNAME", "radunenu.com/element/CNAME"])
   failover_desec_keys = toset(concat(
-    ["radunenu.com/ro/CNAME"],
+    ["radunenu.com/ro/CNAME", "radunenu.com/element/CNAME"],
     [for k in keys(local.standby_rrsets) : k if endswith(k, "/@/A")],
   ))
 }

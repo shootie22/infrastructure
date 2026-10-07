@@ -275,6 +275,14 @@ locals {
       content = "noc-studios.go.ro"
     }
 
+    # Where Element Web is served (#160): c.nuke.zip is a CNAME to this.
+    # The edge normally, which serves it itself; RO's front door while the
+    # edge is down (the front checkers on mixi and fuji switch it).
+    "radunenu.com/element/CNAME" = {
+      zone    = "radunenu.com", name = "element", type = "CNAME"
+      content = "edge.radunenu.com"
+    }
+
     # The edge VPS. ro points here during a failover (dns-failover.tf).
     "radunenu.com/edge/A" = {
       zone    = "radunenu.com", name = "edge", type = "A"
