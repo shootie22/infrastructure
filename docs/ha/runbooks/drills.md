@@ -89,7 +89,7 @@ The times below are what the VM rehearsals measured (dotfiles `tests/cnpg-across
 
 **Result (2026-10-07):** the cable from RO's switch to the router instead of the router's WAN: fuji and minima cut off from everything but each other, the router itself still reachable. Out at about 12:22:00, back in at about 12:44. Passed, but coming back needed a fix by hand.
 - etcd: the thinkcentre became leader right away, with the edge as the majority.
-- fuji fenced itself: after it was back on the network, its gates answered 503 for every service with files, and nothing ran twice.
+- fuji fenced itself at 12:22:49, about 50 s after the cut and before the thinkcentre took over: killed the containers and removed the folders. But only containers that mount the service's folder itself; Audiobookshelf and Baikal mount folders inside it, so theirs kept running on fuji, cut off from everyone. Fixed in dotfiles `ae037ef`.
 - Postgres: all five primaries in DK, and every service labelled to the thinkcentre, by 12:23:33 (1.5 minutes).
 - DNS on the edge at 12:25:33 (3.5 minutes). Back for visitors: Vaultwarden and Audiobookshelf at 3.5 minutes, radunenu.com, PrivateBin and Baikal at 4, Headscale and Rybbit at 6.5, Gitea and Joplin at 6.7, Keycloak at 9 (it restarted five times while its database moved).
 - Send stayed down for a while longer: its oauth2-proxy asks Keycloak for its settings at startup, crashed while Keycloak was down, and then waited out Kubernetes' 5-minute restart backoff.
