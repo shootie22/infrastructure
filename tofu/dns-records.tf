@@ -283,6 +283,12 @@ locals {
       content = "edge.radunenu.com"
     }
 
+    # The tailnet's own relay (DERP) on the edge (#38), next to Tailscale's.
+    "radunenu.com/derp/CNAME" = {
+      zone    = "radunenu.com", name = "derp", type = "CNAME"
+      content = "edge.radunenu.com"
+    }
+
     # The edge VPS. ro points here during a failover (dns-failover.tf).
     "radunenu.com/edge/A" = {
       zone    = "radunenu.com", name = "edge", type = "A"
