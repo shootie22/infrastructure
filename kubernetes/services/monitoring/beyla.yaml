@@ -1,0 +1,125 @@
+# Traffic between workloads, measured in the kernel with eBPF (#52): Beyla,
+# Grafana's build of OpenTelemetry's eBPF instrumentation. Network flows
+# only, no application tracing, so it needs no access to other processes:
+# it reads the packets on each node's interfaces and counts bytes per
+# source and destination workload. Hub's map draws these as the flows
+# between services. Its own DaemonSet, so Alloy keeps running unprivileged.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: beyla
+  namespace: monitoring
+---
+# To name the two ends of a flow (pod, owner, namespace, node, zone).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: beyla
+rules:
+  - apiGroups: [""]
+    resources: [namespaces, nodes, pods, services]
+    verbs: [get, list, watch]
+  - apiGroups: [apps]
+    resources: [deployments, replicasets, statefulsets, daemonsets]
+    verbs: [get, list, watch]
+  - apiGroups: [batch]
+    resources: [jobs, cronjobs]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: beyla
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: beyla
+subjects:
+  - kind: ServiceAccount
+    name: beyla
+    namespace: monitoring
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: beyla-config
+  namespace: monitoring
+data:
+  beyla.yaml: |
+    network:
+      enable: true
+    attributes:
+      kubernetes:
+        enable: true
+      select:
+        # Workload to workload, which node each end is on, and the sites.
+        # No pod names or addresses: they'd multiply the series.
+        beyla_network_flow_bytes:
+          include:
+            - k8s.src.namespace
+            - k8s.src.owner.name
+            - k8s.src.owner.type
+            - k8s.src.node.name
+            - k8s.dst.namespace
+            - k8s.dst.owner.name
+            - k8s.dst.owner.type
+            - k8s.dst.node.name
+            - src.zone
+            - dst.zone
+            - direction
+    prometheus_export:
+      port: 9400
+      path: /metrics
+      features:
+        - network
+        - network_inter_zone
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: beyla
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: beyla
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: beyla
+      annotations:
+        monitoring.radunenu.com/scrape: "true"
+        monitoring.radunenu.com/port: "9400"
+        config-revision: "1"
+    spec:
+      serviceAccountName: beyla
+      # The node's own interfaces, where the packets are.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      tolerations:
+        - {key: node-role.kubernetes.io/etcd, operator: Exists, effect: NoExecute}
+      containers:
+        - name: beyla
+          image: grafana/beyla:3.38.0@sha256:356aec0e9e35a180fe0f7adb3704f1987bd0fab6927d70195eb828d96a27938b
+          args: [--config=/etc/beyla/beyla.yaml]
+          env:
+            - name: BEYLA_KUBE_METADATA_ENABLE
+              value: "true"
+          ports:
+            - {name: metrics, containerPort: 9400}
+          resources:
+            requests: {cpu: 20m, memory: 96Mi}
+            limits: {memory: 320Mi}
+          securityContext:
+            runAsUser: 0
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+              # Load the eBPF programs and read packets; nothing else.
+              add: [BPF, PERFMON, NET_RAW, NET_ADMIN]
+          volumeMounts:
+            - {name: config, mountPath: /etc/beyla, readOnly: true}
+      volumes:
+        - name: config
+          configMap:
+            name: beyla-config
