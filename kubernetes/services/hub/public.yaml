@@ -11,7 +11,7 @@ metadata:
   annotations:
     hub.radunenu.com/description: The public incident API
 spec:
-  replicas: 2
+  replicas: 0
   strategy:
     type: RollingUpdate
     rollingUpdate: {maxSurge: 0, maxUnavailable: 1}
