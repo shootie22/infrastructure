@@ -9,7 +9,7 @@ data "healthchecksio_channel" "pushover" {
 
 locals {
   dead_mans_switches = {
-    alert-relay = "The alert relay on the edge. Silence means the edge or the relay is down, and other alerts may not reach the phone."
+    alert-relay  = "The alert relay on the edge. Silence means the edge or the relay is down, and other alerts may not reach the phone."
     alertmanager = "Alertmanager's Watchdog alert, sent every minute. Silence means Prometheus or Alertmanager on fuji stopped, so in-cluster alerts would go nowhere."
   }
 }

@@ -1,0 +1,72 @@
+# Runs on every pull request to main, and the ruleset requires it, so a
+# change Hub opens (or one by hand) can't land with a broken manifest, rule,
+# dashboard or DNS file (#185).
+name: Checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: kubeconform
+        run: |
+          curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
+          find kubernetes -name '*.yaml' ! -name '*.sops.yaml' ! -name hub.yaml -print0 |
+            xargs -0 ./kubeconform -summary -strict -ignore-missing-schemas \
+              -schema-location default \
+              -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+
+  monitoring:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: pip install pyyaml
+      - name: validate-monitoring.py
+        run: python3 kubernetes/services/monitoring/validate-monitoring.py --prometheus-files-output /tmp/prom --promql-rules-output /tmp/dashboard-queries.yaml
+      - name: Dashboards match their generator
+        run: python3 kubernetes/services/monitoring/generate-dashboards.py --check
+      - name: promtool, the version Prometheus runs
+        run: |
+          image=$(grep -ho 'quay.io/prometheus/prometheus:[^ ]*' kubernetes/services/monitoring/*.yaml | head -1)
+          docker run --rm -v /tmp/prom:/prom:ro -v /tmp/dashboard-queries.yaml:/q.yaml:ro --entrypoint sh "$image" -c \
+            'promtool check rules /prom/*.rules /q.yaml && cd /prom && promtool check config --syntax-only prometheus.yml'
+
+  hub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: infrastructure
+      - uses: actions/checkout@v5
+        with:
+          repository: shootie22/dotfiles
+          path: dotfiles
+      - name: Services match their hub.yaml
+        run: |
+          if [ -z "$(find infrastructure/kubernetes/services -name hub.yaml)" ]; then
+            echo "no service has a hub.yaml yet"
+            exit 0
+          fi
+          docker run --rm -v "$PWD:/w:ro" git.radunenu.com/radu/infra-hub:main \
+            render --check --infra /w/infrastructure --dotfiles /w/dotfiles
+
+  tofu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: opentofu/setup-opentofu@v1
+      - name: fmt and validate
+        working-directory: tofu
+        run: |
+          tofu fmt -check -recursive
+          tofu init -backend=false -input=false
+          tofu validate
