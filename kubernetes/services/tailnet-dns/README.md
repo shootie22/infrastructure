@@ -6,7 +6,7 @@ not forward other DNS queries. The pod has no Kubernetes API token.
 
 Roll this out before configuring Headscale split DNS. First check that the pod
 is healthy, that Fuji permits TCP/UDP 53 on `tailscale0`, and that a tailnet
-client can run `dig @100.64.0.1 hl.infra.radunenu.com A` and receive
+client can run `dig @100.64.0.1 hub.infra.radunenu.com A` and receive
 `100.64.0.1`. Only then add
 `dns.nameservers.split.infra.radunenu.com: [100.64.0.1]` to Headscale's
 config and check resolution from a tailnet client without specifying the DNS server.
@@ -15,8 +15,8 @@ setting. Its pod-template `config-revision` annotation triggers that rollout.
 Do not point clients at this resolver until these checks pass: failed DNS
 would affect the entire `infra.radunenu.com` suffix.
 
-The `hl.infra.radunenu.com` and `hub.infra.radunenu.com` records name Fuji's
-tailnet address only. Their private HTTPS routes share the host-network Caddy
-listener in the Headlamp application; neither Kubernetes Service is published
-through a public Ingress. Browser-trusted certificates for these private routes
+These records name tailnet addresses only. Their private HTTPS routes go
+through the tools proxy in `../headlamp` (the folder keeps Headlamp's name;
+Headlamp itself is retired), and none of them is published through a public
+Ingress. Browser-trusted certificates for these private routes
 use DNS-01 validation and do not require public A or AAAA records.

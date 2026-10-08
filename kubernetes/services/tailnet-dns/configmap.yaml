@@ -17,7 +17,7 @@ data:
       ready 127.0.0.1:8181
       reload
       hosts {
-        TAILNET_IP hl.infra.radunenu.com hub.infra.radunenu.com hub-new.infra.radunenu.com ollama.infra.radunenu.com sxng.infra.radunenu.com
+        TAILNET_IP hub.infra.radunenu.com hub-new.infra.radunenu.com ollama.infra.radunenu.com sxng.infra.radunenu.com
         ttl 60
       }
     }

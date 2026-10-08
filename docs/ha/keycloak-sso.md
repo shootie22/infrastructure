@@ -16,14 +16,14 @@ Tasks are in the [Keycloak SSO milestone](https://github.com/shootie22/infrastru
 | Service | Support | Plan |
 |---|---|---|
 | Grafana | OIDC | Already done, move to the new realm |
-| Argo CD | OIDC | Do it |
+| Argo CD | none | No UI exposed, only the webhook; Hub shows its state |
 | Audiobookshelf | OIDC | Do it, set up in the web UI |
 | Send | none | oauth2-proxy on uploads only |
 | Gitea | OIDC | Do it, existing accounts get linked, not recreated |
 | Rybbit | unclear | OIDC if the version supports it, else forward-auth on the dashboard |
 | Homepage, picshare, pinga admin | none | Shared oauth2-proxy |
 | Headscale | OIDC | Careful: existing users and nodes have to move |
-| Headlamp | OIDC | Needs K3s API server OIDC first |
+| Headlamp | none | Retired: Hub shows the cluster |
 | Vaultwarden | SSO | Optional, the master password still does the real work |
 | Joplin, Baikal | none | Stay on local logins. Forward-auth would break sync |
 | Matrix | via MAS | Separate project |

@@ -6,11 +6,8 @@ keep:
 - certificate.yaml
 - cloudflare-secret.sops.yaml
 - cloudflare-secret.sops.yaml.example
-- deployment.yaml
 - issuer.yaml
 - namespace.yaml
-- rbac.yaml
-- service.yaml
 - tailnet-proxy-configmap.yaml
 - tailnet-proxy-deployment.yaml
 kind: kept

@@ -17,12 +17,6 @@ data:
       }
     }
 
-    https://hl.infra.radunenu.com {
-      bind {$TAILNET_IP}
-      tls /certs/tls.crt /certs/tls.key
-      reverse_proxy headlamp.headlamp.svc.cluster.local:80
-    }
-
     # Hub (#169, #170): straight to its pods, so a browser stays on one copy
     # (the cookie) and both copies serve. hub-new is the name it had while
     # Homepage still had this one.

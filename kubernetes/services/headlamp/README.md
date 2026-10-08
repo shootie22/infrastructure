@@ -1,87 +1,48 @@
-# Headlamp
+# Tailnet tools proxy
 
-Headlamp 0.45.0 is private. It has no Ingress or external Service; the previous
-public `hl.radunenu.com` route was removed. The ApplicationSet discovers this
-directory automatically. The Deployment is pinned to Fuji
-(`kubernetes.io/hostname: fuji`); it will stay Pending rather than move to
-another node if Fuji is unavailable.
+This folder used to be Headlamp. Headlamp is retired now that Hub shows the
+cluster, but the proxy that grew up next to it stays here, under the old
+names: the folder, the `headlamp` namespace, the `headlamp-tailnet-proxy`
+DaemonSet and the `headlamp-infra` certificate. Renaming them would mean a new
+namespace, a new certificate and a short gap for every name below, so it
+waits until there's a reason to touch it.
 
-Tailnet HTTPS is served by the existing host-network Caddy proxy bound only to
-Fuji's `100.64.0.1` address. The listener also serves Homepage at
-`hub.infra.radunenu.com`; the historical Headlamp resource names are retained
-to avoid a disruptive proxy migration.
+## What it serves
 
-## Private HTTPS certificate
+A Caddy on fuji and one on the thinkcentre (#149), each on its own node's
+tailnet address, with HTTPS for:
 
-`hl.infra.radunenu.com` and `hub.infra.radunenu.com` resolve to Fuji's tailnet
-address via Headscale split DNS. A namespaced `headlamp-dns01` Issuer obtains a
-browser-trusted certificate without adding public A records or exposing either
-application. cert-manager
-uses a Cloudflare API token to add and remove the public ACME TXT challenge.
-The token must be scoped to the `radunenu.com` zone with `Zone DNS Edit` and
-`Zone Zone Read`, then placed in an encrypted SopsSecret based on
-`cloudflare-secret.sops.yaml.example`. From the repository root, run
-`bash scripts/create-headlamp-cloudflare-secret.sh` to enter the token without
-echoing it or writing plaintext to disk. If `sops` is not installed, run the
-script with `nix shell nixpkgs#sops -c bash scripts/create-headlamp-cloudflare-secret.sh`.
-Never commit a plaintext token. The Issuer and Certificate manifests are
-deployed after the encrypted secret is ready; the Certificate will write
-`headlamp-infra-tls` in the `headlamp` namespace. The host forwards tailnet TCP
-443 to Caddy's internal 8443 listener; Caddy selects Headlamp or Homepage by
-the requested hostname.
+- `hub.infra.radunenu.com` (and `hub-new`, its old name): Hub, straight to
+  its pods with a sticky cookie
+- `ollama.infra.radunenu.com`
+- `sxng.infra.radunenu.com`
 
-## Access over SSH
+The names resolve to the tailnet addresses through `tailnet-dns` and Headscale
+split DNS. Nothing here has a public Ingress or public A records. The host
+forwards tailnet TCP 443 to Caddy's 8443 (dotfiles
+`modules/nixos/tailnet-https.nix`). Caddy notices a changed Caddyfile or
+certificate within 15 seconds and reloads itself.
 
-From a computer that can SSH to Fuji over the private network, run:
+## Certificate
+
+The `headlamp-dns01` Issuer gets a browser-trusted certificate for all of the
+names above with a DNS-01 challenge, so no public records are needed.
+cert-manager uses a Cloudflare API token scoped to the `radunenu.com` zone
+(`Zone DNS Edit` and `Zone Zone Read`), kept in an encrypted SopsSecret based
+on `cloudflare-secret.sops.yaml.example`. To replace the token, run from the
+repository root:
 
 ```sh
-ssh -t -L 4466:127.0.0.1:4466 fuji 'sudo kubectl -n headlamp port-forward --address 127.0.0.1 svc/headlamp 4466:80'
+nix shell nixpkgs#sops -c bash scripts/create-headlamp-cloudflare-secret.sh
 ```
 
-Then open `http://localhost:4466` on that computer. Keep the SSH session open
-while using Headlamp. SSH encrypts the connection to Fuji and the port-forward
-binds only to loopback; no long-lived Kubernetes resource is created. If the
-local port is busy, change the first `4466` after `-L` and use that port in the
-browser. Do not bind the port-forward to `0.0.0.0`.
+It asks for the token without echoing it and never writes it to disk in
+plain text.
 
-## Login and permissions
+## Adding a name
 
-Headlamp requires a Kubernetes bearer token to log in. The server pod runs as
-`headlamp-server`, which has no RoleBinding or ClusterRoleBinding. Never enable
-`-unsafe-use-service-account-token`: it would make
-every visitor use the pod's identity.
-
-The separate `headlamp-viewer` account has the built-in cluster-wide `view`
-role plus read-only access to nodes and namespaces. It cannot read Secrets or
-write workloads. To get a short-lived login token, an administrator can run on
-Fuji (do not paste the token into chat, logs or Git):
-
-```sh
-sudo kubectl -n headlamp create token headlamp-viewer --duration=1h
-```
-
-The browser's token login is the authorization boundary. Keycloak already
-authenticates Grafana, but Headlamp OIDC would also require a Keycloak client,
-callback URL, an encrypted client secret, and K3s API-server OIDC trust.
-Those settings are not declared in this repository. Do not add OIDC to
-Headlamp until the API-server configuration and per-user RBAC are verified.
-
-## Rollout checks
-
-After Git reconciliation, check the `headlamp` Argo application is Synced and
-Healthy. On Fuji, use `sudo kubectl` to check the Deployment and pod, and
-confirm that the Headlamp Ingress has been pruned. Open the local SSH tunnel,
-confirm an anonymous browser gets the token login, then sign in with a
-short-lived viewer token and inspect namespaces, nodes and workloads. Check
-the RBAC boundary without printing any credentials:
-
-```sh
-sudo kubectl auth can-i list pods --all-namespaces --as=system:serviceaccount:headlamp:headlamp-viewer
-sudo kubectl auth can-i list nodes --as=system:serviceaccount:headlamp:headlamp-viewer
-sudo kubectl auth can-i get secrets --all-namespaces --as=system:serviceaccount:headlamp:headlamp-viewer
-sudo kubectl auth can-i create deployments -n default --as=system:serviceaccount:headlamp:headlamp-viewer
-sudo kubectl auth can-i create pods/exec -n default --as=system:serviceaccount:headlamp:headlamp-viewer
-sudo kubectl auth can-i list pods --all-namespaces --as=system:serviceaccount:headlamp:headlamp-server
-```
-
-The first two should return `yes`, and the remaining checks should return `no`.
+Add a site block to `tailnet-proxy-configmap.yaml`, the name to
+`certificate.yaml`, and the name to the `hosts` line in
+`../tailnet-dns/configmap.yaml` (and bump `config-revision` in
+`../tailnet-dns/deployment.yaml`, since that Corefile is only read at start).
+Hub's deploy tool makes these edits itself for services it deploys.

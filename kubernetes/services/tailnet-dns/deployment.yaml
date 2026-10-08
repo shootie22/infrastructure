@@ -12,7 +12,7 @@ spec:
       labels:
         app: tailnet-dns
       annotations:
-        config-revision: "2"
+        config-revision: "3"
     spec:
       # Both API servers, one copy each (#149); Headscale's split DNS lists
       # both tailnet addresses.

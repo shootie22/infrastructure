@@ -6,7 +6,6 @@ metadata:
 spec:
   secretName: headlamp-infra-tls
   dnsNames:
-    - hl.infra.radunenu.com
     - hub.infra.radunenu.com
     - hub-new.infra.radunenu.com
     - ollama.infra.radunenu.com

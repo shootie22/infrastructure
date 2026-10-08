@@ -147,12 +147,6 @@
     },
     {
       "matchPackageNames": [
-        "ghcr.io/headlamp-k8s/headlamp"
-      ],
-      "sourceUrl": "https://github.com/kubernetes-sigs/headlamp"
-    },
-    {
-      "matchPackageNames": [
         "registry.gitlab.com/timvisee/send"
       ],
       "sourceUrl": "https://gitlab.com/timvisee/send"
