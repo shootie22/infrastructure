@@ -62,6 +62,9 @@ spec:
             - {name: HUB_OIDC_ISSUER, value: "https://auth.radunenu.com/realms/infra"}
             - {name: HUB_OIDC_CLIENT_ID, value: hub}
             - {name: HUB_OIDC_CLIENT_SECRET_FILE, value: /secrets/oidc/client-secret}
+            # Read-only keys for the outside checks' history (#178); optional.
+            - {name: HUB_HEALTHCHECKS_KEY_FILE, value: /secrets/outside/healthchecks}
+            - {name: HUB_UPTIMEROBOT_KEY_FILE, value: /secrets/outside/uptimerobot}
             - name: HUB_DATABASE_URL
               valueFrom:
                 secretKeyRef: {name: hub-db-app, key: uri}
@@ -92,10 +95,15 @@ spec:
               drop: ["ALL"]
           volumeMounts:
             - {name: oidc, mountPath: /secrets/oidc, readOnly: true}
+            - {name: outside, mountPath: /secrets/outside, readOnly: true}
       volumes:
         - name: oidc
           secret:
             secretName: hub-oidc
+        - name: outside
+          secret:
+            secretName: hub-outside
+            optional: true
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
