@@ -4,9 +4,12 @@ metadata:
   name: grafana
   namespace: monitoring
 spec:
-  # One in each site (#148), sharing their database, so Grafana is there
-  # whichever site is down. Each one asks the Prometheus in its own site.
-  replicas: 2
+  # Two Grafanas share one database (#148): this one, and grafana-standby
+  # (grafana-standby.yaml) on the other server, so Grafana is there whichever
+  # site is down. Only this one loads the dashboards and datasources from
+  # their files: two doing it at once fought over the database and lost
+  # dashboards. Each asks the Prometheus and Loki in its own site.
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -22,6 +25,7 @@ spec:
         config-revision: "2"
       labels:
         app.kubernetes.io/name: grafana
+        monitoring.radunenu.com/grafana: "true"
     spec:
       affinity:
         nodeAffinity:
@@ -34,7 +38,7 @@ spec:
             - topologyKey: kubernetes.io/hostname
               labelSelector:
                 matchLabels:
-                  app.kubernetes.io/name: grafana
+                  monitoring.radunenu.com/grafana: "true"
       tolerations:
         - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
