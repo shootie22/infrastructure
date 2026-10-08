@@ -1,0 +1,11 @@
+# Adopted by Hub: this service is written by hand. Its files stay as they
+# are and are edited in place; any file in this folder not listed here
+# fails `hub render --check`.
+keep:
+- configmap.yaml
+- deployment.yaml
+- namespace.yaml
+- secret.sops.yaml
+- service.yaml
+kind: kept
+name: searxng

@@ -1,0 +1,11 @@
+# Adopted by Hub: this service is written by hand. Its files stay as they
+# are and are edited in place; any file in this folder not listed here
+# fails `hub render --check`.
+keep:
+- deployment.yaml
+- namespace.yaml
+- networkpolicy.yaml
+- pvc.yaml
+- secret.sops.yaml
+kind: kept
+name: steamhappy
