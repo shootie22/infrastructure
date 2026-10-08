@@ -96,7 +96,10 @@ spec:
             monitoring.radunenu.com/path: /metrics
 
     # Error/slow requests go to stdout and the existing Alloy pod collector.
-    # Keep request evidence out of Prometheus labels and drop all headers.
+    # Keep request evidence out of Prometheus labels. Of the headers only the
+    # User-Agent and Cloudflare's visitor address are kept, with the
+    # visitor's own address, so Hub's traffic page can say who sent what.
+    # Only for these failed or slow requests, and Loki keeps 14 days.
     additionalArguments:
       # A pod that doesn't accept the connection within 2 s counts as gone,
       # and the retry middleware sends the request to another replica (#160).
@@ -121,3 +124,6 @@ spec:
       - --accesslog.fields.names.OriginDuration=keep
       - --accesslog.fields.names.entryPointName=keep
       - --accesslog.fields.names.RetryAttempts=keep
+      - --accesslog.fields.names.ClientHost=keep
+      - --accesslog.fields.headers.names.User-Agent=keep
+      - --accesslog.fields.headers.names.Cf-Connecting-Ip=keep
