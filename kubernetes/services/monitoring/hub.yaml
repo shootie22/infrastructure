@@ -25,6 +25,7 @@ keep:
 - grafana-provisioning-configmap.yaml
 - grafana-secret.sops.yaml
 - grafana-secret.sops.yaml.example
+- grafana-standby.yaml
 - ingress.yaml
 - loki-alloy-configmap.yaml
 - loki-dk.yaml
