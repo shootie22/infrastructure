@@ -20,7 +20,7 @@ rules:
     verbs: ["get", "list"]
   - apiGroups: ["apps"]
     resources: ["deployments"]
-    resourceNames: ["hub", "hub-public"]
+    resourceNames: ["hub", "hub-public", "hub-writer"]
     verbs: ["get", "patch"]
   - apiGroups: ["apps"]
     resources: ["replicasets"]
@@ -79,7 +79,7 @@ spec:
                     "https://git.radunenu.com/v2/$repo/manifests/main" \
                     | tr -d '\r' | awk -F': ' 'tolower($1) == "docker-content-digest" { print $2 }')
                   [ -n "$latest" ] || { echo "no digest from the registry"; exit 1; }
-                  running=$(kubectl get pods -l "app.kubernetes.io/name in (hub,hub-public)" \
+                  running=$(kubectl get pods -l "app.kubernetes.io/name in (hub,hub-public,hub-writer)" \
                     -o jsonpath='{range .items[*]}{.status.containerStatuses[0].imageID}{"\n"}{end}' \
                     | sed -n 's/.*@//p' | sort -u)
                   echo "registry main: $latest"
@@ -89,9 +89,10 @@ spec:
                     exit 0
                   fi
                   echo "new build, restarting"
-                  kubectl rollout restart deployment/hub deployment/hub-public
+                  kubectl rollout restart deployment/hub deployment/hub-public deployment/hub-writer
                   kubectl rollout status deployment/hub --timeout=8m
                   kubectl rollout status deployment/hub-public --timeout=8m
+                  kubectl rollout status deployment/hub-writer --timeout=8m
               resources:
                 requests: {cpu: 10m, memory: 32Mi}
                 limits: {memory: 128Mi}

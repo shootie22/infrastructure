@@ -10,5 +10,6 @@ On the tailnet only, at <https://hub.infra.radunenu.com> (hub-new.infra.radunenu
 - `rbac.yaml`: read-only access to exactly the kinds Hub shows. No Secrets, ConfigMaps, logs or exec. It may only write its own lease.
 - `oidc.sops.yaml`: the Keycloak client secret (`scripts/create-hub-oidc-secret.sh`).
 - `public.yaml`, `public-db.sops.yaml`: hub-public, the incident API on the internet (#181), with a database role that reads two views only. Its Ingress comes once status.radunenu.com is in DNS.
+- `writer.yaml`: hub-writer, which opens the deploy tool's pull requests as the GitHub App (#186). Off until `scripts/create-hub-writer-app.sh <app id> <key.pem>` has written `writer-app.sops.yaml`.
 
 The tailnet entry is in `headlamp/tailnet-proxy-configmap.yaml` (the tools proxy on fuji and the thinkcentre) and `tailnet-dns`.

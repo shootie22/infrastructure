@@ -1,0 +1,151 @@
+# hub-writer (#186): the only part of Hub that can change anything, and all
+# it can do is open pull requests on infrastructure and dotfiles as the
+# GitHub App. No Kubernetes token, no database. It acts only on requests
+# from hub pods that carry my Keycloak token, which it checks itself.
+# Secrets arrive plain and are encrypted here with the public age keys from
+# .sops.yaml; nothing in this pod can decrypt them.
+#
+# Off (replicas 0) until the App exists and scripts/create-hub-writer-app.sh
+# has written writer-app.sops.yaml.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hub-writer
+  namespace: hub
+  annotations:
+    hub.radunenu.com/description: Opens Hub's deploy pull requests as the GitHub App
+spec:
+  replicas: 0
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 0, maxUnavailable: 1}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hub-writer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hub-writer
+    spec:
+      automountServiceAccountToken: false
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: hub-writer
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: hub-writer
+          image: git.radunenu.com/radu/infra-hub:main
+          imagePullPolicy: Always
+          args: [writer]
+          env:
+            - {name: HUB_WRITER_KEY_FILE, value: /secrets/app/private-key.pem}
+            - {name: HUB_WRITER_OWNER, value: shootie22}
+            - {name: HUB_OIDC_ISSUER, value: "https://auth.radunenu.com/realms/infra"}
+            - {name: HUB_OIDC_CLIENT_ID, value: hub}
+            - name: HUB_WRITER_APP_ID
+              valueFrom:
+                secretKeyRef: {name: hub-writer-app, key: app-id}
+          ports:
+            - {name: http, containerPort: 8080}
+          readinessProbe:
+            httpGet: {path: /readyz, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 20
+          lifecycle:
+            preStop:
+              sleep: {seconds: 3}
+          resources:
+            requests: {cpu: 5m, memory: 24Mi}
+            limits: {memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - {name: app, mountPath: /secrets/app, readOnly: true}
+      volumes:
+        - name: app
+          secret:
+            secretName: hub-writer-app
+            items:
+              - {key: private-key.pem, path: private-key.pem}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub-writer
+  namespace: hub
+spec:
+  selector:
+    app.kubernetes.io/name: hub-writer
+  ports:
+    - {name: http, port: 80, targetPort: http}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: hub-writer
+  namespace: hub
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hub-writer
+---
+# In: only from hub pods.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hub-writer-ingress
+  namespace: hub
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: hub-writer
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: hub}
+      ports:
+        - {protocol: TCP, port: 8080}
+---
+# Out: DNS, and HTTPS to GitHub and Keycloak.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hub-writer-egress
+  namespace: hub
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: hub-writer
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+          podSelector:
+            matchLabels: {k8s-app: kube-dns}
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+    - ports:
+        - {protocol: TCP, port: 443}
