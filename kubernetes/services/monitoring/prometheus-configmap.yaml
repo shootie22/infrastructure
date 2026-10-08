@@ -860,6 +860,33 @@ data:
             annotations:
               summary: Element Web doesn't load completely
               description: element-web-check hasn't passed for 30 minutes. Its job logs list the files that failed. Two replicas on different builds is the usual cause; restarting the deployment fixes that.
+          # Scheduled jobs: the latest run of a CronJob failed (or none has
+          # ever succeeded), it isn't running now, and no later run has
+          # fixed it. Old failed Jobs kept in the history don't count, only
+          # the current state.
+          - alert: CronJobFailed
+            expr: |
+              (
+                (kube_cronjob_status_last_schedule_time > kube_cronjob_status_last_successful_time)
+                or
+                (kube_cronjob_status_last_schedule_time unless on (namespace, cronjob) kube_cronjob_status_last_successful_time)
+              )
+              and on (namespace, cronjob) (kube_cronjob_status_active == 0)
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Scheduled job {{ $labels.namespace }}/{{ $labels.cronjob }} failed its last run"
+              description: Its latest run didn't succeed and nothing is running now. The failed Job's pod log says why (kubectl -n {{ $labels.namespace }} get jobs, then logs of the newest one).
+          # Jobs started by hand or by other tools, not by a CronJob.
+          - alert: JobFailed
+            expr: kube_job_status_failed > 0 unless on (namespace, job_name) kube_job_owner{owner_kind="CronJob"}
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Job {{ $labels.namespace }}/{{ $labels.job_name }} failed"
+              description: A one-off Job failed. Read its pod's log, fix and rerun it, or delete the Job once it no longer matters.
           - alert: HACheckerDown
             expr: probe_success{job="ha-checkers"} == 0
             for: 10m

@@ -3,6 +3,10 @@
 # the public URL. Fails if anything isn't a 200. Prometheus alerts when it
 # hasn't passed for 30 minutes (ElementWebBroken). The outside checks only see
 # that the page loads, which it did during the 2026-10-03 incident.
+#
+# A request that times out or gets a 5xx is tried twice more before it
+# counts: one lost packet between minima and the edge failed a whole run on
+# 2026-10-07. A file that's missing (404) still fails at once.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -32,11 +36,11 @@ spec:
                   failed=0
                   for session in 1 2 3; do
                     jar=$(mktemp)
-                    page=$(curl -fsS -m 20 -c "$jar" -b "$jar" "$site/")
+                    page=$(curl -fsS -m 20 --retry 2 --retry-delay 2 -c "$jar" -b "$jar" "$site/")
                     files=$(echo "$page" | grep -oE '(src|href)="[^"]+\.(js|css)"' | sed -E 's/.*="([^"]+)"/\1/')
                     [ -n "$files" ] || { echo "session $session: page references no files"; failed=1; continue; }
                     for f in $files; do
-                      code=$(curl -s -o /dev/null -m 20 -b "$jar" -w '%{http_code}' "$site/$f")
+                      code=$(curl -s -o /dev/null -m 20 --retry 2 --retry-delay 2 -b "$jar" -w '%{http_code}' "$site/$f")
                       [ "$code" = 200 ] || { echo "session $session: $code $f"; failed=1; }
                     done
                     echo "session $session: $(echo "$files" | wc -l) files checked"
