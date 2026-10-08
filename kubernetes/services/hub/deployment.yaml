@@ -65,6 +65,9 @@ spec:
             # Read-only keys for the outside checks' history (#178); optional.
             - {name: HUB_HEALTHCHECKS_KEY_FILE, value: /secrets/outside/healthchecks}
             - {name: HUB_UPTIMEROBOT_KEY_FILE, value: /secrets/outside/uptimerobot}
+            # A read-only GitHub token, so reading the repos isn't held to
+            # GitHub's 60 anonymous calls an hour; optional.
+            - {name: HUB_GITHUB_TOKEN_FILE, value: /secrets/github/token}
             - name: HUB_DATABASE_URL
               valueFrom:
                 secretKeyRef: {name: hub-db-app, key: uri}
@@ -96,6 +99,7 @@ spec:
           volumeMounts:
             - {name: oidc, mountPath: /secrets/oidc, readOnly: true}
             - {name: outside, mountPath: /secrets/outside, readOnly: true}
+            - {name: github, mountPath: /secrets/github, readOnly: true}
       volumes:
         - name: oidc
           secret:
@@ -103,6 +107,10 @@ spec:
         - name: outside
           secret:
             secretName: hub-outside
+            optional: true
+        - name: github
+          secret:
+            secretName: hub-github
             optional: true
 ---
 apiVersion: policy/v1
