@@ -5,6 +5,10 @@ kind: Cluster
 metadata:
   name: hub-db
   namespace: hub
+  annotations:
+    # Changed to make CNPG look at the managed roles again; it gave up on
+    # hub_public before its password secret existed.
+    hub.radunenu.com/roles-recheck: "1"
 spec:
   instances: 2
   imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
