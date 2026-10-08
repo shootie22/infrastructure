@@ -130,3 +130,41 @@ spec:
         - {protocol: TCP, port: 5432}
     - ports:
         - {protocol: TCP, port: 443}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: status-radunenu-com
+  namespace: hub
+spec:
+  secretName: status-radunenu-com-tls
+  dnsNames:
+    - status.radunenu.com
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+---
+# Only /api on the internet; Hub itself stays on the tailnet.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hub-public
+  namespace: hub
+  annotations:
+    radunenu.com/status: hidden
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [status.radunenu.com]
+      secretName: status-radunenu-com-tls
+  rules:
+    - host: status.radunenu.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: hub-public
+                port:
+                  number: 80
