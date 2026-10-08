@@ -1,0 +1,44 @@
+# Adopted by Hub: this service is written by hand. Its files stay as they
+# are and are edited in place; any file in this folder not listed here
+# fails `hub render --check`.
+keep:
+- README.md
+- alertmanager-secret.sops.yaml
+- alertmanager.yaml
+- beyla.yaml
+- dashboard-assessment.md
+- generate-dashboards.py
+- grafana-dashboard-edge-configmap.yaml
+- grafana-dashboard-fleet-overview-configmap.yaml
+- grafana-dashboard-kubernetes-logs-configmap.yaml
+- grafana-dashboard-kubernetes-workloads-configmap.yaml
+- grafana-dashboard-livekit-configmap.yaml
+- grafana-dashboard-logs-configmap.yaml
+- grafana-dashboard-nodes-configmap.yaml
+- grafana-dashboard-observability-stack-configmap.yaml
+- grafana-dashboard-platform-overview-configmap.yaml
+- grafana-dashboard-pod-drilldown-configmap.yaml
+- grafana-dashboard-services-configmap.yaml
+- grafana-dashboard-synapse-configmap.yaml
+- grafana-dashboard-traefik-configmap.yaml
+- grafana-database.yaml
+- grafana-provisioning-configmap.yaml
+- grafana-secret.sops.yaml
+- grafana-secret.sops.yaml.example
+- ingress.yaml
+- loki-alloy-configmap.yaml
+- loki-dk.yaml
+- loki-tailnet-proxy.yaml
+- namespace.yaml
+- observability-design.md
+- prometheus-configmap.yaml
+- prometheus-dk.yaml
+- pvc.yaml
+- rbac.yaml
+- services.yaml
+- status-api-secret.sops.yaml
+- status-api.yaml
+- validate-monitoring.py
+- workloads.yaml
+kind: kept
+name: monitoring

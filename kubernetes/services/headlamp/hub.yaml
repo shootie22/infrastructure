@@ -1,0 +1,17 @@
+# Adopted by Hub: this service is written by hand. Its files stay as they
+# are and are edited in place; any file in this folder not listed here
+# fails `hub render --check`.
+keep:
+- README.md
+- certificate.yaml
+- cloudflare-secret.sops.yaml
+- cloudflare-secret.sops.yaml.example
+- deployment.yaml
+- issuer.yaml
+- namespace.yaml
+- rbac.yaml
+- service.yaml
+- tailnet-proxy-configmap.yaml
+- tailnet-proxy-deployment.yaml
+kind: kept
+name: headlamp

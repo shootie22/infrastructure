@@ -1,0 +1,18 @@
+# Adopted by Hub: this service is written by hand. Its files stay as they
+# are and are edited in place; any file in this folder not listed here
+# fails `hub render --check`.
+keep:
+- README.md
+- database.yaml
+- deployment.yaml
+- namespace.yaml
+- networkpolicy.yaml
+- oidc.sops.yaml
+- public-db.sops.yaml
+- public.yaml
+- rbac.yaml
+- service.yaml
+- updater.yaml
+- writer.yaml
+kind: kept
+name: hub

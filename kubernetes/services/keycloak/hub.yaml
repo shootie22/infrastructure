@@ -1,0 +1,12 @@
+# Adopted by Hub: this service is written by hand. Its files stay as they
+# are and are edited in place; any file in this folder not listed here
+# fails `hub render --check`.
+keep:
+- certificate.yaml
+- database.yaml
+- ingress.yaml
+- keycloak.yaml
+- postgres.yaml
+- secret.sops.yaml
+kind: kept
+name: keycloak
