@@ -1,0 +1,76 @@
+# Throwaway tests for infra-hub #52, removed with hub-test. Each Job tries
+# TCP connections and prints what got through; the results are in Loki.
+# probe-other: any pod that isn't the agent. RCON and the agent must time
+# out; the Kubernetes API is the control that shows the pod's network works.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: probe-other
+  namespace: hub-test
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: probe
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: probe
+          image: docker.io/library/bash:5.3
+          command:
+            - bash
+            - -c
+            - |
+              try() { if timeout 5 bash -c "</dev/tcp/$1/$2" 2>/dev/null; then echo "probe $3 $1:$2 open"; else echo "probe $3 $1:$2 closed"; fi; }
+              try kubernetes.default.svc 443 control
+              try hub-test-rcon 25575 rcon
+              try hub-test-agent 8080 agent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+---
+# probe-as-agent: wears the agent's label, so the server's fence lets it
+# reach RCON. Shows the fence lets the agent in, not just keeps others out.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: probe-as-agent
+  namespace: hub-test
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: hub-test-agent
+        hub.radunenu.com/probe: "true"
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: probe
+          image: docker.io/library/bash:5.3
+          command:
+            - bash
+            - -c
+            - |
+              try() { if timeout 5 bash -c "</dev/tcp/$1/$2" 2>/dev/null; then echo "probe $3 $1:$2 open"; else echo "probe $3 $1:$2 closed"; fi; }
+              try hub-test-rcon 25575 rcon-as-agent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
