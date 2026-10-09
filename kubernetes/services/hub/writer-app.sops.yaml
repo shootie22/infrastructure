@@ -1,0 +1,35 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: hub-writer-app
+    namespace: hub
+spec:
+    secretTemplates:
+        - name: ENC[AES256_GCM,data:TkDilcP9zcKclqnVbGQ=,iv:kcnq/v/1LhrmiTjzh78ricUK9FnPk0vmOVkHm6bJkiQ=,tag:/aHYV5F6J42X9SPHnNdd5Q==,type:str]
+          stringData:
+            app-id: ENC[AES256_GCM,data:xe1mntwG2A==,iv:biBsM/e+Hir838RZQ9FjIataRZuwQO0cgtVhiEe48JE=,tag:YXq155z2fnkqP6AjCDNtTQ==,type:str]
+            private-key.pem: ENC[AES256_GCM,data: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,iv:fHbLrOBG6QtTe6Qcv4dX3yL1fbMk0fXo1i+w48OXoxE=,tag:jz4YL6njsIjvARN6dzcTIQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBjMUFnQnVGYkZKS0hZa21p
+            d3JUQTVFN3VtLzArUmkwYU56dndMdTNPZ3hRCjNkVUw2bXhtT2NZNXZ1OUJEcTZO
+            R01FMFNEclJXMTRqK1htanlWTzNiNTAKLS0tIFBNK1R0QysrM2lRUVN3bE9kcjdx
+            T3d3bUhFbXFHQXJUeXNHdUhtYitoaVUKVWdhI2IAeO0eySkBGfABlz+ngkcPVAyi
+            IJ+m8/7BUnEnGTLM0EU32NsWKt450f+bBoptAQC1yoWSkkv2l3cf2A==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB1UzJ4cHE2N2YvQ1oxOWwx
+            QlVPTWZzMG1jOUFWQVlTM0NRUmNRcDN0bkFBCjhnRzBzeDFVWFlaOTAwSjFTbldE
+            WHZyaE1jbEZJSy9rTWxBVGRYR0diVTgKLS0tIFM2NFRGRitneXgxNm44OVdkZjdW
+            bU9zeGdDb1NoSTJLcnptc2pRdFAwd3cK/q1xuJB4Ax7PoYElHrXgxQF3ndi2GWiF
+            p2Upt/C9DmZFJhCe1eXHlx49f9uD0xTdM5Nl0vPsGMYko4YX71QTbw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
+    encrypted_suffix: Templates
+    lastmodified: "2026-10-09T13:18:54Z"
+    mac: ENC[AES256_GCM,data:r/xxke1eMsMfJKvD8g+2J7fJbECLVxS+Gdw3OLS1+qkk/i077cohkdMnSX1RO8CQJbx51n1gujMX5LTU+iUtpA+O25Kajn+g2TsFb78zBU5edpxnT9RSavUvxOuwGDqnhUnCksn/qY54xbEDOPhC428OrX1VKO91WV3b04wkz7g=,iv:Kmp7v80ePdBduHLEicGegmVdPCM3l+JJBSMeIYATSPA=,tag:hwB+T4jOI+X39b9d5cyFug==,type:str]
+    version: 3.13.3

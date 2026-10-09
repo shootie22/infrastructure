@@ -5,8 +5,8 @@
 # Secrets arrive plain and are encrypted here with the public age keys from
 # .sops.yaml; nothing in this pod can decrypt them.
 #
-# Off (replicas 0) until the App exists and scripts/create-hub-writer-app.sh
-# has written writer-app.sops.yaml.
+# The App's id and key are in writer-app.sops.yaml
+# (scripts/create-hub-writer-app.sh). One copy per site.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,7 +15,7 @@ metadata:
   annotations:
     hub.radunenu.com/description: Opens Hub's deploy pull requests as the GitHub App
 spec:
-  replicas: 0
+  replicas: 2
   strategy:
     type: RollingUpdate
     rollingUpdate: {maxSurge: 0, maxUnavailable: 1}
