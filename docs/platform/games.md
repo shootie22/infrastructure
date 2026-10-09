@@ -1,6 +1,6 @@
 # Hub: games
 
-Agreed on 2026-10-09 ([#193](https://github.com/shootie22/infrastructure/issues/193)). Builds on the deploy tool from [design.md](design.md). The work is in the [Platform 5: Games](https://github.com/shootie22/infrastructure/milestone/19) milestone.
+Agreed on 2026-10-09. Builds on the deploy tool from [design.md](design.md). The work is tracked in Hub's own repo on my Gitea, milestone [Platform 5: Games](https://git.radunenu.com/radu/infra-hub/milestone/8) (private).
 
 I run a few Minecraft servers and want to stop setting them up by hand. Hub gets a Games section: deploy a server (vanilla, modded, a pack from Modrinth, CurseForge or FTB, or my own image), then run it from a panel with a console, files, players and settings. Like everything else here, anything that changes how a server is set up goes through a pull request.
 
