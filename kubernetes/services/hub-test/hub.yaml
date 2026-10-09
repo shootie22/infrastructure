@@ -13,6 +13,14 @@ image: docker.io/itzg/minecraft-server:java25@sha256:46cfd0bcbd9bbd16900a765fcdd
 kind: game
 minecraft:
   build: "132"
+  content:
+  - id: luckperms
+    name: LuckPerms
+    source: modrinth
+    version: b0mk8uS6
+  - name: PlaceholderAPI
+    source: url
+    url: https://api.spiget.org/v2/resources/6245/versions/644618/download/proxy
   eula: true
   memory: 3G
   port: 25566
