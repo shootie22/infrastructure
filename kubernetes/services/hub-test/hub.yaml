@@ -22,7 +22,7 @@ minecraft:
   type: paper
   version: "26.2"
   whitelist:
-  - HubTestOnly
+  - Notch
 name: hub-test
 ports:
 - name: java

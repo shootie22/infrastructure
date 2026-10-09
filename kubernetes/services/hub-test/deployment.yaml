@@ -48,7 +48,7 @@ spec:
             - {name: STOP_DURATION, value: "60"}
             - {name: TYPE, value: "PAPER"}
             - {name: VERSION, value: "26.2"}
-            - {name: WHITELIST, value: "HubTestOnly"}
+            - {name: WHITELIST, value: "Notch"}
           # The game relay on fuji and the edge sends players here
           # (dotfiles modules/nixos/game-relay.nix).
           ports:
