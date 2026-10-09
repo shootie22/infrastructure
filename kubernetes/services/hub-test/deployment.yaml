@@ -30,6 +30,30 @@ spec:
       containers:
         - name: hub-test
           image: docker.io/itzg/minecraft-server:java25@sha256:46cfd0bcbd9bbd16900a765fcdd5d6f57bc0cf3471c383ad96f87e84998d93e8
+          # Once this setup (HUB_SETUP) has started here, start it from what's
+          # in /data without the download sites: no content or list syncing,
+          # and the server jar the last install left (infra-hub #53).
+          command:
+            - /bin/bash
+            - -c
+            - |
+              if [ "$(cat /data/.hub-setup 2>/dev/null)" = "$HUB_SETUP" ]; then
+                unset MODRINTH_PROJECTS PLUGINS MODS WHITELIST OPS
+                case "$TYPE" in
+                  PAPER) f=/data/.paper.env ;;
+                  PURPUR) f=/data/.purpur.env ;;
+                  MODRINTH) f=/data/.install-modrinth.env ;;
+                  AUTO_CURSEFORGE) f=/data/.install-curseforge.env ;;
+                  *) f= ;;
+                esac
+                server=$([ -n "$f" ] && sed -n 's/^SERVER="\(.*\.jar\)"$/\1/p' "$f")
+                if [ -n "$server" ] && [ -f "$server" ]; then
+                  export TYPE=CUSTOM CUSTOM_SERVER="$server"
+                  unset MODRINTH_MODPACK MODRINTH_VERSION CF_SLUG CF_FILE_ID
+                fi
+                echo "[hub] setup $HUB_SETUP started here before; starting from /data"
+              fi
+              exec /image/scripts/start
           env:
             - {name: ENABLE_RCON, value: "true"}
             - {name: ENABLE_ROLLING_LOGS, value: "false"}
@@ -37,10 +61,11 @@ spec:
             - {name: ENFORCE_WHITELIST, value: "true"}
             - {name: EULA, value: "TRUE"}
             - {name: EXISTING_WHITELIST_FILE, value: "SYNCHRONIZE"}
+            - {name: HUB_SETUP, value: "9ff24f56117e"}
             - {name: MEMORY, value: "3G"}
             - {name: MODRINTH_DOWNLOAD_DEPENDENCIES, value: "none"}
             - {name: MODRINTH_PROJECTS, value: "luckperms:b0mk8uS6"}
-            - {name: MOTD, value: "Hub test server, started offline"}
+            - {name: MOTD, value: "Hub test server"}
             - {name: PAPER_BUILD, value: "132"}
             - {name: PLUGINS, value: "https://api.spiget.org/v2/resources/6245/versions/644618/download/proxy"}
             - name: RCON_PASSWORD
@@ -65,9 +90,13 @@ spec:
               protocol: TCP
           # Ready once the server answers a status ping; no liveness probe, so
           # a long first start (a big pack) isn't killed halfway.
+          # Ready also writes down the setup that got this far.
           readinessProbe:
             exec:
-              command: [mc-health]
+              command:
+                - /bin/bash
+                - -c
+                - mc-health && { [ "$(cat /data/.hub-setup 2>/dev/null)" = "$HUB_SETUP" ] || printf %s "$HUB_SETUP" > /data/.hub-setup; }
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5

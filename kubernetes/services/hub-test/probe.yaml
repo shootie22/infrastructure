@@ -5,7 +5,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: probe-other
+  name: probe-other-2
   namespace: hub-test
 spec:
   backoffLimit: 0
@@ -43,7 +43,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: probe-as-agent
+  name: probe-as-agent-2
   namespace: hub-test
 spec:
   backoffLimit: 0
