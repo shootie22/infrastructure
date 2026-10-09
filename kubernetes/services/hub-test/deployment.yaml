@@ -65,7 +65,7 @@ spec:
             - {name: MEMORY, value: "3G"}
             - {name: MODRINTH_DOWNLOAD_DEPENDENCIES, value: "none"}
             - {name: MODRINTH_PROJECTS, value: "luckperms:b0mk8uS6"}
-            - {name: MOTD, value: "Hub test server, restarted offline"}
+            - {name: MOTD, value: "Hub test server"}
             - {name: PAPER_BUILD, value: "132"}
             - {name: PLUGINS, value: "https://api.spiget.org/v2/resources/6245/versions/644618/download/proxy"}
             - name: RCON_PASSWORD

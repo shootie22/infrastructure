@@ -10,9 +10,6 @@ ha:
   home: thinkcentre
   pattern: site-failover
 image: docker.io/itzg/minecraft-server:java25@sha256:46cfd0bcbd9bbd16900a765fcdd5d6f57bc0cf3471c383ad96f87e84998d93e8
-keep:
-- offline.yaml
-- probe.yaml
 kind: game
 minecraft:
   build: "132"
@@ -28,7 +25,7 @@ minecraft:
   memory: 3G
   port: 25566
   properties:
-    motd: Hub test server, restarted offline
+    motd: Hub test server
   running: true
   type: paper
   version: "26.2"
