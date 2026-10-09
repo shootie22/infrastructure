@@ -1,6 +1,6 @@
 # Hub
 
-The home of the setup: the Overview, the map, incidents and the deploy tool. The code is in the private Gitea repo `radu/infra-hub`; the design is [docs/platform/design.md](../../../docs/platform/design.md).
+The home of the setup: the Overview, the map, incidents and the deploy tool. The code is in the private Gitea repo `radu/infra-hub`; the design is [docs/design.md](https://git.radunenu.com/radu/infra-hub/src/branch/main/docs/design.md) there.
 
 On the tailnet only, at <https://hub.infra.radunenu.com> (hub-new.infra.radunenu.com still works too). Login through Keycloak's `infra` realm, client `hub`, client role `admin`.
 

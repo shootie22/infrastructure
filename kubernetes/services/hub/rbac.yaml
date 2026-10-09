@@ -1,4 +1,4 @@
-# Hub reads the cluster and changes nothing in it (docs/platform/design.md,
+# Hub reads the cluster and changes nothing in it (infra-hub docs/design.md,
 # "Where the data comes from"). Exactly the kinds it shows, get/list/watch
 # only: no Secrets, no ConfigMaps, no pod logs (those come from Loki), no
 # exec. The only thing it may write is its own leader lease.
