@@ -2,8 +2,15 @@
 # are and are edited in place; any file in this folder not listed here
 # fails `hub render --check`.
 keep:
+- agent.yaml
 - rcon.sops.yaml
 - secret.sops.yaml
 - staged.yaml
 kind: kept
+minecraft:
+  eula: true
+  memory: ""
+  port: 6767
+  type: spigot
+  version: ""
 name: minecraft-hc

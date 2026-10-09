@@ -1,0 +1,167 @@
+# The game agent (infra-hub #3, #8): Hub's console, status and files for this
+# server. It has the world folder and the RCON password and nothing else:
+# no Kubernetes token, and it only acts on my Keycloak token. It follows
+# the server's failover label, and keeps running while the server is
+# stopped, so the files stay reachable.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minecraft-skyblock-agent
+  namespace: minecraft-skyblock
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: minecraft-skyblock-agent
+  template:
+    metadata:
+      labels:
+        app: minecraft-skyblock-agent
+        app.kubernetes.io/name: game-agent
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        ha.radunenu.com/minecraft-skyblock: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      # The same user the server runs as (root: its image runs as root and
+      # most of its files are root's), with every capability dropped but
+      # reading and writing files whoever owns them.
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: agent
+          # Hub's image, kept current by hub-updater (fast lane).
+          image: git.radunenu.com/radu/infra-hub:main
+          imagePullPolicy: Always
+          args: [game-agent]
+          env:
+            - {name: HUB_AGENT_RCON, value: "minecraft-skyblock-rcon:25575"}
+            - name: RCON_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: minecraft-rcon, key: password}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 5m, memory: 24Mi}
+            limits: {memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+              add: [DAC_OVERRIDE]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          hostPath:
+            path: /srv/ha/minecraft-skyblock
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-skyblock-agent
+  namespace: minecraft-skyblock
+spec:
+  selector:
+    app: minecraft-skyblock-agent
+  ports:
+    - {name: http, port: 8080, targetPort: http, protocol: TCP}
+---
+# The server's RCON, inside the cluster only, for the agent.
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-skyblock-rcon
+  namespace: minecraft-skyblock
+spec:
+  selector:
+    app: minecraft-skyblock
+  ports:
+    - {name: rcon, port: 25575, targetPort: 25575, protocol: TCP}
+---
+# Only Hub's pods reach the agent; the agent reaches the server's RCON, DNS
+# and Keycloak (HTTPS), nothing else.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: minecraft-skyblock-agent
+  namespace: minecraft-skyblock
+spec:
+  podSelector:
+    matchLabels:
+      app: minecraft-skyblock-agent
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: hub}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: hub}
+      ports:
+        - {protocol: TCP, port: 8080}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+          podSelector:
+            matchLabels: {k8s-app: kube-dns}
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+    - to:
+        - podSelector:
+            matchLabels: {app: minecraft-skyblock}
+      ports:
+        - {protocol: TCP, port: 25575}
+    - ports:
+        - {protocol: TCP, port: 443}
+---
+# hub-updater (in hub) restarts this agent when Hub's image moves, and can
+# do nothing else here.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hub-updater
+  namespace: minecraft-skyblock
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["minecraft-skyblock-agent"]
+    verbs: ["get", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hub-updater
+  namespace: minecraft-skyblock
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: hub-updater
+subjects:
+  - kind: ServiceAccount
+    name: hub-updater
+    namespace: hub

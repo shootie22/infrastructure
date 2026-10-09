@@ -2,6 +2,9 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: minecraft-skyblock
+  # Hub reaches the game agent in namespaces with this label (infra-hub #8).
+  labels:
+    hub.radunenu.com/games: "true"
   annotations:
     hub.radunenu.com/description: Minecraft Skyblock server, Java and Bedrock
 ---
