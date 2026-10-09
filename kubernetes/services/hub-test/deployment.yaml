@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hub-test
+  namespace: hub-test
+spec:
+  # Runs on whichever of thinkcentre and fuji holds the label; the other
+  # has a copy of the files and takes over when this site is gone (dotfiles
+  # modules/nixos/site-failover).
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: hub-test
+  template:
+    metadata:
+      labels:
+        app: hub-test
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        ha.radunenu.com/hub-test: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      # The image stops the server over RCON and waits up to a minute for it
+      # to save (STOP_DURATION).
+      terminationGracePeriodSeconds: 90
+      containers:
+        - name: hub-test
+          image: docker.io/itzg/minecraft-server:java25@sha256:46cfd0bcbd9bbd16900a765fcdd5d6f57bc0cf3471c383ad96f87e84998d93e8
+          env:
+            - {name: ENABLE_RCON, value: "true"}
+            - {name: ENABLE_ROLLING_LOGS, value: "false"}
+            - {name: ENABLE_WHITELIST, value: "true"}
+            - {name: ENFORCE_WHITELIST, value: "true"}
+            - {name: EULA, value: "TRUE"}
+            - {name: EXISTING_WHITELIST_FILE, value: "SYNCHRONIZE"}
+            - {name: MEMORY, value: "3G"}
+            - {name: MOTD, value: "Hub test server"}
+            - {name: PAPER_BUILD, value: "132"}
+            - name: RCON_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: hub-test-env, key: RCON_PASSWORD}
+            - {name: RCON_PORT, value: "25575"}
+            - {name: SERVER_PORT, value: "25566"}
+            - {name: STOP_DURATION, value: "60"}
+            - {name: TYPE, value: "PAPER"}
+            - {name: VERSION, value: "26.2"}
+            - {name: WHITELIST, value: "HubTestOnly"}
+          # The game relay on fuji and the edge sends players here
+          # (dotfiles modules/nixos/game-relay.nix).
+          ports:
+            - name: java
+              containerPort: 25566
+              hostPort: 25566
+              protocol: TCP
+            # Inside the pod only: the copies and the game agent use it.
+            - name: rcon
+              containerPort: 25575
+              protocol: TCP
+          # Ready once the server answers a status ping; no liveness probe, so
+          # a long first start (a big pack) isn't killed halfway.
+          readinessProbe:
+            exec:
+              command: [mc-health]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            requests: {cpu: 500m, memory: 3840Mi}
+            limits: {memory: 4608Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          hostPath:
+            path: /srv/ha/hub-test
+            type: Directory

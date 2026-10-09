@@ -1,0 +1,38 @@
+# Written by Hub's deploy tool: the answers this service was deployed with.
+# The other files in this folder are made from it (`hub render`); change
+# this and render again rather than editing them.
+data:
+  kind: files
+  path: /data
+description: Hub test server (Games), removed after testing
+exposure: none
+ha:
+  home: thinkcentre
+  pattern: site-failover
+image: docker.io/itzg/minecraft-server:java25@sha256:46cfd0bcbd9bbd16900a765fcdd5d6f57bc0cf3471c383ad96f87e84998d93e8
+kind: game
+minecraft:
+  build: "132"
+  eula: true
+  memory: 3G
+  port: 25566
+  properties:
+    motd: Hub test server
+  running: true
+  type: paper
+  version: "26.2"
+  whitelist:
+  - HubTestOnly
+name: hub-test
+ports:
+- name: java
+  port: 25566
+  protocol: TCP
+resources:
+  cpu: 500m
+  memory: 3840Mi
+  memoryLimit: 4608Mi
+secrets:
+- generate: true
+  name: RCON_PASSWORD
+statusPage: false

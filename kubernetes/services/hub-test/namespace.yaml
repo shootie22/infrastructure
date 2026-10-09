@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hub-test
+  annotations:
+    hub.radunenu.com/description: "Hub test server (Games), removed after testing"
+  # Hub reaches the game agents in namespaces with this label.
+  labels:
+    hub.radunenu.com/games: "true"
