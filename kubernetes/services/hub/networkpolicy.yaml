@@ -1,8 +1,7 @@
 # Where Hub may connect: DNS, its database, the monitoring stack, the game
-# agents, the
-# Kubernetes API and the checkers and relays on the Nebula mesh, plus HTTPS
-# and DNS out (Keycloak, GitHub, the authoritative nameservers). Nothing else
-# in the cluster.
+# agents, the Kubernetes API and the checkers and relays on the Nebula mesh,
+# plus HTTPS and DNS out (Keycloak, GitHub, the authoritative nameservers).
+# Nothing else in the cluster.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
