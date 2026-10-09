@@ -195,7 +195,32 @@
         "renovate",
         "careful"
       ]
+    },
+    {
+      "description": "Minecraft servers: the Java tag follows the game version (Hub picks it), so only rebuilds of the same tag",
+      "matchPackageNames": [
+        "docker.io/itzg/minecraft-server"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor",
+        "patch"
+      ],
+      "enabled": false
     }
   ],
-  "fetchChangeLogs": "pr"
+  "fetchChangeLogs": "pr",
+  "customManagers": [
+    {
+      "description": "The image line in a hub.yaml Hub renders a service from, so Renovate moves it together with the deployment made from it (hub render --check would fail otherwise)",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^kubernetes/services/[^/]+/hub\\.yaml$/"
+      ],
+      "matchStrings": [
+        "(^|\\n)image: (?<depName>[^:@\\s]+):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ]
 }
