@@ -25,7 +25,7 @@ spec:
         repoURL: https://github.com/shootie22/infrastructure.git
         targetRevision: main
         path: '{{.path.path}}'
-        # hub.yaml is Hub's record of how the folder was made (#183), not a
+        # hub.yaml is Hub's record of how the folder was made (infra-hub #42), not a
         # manifest.
         directory:
           exclude: hub.yaml

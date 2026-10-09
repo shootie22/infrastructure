@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The read-only API keys Hub uses to read the outside checks' history for
-# its incidents (infrastructure #178): healthchecks.io's read-only key and
+# its incidents (infra-hub #37): healthchecks.io's read-only key and
 # UptimeRobot's read-only key. Written encrypted to
 # kubernetes/services/hub/outside.sops.yaml; never in plain text.
 set -euo pipefail

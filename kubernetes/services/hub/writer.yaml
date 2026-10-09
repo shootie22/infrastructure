@@ -1,4 +1,4 @@
-# hub-writer (#186): the only part of Hub that can change anything, and all
+# hub-writer (infra-hub #45): the only part of Hub that can change anything, and all
 # it can do is open pull requests on infrastructure and dotfiles as the
 # GitHub App. No Kubernetes token, no database. It acts only on requests
 # from hub pods that carry my Keycloak token, which it checks itself.

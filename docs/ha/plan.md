@@ -37,7 +37,7 @@ Each phase is a milestone with one issue per step.
 | [6. Failover path](https://github.com/shootie22/infrastructure/milestone/7) | Edge proxy and DNS failover |
 | [7. Failure drills](https://github.com/shootie22/infrastructure/milestone/8) | Break things on purpose, time the recovery |
 
-Running alongside: [Housekeeping](https://github.com/shootie22/infrastructure/milestone/9) (certs, alerts, keys) and the [Infra map](https://github.com/shootie22/infrastructure/milestone/10).
+Running alongside: [Housekeeping](https://github.com/shootie22/infrastructure/milestone/9) (certs, alerts, keys) and the [Infra map](https://git.radunenu.com/radu/infra-hub/milestone/12).
 
 Rough estimate: 4-8 weeks of evenings and weekends. Phase 2 and Phase 3 are the risky ones.
 

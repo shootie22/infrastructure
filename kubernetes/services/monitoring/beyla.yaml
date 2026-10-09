@@ -1,4 +1,4 @@
-# Traffic between workloads, measured in the kernel with eBPF (#52): Beyla,
+# Traffic between workloads, measured in the kernel with eBPF (infra-hub #17): Beyla,
 # Grafana's build of OpenTelemetry's eBPF instrumentation. Network flows
 # only, no application tracing, so it needs no access to other processes:
 # it reads the packets on each node's interfaces and counts bytes per

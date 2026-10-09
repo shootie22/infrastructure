@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Puts the GitHub App that hub-writer acts as (#186) into
+# Puts the GitHub App that hub-writer acts as (infra-hub #45) into
 # kubernetes/services/hub/writer-app.sops.yaml, encrypted: its id and its
 # private key. Usage: scripts/create-hub-writer-app.sh <app id> <key.pem>
 # Delete the downloaded .pem afterwards; this file is the only copy needed.

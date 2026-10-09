@@ -1,6 +1,6 @@
 # Runs on every pull request to main, and the ruleset requires it, so a
 # change Hub opens (or one by hand) can't land with a broken manifest, rule,
-# dashboard or DNS file (#185).
+# dashboard or DNS file (infra-hub #44).
 name: Checks
 
 on:

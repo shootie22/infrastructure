@@ -1,6 +1,6 @@
 # Hub: design
 
-Agreed on 2026-10-07 ([#163](https://github.com/shootie22/infrastructure/issues/163)). The starting point was [brief.md](brief.md). The build is split into the Platform 1-4 milestones, one issue per step.
+Agreed on 2026-10-07 ([infra-hub#22](https://git.radunenu.com/radu/infra-hub/issues/22)). The starting point was [brief.md](brief.md). The build is split into the Platform 1-4 milestones, one issue per step.
 
 Hub lives at `hub.infra.radunenu.com`, on the tailnet only. Its home page is the Overview. It took over from Homepage on 8 Oct.
 
@@ -66,7 +66,7 @@ Hub finds out what exists from the systems themselves. Nothing gets typed into i
 | Hosts | new: a dotfiles module writes each host's facts (site, mesh address, which checkers, relays and failover services it runs) from its own NixOS config as metrics, through node-exporter. Generated from the config, so it can't go out of date. | nothing new |
 | Git | the commit Argo synced for each app, the commit comin deployed on each host, commit details from GitHub | read-only |
 | healthchecks.io, UptimeRobot | their APIs, every minute | read-only keys |
-| Pod to pod traffic | OpenTelemetry's eBPF instrumentation (OBI, which used to be Beyla) through Alloy on every node, into Prometheus ([#52](https://github.com/shootie22/infrastructure/issues/52)) | Alloy already runs on every node |
+| Pod to pod traffic | OpenTelemetry's eBPF instrumentation (OBI, which used to be Beyla) through Alloy on every node, into Prometheus ([infra-hub#17](https://git.radunenu.com/radu/infra-hub/issues/17)) | Alloy already runs on every node |
 
 Rules for showing it:
 
@@ -200,10 +200,10 @@ Limits to check at every milestone: `hub` under 50m CPU and 150 MiB of memory wh
 
 ## Build order
 
-The issues are in the milestones, in this order.
+The issues are in Hub's own repo on my Gitea (private), in these milestones, in this order.
 
-- **[Platform 1: Core](https://github.com/shootie22/infrastructure/milestone/15):** the repo and CI, login and the app shell, the data sources, host facts, snapshots, running it in the cluster, the Overview (and Homepage's retirement). #164-#170.
-- **[Platform 2: Infra map](https://github.com/shootie22/infrastructure/milestone/16):** eBPF flows, the list of every real link and its metrics, a renderer test against the CPU limits, the five levels and following paths, live logs, replay, descriptions. #52, #171-#176.
-- **[Platform 3: Incidents](https://github.com/shootie22/infrastructure/milestone/17):** the relay journals, ingest, grouping and closing, the incident pages, the API and `hub-public`, later the public status page. #177-#182.
-- **[Platform 4: Deploy tool](https://github.com/shootie22/infrastructure/milestone/18):** templates, reading images, PR checks and rulesets, the GitHub App and the writer, form and CLI, following deploys, the DNS applier on fuji, updates and removal, adopting every existing service. #183-#191.
+- **[Platform 1: Core](https://git.radunenu.com/radu/infra-hub/milestone/11):** the repo and CI, login and the app shell, the data sources, host facts, snapshots, running it in the cluster, the Overview (and Homepage's retirement). infra-hub #23-#29.
+- **[Platform 2: Infra map](https://git.radunenu.com/radu/infra-hub/milestone/12):** eBPF flows, the list of every real link and its metrics, a renderer test against the CPU limits, the five levels and following paths, live logs, replay, descriptions. infra-hub #17, #30-#35.
+- **[Platform 3: Incidents](https://git.radunenu.com/radu/infra-hub/milestone/13):** the relay journals, ingest, grouping and closing, the incident pages, the API and `hub-public`, later the public status page. infra-hub #36-#41.
+- **[Platform 4: Deploy tool](https://git.radunenu.com/radu/infra-hub/milestone/14):** templates, reading images, PR checks and rulesets, the GitHub App and the writer, form and CLI, following deploys, the DNS applier on fuji, updates and removal, adopting every existing service. infra-hub #42-#50.
 - **[Platform 5: Games](https://git.radunenu.com/radu/infra-hub/milestone/8):** Minecraft servers from Hub, with a panel: the `minecraft` block and its templates, the game agent, the Games pages, start and stop by PR, packs and plugins, the new-server wizard, then the two servers I have. Designed in [games.md](games.md). Tracked in infra-hub on my Gitea (private), with easy mode and the fit check for every deploy in [Hub: more](https://git.radunenu.com/radu/infra-hub/milestone/9).

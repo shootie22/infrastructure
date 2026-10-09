@@ -17,7 +17,7 @@ data:
       }
     }
 
-    # Hub (#169, #170): straight to its pods, so a browser stays on one copy
+    # Hub (infra-hub #28, #29): straight to its pods, so a browser stays on one copy
     # (the cookie) and both copies serve. hub-new is the name it had while
     # Homepage still had this one.
     https://hub.infra.radunenu.com, https://hub-new.infra.radunenu.com {

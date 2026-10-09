@@ -1,4 +1,4 @@
-# hub-public (#181): the incident API anyone with a token can read, at
+# hub-public (infra-hub #40): the incident API anyone with a token can read, at
 # https://status.radunenu.com/api/v1/incidents. Its own pods, its own
 # database role that can only read two views, no Kubernetes token, no Hub
 # session. Tokens come from Keycloak (realm infra): a client per consumer,
