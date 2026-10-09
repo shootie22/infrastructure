@@ -5,7 +5,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: probe-other-3
+  name: probe-other-4
   namespace: hub-test
 spec:
   backoffLimit: 0
@@ -29,6 +29,8 @@ spec:
             - -c
             - |
               try() { timeout 5 bash -c "</dev/tcp/$1/$2" 2>/dev/null; case $? in 0) r=open;; 124) r="closed (no answer: dropped)";; *) r="closed (refused or no endpoint)";; esac; echo "probe $3 $1:$2 $r"; }
+              # A new pod takes a moment to show up in the policy controller's lists.
+              sleep 30
               try kubernetes.default.svc 443 control
               try hub-test-rcon 25575 rcon
               try hub-test-agent 8080 agent
@@ -43,7 +45,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: probe-as-agent-3
+  name: probe-as-agent-4
   namespace: hub-test
 spec:
   backoffLimit: 0
@@ -68,6 +70,8 @@ spec:
             - -c
             - |
               try() { timeout 5 bash -c "</dev/tcp/$1/$2" 2>/dev/null; case $? in 0) r=open;; 124) r="closed (no answer: dropped)";; *) r="closed (refused or no endpoint)";; esac; echo "probe $3 $1:$2 $r"; }
+              sleep 30
+              for i in 1 2 3 4 5 6; do timeout 5 bash -c "</dev/tcp/hub-test-rcon/25575" 2>/dev/null && break; sleep 5; done
               try hub-test-rcon 25575 rcon-as-agent
           securityContext:
             allowPrivilegeEscalation: false
