@@ -45,6 +45,31 @@ subjects:
     name: hub-updater
     namespace: hub
 ---
+# Which namespaces hold game agents (by their label); each of those has a
+# Role letting this restart its agent and nothing else (made with the
+# server, infra-hub #3).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: hub-updater-namespaces
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: hub-updater-namespaces
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: hub-updater-namespaces
+subjects:
+  - kind: ServiceAccount
+    name: hub-updater
+    namespace: hub
+---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -85,14 +110,26 @@ spec:
                   echo "registry main: $latest"
                   echo "running: $(echo $running)"
                   if [ "$running" = "$latest" ]; then
-                    echo "up to date"
-                    exit 0
+                    echo "Hub up to date"
+                  else
+                    echo "new build, restarting Hub"
+                    kubectl rollout restart deployment/hub deployment/hub-public deployment/hub-writer
+                    kubectl rollout status deployment/hub --timeout=8m
+                    kubectl rollout status deployment/hub-public --timeout=8m
+                    kubectl rollout status deployment/hub-writer --timeout=8m
                   fi
-                  echo "new build, restarting"
-                  kubectl rollout restart deployment/hub deployment/hub-public deployment/hub-writer
-                  kubectl rollout status deployment/hub --timeout=8m
-                  kubectl rollout status deployment/hub-public --timeout=8m
-                  kubectl rollout status deployment/hub-writer --timeout=8m
+                  # The game agents (infra-hub #3) run the same image, one in each
+                  # namespace labelled for games; each is restarted when it runs
+                  # another build. Restarting an agent doesn't touch its server.
+                  for ns in $(kubectl get namespaces -l hub.radunenu.com/games=true -o jsonpath='{.items[*].metadata.name}'); do
+                    agent=$(kubectl -n "$ns" get pods -l app.kubernetes.io/name=game-agent \
+                      -o jsonpath='{range .items[*]}{.status.containerStatuses[0].imageID}{"\n"}{end}' \
+                      | sed -n 's/.*@//p' | sort -u)
+                    if [ -n "$agent" ] && [ "$agent" != "$latest" ]; then
+                      echo "$ns: new build, restarting its agent"
+                      kubectl -n "$ns" rollout restart "deployment/$ns-agent"
+                    fi
+                  done
               resources:
                 requests: {cpu: 10m, memory: 32Mi}
                 limits: {memory: 128Mi}

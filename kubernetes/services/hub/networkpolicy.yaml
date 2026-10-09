@@ -1,4 +1,5 @@
-# Where Hub may connect: DNS, its database, the monitoring stack, the
+# Where Hub may connect: DNS, its database, the monitoring stack, the game
+# agents, the
 # Kubernetes API and the checkers and relays on the Nebula mesh, plus HTTPS
 # and DNS out (Keycloak, GitHub, the authoritative nameservers). Nothing else
 # in the cluster.
@@ -37,6 +38,14 @@ spec:
     - to:
         - podSelector:
             matchLabels: {app.kubernetes.io/name: hub-writer}
+      ports:
+        - {protocol: TCP, port: 8080}
+    # The game agents, one next to each Minecraft server (infra-hub #3).
+    - to:
+        - namespaceSelector:
+            matchLabels: {hub.radunenu.com/games: "true"}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: game-agent}
       ports:
         - {protocol: TCP, port: 8080}
     - to:
