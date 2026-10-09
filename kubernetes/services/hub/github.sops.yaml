@@ -1,0 +1,34 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: hub-github
+    namespace: hub
+spec:
+    secretTemplates:
+        - name: ENC[AES256_GCM,data:fCYYPVmDcZxCxA==,iv:p5h2MbdlpMXg1CP8Sqr6yN1ziRfauo8T4KxaltejLLo=,tag:FjJabJk9mR0q/CId+zckOw==,type:str]
+          stringData:
+            token: ENC[AES256_GCM,data:xZPOIJxkAfhcHnuYOAEkLAZTlAZHqO/3i8s+LUSw4utbZ5rUjI72aQhqAlXxMzbO7CHL7+o/nrTSFMKCGRZVp6JYwYbkO4WNnfyrzSOIHrLpCuw43/DW+LLnoWuc,iv:jkis+t3iJLAPXTsKWvwWXyd6ZrrdWobl3H/k+DhvGmg=,tag:OMC40OXafGJ3Ru7U4Mc1jw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBzcVp1OENmQW9DQ2d6ak5j
+            OEhFY1hMMFJpc1d2YjlQTFhjOG1IdzcyUHdBCloyUUgvOHR5eXh5TElTVzJ5S0c5
+            QTR6dXpvbjh0RDFUQzZBMkcvMFNhVDAKLS0tIERFNTVzN3FXRE56Wkp2Q1pjNmQy
+            dmJQaFJodGVRRG0zUXlqZEdHYnJTSVkKCUmkL6c+OxbSPL0/W45UUtAgIi+AiNyQ
+            nDBX9zQjgKw7kEZJtDwHC36k0Qn1MoFoh5JIwpA/u50A1D6t3nGz5w==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBjSVo5Vi8zM21QcStmZTVv
+            THVQQ1lwSGtScUpZWkpSZzk2VFFGV2YwRlZnClNpNklvaTA2ZW11MTFORjlvR2lm
+            Q3hNVURVY3BCdzYycEVTdzFidzFhNWcKLS0tIFFXUDFwYjFnbWJqRkk5c3orOThL
+            MVlON1VJV2dobm5yaXhpdFFnL1N4RmcKC3fTeRrd5DmZrAcvah39Szvv15oZoRyx
+            qnAbDE6CxtFSSeU19v//2BlEOaDFFuHbKYfsW2j+L0iSyk+RryZcjw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
+    encrypted_suffix: Templates
+    lastmodified: "2026-10-09T13:04:44Z"
+    mac: ENC[AES256_GCM,data:SwrylmYGmtlWdpwBqlEkhuWur4kBcU+A8A6tLK/isnp9h9IDX/fztp0tbNF+rpgi4eySRTB56plH93tTfUb7s79jY80OSNMNDq1qxkeQN5jxY4LmpoWzoz3uyq86+iQCwQ8ZoDWKCaahFT2qxAfJgrDFAAPNN2qNjRYj5ngF28Y=,iv:FgEYVRWL2/fp9FYbzqPdU7dr4xx2JHpIVUYVbqluRLQ=,tag:dTQE8RZ8EBEwK0uA+f1zcA==,type:str]
+    version: 3.13.3

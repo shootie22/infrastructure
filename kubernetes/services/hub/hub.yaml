@@ -5,6 +5,7 @@ keep:
 - README.md
 - database.yaml
 - deployment.yaml
+- github.sops.yaml
 - namespace.yaml
 - networkpolicy.yaml
 - oidc.sops.yaml
