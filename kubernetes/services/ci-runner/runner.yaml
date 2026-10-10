@@ -1,3 +1,12 @@
+[ -c /dev/net/tun ] || { mkdir -p /dev/net && mknod -m 0666 /dev/net/tun c 10 200; }
+# Docker's overlayfs can't sit on the virtiofs-shared volume, so it
+# gets an ext4 disk image there instead, which the VM's kernel mounts.
+[ -e /dev/loop-control ] || mknod /dev/loop-control c 10 237
+[ -b /dev/loop0 ] || mknod /dev/loop0 b 7 0
+truncate -s 28G /disk/docker.img
+losetup /dev/loop0 /disk/docker.img
+mkfs.ext4 -q -F -E lazy_itable_init=1,lazy_journal_init=1 /dev/loop0
+mount /dev/loop0 /home/rootless/.local/share/docker
 # Gitea Actions runner for every repo on git.radunenu.com, friends' included.
 #
 # The runner itself runs no workflow code. For each job it starts a pod in
@@ -158,6 +167,16 @@ data:
                   # The VM's /dev here has no tun device; rootless networking
                   # (slirp4netns) needs one.
                   [ -c /dev/net/tun ] || { mkdir -p /dev/net && mknod -m 0666 /dev/net/tun c 10 200; }
+                  # Docker's overlayfs can't sit on the virtiofs-shared volume,
+                  # so it gets an ext4 disk image there instead, mounted by the
+                  # VM's kernel.
+                  [ -e /dev/loop-control ] || mknod /dev/loop-control c 10 237
+                  [ -b /dev/loop0 ] || mknod /dev/loop0 b 7 0
+                  truncate -s 28G /disk/docker.img
+                  losetup /dev/loop0 /disk/docker.img
+                  mkfs.ext4 -q -F -E lazy_itable_init=1,lazy_journal_init=1 /dev/loop0
+                  mkdir -p /home/rootless/.local/share/docker
+                  mount /dev/loop0 /home/rootless/.local/share/docker
                   chown rootless:rootless /run/user/1000 /home/rootless/.local/share/docker
                   chmod 700 /run/user/1000
                   exec su rootless -s /bin/sh -c 'export HOME=/home/rootless XDG_RUNTIME_DIR=/run/user/1000 PATH=/home/rootless/bin:$PATH; exec dockerd-entrypoint.sh dockerd --host=unix:///run/user/1000/docker.sock'
@@ -174,7 +193,7 @@ data:
                 limits: {cpu: 1500m, memory: 5Gi}
               volumeMounts:
                 - {name: docker-run, mountPath: /run/user/1000}
-                - {name: docker-data, mountPath: /home/rootless/.local/share/docker}
+                - {name: docker-disk, mountPath: /disk}
           containers:
             - name: job
               env:
@@ -190,7 +209,7 @@ data:
             # Inside the VM's memory: the socket the job talks to Docker on.
             - name: docker-run
               emptyDir: {medium: Memory, sizeLimit: 16Mi}
-            - name: docker-data
+            - name: docker-disk
               emptyDir: {sizeLimit: 30Gi}
             - name: workspace
               emptyDir: {sizeLimit: 10Gi}

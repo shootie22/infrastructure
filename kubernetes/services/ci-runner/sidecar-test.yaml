@@ -1,10 +1,19 @@
+[ -c /dev/net/tun ] || { mkdir -p /dev/net && mknod -m 0666 /dev/net/tun c 10 200; }
+# Docker's overlayfs can't sit on the virtiofs-shared volume, so it
+# gets an ext4 disk image there instead, which the VM's kernel mounts.
+[ -e /dev/loop-control ] || mknod /dev/loop-control c 10 237
+[ -b /dev/loop0 ] || mknod /dev/loop0 b 7 0
+truncate -s 28G /disk/docker.img
+losetup /dev/loop0 /disk/docker.img
+mkfs.ext4 -q -F -E lazy_itable_init=1,lazy_journal_init=1 /dev/loop0
+mount /dev/loop0 /home/rootless/.local/share/docker
 # Temporary: the job pod's Docker sidecar on its own, to try changes without
 # restarting the runner. Same pod shape as runner-config's pod_template.
 # Removed once CI jobs run.
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: sidecar-test-1
+  name: sidecar-test-2
   namespace: ci-jobs
 spec:
   backoffLimit: 0
@@ -38,6 +47,13 @@ spec:
               set -e
               chmod u+s "$(command -v newuidmap)" "$(command -v newgidmap)"
               [ -c /dev/net/tun ] || { mkdir -p /dev/net && mknod -m 0666 /dev/net/tun c 10 200; }
+              [ -e /dev/loop-control ] || mknod /dev/loop-control c 10 237
+              [ -b /dev/loop0 ] || mknod /dev/loop0 b 7 0
+              truncate -s 28G /disk/docker.img
+              losetup /dev/loop0 /disk/docker.img
+              mkfs.ext4 -q -F -E lazy_itable_init=1,lazy_journal_init=1 /dev/loop0
+              mkdir -p /home/rootless/.local/share/docker
+              mount /dev/loop0 /home/rootless/.local/share/docker
               chown rootless:rootless /run/user/1000 /home/rootless/.local/share/docker
               chmod 700 /run/user/1000
               exec su rootless -s /bin/sh -c 'export HOME=/home/rootless XDG_RUNTIME_DIR=/run/user/1000 PATH=/home/rootless/bin:$PATH; exec dockerd-entrypoint.sh dockerd --host=unix:///run/user/1000/docker.sock'
@@ -49,7 +65,7 @@ spec:
             limits: {cpu: 1500m, memory: 5Gi}
           volumeMounts:
             - {name: docker-run, mountPath: /run/user/1000}
-            - {name: docker-data, mountPath: /home/rootless/.local/share/docker}
+            - {name: docker-disk, mountPath: /disk}
       containers:
         - name: job
           image: docker.io/library/docker:29.9.0-cli
@@ -75,5 +91,5 @@ spec:
       volumes:
         - name: docker-run
           emptyDir: {medium: Memory, sizeLimit: 16Mi}
-        - name: docker-data
+        - name: docker-disk
           emptyDir: {sizeLimit: 30Gi}
