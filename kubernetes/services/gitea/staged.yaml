@@ -84,14 +84,14 @@ spec:
               valueFrom: {secretKeyRef: {name: gitea-pg-app, key: username}}
             - name: GITEA__database__PASSWD
               valueFrom: {secretKeyRef: {name: gitea-pg-app, key: password}}
-            # SSH for git: Traefik's gitssh entrypoint (2222 on fuji and the
+            # SSH for git: Traefik's gitssh entrypoint (2022 on fuji and the
             # thinkcentre) passes it to the image's own sshd on 22, so Gitea
             # can still move. Its own name, DNS only, since Cloudflare's proxy
             # in front of git.radunenu.com only carries HTTP. The host keys
             # are in /data/ssh and go along with the standby copy.
             - {name: GITEA__server__DISABLE_SSH, value: "false"}
             - {name: GITEA__server__SSH_DOMAIN, value: ssh.git.radunenu.com}
-            - {name: GITEA__server__SSH_PORT, value: "2222"}
+            - {name: GITEA__server__SSH_PORT, value: "2022"}
             # The instance-wide runner registration token, shared with the CI
             # runner (kubernetes/services/ci-runner). Gitea adds it at start.
             - name: GITEA_RUNNER_REGISTRATION_TOKEN

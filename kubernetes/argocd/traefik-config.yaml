@@ -67,8 +67,8 @@ spec:
             readTimeout: 30m
       # Git over SSH, passed on to Gitea's sshd (the gitea-ssh IngressRouteTCP).
       gitssh:
-        port: 2222
-        hostPort: 2222
+        port: 2022
+        hostPort: 2022
         protocol: TCP
         proxyProtocol:
           trustedIPs: [10.99.0.1/32]
