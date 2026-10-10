@@ -92,6 +92,10 @@ spec:
             - {name: GITEA__server__DISABLE_SSH, value: "false"}
             - {name: GITEA__server__SSH_DOMAIN, value: ssh.git.radunenu.com}
             - {name: GITEA__server__SSH_PORT, value: "2022"}
+            # LFS objects over the SSH connection too (git-lfs-transfer), so
+            # they skip Cloudflare's 100 MB upload limit. Over HTTPS they
+            # still go through Cloudflare.
+            - {name: GITEA__server__LFS_ALLOW_PURE_SSH, value: "true"}
             # sshd checks keys against /data/git/.ssh/authorized_keys, which
             # Gitea writes from the database. Write it again at every start:
             # keys added while SSH was off never got in, and after a failover
