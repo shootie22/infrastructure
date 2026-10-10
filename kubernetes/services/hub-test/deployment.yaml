@@ -7,7 +7,8 @@ spec:
   # Runs on whichever of thinkcentre and fuji holds the label; the other
   # has a copy of the files and takes over when this site is gone (dotfiles
   # modules/nixos/site-failover).
-  replicas: 1
+  # Stopped (minecraft.running: false); the world stays where it is.
+  replicas: 0
   strategy:
     type: Recreate
   selector:

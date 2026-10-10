@@ -26,7 +26,7 @@ minecraft:
   port: 25566
   properties:
     motd: Hub test server
-  running: true
+  running: false
   type: paper
   version: "26.2"
   whitelist:
