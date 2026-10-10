@@ -1,0 +1,79 @@
+# Cluster-wide pieces for CI jobs: the Kata runtime they run in, their low
+# priority, and an admission policy so nothing in ci-jobs can run outside a
+# VM or touch a node, even if the runner or its config gets it wrong.
+
+# Pods with this class run in their own VM (dotfiles modules/nixos/kata.nix
+# sets up the `kata` handler on the nodes that have it). The overhead is the
+# VM's base memory (512 MiB) plus QEMU and virtiofsd, so the pod's cgroup,
+# which holds the whole VM, has room for it.
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: kata
+handler: kata
+overhead:
+  podFixed:
+    cpu: 250m
+    memory: 768Mi
+---
+# Below every service (default 0), and never pushes anything else out.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: ci-job
+value: -100
+preemptionPolicy: Never
+globalDefault: false
+description: CI jobs, which wait or get evicted before any service does.
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: ci-jobs-sandboxed
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods", "pods/ephemeralcontainers"]
+  variables:
+    - name: containers
+      expression: >-
+        object.spec.containers
+        + (has(object.spec.initContainers) ? object.spec.initContainers : [])
+        + (has(object.spec.ephemeralContainers) ? object.spec.ephemeralContainers : [])
+  validations:
+    - expression: "has(object.spec.runtimeClassName) && object.spec.runtimeClassName == 'kata'"
+      message: CI pods run in a Kata VM (runtimeClassName kata).
+    - expression: >-
+        !(has(object.spec.hostNetwork) && object.spec.hostNetwork) &&
+        !(has(object.spec.hostPID) && object.spec.hostPID) &&
+        !(has(object.spec.hostIPC) && object.spec.hostIPC) &&
+        !(has(object.spec.hostUsers) && object.spec.hostUsers)
+      message: CI pods share nothing with the node.
+    - expression: "!has(object.spec.volumes) || object.spec.volumes.all(v, !has(v.hostPath))"
+      message: CI pods mount no node paths.
+    - expression: "has(object.spec.automountServiceAccountToken) && object.spec.automountServiceAccountToken == false"
+      message: CI pods get no Kubernetes credentials.
+    - expression: "variables.containers.all(c, !has(c.ports) || c.ports.all(p, !has(p.hostPort)))"
+      message: CI pods open no ports on the node.
+    - expression: >-
+        variables.containers.all(c, c.name == 'docker' ||
+        !has(c.securityContext) || !has(c.securityContext.privileged) || !c.securityContext.privileged)
+      message: Only the docker sidecar is privileged (inside the VM).
+    - expression: "has(object.spec.priorityClassName) && object.spec.priorityClassName == 'ci-job'"
+      message: CI pods run at the ci-job priority.
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: ci-jobs-sandboxed
+spec:
+  policyName: ci-jobs-sandboxed
+  validationActions: [Deny]
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: ci-jobs

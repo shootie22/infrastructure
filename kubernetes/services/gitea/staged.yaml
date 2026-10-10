@@ -89,6 +89,10 @@ spec:
             # one node is what kept Gitea from moving. HTTPS only; SSH could
             # come back as a TCP route through Traefik.
             - {name: GITEA__server__DISABLE_SSH, value: "true"}
+            # The instance-wide runner registration token, shared with the CI
+            # runner (kubernetes/services/ci-runner). Gitea adds it at start.
+            - name: GITEA_RUNNER_REGISTRATION_TOKEN
+              valueFrom: {secretKeyRef: {name: runner-registration, key: token}}
           ports:
             - {name: http, containerPort: 3000}
           volumeMounts:

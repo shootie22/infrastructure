@@ -1,0 +1,34 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: runner-registration
+    namespace: gitea
+spec:
+    secretTemplates:
+        - name: ENC[AES256_GCM,data:JbCju9zacJXP6JMloHqUG0JwcA==,iv:4dajHPR/ebEf2rCQtjIHaR4LCgaTbhvK9QTN6Jw5xEU=,tag:M//ffb0rVY9051CIZbuylA==,type:str]
+          stringData:
+            token: ENC[AES256_GCM,data:kieq8PG0P/E3KUTWqttvikVa5Q4Zv+f2Fgwahz3JfFwR06yS1mcdglk7rUhLy6GjLR7zKgRHU+9NaB85DnJoJg==,iv:BpI650IighNASFmYqHQ9oWOANeS7+HPfpYr9VeOrfys=,tag:G4hxb3/1FcE2WNfhlM7VWg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAwTWMxS2UybUovWW1VSkRk
+            WWVUL2J6SnJjdjZqWVJlTVlyM0h0UlVNWlFjCkV4alVxY2k1UCtiZlM5OVFPZ0JX
+            ZFlCVmhYRldKYTQ1Z1hydEk2R2NyRmcKLS0tIGV1NWVUeStqZ0psbmhHcTN6d2JU
+            cUwxYkJ4UWhqajByQUFMT25TUVNJVG8KHaB9ZO5zqHE1CTmJgsITioc5nBUV2658
+            c4yFBSs8bObwLtxRZhxt9Jt1QZ8OPyVLCWEVAvvDFI5u81+O7875SQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA0dVdUdXlzQlE2TElxNWhj
+            OURXanV3STV4MGNpZWw3MHBvdUpWWnpvTlc0CmlQaGd4dFE1dHh1K1BJVnlDZmFm
+            TkRaaHZReUYwT2hSaXE2WlEvZHlEb2MKLS0tIHpSeXZiRk5zNnppOWE5TWFiOGhk
+            dmdOUmRhdEdEM2YyRTZlZjNxa3NQblkKw3FGxKuVssMvxvD+Ae2SHsUzUqCBLLiH
+            +Rxz/Pvo2jUVh1ICAs3gTc9nCCBN1gdjsZ0CMHWmrGUB3oNkvm4itQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
+    encrypted_suffix: Templates
+    lastmodified: "2026-10-10T07:07:35Z"
+    mac: ENC[AES256_GCM,data:xT1zsqq/tkpSBInVdZR8bnmRrTq7shFfN6ahWAW4WIJ2VbX3TnOajmiiDPKtvngtEscuOk5CGJI2V96MxlYc89xsfU88I9iRtPtB7jHLGVF9+MFNjVSl0hs0p3jaP9lVMspADbOIuA9c9KKEnMlCziHMgVUmgm6rr6/rGeAeyjk=,iv:KWPVkpFFRy0tEvB5F6qHz75R77QIPcyzi+D6dZlPr04=,tag:8+gmkH6Ann9nILQ7VS9R3Q==,type:str]
+    version: 3.13.3

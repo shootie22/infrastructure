@@ -1,0 +1,237 @@
+# Gitea Actions runner for every repo on git.radunenu.com, friends' included.
+#
+# The runner itself runs no workflow code. For each job it starts a pod in
+# ci-jobs (its Kubernetes backend), and that pod runs in its own Kata VM: the
+# job's steps in `job`, and a rootless Docker daemon next to it for image
+# builds. The VM is thrown away when the job ends. The job only ever sees its
+# own job token; the runner's credentials and the registration token stay
+# here, outside the VM.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ci-runner
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+  annotations:
+    hub.radunenu.com/description: Gitea Actions runner, starts each CI job as a pod in its own VM
+---
+# Privileged here only because the Docker sidecar needs it inside its VM;
+# the ci-jobs-sandboxed policy (cluster.yaml) keeps every pod in a VM.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ci-jobs
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/warn: privileged
+  annotations:
+    hub.radunenu.com/description: CI job pods, one Kata VM each
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: runner
+  namespace: ci-runner
+---
+# What the runner's Kubernetes backend needs, in ci-jobs only. No get on
+# secrets: it writes each job's service env and deletes it after.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: runner
+  namespace: ci-jobs
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "get", "list", "delete"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create", "get"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: runner
+  namespace: ci-jobs
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: runner
+subjects:
+  - kind: ServiceAccount
+    name: runner
+    namespace: ci-runner
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: runner-config
+  namespace: ci-runner
+data:
+  config.yaml: |
+    log:
+      level: info
+
+    runner:
+      file: /data/.runner
+      # Jobs at once over all nodes; each node takes one at a time (the
+      # anti-affinity below), the rest wait for a free node.
+      capacity: 1
+      timeout: 3h
+      shutdown_timeout: 30m
+      fetch_interval: 2s
+      labels:
+        - "kata-test:kubernetes://docker.gitea.com/runner-images:ubuntu-latest"
+
+    # Jobs reach the cache through this runner; it keeps each repo's entries
+    # apart, so one repo can't read or plant another's.
+    cache:
+      enabled: true
+      dir: /data/cache
+      port: 8088
+      repo_size_limit: 5GB
+      size_limit: 15GB
+
+    container:
+      force_pull: true
+
+    kubernetes:
+      namespace: ci-jobs
+      pod_template:
+        metadata:
+          labels:
+            app: ci-job
+        spec:
+          runtimeClassName: kata
+          priorityClassName: ci-job
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          # Public resolvers, not cluster DNS: a job learns nothing about
+          # the cluster's services.
+          dnsPolicy: None
+          dnsConfig:
+            nameservers: ["1.1.1.1", "9.9.9.9"]
+          # Gitea through Traefik inside the cluster, not through Cloudflare,
+          # which turns away request bodies over 100 MB (image layers).
+          hostAliases:
+            - ip: "10.43.120.87" # traefik.kube-system
+              hostnames: ["git.radunenu.com"]
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values: ["thinkcentre"]
+            # One CI VM per node at a time.
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - topologyKey: kubernetes.io/hostname
+                  labelSelector:
+                    matchLabels:
+                      app: ci-job
+          initContainers:
+            # Rootless Docker for image builds, as a sidecar. Privileged inside
+            # the VM (for its user namespaces), but the daemon and every
+            # container it starts run as an unprivileged user in the VM.
+            - name: docker
+              image: docker.io/library/docker:29.9.0-dind-rootless@sha256:54155db4950e2f9af3bb829fcfe627030576fc7ae235018be63175fca7326171
+              restartPolicy: Always
+              command: ["dockerd-entrypoint.sh"]
+              args: ["dockerd", "--host=unix:///run/user/1000/docker.sock"]
+              securityContext:
+                privileged: true
+              startupProbe:
+                exec:
+                  command: ["test", "-S", "/run/user/1000/docker.sock"]
+                periodSeconds: 2
+                failureThreshold: 60
+              resources:
+                requests: {cpu: 500m, memory: 1Gi}
+                limits: {cpu: 1500m, memory: 5Gi}
+              volumeMounts:
+                - {name: docker-run, mountPath: /run/user/1000}
+                - {name: docker-data, mountPath: /home/rootless/.local/share/docker}
+          containers:
+            - name: job
+              env:
+                - {name: DOCKER_HOST, value: "unix:///run/user/1000/docker.sock"}
+              securityContext:
+                allowPrivilegeEscalation: false
+              resources:
+                requests: {cpu: 250m, memory: 512Mi}
+                limits: {cpu: 500m, memory: 1536Mi}
+              volumeMounts:
+                - {name: docker-run, mountPath: /run/user/1000}
+          volumes:
+            # Inside the VM's memory: the socket the job talks to Docker on.
+            - name: docker-run
+              emptyDir: {medium: Memory, sizeLimit: 16Mi}
+            - name: docker-data
+              emptyDir: {sizeLimit: 30Gi}
+            - name: workspace
+              emptyDir: {sizeLimit: 10Gi}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: runner
+  namespace: ci-runner
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: ci-runner}
+  template:
+    metadata:
+      labels: {app: ci-runner}
+    spec:
+      serviceAccountName: runner
+      # Keep above runner.shutdown_timeout, so a running job can finish.
+      terminationGracePeriodSeconds: 1900
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: runner
+          image: docker.io/gitea/runner:5.0.0@sha256:328b8dad8de80a19dab6c5c61292c1d624cd3460c25a5c0067e95c11318657ca
+          env:
+            - {name: CONFIG_FILE, value: /config/config.yaml}
+            - {name: GITEA_INSTANCE_URL, value: "http://gitea.gitea.svc"}
+            - {name: GITEA_RUNNER_NAME, value: kubernetes}
+            - {name: HOME, value: /data}
+            - name: GITEA_RUNNER_REGISTRATION_TOKEN
+              valueFrom:
+                secretKeyRef: {name: runner-registration, key: token}
+          ports:
+            - {name: cache, containerPort: 8088}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi, ephemeral-storage: 1Gi}
+            limits: {cpu: "1", memory: 1Gi, ephemeral-storage: 20Gi}
+          volumeMounts:
+            - {name: config, mountPath: /config, readOnly: true}
+            - {name: data, mountPath: /data}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: config
+          configMap: {name: runner-config}
+        # Registration and the cache. Lost when the pod moves: the runner then
+        # registers again (the old entry shows offline in Gitea).
+        - name: data
+          emptyDir: {sizeLimit: 20Gi}
+        - name: tmp
+          emptyDir: {sizeLimit: 1Gi}

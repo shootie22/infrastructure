@@ -2,9 +2,9 @@
 # are and are edited in place; any file in this folder not listed here
 # fails `hub render --check`.
 keep:
-- database.yaml
-- runner-registration.sops.yaml
+- cluster.yaml
+- networkpolicy.yaml
+- runner.yaml
 - secret.sops.yaml
-- staged.yaml
 kind: kept
-name: gitea
+name: ci-runner

@@ -1,0 +1,106 @@
+# CI jobs may reach the public internet, Gitea (through Traefik) and the
+# runner's cache. Nothing else: no cluster services, no nodes, no LAN, no
+# tailnet. Nothing reaches them; the runner talks to them through the
+# Kubernetes API (exec), not the network.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ci-jobs
+  namespace: ci-jobs
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    # The public resolvers in the job pods' dnsConfig.
+    - to:
+        - ipBlock: {cidr: 1.1.1.1/32}
+        - ipBlock: {cidr: 9.9.9.9/32}
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+    # git.radunenu.com, which the pods' hostAliases point at Traefik.
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: traefik}
+      ports:
+        - {protocol: TCP, port: 8443} # websecure behind the Service's 443
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: ci-runner}
+          podSelector:
+            matchLabels: {app: ci-runner}
+      ports:
+        - {protocol: TCP, port: 8088}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 100.64.0.0/10
+              - 169.254.0.0/16
+              - 127.0.0.0/8
+      ports:
+        - {protocol: TCP, port: 443}
+        - {protocol: TCP, port: 80}
+---
+# The runner: Gitea, the Kubernetes API (to start job pods), and the
+# internet (it downloads actions from GitHub). Only job pods reach it, on
+# the cache port.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: runner
+  namespace: ci-runner
+spec:
+  podSelector:
+    matchLabels: {app: ci-runner}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: ci-jobs}
+          podSelector:
+            matchLabels: {app: ci-job}
+      ports:
+        - {protocol: TCP, port: 8088}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+          podSelector:
+            matchLabels: {k8s-app: kube-dns}
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: gitea}
+          podSelector:
+            matchLabels: {app: gitea}
+      ports:
+        - {protocol: TCP, port: 3000}
+    # The API servers on the Nebula addresses (fuji, thinkcentre, edge).
+    - to:
+        - ipBlock: {cidr: 10.99.0.0/24}
+      ports:
+        - {protocol: TCP, port: 6443}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 100.64.0.0/10
+              - 169.254.0.0/16
+              - 127.0.0.0/8
+      ports:
+        - {protocol: TCP, port: 443}
