@@ -33,7 +33,8 @@ spec:
           image: docker.io/itzg/minecraft-server:java25@sha256:46cfd0bcbd9bbd16900a765fcdd5d6f57bc0cf3471c383ad96f87e84998d93e8
           # Once this setup (HUB_SETUP) has started here, start it from what's
           # in /data without the download sites: no content or list syncing,
-          # and the server jar the last install left (infra-hub #53).
+          # and the server jar the last install left (infra-hub #53). A new
+          # setup clears the old mod or plugin jars, so removing one works.
           command:
             - /bin/bash
             - -c
@@ -53,6 +54,10 @@ spec:
                   unset MODRINTH_MODPACK MODRINTH_VERSION CF_SLUG CF_FILE_ID
                 fi
                 echo "[hub] setup $HUB_SETUP started here before; starting from /data"
+              elif [ -n "$HUB_CONTENT_DIR" ] && [ -d "$HUB_CONTENT_DIR" ]; then
+                # A new setup: its jars are exactly the list. The last one's
+                # go first; their folders (settings, data) stay.
+                find "$HUB_CONTENT_DIR" -maxdepth 1 -type f -name '*.jar' -print -delete | sed 's/^/[hub] removed /'
               fi
               exec /image/scripts/start
           env:
@@ -62,6 +67,7 @@ spec:
             - {name: ENFORCE_WHITELIST, value: "true"}
             - {name: EULA, value: "TRUE"}
             - {name: EXISTING_WHITELIST_FILE, value: "SYNCHRONIZE"}
+            - {name: HUB_CONTENT_DIR, value: "/data/plugins"}
             - {name: HUB_SETUP, value: "9ff24f56117e"}
             - {name: MEMORY, value: "3G"}
             - {name: MODRINTH_DOWNLOAD_DEPENDENCIES, value: "none"}
