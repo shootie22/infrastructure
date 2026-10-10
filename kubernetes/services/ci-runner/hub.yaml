@@ -6,5 +6,6 @@ keep:
 - networkpolicy.yaml
 - runner.yaml
 - secret.sops.yaml
+- sidecar-test.yaml
 kind: kept
 name: ci-runner

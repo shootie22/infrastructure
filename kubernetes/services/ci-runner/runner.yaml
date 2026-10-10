@@ -84,7 +84,7 @@ data:
       # anti-affinity below), the rest wait for a free node.
       capacity: 1
       timeout: 3h
-      shutdown_timeout: 30m
+      shutdown_timeout: 10m
       fetch_interval: 2s
       labels:
         - "kata-test:kubernetes://docker.gitea.com/runner-images:ubuntu-latest"
@@ -155,6 +155,9 @@ data:
                 - |
                   set -e
                   chmod u+s "$(command -v newuidmap)" "$(command -v newgidmap)"
+                  # The VM's /dev here has no tun device; rootless networking
+                  # (slirp4netns) needs one.
+                  [ -c /dev/net/tun ] || { mkdir -p /dev/net && mknod -m 0666 /dev/net/tun c 10 200; }
                   chown rootless:rootless /run/user/1000 /home/rootless/.local/share/docker
                   chmod 700 /run/user/1000
                   exec su rootless -s /bin/sh -c 'export HOME=/home/rootless XDG_RUNTIME_DIR=/run/user/1000 PATH=/home/rootless/bin:$PATH; exec dockerd-entrypoint.sh dockerd --host=unix:///run/user/1000/docker.sock'
@@ -206,11 +209,11 @@ spec:
     metadata:
       labels: {app: ci-runner}
       # Bump when runner-config changes, so the runner restarts with it.
-      annotations: {config: "2"}
+      annotations: {config: "3"}
     spec:
       serviceAccountName: runner
       # Keep above runner.shutdown_timeout, so a running job can finish.
-      terminationGracePeriodSeconds: 1900
+      terminationGracePeriodSeconds: 660
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
