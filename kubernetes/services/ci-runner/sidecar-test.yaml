@@ -4,7 +4,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: sidecar-test-4
+  name: sidecar-test-5
   namespace: ci-jobs
 spec:
   backoffLimit: 0
@@ -29,7 +29,7 @@ spec:
         kubernetes.io/hostname: thinkcentre
       initContainers:
         - name: format
-          image: docker.io/library/debian:trixie-slim@sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f
+          image: docker.io/library/ubuntu:24.04@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55
           command: ["sh", "-c", "truncate -s 28G /disk/docker.img && mkfs.ext4 -q -F -E lazy_itable_init=1,lazy_journal_init=1 /disk/docker.img"]
           volumeMounts:
             - {name: docker-disk, mountPath: /disk}
