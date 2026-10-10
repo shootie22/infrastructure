@@ -204,9 +204,24 @@ data:
         # One job, then it exits and the pod (and VM) ends.
         - name: runner
           image: docker.io/gitea/runner:5.0.0@sha256:328b8dad8de80a19dab6c5c61292c1d624cd3460c25a5c0067e95c11318657ca
-          command: ["sh", "-c", "install -m 0600 /run/runner/runner /data/.runner && cd /data && exec gitea-runner daemon --once --config /config/config.yaml"]
+          # The .runner file and the config come in as variables, not
+          # volumes: Kata syncs Secret and ConfigMap volumes into the VM with
+          # a watcher, which doesn't work with QEMU running rootless.
+          command:
+            - sh
+            - -c
+            - |
+              umask 077
+              printf '%s' "$RUNNER_FILE" > /data/.runner
+              printf '%s' "$RUNNER_CONFIG" > /data/config.yaml
+              unset RUNNER_FILE
+              cd /data && exec gitea-runner daemon --once --config /data/config.yaml
           env:
             - {name: HOME, value: /data}
+            - name: RUNNER_FILE
+              valueFrom: {secretKeyRef: {name: __NAME__, key: runner}}
+            - name: RUNNER_CONFIG
+              valueFrom: {configMapKeyRef: {name: job-runner, key: config.yaml}}
             - {name: DOCKER_HOST, value: "unix:///run/user/1000/docker.sock"}
           securityContext:
             runAsUser: 1000
@@ -218,8 +233,6 @@ data:
             limits: {cpu: 500m, memory: 512Mi}
           volumeMounts:
             - {name: docker-run, mountPath: /run/user/1000}
-            - {name: runner, mountPath: /run/runner, readOnly: true}
-            - {name: config, mountPath: /config, readOnly: true}
             - {name: data, mountPath: /data}
       volumes:
         # Inside the VM's memory: the Docker socket.
@@ -229,10 +242,6 @@ data:
           emptyDir: {sizeLimit: 30Gi}
         - name: data
           emptyDir: {sizeLimit: 2Gi}
-        - name: runner
-          secret: {secretName: __NAME__, defaultMode: 0444, optional: true}
-        - name: config
-          configMap: {name: job-runner}
 ---
 # The runner inside each job VM.
 apiVersion: v1
@@ -273,7 +282,7 @@ spec:
     metadata:
       labels: {app: ci-dispatcher}
       # Bump when the dispatcher ConfigMap changes.
-      annotations: {config: "3"}
+      annotations: {config: "4"}
     spec:
       serviceAccountName: dispatcher
       enableServiceLinks: false
