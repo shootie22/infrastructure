@@ -78,9 +78,9 @@ data:
   # One line per node: node, its runs-on labels, and the Docker sidecar's
   # CPU and memory limit (the job runs there).
   slots: |
-    thinkcentre kata-test:docker://docker.gitea.com/runner-images:ubuntu-latest 2 6Gi
-    fuji kata-test-fuji:docker://docker.gitea.com/runner-images:ubuntu-latest 2 6Gi
-    mixi kata-test-mixi:docker://docker.gitea.com/runner-images:ubuntu-latest 3 2560Mi
+    thinkcentre linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-thinkcentre:docker://docker.gitea.com/runner-images:ubuntu-latest 2 6Gi
+    fuji linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-fuji:docker://docker.gitea.com/runner-images:ubuntu-latest 2 6Gi
+    mixi linux-arm64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-arm64-mixi:docker://docker.gitea.com/runner-images:ubuntu-latest 3 2560Mi
 
   register.yaml: |
     runner:
