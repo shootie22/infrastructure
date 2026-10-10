@@ -79,6 +79,8 @@ data:
   # CPU and memory limit (the job runs there).
   slots: |
     thinkcentre kata-test:docker://docker.gitea.com/runner-images:ubuntu-latest 2 6Gi
+    fuji kata-test-fuji:docker://docker.gitea.com/runner-images:ubuntu-latest 2 6Gi
+    mixi kata-test-mixi:docker://docker.gitea.com/runner-images:ubuntu-latest 3 2560Mi
 
   register.yaml: |
     runner:
