@@ -92,6 +92,12 @@ spec:
             - {name: GITEA__server__DISABLE_SSH, value: "false"}
             - {name: GITEA__server__SSH_DOMAIN, value: ssh.git.radunenu.com}
             - {name: GITEA__server__SSH_PORT, value: "2022"}
+            # sshd checks keys against /data/git/.ssh/authorized_keys, which
+            # Gitea writes from the database. Write it again at every start:
+            # keys added while SSH was off never got in, and after a failover
+            # the standby copy can be older than the database (CNPG).
+            - {name: GITEA__cron_0X2E_resync_all_sshkeys__ENABLED, value: "true"}
+            - {name: GITEA__cron_0X2E_resync_all_sshkeys__RUN_AT_START, value: "true"}
             # The instance-wide runner registration token, shared with the CI
             # runner (kubernetes/services/ci-runner). Gitea adds it at start.
             - name: GITEA_RUNNER_REGISTRATION_TOKEN
