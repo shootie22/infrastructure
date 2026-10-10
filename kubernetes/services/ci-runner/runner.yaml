@@ -1,11 +1,18 @@
-# Gitea Actions runner for every repo on git.radunenu.com, friends' included.
+# Gitea Actions runners for every repo on git.radunenu.com, friends' included.
 #
-# The runner itself runs no workflow code. For each job it starts a pod in
-# ci-jobs (its Kubernetes backend), and that pod runs in its own Kata VM: the
-# job's steps in `job`, and a rootless Docker daemon next to it for image
-# builds. The VM is thrown away when the job ends. The job only ever sees its
-# own job token; the runner's credentials and the registration token stay
-# here, outside the VM.
+# Each CI job runs in its own Kata VM (a pod in ci-jobs): a Gitea runner that
+# takes exactly one job, a rootless Docker daemon it runs the job in, and
+# nothing else. When the job ends the pod ends, and the VM with it.
+#
+# The dispatcher here keeps one such pod waiting per node. It holds the
+# registration token and registers an ephemeral runner for each pod; the pod
+# only gets the resulting .runner file, whose credentials Gitea revokes as
+# soon as a job is assigned. So nothing in a VM can register runners or pick
+# up other jobs. The dispatcher runs no workflow code.
+#
+# (The runner's own Kubernetes backend would be simpler, but it runs steps
+# through `kubectl exec` with stdin, and with Kata the output after the first
+# write gets lost.)
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -13,7 +20,7 @@ metadata:
   labels:
     pod-security.kubernetes.io/enforce: restricted
   annotations:
-    hub.radunenu.com/description: Gitea Actions runner, starts each CI job as a pod in its own VM
+    hub.radunenu.com/description: Starts a Kata VM per CI job, each with a one-job Gitea runner
 ---
 # Privileged here only because the Docker sidecar needs it inside its VM;
 # the ci-jobs-sandboxed policy (cluster.yaml) keeps every pod in a VM.
@@ -30,26 +37,20 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: runner
+  name: dispatcher
   namespace: ci-runner
 ---
-# What the runner's Kubernetes backend needs, in ci-jobs only. No get on
-# secrets: it writes each job's service env and deletes it after.
+# Starts and removes job pods and their .runner Secrets, in ci-jobs only. It
+# can't read Secrets back or exec into pods.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: runner
+  name: dispatcher
   namespace: ci-jobs
 rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["create", "get", "list", "delete"]
-  - apiGroups: [""]
-    resources: ["pods/exec"]
-    verbs: ["create", "get"]
-  - apiGroups: [""]
-    resources: ["pods/log"]
-    verbs: ["get"]
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["create", "delete"]
@@ -57,215 +58,253 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: runner
+  name: dispatcher
   namespace: ci-jobs
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: runner
+  name: dispatcher
 subjects:
   - kind: ServiceAccount
-    name: runner
+    name: dispatcher
     namespace: ci-runner
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: runner-config
+  name: dispatcher
   namespace: ci-runner
+data:
+  # One line per node: node, its runs-on labels, and the Docker sidecar's
+  # CPU and memory limit (the job runs there).
+  slots: |
+    thinkcentre kata-test:docker://docker.gitea.com/runner-images:ubuntu-latest 2 6Gi
+
+  register.yaml: |
+    runner:
+      file: /work/.runner
+
+  dispatch.sh: |
+    set -u
+    K=/opt/kubectl/bin/kubectl
+    ns=ci-jobs
+    while true; do
+      while read -r node labels cpu mem; do
+        [ -n "$node" ] || continue
+        name="ci-$node"
+        phase=$($K -n $ns get pod "$name" -o jsonpath='{.status.phase}' 2>/dev/null)
+        case "$phase" in
+          Pending|Running) continue ;;
+          Succeeded) $K -n $ns delete pod "$name" --wait=true ;;
+          Failed)
+            echo "$name failed, starting a new one in a minute"
+            $K -n $ns delete pod "$name" --wait=true
+            sleep 60 ;;
+        esac
+        $K -n $ns delete secret "$name" --ignore-not-found >/dev/null
+        rm -f /work/.runner
+        if ! gitea-runner register --no-interactive --ephemeral \
+            --config /etc/dispatcher/register.yaml --instance https://git.radunenu.com \
+            --token-file /secrets/token --name "$name" --labels "$labels" >/dev/null; then
+          echo "registering $name failed"; sleep 30; continue
+        fi
+        $K -n $ns create secret generic "$name" --from-file=runner=/work/.runner >/dev/null
+        rm -f /work/.runner
+        sed -e "s/__NAME__/$name/g" -e "s/__NODE__/$node/g" -e "s/__CPU__/$cpu/g" -e "s/__MEM__/$mem/g" \
+          /etc/dispatcher/job-pod.yaml | $K -n $ns create -f - >/dev/null && echo "$name waiting for a job"
+      done < /etc/dispatcher/slots
+      sleep 10
+    done
+
+  job-pod.yaml: |
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: __NAME__
+      labels: {app: ci-job}
+    spec:
+      restartPolicy: Never
+      runtimeClassName: kata
+      priorityClassName: ci-job
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      # Public resolvers, not cluster DNS: a job learns nothing about the
+      # cluster's services.
+      dnsPolicy: None
+      dnsConfig:
+        nameservers: ["1.1.1.1", "9.9.9.9"]
+      # Gitea through Traefik inside the cluster, not through Cloudflare,
+      # which turns away request bodies over 100 MB (image layers).
+      hostAliases:
+        - ip: "10.43.120.87" # traefik.kube-system
+          hostnames: ["git.radunenu.com"]
+      nodeSelector:
+        kubernetes.io/hostname: __NODE__
+      initContainers:
+        # Docker's overlayfs can't sit on the virtiofs-shared volume, so it
+        # gets an ext4 disk image there instead, which the VM's kernel
+        # mounts. Ubuntu's image has mkfs; Docker's don't.
+        - name: format
+          image: docker.io/library/ubuntu:24.04@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55
+          command: ["sh", "-c", "truncate -s 28G /disk/docker.img && mkfs.ext4 -q -F -E lazy_itable_init=1,lazy_journal_init=1 /disk/docker.img"]
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - {name: docker-disk, mountPath: /disk}
+        # Rootless Docker, which the runner runs the job in. Privileged
+        # inside the VM (for its user namespaces), but the daemon and every
+        # container it starts run as an unprivileged user in the VM.
+        # Kata shares image files over virtiofs, which drops file
+        # capabilities, so root gives newuidmap/newgidmap the setuid bit
+        # instead, sets up the devices the VM's /dev lacks, mounts the disk,
+        # then hands over to the rootless user for good.
+        - name: docker
+          image: docker.io/library/docker:29.9.0-dind-rootless@sha256:54155db4950e2f9af3bb829fcfe627030576fc7ae235018be63175fca7326171
+          restartPolicy: Always
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              chmod u+s "$(command -v newuidmap)" "$(command -v newgidmap)"
+              [ -c /dev/net/tun ] || { mkdir -p /dev/net && mknod -m 0666 /dev/net/tun c 10 200; }
+              [ -e /dev/loop-control ] || mknod /dev/loop-control c 10 237
+              [ -b /dev/loop0 ] || mknod /dev/loop0 b 7 0
+              losetup /dev/loop0 /disk/docker.img
+              mkdir -p /home/rootless/.local/share/docker
+              mount -t ext4 /dev/loop0 /home/rootless/.local/share/docker
+              chown rootless:rootless /run/user/1000 /home/rootless/.local/share/docker
+              chmod 700 /run/user/1000
+              exec su rootless -s /bin/sh -c 'export HOME=/home/rootless XDG_RUNTIME_DIR=/run/user/1000 PATH=/home/rootless/bin:$PATH; exec dockerd-entrypoint.sh dockerd --host=unix:///run/user/1000/docker.sock'
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          startupProbe:
+            exec:
+              command: ["test", "-S", "/run/user/1000/docker.sock"]
+            periodSeconds: 2
+            failureThreshold: 60
+          resources:
+            requests: {cpu: 250m, memory: 1Gi}
+            limits: {cpu: "__CPU__", memory: __MEM__}
+          volumeMounts:
+            - {name: docker-run, mountPath: /run/user/1000}
+            - {name: docker-disk, mountPath: /disk}
+      containers:
+        # One job, then it exits and the pod (and VM) ends.
+        - name: runner
+          image: docker.io/gitea/runner:5.0.0@sha256:328b8dad8de80a19dab6c5c61292c1d624cd3460c25a5c0067e95c11318657ca
+          command: ["sh", "-c", "install -m 0600 /run/runner/runner /data/.runner && cd /data && exec gitea-runner daemon --once --config /config/config.yaml"]
+          env:
+            - {name: HOME, value: /data}
+            - {name: DOCKER_HOST, value: "unix:///run/user/1000/docker.sock"}
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          volumeMounts:
+            - {name: docker-run, mountPath: /run/user/1000}
+            - {name: runner, mountPath: /run/runner, readOnly: true}
+            - {name: config, mountPath: /config, readOnly: true}
+            - {name: data, mountPath: /data}
+      volumes:
+        # Inside the VM's memory: the Docker socket.
+        - name: docker-run
+          emptyDir: {medium: Memory, sizeLimit: 16Mi}
+        - name: docker-disk
+          emptyDir: {sizeLimit: 30Gi}
+        - name: data
+          emptyDir: {sizeLimit: 2Gi}
+        - name: runner
+          secret: {secretName: __NAME__, defaultMode: 0444}
+        - name: config
+          configMap: {name: job-runner}
+---
+# The runner inside each job VM.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: job-runner
+  namespace: ci-jobs
 data:
   config.yaml: |
     log:
       level: info
-
     runner:
       file: /data/.runner
-      # Jobs at once over all nodes; each node takes one at a time (the
-      # anti-affinity below), the rest wait for a free node.
       capacity: 1
       timeout: 3h
-      shutdown_timeout: 10m
-      fetch_interval: 2s
-      labels:
-        - "kata-test:kubernetes://docker.gitea.com/runner-images:ubuntu-latest"
-
-    # Jobs reach the cache through this runner; it keeps each repo's entries
-    # apart, so one repo can't read or plant another's.
+    # Only this VM's cache: empty for every job, shared with nothing.
     cache:
       enabled: true
       dir: /data/cache
-      port: 8088
-      repo_size_limit: 5GB
-      size_limit: 15GB
-
     container:
-      force_pull: true
-
-    kubernetes:
-      namespace: ci-jobs
-      pod_template:
-        metadata:
-          labels:
-            app: ci-job
-        spec:
-          runtimeClassName: kata
-          priorityClassName: ci-job
-          automountServiceAccountToken: false
-          enableServiceLinks: false
-          # Public resolvers, not cluster DNS: a job learns nothing about
-          # the cluster's services.
-          dnsPolicy: None
-          dnsConfig:
-            nameservers: ["1.1.1.1", "9.9.9.9"]
-          # Gitea through Traefik inside the cluster, not through Cloudflare,
-          # which turns away request bodies over 100 MB (image layers).
-          hostAliases:
-            - ip: "10.43.120.87" # traefik.kube-system
-              hostnames: ["git.radunenu.com"]
-          affinity:
-            nodeAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                nodeSelectorTerms:
-                  - matchExpressions:
-                      - key: kubernetes.io/hostname
-                        operator: In
-                        values: ["thinkcentre"]
-            # One CI VM per node at a time.
-            podAntiAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - topologyKey: kubernetes.io/hostname
-                  labelSelector:
-                    matchLabels:
-                      app: ci-job
-          initContainers:
-            # Docker's overlayfs can't sit on the virtiofs-shared volume, so
-            # it gets an ext4 disk image there instead, which the VM's kernel
-            # mounts. Ubuntu's image has mkfs; Docker's don't.
-            - name: format
-              image: docker.io/library/ubuntu:24.04@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55
-              command: ["sh", "-c", "truncate -s 28G /disk/docker.img && mkfs.ext4 -q -F -E lazy_itable_init=1,lazy_journal_init=1 /disk/docker.img"]
-              securityContext:
-                allowPrivilegeEscalation: false
-              volumeMounts:
-                - {name: docker-disk, mountPath: /disk}
-            # Rootless Docker for image builds, as a sidecar. Privileged inside
-            # the VM (for its user namespaces), but the daemon and every
-            # container it starts run as an unprivileged user in the VM.
-            #
-            # Kata shares image files into the VM over virtiofs, which drops
-            # file capabilities, so newuidmap/newgidmap lose theirs. Root in
-            # the sidecar gives them the setuid bit instead (that survives),
-            # then hands over to the rootless user for good.
-            - name: docker
-              image: docker.io/library/docker:29.9.0-dind-rootless@sha256:54155db4950e2f9af3bb829fcfe627030576fc7ae235018be63175fca7326171
-              restartPolicy: Always
-              command:
-                - sh
-                - -c
-                - |
-                  set -e
-                  chmod u+s "$(command -v newuidmap)" "$(command -v newgidmap)"
-                  # The VM's /dev here has no tun device; rootless networking
-                  # (slirp4netns) needs one.
-                  [ -c /dev/net/tun ] || { mkdir -p /dev/net && mknod -m 0666 /dev/net/tun c 10 200; }
-                  # The disk image from `format`, through the VM's loop device.
-                  [ -e /dev/loop-control ] || mknod /dev/loop-control c 10 237
-                  [ -b /dev/loop0 ] || mknod /dev/loop0 b 7 0
-                  losetup /dev/loop0 /disk/docker.img
-                  mkdir -p /home/rootless/.local/share/docker
-                  mount -t ext4 /dev/loop0 /home/rootless/.local/share/docker
-                  chown rootless:rootless /run/user/1000 /home/rootless/.local/share/docker
-                  chmod 700 /run/user/1000
-                  exec su rootless -s /bin/sh -c 'export HOME=/home/rootless XDG_RUNTIME_DIR=/run/user/1000 PATH=/home/rootless/bin:$PATH; exec dockerd-entrypoint.sh dockerd --host=unix:///run/user/1000/docker.sock'
-              securityContext:
-                privileged: true
-                runAsUser: 0
-              startupProbe:
-                exec:
-                  command: ["test", "-S", "/run/user/1000/docker.sock"]
-                periodSeconds: 2
-                failureThreshold: 60
-              resources:
-                requests: {cpu: 500m, memory: 1Gi}
-                limits: {cpu: 1500m, memory: 5Gi}
-              volumeMounts:
-                - {name: docker-run, mountPath: /run/user/1000}
-                - {name: docker-disk, mountPath: /disk}
-          containers:
-            - name: job
-              env:
-                - {name: DOCKER_HOST, value: "unix:///run/user/1000/docker.sock"}
-              securityContext:
-                allowPrivilegeEscalation: false
-              resources:
-                requests: {cpu: 250m, memory: 512Mi}
-                limits: {cpu: 500m, memory: 1536Mi}
-              volumeMounts:
-                - {name: docker-run, mountPath: /run/user/1000}
-          volumes:
-            # Inside the VM's memory: the socket the job talks to Docker on.
-            - name: docker-run
-              emptyDir: {medium: Memory, sizeLimit: 16Mi}
-            - name: docker-disk
-              emptyDir: {sizeLimit: 30Gi}
-            - name: workspace
-              emptyDir: {sizeLimit: 10Gi}
+      docker_host: unix:///run/user/1000/docker.sock
+      privileged: false
+      valid_volumes: []
+      # Job containers get Docker's /etc/hosts, not the pod's.
+      options: --add-host=git.radunenu.com:10.43.120.87
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: runner
+  name: dispatcher
   namespace: ci-runner
 spec:
   replicas: 1
   strategy: {type: Recreate}
   selector:
-    matchLabels: {app: ci-runner}
+    matchLabels: {app: ci-dispatcher}
   template:
     metadata:
-      labels: {app: ci-runner}
-      # Bump when runner-config changes, so the runner restarts with it.
-      annotations: {config: "4"}
+      labels: {app: ci-dispatcher}
+      # Bump when the dispatcher ConfigMap changes.
+      annotations: {config: "1"}
     spec:
-      serviceAccountName: runner
-      # Keep above runner.shutdown_timeout, so a running job can finish.
-      terminationGracePeriodSeconds: 660
+      serviceAccountName: dispatcher
+      enableServiceLinks: false
+      hostAliases:
+        - ip: "10.43.120.87" # traefik.kube-system
+          hostnames: ["git.radunenu.com"]
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
-        fsGroup: 1000
         seccompProfile: {type: RuntimeDefault}
       containers:
-        - name: runner
+        - name: dispatcher
           image: docker.io/gitea/runner:5.0.0@sha256:328b8dad8de80a19dab6c5c61292c1d624cd3460c25a5c0067e95c11318657ca
+          command: ["bash", "/etc/dispatcher/dispatch.sh"]
           env:
-            - {name: CONFIG_FILE, value: /config/config.yaml}
-            - {name: GITEA_INSTANCE_URL, value: "http://gitea.gitea.svc"}
-            - {name: GITEA_RUNNER_NAME, value: kubernetes}
-            - {name: HOME, value: /data}
-            - name: GITEA_RUNNER_REGISTRATION_TOKEN
-              valueFrom:
-                secretKeyRef: {name: runner-registration, key: token}
-          ports:
-            - {name: cache, containerPort: 8088}
+            - {name: HOME, value: /work}
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities: {drop: [ALL]}
           resources:
-            requests: {cpu: 50m, memory: 128Mi, ephemeral-storage: 1Gi}
-            limits: {cpu: "1", memory: 1Gi, ephemeral-storage: 20Gi}
+            requests: {cpu: 20m, memory: 64Mi}
+            limits: {cpu: 500m, memory: 256Mi}
           volumeMounts:
-            - {name: config, mountPath: /config, readOnly: true}
-            - {name: data, mountPath: /data}
+            - {name: config, mountPath: /etc/dispatcher, readOnly: true}
+            - {name: token, mountPath: /secrets, readOnly: true}
+            - {name: kubectl, mountPath: /opt/kubectl, readOnly: true}
+            - {name: work, mountPath: /work}
             - {name: tmp, mountPath: /tmp}
       volumes:
         - name: config
-          configMap: {name: runner-config}
-        # Registration and the cache. Lost when the pod moves: the runner then
-        # registers again (the old entry shows offline in Gitea).
-        - name: data
-          emptyDir: {sizeLimit: 20Gi}
+          configMap: {name: dispatcher}
+        - name: token
+          secret: {secretName: runner-registration}
+        # kubectl straight from its official image.
+        - name: kubectl
+          image:
+            reference: registry.k8s.io/kubectl:v1.36.3@sha256:6e4fce3c83651edb91b74bc67701c5cd263dd8aa3cd4254b1798d6425a5ab789
+        - name: work
+          emptyDir: {sizeLimit: 16Mi}
         - name: tmp
-          emptyDir: {sizeLimit: 1Gi}
+          emptyDir: {sizeLimit: 16Mi}
