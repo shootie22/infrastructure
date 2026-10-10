@@ -94,9 +94,12 @@ data:
         name="ci-$node"
         # Empty only when the pod is really gone; an API error skips the node
         # for this round (k3s restarts), so a live pod's Secret stays put.
-        if ! phase=$($K -n $ns get pod "$name" --ignore-not-found -o jsonpath='{.status.phase}'); then
+        if ! state=$($K -n $ns get pod "$name" --ignore-not-found -o jsonpath='{.status.phase} {.status.containerStatuses[?(@.name=="runner")].state.terminated.reason}'); then
           continue
         fi
+        read -r phase exited <<<"$state"
+        # Done once the runner has exited, even if the Docker sidecar lingers.
+        [ -n "${exited:-}" ] && phase=Succeeded
         case "$phase" in
           Pending|Running) continue ;;
           Succeeded) $K -n $ns delete pod "$name" --wait=true || continue ;;
@@ -227,7 +230,7 @@ data:
         - name: data
           emptyDir: {sizeLimit: 2Gi}
         - name: runner
-          secret: {secretName: __NAME__, defaultMode: 0444}
+          secret: {secretName: __NAME__, defaultMode: 0444, optional: true}
         - name: config
           configMap: {name: job-runner}
 ---
@@ -270,7 +273,7 @@ spec:
     metadata:
       labels: {app: ci-dispatcher}
       # Bump when the dispatcher ConfigMap changes.
-      annotations: {config: "2"}
+      annotations: {config: "3"}
     spec:
       serviceAccountName: dispatcher
       enableServiceLinks: false
