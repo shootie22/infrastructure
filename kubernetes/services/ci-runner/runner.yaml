@@ -138,6 +138,16 @@ data:
                     matchLabels:
                       app: ci-job
           initContainers:
+            # Docker's overlayfs can't sit on the virtiofs-shared volume, so
+            # it gets an ext4 disk image there instead, which the VM's kernel
+            # mounts. Ubuntu's image has mkfs; Docker's don't.
+            - name: format
+              image: docker.io/library/ubuntu:24.04@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55
+              command: ["sh", "-c", "truncate -s 28G /disk/docker.img && mkfs.ext4 -q -F -E lazy_itable_init=1,lazy_journal_init=1 /disk/docker.img"]
+              securityContext:
+                allowPrivilegeEscalation: false
+              volumeMounts:
+                - {name: docker-disk, mountPath: /disk}
             # Rootless Docker for image builds, as a sidecar. Privileged inside
             # the VM (for its user namespaces), but the daemon and every
             # container it starts run as an unprivileged user in the VM.
@@ -158,16 +168,12 @@ data:
                   # The VM's /dev here has no tun device; rootless networking
                   # (slirp4netns) needs one.
                   [ -c /dev/net/tun ] || { mkdir -p /dev/net && mknod -m 0666 /dev/net/tun c 10 200; }
-                  # Docker's overlayfs can't sit on the virtiofs-shared volume,
-                  # so it gets an ext4 disk image there instead, mounted by the
-                  # VM's kernel.
+                  # The disk image from `format`, through the VM's loop device.
                   [ -e /dev/loop-control ] || mknod /dev/loop-control c 10 237
                   [ -b /dev/loop0 ] || mknod /dev/loop0 b 7 0
-                  truncate -s 28G /disk/docker.img
                   losetup /dev/loop0 /disk/docker.img
-                  mkfs.ext4 -q -F -E lazy_itable_init=1,lazy_journal_init=1 /dev/loop0
                   mkdir -p /home/rootless/.local/share/docker
-                  mount /dev/loop0 /home/rootless/.local/share/docker
+                  mount -t ext4 /dev/loop0 /home/rootless/.local/share/docker
                   chown rootless:rootless /run/user/1000 /home/rootless/.local/share/docker
                   chmod 700 /run/user/1000
                   exec su rootless -s /bin/sh -c 'export HOME=/home/rootless XDG_RUNTIME_DIR=/run/user/1000 PATH=/home/rootless/bin:$PATH; exec dockerd-entrypoint.sh dockerd --host=unix:///run/user/1000/docker.sock'
@@ -219,7 +225,7 @@ spec:
     metadata:
       labels: {app: ci-runner}
       # Bump when runner-config changes, so the runner restarts with it.
-      annotations: {config: "3"}
+      annotations: {config: "4"}
     spec:
       serviceAccountName: runner
       # Keep above runner.shutdown_timeout, so a running job can finish.
