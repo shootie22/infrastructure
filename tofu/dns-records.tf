@@ -192,6 +192,11 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
+    # Git over SSH. DNS only: Cloudflare's proxy doesn't carry SSH.
+    "radunenu.com/ssh.git/CNAME" = {
+      zone    = "radunenu.com", name = "ssh.git", type = "CNAME"
+      content = "ro.radunenu.com"
+    }
     "radunenu.com/hs/CNAME" = {
       zone    = "radunenu.com", name = "hs", type = "CNAME"
       content = "ro.radunenu.com"

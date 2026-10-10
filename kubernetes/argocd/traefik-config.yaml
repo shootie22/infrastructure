@@ -65,6 +65,13 @@ spec:
         transport:
           respondingTimeouts:
             readTimeout: 30m
+      # Git over SSH, passed on to Gitea's sshd (the gitea-ssh IngressRouteTCP).
+      gitssh:
+        port: 2222
+        hostPort: 2222
+        protocol: TCP
+        proxyProtocol:
+          trustedIPs: [10.99.0.1/32]
     # The address written into each Ingress's status. It used to come from the
     # LoadBalancer Service; the internal-only one has none, and Argo CD keeps
     # an Ingress without an address at Progressing. ro is where visitors
