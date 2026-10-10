@@ -92,23 +92,29 @@ data:
       while read -r node labels cpu mem; do
         [ -n "$node" ] || continue
         name="ci-$node"
-        phase=$($K -n $ns get pod "$name" -o jsonpath='{.status.phase}' 2>/dev/null)
+        # Empty only when the pod is really gone; an API error skips the node
+        # for this round (k3s restarts), so a live pod's Secret stays put.
+        if ! phase=$($K -n $ns get pod "$name" --ignore-not-found -o jsonpath='{.status.phase}'); then
+          continue
+        fi
         case "$phase" in
           Pending|Running) continue ;;
-          Succeeded) $K -n $ns delete pod "$name" --wait=true ;;
+          Succeeded) $K -n $ns delete pod "$name" --wait=true || continue ;;
           Failed)
             echo "$name failed, starting a new one in a minute"
-            $K -n $ns delete pod "$name" --wait=true
+            $K -n $ns delete pod "$name" --wait=true || continue
             sleep 60 ;;
         esac
-        $K -n $ns delete secret "$name" --ignore-not-found >/dev/null
+        $K -n $ns delete secret "$name" --ignore-not-found >/dev/null || continue
         rm -f /work/.runner
         if ! gitea-runner register --no-interactive --ephemeral \
             --config /etc/dispatcher/register.yaml --instance https://git.radunenu.com \
             --token-file /secrets/token --name "$name" --labels "$labels" >/dev/null; then
           echo "registering $name failed"; sleep 30; continue
         fi
-        $K -n $ns create secret generic "$name" --from-file=runner=/work/.runner >/dev/null
+        if ! $K -n $ns create secret generic "$name" --from-file=runner=/work/.runner >/dev/null; then
+          rm -f /work/.runner; continue
+        fi
         rm -f /work/.runner
         sed -e "s/__NAME__/$name/g" -e "s/__NODE__/$node/g" -e "s/__CPU__/$cpu/g" -e "s/__MEM__/$mem/g" \
           /etc/dispatcher/job-pod.yaml | $K -n $ns create -f - >/dev/null && echo "$name waiting for a job"
@@ -264,7 +270,7 @@ spec:
     metadata:
       labels: {app: ci-dispatcher}
       # Bump when the dispatcher ConfigMap changes.
-      annotations: {config: "1"}
+      annotations: {config: "2"}
     spec:
       serviceAccountName: dispatcher
       enableServiceLinks: false
