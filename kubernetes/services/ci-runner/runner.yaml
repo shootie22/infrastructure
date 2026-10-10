@@ -1,12 +1,3 @@
-[ -c /dev/net/tun ] || { mkdir -p /dev/net && mknod -m 0666 /dev/net/tun c 10 200; }
-# Docker's overlayfs can't sit on the virtiofs-shared volume, so it
-# gets an ext4 disk image there instead, which the VM's kernel mounts.
-[ -e /dev/loop-control ] || mknod /dev/loop-control c 10 237
-[ -b /dev/loop0 ] || mknod /dev/loop0 b 7 0
-truncate -s 28G /disk/docker.img
-losetup /dev/loop0 /disk/docker.img
-mkfs.ext4 -q -F -E lazy_itable_init=1,lazy_journal_init=1 /dev/loop0
-mount /dev/loop0 /home/rootless/.local/share/docker
 # Gitea Actions runner for every repo on git.radunenu.com, friends' included.
 #
 # The runner itself runs no workflow code. For each job it starts a pod in
