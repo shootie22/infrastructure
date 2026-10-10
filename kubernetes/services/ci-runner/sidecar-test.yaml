@@ -1,0 +1,79 @@
+# Temporary: the job pod's Docker sidecar on its own, to try changes without
+# restarting the runner. Same pod shape as runner-config's pod_template.
+# Removed once CI jobs run.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sidecar-test-1
+  namespace: ci-jobs
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 900
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels: {app: ci-sidecar-test}
+    spec:
+      restartPolicy: Never
+      runtimeClassName: kata
+      priorityClassName: ci-job
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      dnsPolicy: None
+      dnsConfig:
+        nameservers: ["1.1.1.1", "9.9.9.9"]
+      hostAliases:
+        - ip: "10.43.120.87"
+          hostnames: ["git.radunenu.com"]
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      initContainers:
+        - name: docker
+          image: docker.io/library/docker:29.9.0-dind-rootless@sha256:54155db4950e2f9af3bb829fcfe627030576fc7ae235018be63175fca7326171
+          restartPolicy: Always
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              chmod u+s "$(command -v newuidmap)" "$(command -v newgidmap)"
+              [ -c /dev/net/tun ] || { mkdir -p /dev/net && mknod -m 0666 /dev/net/tun c 10 200; }
+              chown rootless:rootless /run/user/1000 /home/rootless/.local/share/docker
+              chmod 700 /run/user/1000
+              exec su rootless -s /bin/sh -c 'export HOME=/home/rootless XDG_RUNTIME_DIR=/run/user/1000 PATH=/home/rootless/bin:$PATH; exec dockerd-entrypoint.sh dockerd --host=unix:///run/user/1000/docker.sock'
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          resources:
+            requests: {cpu: 500m, memory: 1Gi}
+            limits: {cpu: 1500m, memory: 5Gi}
+          volumeMounts:
+            - {name: docker-run, mountPath: /run/user/1000}
+            - {name: docker-data, mountPath: /home/rootless/.local/share/docker}
+      containers:
+        - name: job
+          image: docker.io/library/docker:29.9.0-cli
+          command:
+            - sh
+            - -c
+            - |
+              for i in $(seq 90); do docker info >/dev/null 2>&1 && break; sleep 2; done
+              echo "== uname: $(uname -r) vendor: $(cat /sys/class/dmi/id/sys_vendor 2>/dev/null) cpus: $(nproc)"
+              docker info --format 'driver={{.Driver}} secopts={{.SecurityOptions}}' 2>&1
+              docker run --rm docker.io/library/alpine:3.22 sh -c 'echo container ok; id' 2>&1
+              docker run --rm --privileged -v /:/host docker.io/library/alpine:3.22 sh -c 'id; ls /host; ls /host/var/lib/rancher 2>&1' 2>&1
+              printf 'FROM docker.io/library/alpine:3.22\nRUN apk add --no-cache curl\n' > /tmp/Dockerfile
+              time docker build -q -t t /tmp 2>&1
+              echo "== done"
+          env:
+            - {name: DOCKER_HOST, value: "unix:///run/user/1000/docker.sock"}
+          resources:
+            requests: {cpu: 250m, memory: 512Mi}
+            limits: {cpu: 500m, memory: 1536Mi}
+          volumeMounts:
+            - {name: docker-run, mountPath: /run/user/1000}
+      volumes:
+        - name: docker-run
+          emptyDir: {medium: Memory, sizeLimit: 16Mi}
+        - name: docker-data
+          emptyDir: {sizeLimit: 30Gi}
