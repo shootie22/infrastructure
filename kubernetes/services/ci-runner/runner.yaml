@@ -141,13 +141,26 @@ data:
             # Rootless Docker for image builds, as a sidecar. Privileged inside
             # the VM (for its user namespaces), but the daemon and every
             # container it starts run as an unprivileged user in the VM.
+            #
+            # Kata shares image files into the VM over virtiofs, which drops
+            # file capabilities, so newuidmap/newgidmap lose theirs. Root in
+            # the sidecar gives them the setuid bit instead (that survives),
+            # then hands over to the rootless user for good.
             - name: docker
               image: docker.io/library/docker:29.9.0-dind-rootless@sha256:54155db4950e2f9af3bb829fcfe627030576fc7ae235018be63175fca7326171
               restartPolicy: Always
-              command: ["dockerd-entrypoint.sh"]
-              args: ["dockerd", "--host=unix:///run/user/1000/docker.sock"]
+              command:
+                - sh
+                - -c
+                - |
+                  set -e
+                  chmod u+s "$(command -v newuidmap)" "$(command -v newgidmap)"
+                  chown rootless:rootless /run/user/1000 /home/rootless/.local/share/docker
+                  chmod 700 /run/user/1000
+                  exec su rootless -s /bin/sh -c 'export HOME=/home/rootless XDG_RUNTIME_DIR=/run/user/1000 PATH=/home/rootless/bin:$PATH; exec dockerd-entrypoint.sh dockerd --host=unix:///run/user/1000/docker.sock'
               securityContext:
                 privileged: true
+                runAsUser: 0
               startupProbe:
                 exec:
                   command: ["test", "-S", "/run/user/1000/docker.sock"]
@@ -192,6 +205,8 @@ spec:
   template:
     metadata:
       labels: {app: ci-runner}
+      # Bump when runner-config changes, so the runner restarts with it.
+      annotations: {config: "2"}
     spec:
       serviceAccountName: runner
       # Keep above runner.shutdown_timeout, so a running job can finish.
