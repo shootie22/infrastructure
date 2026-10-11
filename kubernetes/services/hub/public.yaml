@@ -47,7 +47,7 @@ spec:
           args: [public]
           env:
             - {name: HUB_DATABASE_URL_FILE, value: /secrets/db/uri}
-            - {name: HUB_PUBLIC_ISSUER, value: "https://auth.radunenu.com/realms/network-admin"}
+            - {name: HUB_PUBLIC_ISSUER, value: "https://auth.yeetus.net/realms/network-admin"}
           ports:
             - {name: http, containerPort: 8080}
           readinessProbe:

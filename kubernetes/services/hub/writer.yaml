@@ -52,7 +52,7 @@ spec:
           env:
             - {name: HUB_WRITER_KEY_FILE, value: /secrets/app/private-key.pem}
             - {name: HUB_WRITER_OWNER, value: shootie22}
-            - {name: HUB_OIDC_ISSUER, value: "https://auth.radunenu.com/realms/network-admin"}
+            - {name: HUB_OIDC_ISSUER, value: "https://auth.yeetus.net/realms/network-admin"}
             - {name: HUB_OIDC_CLIENT_ID, value: hub}
             - name: HUB_WRITER_APP_ID
               valueFrom:

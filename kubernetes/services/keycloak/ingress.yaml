@@ -16,12 +16,11 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - auth.radunenu.com
         - auth.yeetus.net
       # Renewed by cert-manager (certificate.yaml).
       secretName: auth-radunenu-com-le
   rules:
-    - host: auth.radunenu.com
+    - host: auth.yeetus.net
       http:
         paths:
           # yippie-api: profile pictures (yippie-api.yaml).
@@ -39,7 +38,23 @@ spec:
                 name: keycloak
                 port:
                   number: 8080
-    - host: auth.yeetus.net
+---
+# auth.radunenu.com, the old name: still served as is, so old links, clones
+# and apps keep working. No homepage annotation, so the status probes only
+# check the new name.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak-old-name
+  namespace: keycloak
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - auth.radunenu.com
+      secretName: auth-radunenu-com-le
+  rules:
+    - host: auth.radunenu.com
       http:
         paths:
           # yippie-api: profile pictures (yippie-api.yaml).

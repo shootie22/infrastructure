@@ -24,11 +24,11 @@ resource "uptimerobot_alert_contact" "email" {
 locals {
   uptime_http_monitors = {
     "radunenu.com" = "https://radunenu.com/"
-    "Gitea"        = "https://git.radunenu.com/"
+    "Gitea"        = "https://git.yeetus.net/"
     "Vaultwarden"  = "https://vw.yeetus.net/alive"
     "Headscale"    = "https://hs.radunenu.com/health"
-    "yeetus.net"   = "https://yeetus.net/"
-    "Keycloak"     = "https://auth.radunenu.com/"
+    "Home"         = "https://yeetus.net/"
+    "Keycloak"     = "https://auth.yeetus.net/"
     "Element Web"  = "https://c.nuke.zip/"
   }
 }

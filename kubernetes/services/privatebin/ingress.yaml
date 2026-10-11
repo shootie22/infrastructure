@@ -16,11 +16,10 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - pbin.radunenu.com
         - pbin.yeetus.net
       secretName: pbin-radunenu-com-tls
   rules:
-    - host: pbin.radunenu.com
+    - host: pbin.yeetus.net
       http:
         paths:
           - path: /
@@ -30,7 +29,38 @@ spec:
                 name: privatebin
                 port:
                   number: 80
-    - host: pbin.yeetus.net
+---
+# pbin.radunenu.com moved to pbin.yeetus.net: the old name redirects there
+# with the path kept. The new name doesn't match, so it passes straight
+# through.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: to-yeetus
+  namespace: privatebin
+spec:
+  redirectRegex:
+    regex: ^https?://pbin\.radunenu\.com/(.*)$
+    replacement: https://pbin.yeetus.net/${1}
+    permanent: true
+---
+# pbin.radunenu.com, the old name: redirects to the new one (to-yeetus). No
+# homepage annotation, so the status probes only check the new name.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: privatebin-old-name
+  namespace: privatebin
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: privatebin-to-yeetus@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - pbin.radunenu.com
+      secretName: pbin-radunenu-com-tls
+  rules:
+    - host: pbin.radunenu.com
       http:
         paths:
           - path: /

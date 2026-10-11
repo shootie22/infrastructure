@@ -65,7 +65,7 @@ spec:
           env:
             # Anything but production swaps Redis for an in-memory mock.
             - {name: NODE_ENV, value: production}
-            - {name: BASE_URL, value: https://share.radunenu.com}
+            - {name: BASE_URL, value: https://share.yeetus.net}
             - {name: FILE_DIR, value: /uploads}
             - {name: REDIS_HOST, value: 127.0.0.1}
             # 50 GiB per upload.

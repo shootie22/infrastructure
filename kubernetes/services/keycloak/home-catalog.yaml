@@ -1,4 +1,4 @@
-# Home's list of services (hub.radunenu.com, kubernetes/services/home).
+# Home's list of services (yeetus.net, kubernetes/services/home).
 # yippie-api reads it and adds up/down from the status probes; a new service
 # is one entry here. A mistake in it makes yippie-api refuse the whole list
 # rather than show half of it, so check it with the tests in the yippie repo
@@ -18,11 +18,11 @@ metadata:
 data:
   catalog.yaml: |
     services:
-      - {id: send, name: Send, description: Share files with a link, icon: send, url: "https://share.radunenu.com", group: share-uploaders}
+      - {id: send, name: Send, description: Share files with a link, icon: send, url: "https://share.yeetus.net", group: share-uploaders}
       - {id: audiobooks, name: Audiobooks, description: "Listen anywhere, synced", icon: books, url: "https://books.yeetus.net", group: audiobooks}
       - {id: notes, name: Notes, description: Joplin on every device, icon: notes, url: "https://n.yeetus.net", group: notes}
       - {id: passwords, name: Passwords, description: Your own vault, icon: key, url: "https://vw.yeetus.net", group: passwords}
-      - {id: calendar, name: Calendar, description: Calendars and contacts, icon: cal, url: "https://cal.radunenu.com", group: calendar}
-      - {id: git, name: Git, description: "Code, issues and CI", icon: git, url: "https://git.radunenu.com", group: git}
-      - {id: pastebin, name: Pastebin, description: Encrypted pastes, icon: paste, url: "https://pbin.radunenu.com", access: everyone}
-      - {id: minecraft, name: Minecraft, description: Our server, icon: mc, address: mc.radunenu.com, access: members}
+      - {id: calendar, name: Calendar, description: Calendars and contacts, icon: cal, url: "https://cal.yeetus.net", group: calendar}
+      - {id: git, name: Git, description: "Code, issues and CI", icon: git, url: "https://git.yeetus.net", group: git}
+      - {id: pastebin, name: Pastebin, description: Encrypted pastes, icon: paste, url: "https://pbin.yeetus.net", access: everyone}
+      - {id: minecraft, name: Minecraft, description: Our server, icon: mc, address: play.yeetus.net, access: members}
