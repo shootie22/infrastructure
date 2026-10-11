@@ -72,8 +72,10 @@ spec:
             # oidc-source.sh below). A first Keycloak sign-in links to the
             # existing account with the same username, or email (auto),
             # someone new gets an account named after their Keycloak username.
-            # Password sign-in stays until everyone has moved. OIDC_* are for
+            # The password form is off, so the web sign-in is Keycloak only.
+            # Git over HTTPS still takes a password or a token. OIDC_* are for
             # the init container; the client secret is in gitea-env.
+            - {name: GITEA__service__ENABLE_PASSWORD_SIGNIN_FORM, value: "false"}
             - {name: GITEA__oauth2_client__ENABLE_AUTO_REGISTRATION, value: "true"}
             - {name: GITEA__oauth2_client__ACCOUNT_LINKING, value: auto}
             - {name: GITEA__oauth2_client__USERNAME, value: preferred_username}

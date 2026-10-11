@@ -47,9 +47,10 @@ spec:
             # #66). An existing account is linked by its (verified) email on
             # the first SSO sign-in. The master password stays: it's what
             # encrypts the vault, and Keycloak never sees it. Email+password
-            # login stays too until SSO_ONLY. The client secret is
-            # SSO_CLIENT_SECRET in vaultwarden-env.
+            # login is off (SSO_ONLY). The client secret is SSO_CLIENT_SECRET
+            # in vaultwarden-env.
             - {name: SSO_ENABLED, value: "true"}
+            - {name: SSO_ONLY, value: "true"}
             - {name: SSO_AUTHORITY, value: "https://auth.yeetus.net/realms/network-yeetus"}
             # Vaultwarden adds openid itself; listing it again is refused.
             - {name: SSO_SCOPES, value: "profile email offline_access"}
