@@ -51,9 +51,11 @@ spec:
             - {name: saml, mountPath: /saml, readOnly: true}
           env:
             # Sign-in through Keycloak (SAML, client `joplin` in network-yeetus,
-            # #231). Users are matched by email. Password login stays until
-            # everyone has moved (LOCAL_AUTH_ENABLED).
+            # #231). Users are matched by email. Password login is off: the
+            # apps use the "Joplin Server (SAML)" target. Locked out with
+            # Keycloak down? Set LOCAL_AUTH_ENABLED back to true.
             - {name: API_BASE_URL, value: "https://n.yeetus.net"}
+            - {name: LOCAL_AUTH_ENABLED, value: "false"}
             - {name: SAML_ENABLED, value: "true"}
             - {name: SAML_IDP_CONFIG_FILE, value: /saml/idp.xml}
             - {name: SAML_SP_CONFIG_FILE, value: /saml/sp.xml}
