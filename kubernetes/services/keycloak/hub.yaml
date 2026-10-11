@@ -12,8 +12,9 @@ keep:
 - namespace.yaml
 - realms.yaml
 - secret.sops.yaml
+- yeetus-api-db.yaml
+- yeetus-api.sops.yaml
+- yeetus-api.yaml
 - yippie-api-db.yaml
-- yippie-api.sops.yaml
-- yippie-api.yaml
 kind: kept
 name: keycloak

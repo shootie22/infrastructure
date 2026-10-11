@@ -1,7 +1,7 @@
 # Home's list of services (yeetus.net, kubernetes/services/home).
-# yippie-api reads it and adds up/down from the status probes; a new service
-# is one entry here. A mistake in it makes yippie-api refuse the whole list
-# rather than show half of it, so check it with the tests in the yippie repo
+# yeetus-api reads it and adds up/down from the status probes; a new service
+# is one entry here. A mistake in it makes yeetus-api refuse the whole list
+# rather than show half of it, so check it with the tests in the yeetus repo
 # (apps/api/src/home.test.ts) when in doubt.
 #
 #   id, name, description: what the tile says

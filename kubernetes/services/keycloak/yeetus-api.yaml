@@ -1,25 +1,25 @@
-# yippie-api (source: git.radunenu.com/radu/yippie, apps/api): profile
-# pictures for Yippie Network and Network Admin, set as each user's `picture`
-# attribute, and Home's list of services with their status.
-# Served under auth.yeetus.net/yippie/ (ingress.yaml) so the account page
-# reaches it without CORS. Its Postgres is yippie-api-db.yaml; its Keycloak
-# client (yippie-api, network-yippie) is in realms.yaml, with the secret in
-# yippie-api.sops.yaml and config-cli.sops.yaml.
+# yeetus-api (source: git.yeetus.net/radu/yeetus, apps/api; it was yippie-api):
+# profile pictures for Yeetus Network and Network Admin, set as each user's
+# `picture` attribute, and Home's list of services with their status. Served
+# under auth.yeetus.net/yeetus/ (and the old /yippie/, ingress.yaml) so the
+# account page reaches it without CORS. Its Postgres is yeetus-api-db.yaml; its
+# Keycloak client (yeetus-api, both realms) is in realms.yaml, with the secret
+# in yeetus-api.sops.yaml and config-cli.sops.yaml.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: yippie-api
+  name: yeetus-api
   namespace: keycloak
 spec:
   # One per site; it keeps nothing itself.
   replicas: 2
   selector:
     matchLabels:
-      app: yippie-api
+      app: yeetus-api
   template:
     metadata:
       labels:
-        app: yippie-api
+        app: yeetus-api
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -34,28 +34,29 @@ spec:
           whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels:
-              app: yippie-api
+              app: yeetus-api
       tolerations:
         - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
-        - name: yippie-api
-          image: git.radunenu.com/radu/yippie-api:main@sha256:db4fa409070abe81f6993b521ebaa38883fd73a3933fd89a1ce04914669a51a5
+        - name: yeetus-api
+          image: git.radunenu.com/radu/yeetus-api:main@sha256:90e8f16aa4c1efe89d2710b393d788eb47881ce8dc2822600828d41856215b0a
           env:
             - name: DATABASE_URL
               valueFrom:
-                secretKeyRef: {name: yippie-api-db-app, key: uri}
+                secretKeyRef: {name: yeetus-api-db-app, key: uri}
             - name: KEYCLOAK_URL
               value: http://keycloak:8080
             - name: ISSUER_BASE
               value: https://auth.yeetus.net
+            # network-yippie becomes network-yeetus with the realm rename.
             - name: REALMS
               value: network-yippie,network-admin
             - name: PUBLIC_URL
-              value: https://auth.yeetus.net/yippie
+              value: https://auth.yeetus.net/yeetus
             - name: CLIENT_SECRET
               valueFrom:
-                secretKeyRef: {name: yippie-api-env, key: CLIENT_SECRET}
+                secretKeyRef: {name: yeetus-api-env, key: CLIENT_SECRET}
             # Home's list of services (home-catalog.yaml) and where its up/down comes from.
             - name: CATALOG_FILE
               value: /config/catalog.yaml
@@ -67,10 +68,10 @@ spec:
             - name: http
               containerPort: 8080
           readinessProbe:
-            httpGet: {path: /yippie/healthz, port: http}
+            httpGet: {path: /yeetus/healthz, port: http}
             periodSeconds: 5
           livenessProbe:
-            httpGet: {path: /yippie/healthz, port: http}
+            httpGet: {path: /yeetus/healthz, port: http}
             periodSeconds: 20
           resources:
             requests: {cpu: 10m, memory: 64Mi}
@@ -90,11 +91,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: yippie-api
+  name: yeetus-api
   namespace: keycloak
 spec:
   selector:
-    app: yippie-api
+    app: yeetus-api
   ports:
     - name: http
       port: 8080

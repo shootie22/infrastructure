@@ -43,9 +43,9 @@ spec:
               drop: ["ALL"]
       containers:
         - name: keycloak
-          # Keycloak 26.5.5 with the Yippie login and account pages added (git.radunenu.com/radu/yippie).
-          # Realms only use them once realms.yaml sets loginTheme/accountTheme: yippie.
-          image: git.radunenu.com/radu/yippie-keycloak:main@sha256:b2176c8db63a622d46d6afee2f2fe9408c840c16b1b8a4f3dce6edad79c65443
+          # Keycloak 26.5.5 with the Yeetus login and account pages added (git.yeetus.net/radu/yeetus).
+          # Realms use them through loginTheme/accountTheme: yeetus in realms.yaml.
+          image: git.radunenu.com/radu/yeetus-keycloak:main@sha256:43aa5fda9376a16c5240cc1a300389803c5a3d68bcdf82def7c92a41ef230fb8
           imagePullPolicy: IfNotPresent
           args:
             - start
