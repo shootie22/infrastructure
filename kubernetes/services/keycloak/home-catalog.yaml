@@ -7,7 +7,7 @@
 #   id, name, description: what the tile says
 #   icon: send, books, notes, key, cal, git, paste, mc, chat (apps/home/src/icons.ts)
 #   url: where Open goes, or address: something to copy (game servers)
-#   group: the network-yippie group whose members may use it (realms.yaml),
+#   group: the network-yeetus group whose members may use it (realms.yaml),
 #          or access: everyone (guests too) / members (anyone signed in)
 #   probe: the status probe's URL, if it isn't the url
 apiVersion: v1

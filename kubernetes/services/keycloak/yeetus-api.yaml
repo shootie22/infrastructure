@@ -49,9 +49,8 @@ spec:
               value: http://keycloak:8080
             - name: ISSUER_BASE
               value: https://auth.yeetus.net
-            # network-yippie becomes network-yeetus with the realm rename.
             - name: REALMS
-              value: network-yippie,network-admin
+              value: network-yeetus,network-admin
             - name: PUBLIC_URL
               value: https://auth.yeetus.net/yeetus
             - name: CLIENT_SECRET

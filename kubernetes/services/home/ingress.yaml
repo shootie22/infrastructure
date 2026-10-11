@@ -8,7 +8,7 @@ metadata:
     gethomepage.dev/external: "true"
     gethomepage.dev/group: Apps
     gethomepage.dev/name: Home
-    gethomepage.dev/description: Every service on Yippie Network
+    gethomepage.dev/description: Every service on Yeetus Network
     gethomepage.dev/weight: "100"
     gethomepage.dev/siteMonitor: http://home.home.svc.cluster.local:8080/healthz
 spec:

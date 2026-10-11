@@ -1,6 +1,6 @@
-# Home at yeetus.net (#222): every service on Yippie Network, yours
-# first. Static files in nginx (source: git.radunenu.com/radu/yippie,
-# apps/home); the list of services comes from yippie-api
+# Home at yeetus.net (#222): every service on Yeetus Network, yours
+# first. Static files in nginx (source: git.yeetus.net/radu/yeetus,
+# apps/home); the list of services comes from yeetus-api
 # (keycloak/home-catalog.yaml), sign-in from Keycloak's `home` client.
 apiVersion: apps/v1
 kind: Deployment
@@ -37,7 +37,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: home
-          image: git.radunenu.com/radu/yippie-home:main@sha256:0bc432b5ef23948187920e85a52be9f245c9aa0c608b29f13b98795276d3422d
+          image: git.radunenu.com/radu/yeetus-home:main@sha256:af529208d05ab9089ab7bd7cec87f4a8e28a738e405d30b2ca2fce399dfaf6dd
           ports:
             - name: http
               containerPort: 8080

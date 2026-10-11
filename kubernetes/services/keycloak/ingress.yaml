@@ -12,6 +12,7 @@ metadata:
     gethomepage.dev/description: Identity administration
     gethomepage.dev/weight: "300"
     gethomepage.dev/siteMonitor: http://keycloak.keycloak.svc.cluster.local:9000/health/ready
+    traefik.ingress.kubernetes.io/router.middlewares: keycloak-old-realm-name@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
@@ -55,6 +56,8 @@ kind: Ingress
 metadata:
   name: keycloak-old-name
   namespace: keycloak
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: keycloak-old-realm-name@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
@@ -88,3 +91,16 @@ spec:
                 name: keycloak
                 port:
                   number: 8080
+---
+# The realm was network-yippie until 11 Oct; old bookmarks (the account page)
+# go to its new name. Everything else passes straight through.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: old-realm-name
+  namespace: keycloak
+spec:
+  redirectRegex:
+    regex: ^https?://([^/]+)/realms/network-yippie/(.*)$
+    replacement: https://${1}/realms/network-yeetus/${2}
+    permanent: true
