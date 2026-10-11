@@ -18,6 +18,26 @@ spec:
       labels: {app: joplin}
     spec:
       automountServiceAccountToken: false
+      initContainers:
+        # Keycloak's SAML metadata for the realm (its signing certificate),
+        # fresh at every start so a key rotation needs nothing here. Keycloak
+        # says it wants signed login requests, which Joplin can't make, and the
+        # SAML library refuses a mismatch; the `joplin` client doesn't require
+        # them, so the flag is turned off in the copy.
+        - name: saml-metadata
+          image: docker.io/curlimages/curl:8.22.0@sha256:58adaa4e8dca9c988bae2aba4ab3434a0bb2da16bbe3f92dec39ec7785166777
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              curl -fsS --retry 10 --retry-all-errors --retry-delay 3 \
+                http://keycloak.keycloak.svc:8080/realms/network-yeetus/protocol/saml/descriptor \
+                | sed 's/WantAuthnRequestsSigned="true"/WantAuthnRequestsSigned="false"/' > /saml/idp.xml
+              cp /sp/sp.xml /saml/sp.xml
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - {name: saml, mountPath: /saml}
+            - {name: saml-sp, mountPath: /sp, readOnly: true}
       containers:
         - name: joplin
           image: joplin/server:3.5.2@sha256:5d9e7f9d31b436cb1b99d1a6a65d8c5bf760829094617e8ad1e956fd925de888
@@ -27,7 +47,17 @@ spec:
             - {name: http, containerPort: 22300}
           securityContext:
             allowPrivilegeEscalation: false
+          volumeMounts:
+            - {name: saml, mountPath: /saml, readOnly: true}
           env:
+            # Sign-in through Keycloak (SAML, client `joplin` in network-yeetus,
+            # #231). Users are matched by email. Password login stays until
+            # everyone has moved (LOCAL_AUTH_ENABLED).
+            - {name: API_BASE_URL, value: "https://n.yeetus.net"}
+            - {name: SAML_ENABLED, value: "true"}
+            - {name: SAML_IDP_CONFIG_FILE, value: /saml/idp.xml}
+            - {name: SAML_SP_CONFIG_FILE, value: /saml/sp.xml}
+            - {name: SAML_ORGANIZATION_DISPLAY_NAME, value: Yeetus Network}
             - name: POSTGRES_HOST
               value: joplin-pg-rw
             - name: POSTGRES_DATABASE
@@ -64,6 +94,29 @@ spec:
           operator: Exists
           effect: NoExecute
           tolerationSeconds: 30
+      volumes:
+        - name: saml
+          emptyDir: {}
+        - name: saml-sp
+          configMap:
+            name: joplin-saml
+---
+# Joplin's side of SAML (the "service provider"): its name in Keycloak
+# (client `joplin`) and where Keycloak posts the answer back.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: joplin-saml
+  namespace: joplin
+data:
+  sp.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata" entityID="joplin">
+      <SPSSODescriptor AuthnRequestsSigned="false" WantAssertionsSigned="true" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+        <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</NameIDFormat>
+        <AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://n.yeetus.net/api/saml" index="0"/>
+      </SPSSODescriptor>
+    </EntityDescriptor>
 ---
 apiVersion: v1
 kind: Service
