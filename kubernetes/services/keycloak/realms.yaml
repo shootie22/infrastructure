@@ -223,15 +223,53 @@ data:
           post.logout.redirect.uris: "https://books.yeetus.net/*"
         authenticationFlowBindingOverrides:
           browser: gate audiobookshelf
+      # Joplin Server (n.yeetus.net, #231): SAML, since that's what it speaks.
+      # It finds the user by the `email` attribute; `displayName` only names
+      # an account it creates. Its side is in joplin/staged.yaml. Gated like
+      # the others: only the notes group gets in.
+      - clientId: joplin
+        name: Notes
+        description: n.yeetus.net
+        protocol: saml
+        enabled: true
+        frontchannelLogout: true
+        redirectUris: ["https://n.yeetus.net/api/saml"]
+        attributes:
+          saml.assertion.signature: "true"
+          saml.server.signature: "true"
+          saml.client.signature: "false"
+          saml.authnstatement: "true"
+          saml_name_id_format: email
+          saml.force.name.id.format: "true"
+          saml_assertion_consumer_url_post: https://n.yeetus.net/api/saml
+          saml.signature.algorithm: RSA_SHA256
+        protocolMappers:
+          - name: email
+            protocol: saml
+            protocolMapper: saml-user-property-mapper
+            config: {user.attribute: email, attribute.name: email, attribute.nameformat: Basic}
+          - name: displayName
+            protocol: saml
+            protocolMapper: saml-user-property-mapper
+            config: {user.attribute: firstName, attribute.name: displayName, attribute.nameformat: Basic}
+        authenticationFlowBindingOverrides:
+          browser: gate joplin
     roles:
       client:
         audiobookshelf:
           - name: access
             description: May sign in to Audiobookshelf
+        joplin:
+          - name: access
+            description: May sign in to Joplin
     authenticatorConfig:
       - alias: audiobookshelf no access
         config: {condUserRole: audiobookshelf.access, negate: "true"}
       - alias: audiobookshelf deny
+        config: {denyErrorMessage: yeetusNoAccess}
+      - alias: joplin no access
+        config: {condUserRole: joplin.access, negate: "true"}
+      - alias: joplin deny
         config: {denyErrorMessage: yeetusNoAccess}
     # Each gated app: Keycloak's browser flow, then "no access role, no entry"
     # (docs/ha/keycloak-sso.md, "Who gets into which app").
@@ -272,6 +310,42 @@ data:
         authenticationExecutions:
           - {authenticator: conditional-user-role, authenticatorConfig: audiobookshelf no access, requirement: REQUIRED, priority: 10}
           - {authenticator: deny-access-authenticator, authenticatorConfig: audiobookshelf deny, requirement: REQUIRED, priority: 20}
+      - alias: gate joplin
+        description: Sign in, then only with joplin's access role
+        providerId: basic-flow
+        topLevel: true
+        builtIn: false
+        authenticationExecutions:
+          - {flowAlias: gate joplin sign in, requirement: REQUIRED, priority: 10, autheticatorFlow: true}
+          - {flowAlias: gate joplin check, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+      - alias: gate joplin sign in
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: auth-cookie, requirement: ALTERNATIVE, priority: 10}
+          - {flowAlias: gate joplin forms, requirement: ALTERNATIVE, priority: 20, autheticatorFlow: true}
+      - alias: gate joplin forms
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: auth-username-password-form, requirement: REQUIRED, priority: 10}
+          - {flowAlias: gate joplin 2fa, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+      - alias: gate joplin 2fa
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: conditional-user-configured, requirement: REQUIRED, priority: 10}
+          - {authenticator: auth-otp-form, requirement: ALTERNATIVE, priority: 20}
+      - alias: gate joplin check
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: conditional-user-role, authenticatorConfig: joplin no access, requirement: REQUIRED, priority: 10}
+          - {authenticator: deny-access-authenticator, authenticatorConfig: joplin deny, requirement: REQUIRED, priority: 20}
     users:
       - username: service-account-yeetus-api
         serviceAccountClientId: yeetus-api
@@ -289,6 +363,8 @@ data:
           audiobookshelf: [access]
       - name: notes
         attributes: {description: [Joplin]}
+        clientRoles:
+          joplin: [access]
       - name: passwords
         attributes: {description: [Vaultwarden]}
       - name: git
