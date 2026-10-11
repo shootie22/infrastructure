@@ -45,7 +45,7 @@ spec:
         - name: keycloak
           # Keycloak 26.5.5 with the Yippie login and account pages added (git.radunenu.com/radu/yippie).
           # Realms only use them once realms.yaml sets loginTheme/accountTheme: yippie.
-          image: git.radunenu.com/radu/yippie-keycloak:main@sha256:a9c429bf7b6181cd2ffe5a7cf41382bcdef09846b9bdab7b98e483fef89b0565
+          image: git.radunenu.com/radu/yippie-keycloak:main@sha256:e3e385d53850b82c91a13f245734932d232958f0952b068088f64829a7533a2d
           imagePullPolicy: IfNotPresent
           args:
             - start
