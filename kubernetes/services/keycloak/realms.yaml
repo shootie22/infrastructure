@@ -24,10 +24,10 @@ data:
     displayName: Network Admin
     enabled: true
     # Same pages with a red card, so it never looks like the everyday account.
-    loginTheme: yippie
-    accountTheme: yippie
+    loginTheme: yeetus
+    accountTheme: yeetus
     rememberMe: false
-    # Keycloak's default profile plus `picture`, set by yippie-api like in
+    # Keycloak's default profile plus `picture`, set by yeetus-api like in
     # network-yippie. Only I am in this realm, so the rest stays editable.
     attributes:
       userProfileEnabled: "true"
@@ -76,18 +76,18 @@ data:
           displayHeader: User metadata
           displayDescription: Attributes, which refer to user metadata
     clients:
-      # yippie-api.yaml, same as in network-yippie (same secret).
-      - clientId: yippie-api
-        name: yippie-api
+      # yeetus-api.yaml, same as in network-yippie (same secret).
+      - clientId: yeetus-api
+        name: yeetus-api
         enabled: true
         publicClient: false
-        secret: $(env:YIPPIE_API_SECRET)
+        secret: $(env:YEETUS_API_SECRET)
         standardFlowEnabled: false
         directAccessGrantsEnabled: false
         serviceAccountsEnabled: true
     users:
-      - username: service-account-yippie-api
-        serviceAccountClientId: yippie-api
+      - username: service-account-yeetus-api
+        serviceAccountClientId: yeetus-api
         enabled: true
         clientRoles:
           realm-management: [view-users, manage-users]
@@ -95,17 +95,17 @@ data:
   # they use. Access by a group per app.
   network-yippie.yaml: |
     realm: network-yippie
-    displayName: Yippie Network
+    displayName: Yeetus Network
     enabled: true
     # Everyone has a short username (the same as on Gitea) and can sign in
     # with it or their email. Apps go by the username, so it isn't the email.
     registrationEmailAsUsername: false
     loginWithEmailAllowed: true
     duplicateEmailsAllowed: false
-    # The Yippie login and account pages (git.radunenu.com/radu/yippie).
-    # Need the yippie-keycloak image; without it Keycloak uses its own pages.
-    loginTheme: yippie
-    accountTheme: yippie
+    # The Yeetus login and account pages (git.yeetus.net/radu/yeetus).
+    # Need the yeetus-keycloak image; without it Keycloak uses its own pages.
+    loginTheme: yeetus
+    accountTheme: yeetus
     rememberMe: true
     # Email and username: only an admin changes them. Joplin and the email
     # matching in the other apps trust the email Keycloak sends, so letting
@@ -147,7 +147,7 @@ data:
           required: {roles: [user]}
           permissions: {view: [admin, user], edit: [admin, user]}
           multivalued: false
-        # Address of the profile picture, set by yippie-api when someone
+        # Address of the profile picture, set by yeetus-api when someone
         # uploads one on the account page. The standard `picture` claim.
         - name: picture
           displayName: Picture
@@ -186,19 +186,19 @@ data:
               access.token.claim: "false"
               userinfo.token.claim: "true"
               introspection.token.claim: "false"
-      # yippie-api.yaml: profile pictures. Only a service account, which may
+      # yeetus-api.yaml: profile pictures. Only a service account, which may
       # read and change users (to set `picture`).
-      - clientId: yippie-api
-        name: yippie-api
+      - clientId: yeetus-api
+        name: yeetus-api
         enabled: true
         publicClient: false
-        secret: $(env:YIPPIE_API_SECRET)
+        secret: $(env:YEETUS_API_SECRET)
         standardFlowEnabled: false
         directAccessGrantsEnabled: false
         serviceAccountsEnabled: true
     users:
-      - username: service-account-yippie-api
-        serviceAccountClientId: yippie-api
+      - username: service-account-yeetus-api
+        serviceAccountClientId: yeetus-api
         enabled: true
         clientRoles:
           realm-management: [view-users, manage-users]

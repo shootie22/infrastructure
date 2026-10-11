@@ -23,12 +23,20 @@ spec:
     - host: auth.yeetus.net
       http:
         paths:
-          # yippie-api: profile pictures (yippie-api.yaml).
+          # yeetus-api: profile pictures and Home's list (yeetus-api.yaml),
+          # also on its old prefix /yippie/ for now.
+          - path: /yeetus/
+            pathType: Prefix
+            backend:
+              service:
+                name: yeetus-api
+                port:
+                  number: 8080
           - path: /yippie/
             pathType: Prefix
             backend:
               service:
-                name: yippie-api
+                name: yeetus-api
                 port:
                   number: 8080
           - path: /
@@ -57,12 +65,20 @@ spec:
     - host: auth.radunenu.com
       http:
         paths:
-          # yippie-api: profile pictures (yippie-api.yaml).
+          # yeetus-api: profile pictures and Home's list (yeetus-api.yaml),
+          # also on its old prefix /yippie/ for now.
+          - path: /yeetus/
+            pathType: Prefix
+            backend:
+              service:
+                name: yeetus-api
+                port:
+                  number: 8080
           - path: /yippie/
             pathType: Prefix
             backend:
               service:
-                name: yippie-api
+                name: yeetus-api
                 port:
                   number: 8080
           - path: /

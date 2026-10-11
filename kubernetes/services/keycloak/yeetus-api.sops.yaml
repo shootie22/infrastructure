@@ -1,0 +1,34 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: yeetus-api
+    namespace: keycloak
+spec:
+    secretTemplates:
+        - name: ENC[AES256_GCM,data:GdIC77tIX8lilPBU13I=,iv:xBsoSlxYFyXNRvKFpKNo5R7q39D0aPngSbJivMAjY6M=,tag:+rQ/iS8mxOJ+odFys/VG6w==,type:str]
+          stringData:
+            CLIENT_SECRET: ENC[AES256_GCM,data:cZXcd3MGZXTGAv8Lbslze+LO/UPicgFn0ckcG8MU5m8oL3a7OY5ZfQ==,iv:Qx/qFBgwotrmfcPaC19jWw/pnu1aaChon1kndNE+4G0=,tag:aPkQBUKWZh8/nP2esWpzLQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBRbzZkSUU1THF1UjFXY0Zr
+            WXZlUXgrbjJ5cUtCbWNtZXV2VFVId1hvL0RvCm5oTUtMVFUvUW5ody9aRmNacEQz
+            SG5BdnVrbjhZV3lpVEtaTWhkVDlyaDAKLS0tIGVzVWd1YVZJeG5MeGVkMGZmZVh1
+            Y0dUTUFHQ1FKM3ArMWRFODdoYThLQ0EKzWHJno2yOQqMPBWTDyzPt/l0NUqH3VqF
+            XMdOubcFTias+Upv7N2V8VL7Rr7IMNz1rhd8fYuMkhOyRtOFwImtjw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBVbks2aHpjTjR4aGRmMkxK
+            MXFGVFJ3Tm5yZnk2eXJTRzlveTJWQTVPNW1VCllzaU9rOFRmeGs2Y20yMzlqNVA0
+            aTlDZUJzMjhjMTRWOU1qSkVad0xUbUUKLS0tIHBCdHorYmZTa0packpDMXB4TE5F
+            c0ViMk0zemZ0eGpIaWdqN0sycFcrK28KM0XAZ1zBWop67IlvK5aWu+xVRXpK3JUu
+            SwSr1If3C0RZqUpCnASlxuKP7TMkoM1jUxmHtbuq61mi+poHxxMGhw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
+    encrypted_suffix: Templates
+    lastmodified: "2026-10-11T17:36:41Z"
+    mac: ENC[AES256_GCM,data:7Icx3Y0vNx9CcH3pLUKaEPo4ivJBeYbhUWpKPelENF18rOLvA3F9Khk5rkA8zzD89m5D6SjeHCHb9ERZN0xVvCGiO8eE7RX2vv3MlDEZgwHg7MMlq9QSGEzxFlyiffkjvVHmeUq3aZwQ5nM16Zc7JB/4v5wfXYnspkdZwYYqU5I=,iv:cCKgiuY1jlQTv88NfBwM7KRAjeR6AQ3smbIieHaRwGg=,tag:SPBA6hz+n3wuJSu+y7Ig6w==,type:str]
+    version: 3.13.3
