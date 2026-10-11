@@ -36,6 +36,78 @@ Setting it up once, in the admin UI, realm `master`:
 2. The client's Service account roles tab: Assign role, filter by realm roles, `admin`.
 3. Copy the secret from the Credentials tab, then on nixpad: `nix shell nixpkgs#sops nixpkgs#yq-go -c scripts/create-keycloak-config-cli-secret.sh` and commit what it changed.
 
+## Who gets into which app
+
+Keycloak lets anyone in the realm sign in to any client, and some apps create an account for whoever arrives. So every app in network-yippie gets a gate:
+
+- a client role `access` on the app's client;
+- a group per app (`audiobooks`, `notes`, `passwords`, `git`, `calendar`) that has that role, in `realms.yaml`;
+- the client's browser flow overridden with a copy of Keycloak's browser flow plus a last step: if the user doesn't have the role, Deny access.
+
+The gate also applies when someone is already signed in elsewhere (the cookie path), which a test on a Keycloak copy checked. A refused person gets the login theme's "Not yet" page with a ready mail asking for access (message key `yippieNoAccess`). Adding someone to an app is adding them to its group in the admin UI. Home uses the same groups.
+
+The blocks for an app (here `audiobooks`, client `audiobookshelf`), in network-yippie's file:
+
+```yaml
+clients:
+  - clientId: audiobookshelf
+    name: Audiobooks
+    # ... the app's own settings
+    authenticationFlowBindingOverrides:
+      browser: gate audiobookshelf
+roles:
+  client:
+    audiobookshelf:
+      - name: access
+groups:
+  - name: audiobooks
+    clientRoles:
+      audiobookshelf: [access]
+authenticatorConfig:
+  - alias: audiobookshelf no access
+    config: {condUserRole: audiobookshelf.access, negate: "true"}
+  - alias: audiobookshelf deny
+    config: {denyErrorMessage: yippieNoAccess}
+authenticationFlows:
+  - alias: gate audiobookshelf
+    providerId: basic-flow
+    topLevel: true
+    builtIn: false
+    authenticationExecutions:
+      - {flowAlias: gate audiobookshelf sign in, requirement: REQUIRED, priority: 10, autheticatorFlow: true}
+      - {flowAlias: gate audiobookshelf check, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+  - alias: gate audiobookshelf sign in
+    providerId: basic-flow
+    topLevel: false
+    builtIn: false
+    authenticationExecutions:
+      - {authenticator: auth-cookie, requirement: ALTERNATIVE, priority: 10}
+      - {flowAlias: gate audiobookshelf forms, requirement: ALTERNATIVE, priority: 20, autheticatorFlow: true}
+  - alias: gate audiobookshelf forms
+    providerId: basic-flow
+    topLevel: false
+    builtIn: false
+    authenticationExecutions:
+      - {authenticator: auth-username-password-form, requirement: REQUIRED, priority: 10}
+      - {flowAlias: gate audiobookshelf 2fa, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+  - alias: gate audiobookshelf 2fa
+    providerId: basic-flow
+    topLevel: false
+    builtIn: false
+    authenticationExecutions:
+      - {authenticator: conditional-user-configured, requirement: REQUIRED, priority: 10}
+      - {authenticator: auth-otp-form, requirement: ALTERNATIVE, priority: 20}
+  - alias: gate audiobookshelf check
+    providerId: basic-flow
+    topLevel: false
+    builtIn: false
+    authenticationExecutions:
+      - {authenticator: conditional-user-role, authenticatorConfig: audiobookshelf no access, requirement: REQUIRED, priority: 10}
+      - {authenticator: deny-access-authenticator, authenticatorConfig: audiobookshelf deny, requirement: REQUIRED, priority: 20}
+```
+
+(`autheticatorFlow` is spelled that way in Keycloak's own format.) When passkeys get turned on, the 2fa flow gets the WebAuthn step too, like Keycloak's own browser flow.
+
 ## Services
 
 | Service | Support | Plan |
