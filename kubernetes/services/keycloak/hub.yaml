@@ -15,6 +15,5 @@ keep:
 - yeetus-api-db.yaml
 - yeetus-api.sops.yaml
 - yeetus-api.yaml
-- yippie-api-db.yaml
 kind: kept
 name: keycloak
