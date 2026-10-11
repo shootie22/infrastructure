@@ -202,3 +202,11 @@ Later that day:
 - **The last few single-copy services** move within 30 seconds like the rest.
 
 In the evening Debian went off the thinkcentre for good: one last Borg archive of its root (18 GB, 4.4 GB after deduplication), then its boot entries, its files and its volume. NixOS's root grew from 24 to 55 GB without a reboot. The database restore got its first real test too: Gitea's hourly dump into a scratch Postgres in 8 seconds, every table count matching.
+
+## 2026-10-11: Cleanup, and the nameservers switch for real
+
+The old Postgres containers are gone. Five days next to CNPG, about 32 KB of traffic each in the last day, nobody missed them. The data folders stay until the next Borg run has them.
+
+The nameserver checkers came out of dry run. Before that, a last round of checks: every zone's DNSSEC checks out whichever provider serves the records and whichever serves the keys, `tofu plan` finds no difference between Cloudflare and deSEC, and every site that works through Cloudflare also works straight at the origin with a valid certificate. That last one matters, since deSEC has no proxy. The three checkers had seen Cloudflare answer for 89 hours without a single flip.
+
+Keycloak's realms can come from Git now, through keycloak-config-cli. A test against a copy of the realms in Docker found something worth knowing: with its default settings it deletes groups it didn't create, "remote state" or not. Here it's set to never delete anything.

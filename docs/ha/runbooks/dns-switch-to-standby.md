@@ -17,9 +17,7 @@ Not run for real yet.
 
 ## Before switching: check DNSSEC
 
-All zones except kronorite.com run multi-signer DNSSEC: both Cloudflare's and deSEC's DS records are at the registry, so they switch with DNSSEC intact. `scripts/porkbun-ds-sync` (dry run) shows whether every DS record is published.
-
-kronorite.com has no DNSSEC yet, so it can switch straight away. Once it's on multi-signer too ([#75](https://github.com/shootie22/infrastructure/issues/75)), this section has nothing left to check.
+All zones run multi-signer DNSSEC: both Cloudflare's and deSEC's DS records are at the registry, so they switch with DNSSEC intact. `scripts/porkbun-ds-sync` (dry run) shows whether every DS record is published.
 
 ## Steps
 
