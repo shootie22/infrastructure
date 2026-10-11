@@ -43,7 +43,9 @@ spec:
               drop: ["ALL"]
       containers:
         - name: keycloak
-          image: quay.io/keycloak/keycloak:26.5.5@sha256:a7b0cb7a43a1235a61872883414d3f1d9a3ceac9df6e5907bd12202778a6265c
+          # Keycloak 26.5.5 with the Yippie login theme added (git.radunenu.com/radu/yippie).
+          # Realms only use it once realms.yaml sets loginTheme: yippie.
+          image: git.radunenu.com/radu/yippie-keycloak:main@sha256:81e52588739048c20eccb40784b654c60ae02fad1f7fe8b2eb337e3449049946
           imagePullPolicy: IfNotPresent
           args:
             - start
