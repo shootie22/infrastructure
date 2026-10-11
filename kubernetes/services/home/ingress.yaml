@@ -1,0 +1,106 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: home
+  namespace: home
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: Home
+    gethomepage.dev/description: Every service on Yippie Network
+    gethomepage.dev/weight: "100"
+    gethomepage.dev/siteMonitor: http://home.home.svc.cluster.local:8080/healthz
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [hub.radunenu.com]
+      secretName: hub-radunenu-com-le
+  rules:
+    - host: hub.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: home
+                port:
+                  number: 8080
+---
+# yippie, network, net, services and apps.radunenu.com: easier to remember,
+# same place. Redirected with the path kept.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: to-hub
+  namespace: home
+spec:
+  redirectRegex:
+    regex: ^https?://[^/]+(.*)$
+    replacement: https://hub.radunenu.com${1}
+    permanent: true
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: home-aliases
+  namespace: home
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: home-to-hub@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [yippie.radunenu.com, network.radunenu.com, net.radunenu.com, services.radunenu.com, apps.radunenu.com]
+      secretName: hub-radunenu-com-le
+  rules:
+    - host: yippie.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: home
+                port:
+                  number: 8080
+    - host: network.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: home
+                port:
+                  number: 8080
+    - host: net.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: home
+                port:
+                  number: 8080
+    - host: services.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: home
+                port:
+                  number: 8080
+    - host: apps.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: home
+                port:
+                  number: 8080

@@ -1,0 +1,19 @@
+# One certificate for Home and the five names that send people to it.
+# HTTP-01, like the other sites.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: hub-radunenu-com
+  namespace: home
+spec:
+  secretName: hub-radunenu-com-le
+  dnsNames:
+    - hub.radunenu.com
+    - yippie.radunenu.com
+    - network.radunenu.com
+    - net.radunenu.com
+    - services.radunenu.com
+    - apps.radunenu.com
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer

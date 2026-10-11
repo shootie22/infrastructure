@@ -1,6 +1,6 @@
 # yippie-api (source: git.radunenu.com/radu/yippie, apps/api): profile
 # pictures for Yippie Network and Network Admin, set as each user's `picture`
-# attribute.
+# attribute, and Home's list of services with their status.
 # Served under auth.radunenu.com/yippie/ (ingress.yaml) so the account page
 # reaches it without CORS. Its Postgres is yippie-api-db.yaml; its Keycloak
 # client (yippie-api, network-yippie) is in realms.yaml, with the secret in
@@ -40,7 +40,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: yippie-api
-          image: git.radunenu.com/radu/yippie-api:main@sha256:08f5d57a7ceb15a5a9d56c8963b2717376d4107de877bc40d124a22f6a63d9d8
+          image: git.radunenu.com/radu/yippie-api:main@sha256:8fda8525605aaea422173f92af5f7f3f1d308a9157674028d03a9e660a812b8d
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -56,6 +56,13 @@ spec:
             - name: CLIENT_SECRET
               valueFrom:
                 secretKeyRef: {name: yippie-api-env, key: CLIENT_SECRET}
+            # Home's list of services (home-catalog.yaml) and where its up/down comes from.
+            - name: CATALOG_FILE
+              value: /config/catalog.yaml
+            - name: PROMETHEUS
+              value: http://prometheus.monitoring.svc:9090,http://prometheus-dk.monitoring.svc:9090
+            - name: HOME_ORIGIN
+              value: https://hub.radunenu.com
           ports:
             - name: http
               containerPort: 8080
@@ -73,6 +80,12 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
+          volumeMounts:
+            - {name: catalog, mountPath: /config, readOnly: true}
+      volumes:
+        - name: catalog
+          configMap:
+            name: home-catalog
 ---
 apiVersion: v1
 kind: Service
