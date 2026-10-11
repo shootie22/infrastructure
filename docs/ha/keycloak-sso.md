@@ -42,15 +42,18 @@ Setting it up once, in the admin UI, realm `master`:
 |---|---|---|
 | Grafana | OIDC | Done, network-admin |
 | Argo CD | none | No UI exposed, only the webhook; Hub shows its state |
-| Audiobookshelf | OIDC | Do it, set up in the web UI |
+| Audiobookshelf | OIDC | Link existing users by email, then password login off |
 | Send | none | oauth2-proxy on uploads only |
-| Gitea | OIDC | Do it, existing accounts get linked, not recreated |
+| Gitea | OIDC | Existing accounts get linked, not recreated; last to move |
 | Rybbit | unclear | OIDC if the version supports it, else forward-auth on the dashboard |
 | Homepage, picshare, pinga admin | none | Shared oauth2-proxy |
 | Headscale | OIDC | Careful: existing users and nodes have to move |
 | Headlamp | none | Retired: Hub shows the cluster |
-| Vaultwarden | SSO | Optional, the master password still does the real work |
-| Joplin, Baikal | none | Stay on local logins. Forward-auth would break sync |
+| Vaultwarden | SSO | Link by email; the master password stays and still unlocks the vault |
+| Joplin | SAML | Matched by email, so emails get locked in Keycloak first |
+| Baïkal | none | Stays on its own passwords: CalDAV clients only do username and password |
 | Matrix | via MAS | Separate project |
 
 Public sites, SearXNG, Ollama, bots, runners and game servers don't need it.
+
+How each one moves without anyone losing data: [sso-migration.md](sso-migration.md).
