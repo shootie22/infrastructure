@@ -210,6 +210,10 @@ data:
         redirectUris:
           - https://books.yeetus.net/auth/openid/callback
           - https://books.yeetus.net/auth/openid/mobile-redirect
+          # Audiobookshelf puts its /audiobookshelf/ prefix in front by default
+          # (it serves the same app there), and has no setting for it here.
+          - https://books.yeetus.net/audiobookshelf/auth/openid/callback
+          - https://books.yeetus.net/audiobookshelf/auth/openid/mobile-redirect
         webOrigins: ["https://books.yeetus.net"]
         attributes:
           pkce.code.challenge.method: S256
