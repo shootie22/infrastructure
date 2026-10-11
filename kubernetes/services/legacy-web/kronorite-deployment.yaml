@@ -4,7 +4,7 @@ metadata:
   name: kronorite
   namespace: legacy-web
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: kronorite
@@ -23,10 +23,21 @@ spec:
             - /etc/caddy/Caddyfile
             - --adapter
             - caddyfile
+            # Picks up a changed ConfigMap by itself, no restart needed.
+            - --watch
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
+          # Traefik needs a moment to stop sending requests here (#89).
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            periodSeconds: 2
           volumeMounts:
             - name: config
               mountPath: /etc/caddy
@@ -35,3 +46,17 @@ spec:
         - name: config
           configMap:
             name: kronorite-caddy
+      # One copy per site, so either site can serve it alone (#89).
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchLabels:
+                  app: kronorite
+  # No third site for a surge pod, so replace one at a time.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1

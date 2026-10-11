@@ -66,6 +66,14 @@ Order: Nebula first (it needs nothing), then one server restored from an etcd sn
      --from-file=key=/var/lib/sops-nix/key.txt
    ```
    Hand over to Git: `kubectl apply -f kubernetes/bootstrap/root.yaml`. Argo CD then installs everything under `kubernetes/argocd` and `kubernetes/services`, Headscale included.
+
+   The GitHub webhook's secret isn't in Git. Make a new one and set it in both places, or Argo CD takes unsigned calls (#87):
+   ```sh
+   s=$(openssl rand -hex 32)
+   kubectl -n argocd patch secret argocd-secret --type merge \
+     -p "{\"stringData\":{\"webhook.github.secret\":\"$s\"}}"
+   ```
+   then paste `$s` into the webhook under the repo's Settings → Webhooks.
 4. **The thinkcentre and the edge:** install, sign their Nebula keys, deploy. With no `/var/lib/rancher/k3s/server/db` they join the restored cluster as new members.
 5. **Agents:** mixi and minima from their NixOS configs, Nebula keys signed. They join through `k3s-api` (every API server, from the hosts file), so this works with either API server up. An API server leaves itself out of its own `k3s-api` entry: a fresh server that tried to join through itself would hang, since its API isn't up yet.
 6. **The tailnet** comes back with Headscale, once the cluster runs it again.
