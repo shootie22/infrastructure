@@ -254,6 +254,26 @@ data:
             config: {user.attribute: firstName, attribute.name: displayName, attribute.nameformat: Basic}
         authenticationFlowBindingOverrides:
           browser: gate joplin
+      # Vaultwarden (vw.yeetus.net, #66). Its side is SSO_* in
+      # vaultwarden/staged.yaml. Bitwarden's apps check the access token
+      # every 5 minutes, so it lives 10 here (Vaultwarden's own advice).
+      # offline_access comes with the realm's optional scopes; listing scopes
+      # here would replace the defaults.
+      - clientId: vaultwarden
+        name: Passwords
+        description: vw.yeetus.net
+        enabled: true
+        publicClient: false
+        secret: $(env:VAULTWARDEN_SECRET)
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        redirectUris: ["https://vw.yeetus.net/identity/connect/oidc-signin"]
+        webOrigins: ["https://vw.yeetus.net"]
+        attributes:
+          pkce.code.challenge.method: S256
+          access.token.lifespan: "600"
+        authenticationFlowBindingOverrides:
+          browser: gate vaultwarden
     roles:
       client:
         audiobookshelf:
@@ -262,6 +282,9 @@ data:
         joplin:
           - name: access
             description: May sign in to Joplin
+        vaultwarden:
+          - name: access
+            description: May sign in to Vaultwarden
     authenticatorConfig:
       - alias: audiobookshelf no access
         config: {condUserRole: audiobookshelf.access, negate: "true"}
@@ -270,6 +293,10 @@ data:
       - alias: joplin no access
         config: {condUserRole: joplin.access, negate: "true"}
       - alias: joplin deny
+        config: {denyErrorMessage: yeetusNoAccess}
+      - alias: vaultwarden no access
+        config: {condUserRole: vaultwarden.access, negate: "true"}
+      - alias: vaultwarden deny
         config: {denyErrorMessage: yeetusNoAccess}
     # Each gated app: Keycloak's browser flow, then "no access role, no entry"
     # (docs/ha/keycloak-sso.md, "Who gets into which app").
@@ -346,6 +373,42 @@ data:
         authenticationExecutions:
           - {authenticator: conditional-user-role, authenticatorConfig: joplin no access, requirement: REQUIRED, priority: 10}
           - {authenticator: deny-access-authenticator, authenticatorConfig: joplin deny, requirement: REQUIRED, priority: 20}
+      - alias: gate vaultwarden
+        description: Sign in, then only with vaultwarden's access role
+        providerId: basic-flow
+        topLevel: true
+        builtIn: false
+        authenticationExecutions:
+          - {flowAlias: gate vaultwarden sign in, requirement: REQUIRED, priority: 10, autheticatorFlow: true}
+          - {flowAlias: gate vaultwarden check, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+      - alias: gate vaultwarden sign in
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: auth-cookie, requirement: ALTERNATIVE, priority: 10}
+          - {flowAlias: gate vaultwarden forms, requirement: ALTERNATIVE, priority: 20, autheticatorFlow: true}
+      - alias: gate vaultwarden forms
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: auth-username-password-form, requirement: REQUIRED, priority: 10}
+          - {flowAlias: gate vaultwarden 2fa, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+      - alias: gate vaultwarden 2fa
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: conditional-user-configured, requirement: REQUIRED, priority: 10}
+          - {authenticator: auth-otp-form, requirement: ALTERNATIVE, priority: 20}
+      - alias: gate vaultwarden check
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: conditional-user-role, authenticatorConfig: vaultwarden no access, requirement: REQUIRED, priority: 10}
+          - {authenticator: deny-access-authenticator, authenticatorConfig: vaultwarden deny, requirement: REQUIRED, priority: 20}
     users:
       - username: service-account-yeetus-api
         serviceAccountClientId: yeetus-api
@@ -367,6 +430,8 @@ data:
           joplin: [access]
       - name: passwords
         attributes: {description: [Vaultwarden]}
+        clientRoles:
+          vaultwarden: [access]
       - name: git
         attributes: {description: [Gitea]}
       - name: calendar
