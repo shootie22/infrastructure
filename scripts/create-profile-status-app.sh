@@ -36,6 +36,10 @@ if ! grep -q -- '-----BEGIN RSA PRIVATE KEY-----' "$key_file"; then
 fi
 
 dir=kubernetes/services/profile-status
+if [[ ! -d "$dir" ]]; then
+  printf 'No %s here: run this from the infrastructure repo, on the branch that adds profile-status.\n' "$dir" >&2
+  exit 1
+fi
 target=$dir/github-app.sops.yaml
 if [[ -e "$target" ]]; then
   printf 'Refusing to overwrite %s\n' "$target" >&2
