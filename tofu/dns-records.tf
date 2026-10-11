@@ -43,7 +43,7 @@ locals {
     }
     "byradu.com/api/CNAME" = {
       zone    = "byradu.com", name = "api", type = "CNAME"
-      content = "api.radunenu.com"
+      content = "beacon.radunenu.com"
       proxied = true
     }
     "byradu.com/www/CNAME" = {
