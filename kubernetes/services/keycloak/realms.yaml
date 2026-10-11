@@ -23,6 +23,9 @@ data:
     realm: network-admin
     displayName: Network Admin
     enabled: true
+    # Same pages with a red card, so it never looks like the everyday account.
+    loginTheme: yippie
+    rememberMe: false
   # Everyone else (friends, family, my everyday account) and the services
   # they use. Access by a group per app.
   network-yippie.yaml: |
