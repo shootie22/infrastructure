@@ -1,6 +1,6 @@
 # yeetus-api's Postgres: profile pictures (and later app passwords). One
-# instance in each site, like keycloak-db. Started as a copy of yippie-api-db
-# (the name before the rename), which goes once this one is in use.
+# instance in each site, like keycloak-db. Started on 11 Oct as a copy of
+# yippie-api-db (the name before the rename), which is gone now.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -13,7 +13,8 @@ spec:
     initdb:
       database: yeetus
       owner: yeetus
-      # Copies yippie-api-db's database once, at creation.
+      # Copied yippie-api-db's database once, at creation. Only read at
+      # bootstrap, so the missing source does nothing now.
       import:
         type: microservice
         databases: [yippie]

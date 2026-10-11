@@ -1,10 +1,10 @@
 # yeetus-api (source: git.yeetus.net/radu/yeetus, apps/api; it was yippie-api):
 # profile pictures for Yeetus Network and Network Admin, set as each user's
 # `picture` attribute, and Home's list of services with their status. Served
-# under auth.yeetus.net/yeetus/ (and the old /yippie/, ingress.yaml) so the
-# account page reaches it without CORS. Its Postgres is yeetus-api-db.yaml; its
-# Keycloak client (yeetus-api, both realms) is in realms.yaml, with the secret
-# in yeetus-api.sops.yaml and config-cli.sops.yaml.
+# under auth.yeetus.net/yeetus/ (ingress.yaml) so the account page reaches it
+# without CORS. Its Postgres is yeetus-api-db.yaml; its Keycloak client
+# (yeetus-api, both realms) is in realms.yaml, with the secret in
+# yeetus-api.sops.yaml and config-cli.sops.yaml.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -40,7 +40,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: yeetus-api
-          image: git.radunenu.com/radu/yeetus-api:main@sha256:90e8f16aa4c1efe89d2710b393d788eb47881ce8dc2822600828d41856215b0a
+          image: git.radunenu.com/radu/yeetus-api:main@sha256:cc1f61f060cf34599c094a719a41570734bd179a07f010577506302fecd98bca
           env:
             - name: DATABASE_URL
               valueFrom:
