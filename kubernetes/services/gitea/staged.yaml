@@ -6,48 +6,6 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gitea-postgres
-  namespace: gitea
-spec:
-  replicas: 1
-  strategy: {type: Recreate}
-  selector:
-    matchLabels: {app: gitea-postgres}
-  template:
-    metadata:
-      labels: {app: gitea-postgres}
-    spec:
-      automountServiceAccountToken: false
-      nodeSelector:
-        kubernetes.io/hostname: thinkcentre
-      containers:
-        - name: postgres
-          image: postgres:14.24-trixie@sha256:156f0b253fd61366d5fc2107ad45955027d5612f695a8436ce20167f3fa79bff
-          envFrom:
-            - secretRef: {name: gitea-env}
-          ports:
-            - {name: postgres, containerPort: 5432}
-          volumeMounts:
-            - {name: postgres, mountPath: /var/lib/postgresql/data}
-      volumes:
-        - name: postgres
-          hostPath:
-            path: /home/main/services/gitea/postgres
-            type: Directory
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: db
-  namespace: gitea
-spec:
-  selector: {app: gitea-postgres}
-  ports:
-    - {name: postgres, port: 5432, targetPort: postgres}
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: gitea
   namespace: gitea
 spec:

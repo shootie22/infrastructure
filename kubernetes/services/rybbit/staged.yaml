@@ -76,69 +76,6 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: postgres
-  namespace: rybbit
-spec:
-  replicas: 1
-  strategy:
-    type: Recreate
-  selector:
-    matchLabels:
-      app: rybbit-postgres
-  template:
-    metadata:
-      labels:
-        app: rybbit-postgres
-    spec:
-      automountServiceAccountToken: false
-      nodeSelector:
-        kubernetes.io/hostname: thinkcentre
-      containers:
-        - name: postgres
-          image: postgres:17.4-bookworm@sha256:304ab813518754228f9f792f79d6da36359b82d8ecf418096c636725f8c930ad
-          env:
-            - name: POSTGRES_DB
-              valueFrom: {secretKeyRef: {name: rybbit-env, key: POSTGRES_DB}}
-            - name: POSTGRES_USER
-              valueFrom: {secretKeyRef: {name: rybbit-env, key: POSTGRES_USER}}
-            - name: POSTGRES_PASSWORD
-              valueFrom: {secretKeyRef: {name: rybbit-env, key: POSTGRES_PASSWORD}}
-          ports:
-            - name: postgres
-              containerPort: 5432
-          readinessProbe:
-            exec:
-              command:
-                - sh
-                - -c
-                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
-            initialDelaySeconds: 3
-            periodSeconds: 5
-          volumeMounts:
-            - name: data
-              mountPath: /var/lib/postgresql/data
-      volumes:
-        - name: data
-          hostPath:
-            path: /home/main/services/rybbit/postgres
-            type: Directory
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres
-  namespace: rybbit
-spec:
-  selector:
-    app: rybbit-postgres
-  ports:
-    - name: postgres
-      port: 5432
-      targetPort: postgres
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: clickhouse
   namespace: rybbit
 spec:

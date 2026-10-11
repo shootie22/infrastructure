@@ -6,7 +6,7 @@ keep:
 - database.yaml
 - ingress.yaml
 - keycloak.yaml
-- postgres.yaml
+- namespace.yaml
 - secret.sops.yaml
 kind: kept
 name: keycloak

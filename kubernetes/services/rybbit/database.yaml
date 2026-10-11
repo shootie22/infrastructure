@@ -1,6 +1,6 @@
 # Rybbit's Postgres (accounts and site settings; the events are in
-# ClickHouse): one instance in each site (#31). Imported from the old single
-# Postgres (postgres in staged.yaml), which stays until the move is checked.
+# ClickHouse): one instance in each site (#31). Imported on 6 Oct from the old
+# single Postgres, removed on 11 Oct (#162).
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -13,19 +13,6 @@ spec:
     initdb:
       database: analytics
       owner: rybbit
-      import:
-        type: microservice
-        databases: [analytics]
-        source:
-          externalCluster: old
-  externalClusters:
-    - name: old
-      connectionParameters:
-        host: postgres
-        user: rybbit
-        dbname: analytics
-        sslmode: disable
-      password: {name: rybbit-env, key: POSTGRES_PASSWORD}
   storage:
     size: 2Gi
     storageClass: local-path

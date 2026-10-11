@@ -1,6 +1,5 @@
-# Keycloak's Postgres: one instance in each site (#31). Created by importing
-# from the old single Postgres (postgres.yaml), which stays until the move is
-# checked; its folder on fuji is the way back.
+# Keycloak's Postgres: one instance in each site (#31). Imported on 6 Oct from
+# the old single Postgres, removed on 11 Oct (#162).
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -13,19 +12,6 @@ spec:
     initdb:
       database: keycloak
       owner: keycloak
-      import:
-        type: microservice
-        databases: [keycloak]
-        source:
-          externalCluster: old
-  externalClusters:
-    - name: old
-      connectionParameters:
-        host: postgres
-        user: keycloak
-        dbname: keycloak
-        sslmode: disable
-      password: {name: keycloak-env, key: POSTGRES_PASSWORD}
   storage:
     size: 2Gi
     storageClass: local-path

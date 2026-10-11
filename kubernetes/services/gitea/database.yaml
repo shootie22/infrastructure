@@ -1,6 +1,5 @@
-# Gitea's Postgres: one instance in each site (#31, #144). Imported from the
-# old single Postgres 14 (gitea-postgres in staged.yaml), which stays until the
-# move is checked. The repos are files and still only on the thinkcentre (#142).
+# Gitea's Postgres: one instance in each site (#31, #144). Imported on 6 Oct
+# from the old single Postgres 14, removed on 11 Oct (#162).
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -13,19 +12,6 @@ spec:
     initdb:
       database: gitea
       owner: gitea
-      import:
-        type: microservice
-        databases: [gitea_db]
-        source:
-          externalCluster: old
-  externalClusters:
-    - name: old
-      connectionParameters:
-        host: db
-        user: gitea_dbusr
-        dbname: gitea_db
-        sslmode: disable
-      password: {name: gitea-env, key: POSTGRES_PASSWORD}
   storage:
     size: 20Gi
     storageClass: local-path
