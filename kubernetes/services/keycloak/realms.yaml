@@ -6,18 +6,26 @@
 # Client secrets don't go here: write $(env:SOME_SECRET) and put SOME_SECRET
 # in config-cli.sops.yaml.
 #
-# master isn't here on purpose: it only holds the admin account.
+# Which realm a service goes in: docs/ha/keycloak-sso.md#realms.
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: keycloak-realms
   namespace: keycloak
 data:
-  # Admin tools: Grafana, Hub. Only me.
-  infra.yaml: |
-    realm: infra
+  # Keycloak's own admin realm. Only the admin account and config-cli, never
+  # apps or other users. Can't be renamed.
+  master.yaml: |
+    realm: master
+    displayName: Keycloak Admin
+  # Admin tools only I use: Grafana, Hub. Access by a role per app.
+  network-admin.yaml: |
+    realm: network-admin
+    displayName: Network Admin
     enabled: true
-  # Friends' accounts and the services they use.
-  main.yaml: |
-    realm: main
+  # Everyone else (friends, family, my everyday account) and the services
+  # they use. Access by a group per app.
+  network-yippie.yaml: |
+    realm: network-yippie
+    displayName: Yippie Network
     enabled: true

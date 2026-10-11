@@ -1,7 +1,7 @@
 # hub-public (infra-hub #40): the incident API anyone with a token can read, at
 # https://status.radunenu.com/api/v1/incidents. Its own pods, its own
 # database role that can only read two views, no Kubernetes token, no Hub
-# session. Tokens come from Keycloak (realm infra): a client per consumer,
+# session. Tokens come from Keycloak (realm network-admin): a client per consumer,
 # with the role incidents:read of the hub-public client.
 apiVersion: apps/v1
 kind: Deployment
@@ -47,7 +47,7 @@ spec:
           args: [public]
           env:
             - {name: HUB_DATABASE_URL_FILE, value: /secrets/db/uri}
-            - {name: HUB_PUBLIC_ISSUER, value: "https://auth.radunenu.com/realms/infra"}
+            - {name: HUB_PUBLIC_ISSUER, value: "https://auth.radunenu.com/realms/network-admin"}
           ports:
             - {name: http, containerPort: 8080}
           readinessProbe:

@@ -96,6 +96,13 @@ spec:
               value: "true"
             - name: GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH
               value: /var/lib/grafana/dashboards/observability/platform-overview.json
+            # Keycloak realm network-admin (docs/ha/keycloak-sso.md).
+            - name: GF_AUTH_GENERIC_OAUTH_AUTH_URL
+              value: https://auth.radunenu.com/realms/network-admin/protocol/openid-connect/auth
+            - name: GF_AUTH_GENERIC_OAUTH_TOKEN_URL
+              value: https://auth.radunenu.com/realms/network-admin/protocol/openid-connect/token
+            - name: GF_AUTH_GENERIC_OAUTH_API_URL
+              value: https://auth.radunenu.com/realms/network-admin/protocol/openid-connect/userinfo
             - name: GF_DATABASE_TYPE
               value: postgres
             - name: GF_DATABASE_HOST

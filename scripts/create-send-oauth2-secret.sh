@@ -19,12 +19,6 @@ umask 077
 tmp=$(mktemp "${target}.XXXXXX")
 trap 'rm -f "$tmp"' EXIT
 
-read -r -p 'Keycloak realm (as in https://auth.radunenu.com/realms/<realm>): ' realm
-if [[ ! "$realm" =~ ^[A-Za-z0-9_-]+$ ]]; then
-  printf 'Unexpected realm name; no file was created.\n' >&2
-  exit 1
-fi
-
 read -r -s -p 'Client secret of the "share" client (input hidden): ' client_secret
 printf '\n' >&2
 if [[ ! "$client_secret" =~ ^[A-Za-z0-9_-]+$ ]]; then
@@ -45,7 +39,6 @@ spec:
   secretTemplates:
     - name: send-oauth2
       stringData:
-        OAUTH2_PROXY_OIDC_ISSUER_URL: "https://auth.radunenu.com/realms/$realm"
         OAUTH2_PROXY_CLIENT_SECRET: "$client_secret"
         OAUTH2_PROXY_COOKIE_SECRET: "$cookie_secret"
 YAML
