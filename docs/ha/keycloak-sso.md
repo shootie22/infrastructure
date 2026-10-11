@@ -122,7 +122,18 @@ authenticationFlows:
 | Headscale | OIDC | Careful: existing users and nodes have to move |
 | Headlamp | none | Retired: Hub shows the cluster |
 | Vaultwarden | SSO | Optional, the master password still does the real work |
-| Joplin, Baikal | none | Stay on local logins. Forward-auth would break sync |
+| Joplin | SAML | Done, password login kept for now |
+| Baïkal | none | App passwords from the account page, checked by Traefik (below) |
 | Matrix | via MAS | Separate project |
 
 Public sites, SearXNG, Ollama, bots, runners and game servers don't need it.
+
+## Baïkal: app passwords
+
+Calendar and contacts apps only do a username and a password, so they never see Keycloak. People in the `calendar` group make one password per device on the account page (Sign-in & security, Calendar apps); yeetus-api keeps a SHA-256 of each.
+
+- `cal.yeetus.net/dav.php`, `/cal.php` and `/card.php` go through the `dav-auth` forwardAuth (`kubernetes/services/baikal/ingress.yaml`). yeetus-api answers on port 8081, which no Ingress routes to: a working app password from someone enabled and still in the group gets `X-Yeetus-User: <username>` back, anything else a 401 with a Basic challenge.
+- Baïkal runs in its "Apache" auth mode and takes that header as the user (nginx config in `staged.yaml`). nginx refuses DAV requests without it and never passes the app's own `Authorization` on, because Baïkal would otherwise trust a blank user or the unchecked Basic username.
+- Everything else on the host (start page, `/admin`) drops any `X-Yeetus-User` the client sent, and a NetworkPolicy lets only Traefik reach the pod.
+- Baïkal usernames have to match Keycloak usernames. A new person needs a Baïkal user too (admin page), its password no longer matters.
+- Removing an app password stops that device right away. Disabling the account or taking someone out of `calendar` stops all their devices within a minute.

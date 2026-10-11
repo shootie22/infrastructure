@@ -12,6 +12,33 @@ spec:
     name: letsencrypt-prod
     kind: ClusterIssuer
 ---
+# Calendar app passwords (#233). The DAV endpoints only take requests that
+# yeetus-api has checked: a Basic header with an app password made on the
+# account page. It answers with the Keycloak username, which Traefik passes
+# on as X-Yeetus-User (and drops any X-Yeetus-User the app sent).
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: dav-auth
+  namespace: baikal
+spec:
+  forwardAuth:
+    address: http://yeetus-api.keycloak.svc.cluster.local:8081/dav-auth
+    authRequestHeaders: [Authorization]
+    authResponseHeaders: [X-Yeetus-User]
+---
+# Everything else (the start page, the admin pages): nobody gets to name a
+# user by sending the header themselves.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: no-user
+  namespace: baikal
+spec:
+  headers:
+    customRequestHeaders:
+      X-Yeetus-User: ""
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -26,6 +53,7 @@ metadata:
     gethomepage.dev/description: Calendars and contacts
     gethomepage.dev/weight: "800"
     gethomepage.dev/siteMonitor: http://baikal.baikal.svc.cluster.local
+    traefik.ingress.kubernetes.io/router.middlewares: baikal-no-user@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
@@ -44,6 +72,32 @@ spec:
                 port:
                   number: 80
 ---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: baikal-dav
+  namespace: baikal
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: baikal-dav-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - cal.yeetus.net
+        - cal.radunenu.com
+      secretName: cal-radunenu-com-tls
+  rules:
+    - host: cal.yeetus.net
+      http: &dav
+        paths:
+          - {path: /dav.php, pathType: Prefix, backend: {service: {name: baikal, port: {number: 80}}}}
+          - {path: /cal.php, pathType: Prefix, backend: {service: {name: baikal, port: {number: 80}}}}
+          - {path: /card.php, pathType: Prefix, backend: {service: {name: baikal, port: {number: 80}}}}
+    # The old name: devices set up with it keep working once they have an
+    # app password.
+    - host: cal.radunenu.com
+      http: *dav
+---
 # cal.radunenu.com, the old name: still served as is, so old links, clones
 # and apps keep working. No homepage annotation, so the status probes only
 # check the new name.
@@ -52,6 +106,8 @@ kind: Ingress
 metadata:
   name: baikal-old-name
   namespace: baikal
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: baikal-no-user@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:

@@ -3,6 +3,7 @@
 # fails `hub render --check`.
 keep:
 - ingress.yaml
+- networkpolicy.yaml
 - staged.yaml
 kind: kept
 name: baikal
