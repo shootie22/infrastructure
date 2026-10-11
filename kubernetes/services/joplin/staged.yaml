@@ -6,46 +6,6 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: joplin-postgres
-  namespace: joplin
-spec:
-  replicas: 1
-  strategy: {type: Recreate}
-  selector:
-    matchLabels: {app: joplin-postgres}
-  template:
-    metadata:
-      labels: {app: joplin-postgres}
-    spec:
-      automountServiceAccountToken: false
-      nodeSelector:
-        kubernetes.io/hostname: thinkcentre
-      containers:
-        - name: postgres
-          image: postgres:15.17-trixie@sha256:f30e3de0ac9cc938dac627ef2231099867c694b5f949fadb924c8c977428c399
-          envFrom:
-            - secretRef: {name: joplin-env}
-          ports:
-            - {name: postgres, containerPort: 5432}
-          volumeMounts:
-            - {name: data, mountPath: /var/lib/postgresql/data}
-      volumes:
-        - name: data
-          hostPath: {path: /home/main/services/joplin/db, type: Directory}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: joplin-db
-  namespace: joplin
-spec:
-  selector: {app: joplin-postgres}
-  ports:
-    - {name: postgres, port: 5432, targetPort: postgres}
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: joplin
   namespace: joplin
 spec:

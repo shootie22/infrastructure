@@ -1,6 +1,6 @@
 # Joplin's Postgres, notes and attachments included: one instance in each
-# site (#31). Imported from the old single Postgres (joplin-postgres in
-# staged.yaml), which stays until the move is checked.
+# site (#31). Imported on 6 Oct from the old single Postgres, removed on 11 Oct
+# (#162).
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -13,19 +13,6 @@ spec:
     initdb:
       database: joplin
       owner: joplin
-      import:
-        type: microservice
-        databases: [joplin_db]
-        source:
-          externalCluster: old
-  externalClusters:
-    - name: old
-      connectionParameters:
-        host: joplin-db
-        user: joplin_usr
-        dbname: joplin_db
-        sslmode: disable
-      password: {name: joplin-env, key: POSTGRES_PASSWORD}
   storage:
     size: 10Gi
     storageClass: local-path
