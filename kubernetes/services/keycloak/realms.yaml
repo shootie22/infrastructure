@@ -33,6 +33,11 @@ data:
     realm: network-yippie
     displayName: Yippie Network
     enabled: true
+    # Everyone has a short username (the same as on Gitea) and can sign in
+    # with it or their email. Apps go by the username, so it isn't the email.
+    registrationEmailAsUsername: false
+    loginWithEmailAllowed: true
+    duplicateEmailsAllowed: false
     # The Yippie login and account pages (git.radunenu.com/radu/yippie).
     # Need the yippie-keycloak image; without it Keycloak uses its own pages.
     loginTheme: yippie
