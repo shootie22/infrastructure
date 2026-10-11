@@ -6,15 +6,15 @@ Tasks are in the [Keycloak SSO milestone](https://github.com/shootie22/infrastru
 
 ## Realms
 
-Three of them, and every service goes in one of the two below master. The rule: if anyone besides me will ever use it, it goes in network-yippie.
+Three of them, and every service goes in one of the two below master. The rule: if anyone besides me will ever use it, it goes in network-yeetus.
 
 | Realm | Login page says | Who logs in | What's in it | Access by |
 |---|---|---|---|---|
 | `master` | Keycloak Admin | me, only to manage Keycloak | the admin account, `config-cli` | nothing else, ever |
 | `network-admin` | Network Admin | me | admin tools: Grafana, Hub | a role per app (`grafana-admin`) |
-| `network-yippie` | Yippie Network | friends, family, my everyday account | services other people use: Send | a group per app (`share-uploaders`) |
+| `network-yeetus` | Yeetus Network | friends, family, my everyday account | services other people use: Send | a group per app (`share-uploaders`) |
 
-master is Keycloak's own realm and can't be renamed or deleted. It's the key to everything else, so no app ever logs in through it. network-admin and network-yippie were called `infra` and `main` until 11 Oct.
+master is Keycloak's own realm and can't be renamed or deleted. It's the key to everything else, so no app ever logs in through it. network-admin and network-yeetus were called `infra` and `main` until 11 Oct, and network-yeetus was network-yippie for an evening after that.
 
 A service's login URL is `https://auth.yeetus.net/realms/<realm>`. It goes in the Deployment as a plain value, not in the secret, so the realm a service uses is visible in Git.
 
@@ -38,15 +38,15 @@ Setting it up once, in the admin UI, realm `master`:
 
 ## Who gets into which app
 
-Keycloak lets anyone in the realm sign in to any client, and some apps create an account for whoever arrives. So every app in network-yippie gets a gate:
+Keycloak lets anyone in the realm sign in to any client, and some apps create an account for whoever arrives. So every app in network-yeetus gets a gate:
 
 - a client role `access` on the app's client;
 - a group per app (`audiobooks`, `notes`, `passwords`, `git`, `calendar`) that has that role, in `realms.yaml`;
 - the client's browser flow overridden with a copy of Keycloak's browser flow plus a last step: if the user doesn't have the role, Deny access.
 
-The gate also applies when someone is already signed in elsewhere (the cookie path), which a test on a Keycloak copy checked. A refused person gets the login theme's "Not yet" page with a ready mail asking for access (message key `yippieNoAccess`). Adding someone to an app is adding them to its group in the admin UI. Home uses the same groups.
+The gate also applies when someone is already signed in elsewhere (the cookie path), which a test on a Keycloak copy checked. A refused person gets the login theme's "Not yet" page with a ready mail asking for access (message key `yeetusNoAccess`). Adding someone to an app is adding them to its group in the admin UI. Home uses the same groups.
 
-The blocks for an app (here `audiobooks`, client `audiobookshelf`), in network-yippie's file:
+The blocks for an app (here `audiobooks`, client `audiobookshelf`), in network-yeetus's file:
 
 ```yaml
 clients:
@@ -67,7 +67,7 @@ authenticatorConfig:
   - alias: audiobookshelf no access
     config: {condUserRole: audiobookshelf.access, negate: "true"}
   - alias: audiobookshelf deny
-    config: {denyErrorMessage: yippieNoAccess}
+    config: {denyErrorMessage: yeetusNoAccess}
 authenticationFlows:
   - alias: gate audiobookshelf
     providerId: basic-flow

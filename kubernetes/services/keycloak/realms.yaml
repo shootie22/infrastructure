@@ -28,7 +28,7 @@ data:
     accountTheme: yeetus
     rememberMe: false
     # Keycloak's default profile plus `picture`, set by yeetus-api like in
-    # network-yippie. Only I am in this realm, so the rest stays editable.
+    # network-yeetus. Only I am in this realm, so the rest stays editable.
     attributes:
       userProfileEnabled: "true"
     userProfile:
@@ -76,7 +76,7 @@ data:
           displayHeader: User metadata
           displayDescription: Attributes, which refer to user metadata
     clients:
-      # yeetus-api.yaml, same as in network-yippie (same secret).
+      # yeetus-api.yaml, same as in network-yeetus (same secret).
       - clientId: yeetus-api
         name: yeetus-api
         enabled: true
@@ -93,8 +93,8 @@ data:
           realm-management: [view-users, manage-users]
   # Everyone else (friends, family, my everyday account) and the services
   # they use. Access by a group per app.
-  network-yippie.yaml: |
-    realm: network-yippie
+  network-yeetus.yaml: |
+    realm: network-yeetus
     displayName: Yeetus Network
     enabled: true
     # Everyone has a short username (the same as on Gitea) and can sign in

@@ -12,9 +12,7 @@ metadata:
   namespace: keycloak
 spec:
   schedule: "*/10 * * * *"
-  # Paused while network-yippie is renamed to network-yeetus in the admin UI:
-  # a run in between would make a new, empty network-yippie.
-  suspend: true
+  suspend: false
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 3
