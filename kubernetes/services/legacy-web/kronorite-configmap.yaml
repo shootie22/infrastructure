@@ -13,5 +13,17 @@ data:
     :8080 {
       @root path /
       redir @root https://store.steampowered.com/app/876780 302
+
+      # The old site's pages (#73). On the OVH box each was an index.html
+      # with a meta refresh; these are the same targets. /atestat and /bbtom
+      # had real content and aren't back yet.
+      @steam path /kronorite-has-released /kronorite-has-released/ /play-kronorite /play-kronorite/ /steam-store-page /steam-store-page/
+      redir @steam https://store.steampowered.com/app/876780/Kronorite/ 302
+      @discord path /discord-server /discord-server/ /contact-us /contact-us/ /august-open-beta-join-our-discord /august-open-beta-join-our-discord/ /open-beta-live-come-grab-your-key /open-beta-live-come-grab-your-key/
+      redir @discord https://discord.kronorite.com 302
+      # /service-status went to status.kronorite.com, which is gone.
+      @home path /home /home/ /about-us /about-us/ /newsletter /newsletter/ /privacy-policy /privacy-policy/ /service-status /service-status/
+      redir @home / 302
+
       respond 404
     }
