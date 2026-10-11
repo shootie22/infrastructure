@@ -1,0 +1,106 @@
+# keycloak-config-cli (#56): applies realms.yaml to Keycloak every 10
+# minutes, so a new client or group is a commit instead of clicks in the
+# admin UI. It skips a realm whose file hasn't changed since its last run.
+#
+# It logs in as the config-cli client in master (a service account with the
+# admin role); its secret is in config-cli.sops.yaml, made with
+# scripts/create-keycloak-config-cli-secret.sh.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: keycloak-config-cli
+  namespace: keycloak
+spec:
+  schedule: "*/10 * * * *"
+  # Until config-cli.sops.yaml exists.
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 600
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: config-cli
+              image: docker.io/adorsys/keycloak-config-cli:6.5.1-26.5.5@sha256:0955d98c8a341898b7aa177477edf8a1e90569ae50bbe7598141c1270b773274
+              env:
+                - name: KEYCLOAK_URL
+                  value: http://keycloak:8080
+                # Keycloak may be moving to the other site right then.
+                - name: KEYCLOAK_AVAILABILITYCHECK_ENABLED
+                  value: "true"
+                - name: KEYCLOAK_AVAILABILITYCHECK_TIMEOUT
+                  value: 300s
+                - name: KEYCLOAK_LOGINREALM
+                  value: master
+                - name: KEYCLOAK_GRANTTYPE
+                  value: client_credentials
+                - name: KEYCLOAK_CLIENTID
+                  value: config-cli
+                - name: IMPORT_FILES_LOCATIONS
+                  value: /config/*.yaml
+                - name: IMPORT_VARSUBSTITUTION_ENABLED
+                  value: "true"
+                # Never delete anything. By default it deletes groups, roles,
+                # clients and flows that aren't in the files, remote state or
+                # not (it took a hand-made group in a test). Removing something
+                # is done by hand in the admin UI.
+                - {name: IMPORT_MANAGED_AUTHENTICATIONFLOW, value: no-delete}
+                - {name: IMPORT_MANAGED_GROUP, value: no-delete}
+                - {name: IMPORT_MANAGED_REQUIREDACTION, value: no-delete}
+                - {name: IMPORT_MANAGED_CLIENTSCOPE, value: no-delete}
+                - {name: IMPORT_MANAGED_SCOPEMAPPING, value: no-delete}
+                - {name: IMPORT_MANAGED_CLIENTSCOPEMAPPING, value: no-delete}
+                - {name: IMPORT_MANAGED_COMPONENT, value: no-delete}
+                - {name: IMPORT_MANAGED_SUBCOMPONENT, value: no-delete}
+                - {name: IMPORT_MANAGED_IDENTITYPROVIDER, value: no-delete}
+                - {name: IMPORT_MANAGED_IDENTITYPROVIDERMAPPER, value: no-delete}
+                - {name: IMPORT_MANAGED_ROLE, value: no-delete}
+                - {name: IMPORT_MANAGED_CLIENT, value: no-delete}
+                - {name: IMPORT_MANAGED_CLIENTAUTHORIZATIONRESOURCES, value: no-delete}
+                - {name: IMPORT_MANAGED_CLIENTAUTHORIZATIONPOLICIES, value: no-delete}
+                - {name: IMPORT_MANAGED_CLIENTAUTHORIZATIONSCOPES, value: no-delete}
+                - {name: IMPORT_MANAGED_MESSAGEBUNDLES, value: no-delete}
+                - {name: IMPORT_MANAGED_WORKFLOW, value: no-delete}
+                - name: JAVA_OPTS
+                  value: -XX:MaxRAMPercentage=75
+              # KEYCLOAK_CLIENTSECRET, plus the client secrets realms.yaml
+              # refers to.
+              envFrom:
+                - secretRef:
+                    name: keycloak-config-cli
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 384Mi
+                limits:
+                  memory: 768Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: realms
+                  mountPath: /config
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: realms
+              configMap:
+                name: keycloak-realms
+            - name: tmp
+              emptyDir: {}

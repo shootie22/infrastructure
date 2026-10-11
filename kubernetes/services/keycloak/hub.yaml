@@ -3,10 +3,12 @@
 # fails `hub render --check`.
 keep:
 - certificate.yaml
+- config-cli.yaml
 - database.yaml
 - ingress.yaml
 - keycloak.yaml
 - namespace.yaml
+- realms.yaml
 - secret.sops.yaml
 kind: kept
 name: keycloak

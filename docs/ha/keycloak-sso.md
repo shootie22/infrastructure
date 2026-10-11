@@ -11,6 +11,17 @@ Tasks are in the [Keycloak SSO milestone](https://github.com/shootie22/infrastru
 - Every app keeps a local admin login as a fallback.
 - Client secrets go in a `*.sops.yaml` next to the service. Grafana (`kubernetes/services/monitoring/workloads.yaml`) is already set up this way.
 
+## Realms from Git
+
+Clients, groups and roles are written in [`keycloak/realms.yaml`](../../kubernetes/services/keycloak/realms.yaml), and [keycloak-config-cli](https://github.com/adorsys/keycloak-config-cli) applies them every 10 minutes ([`config-cli.yaml`](../../kubernetes/services/keycloak/config-cli.yaml), #56). Only what's in the file is touched, and nothing is ever deleted: by default it deletes groups and clients it didn't make, which a test with a copy of the realms caught. So taking something out is a commit plus a click in the admin UI.
+
+A client's secret is written as `$(env:NAME)` in the file, with `NAME` added to `keycloak/config-cli.sops.yaml` (`sops edit`).
+
+Setting it up once, in the admin UI, realm `master`:
+1. Clients, Create client: ID `config-cli`, Client authentication on, Service account roles on, Standard flow and Direct access grants off.
+2. The client's Service account roles tab: Assign role, filter by realm roles, `admin`.
+3. Copy the secret from the Credentials tab, then on nixpad: `nix shell nixpkgs#sops nixpkgs#yq-go -c scripts/create-keycloak-config-cli-secret.sh` and commit what it changed.
+
 ## Services
 
 | Service | Support | Plan |
