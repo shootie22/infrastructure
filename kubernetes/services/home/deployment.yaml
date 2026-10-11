@@ -1,0 +1,76 @@
+# Home at hub.radunenu.com (#222): every service on Yippie Network, yours
+# first. Static files in nginx (source: git.radunenu.com/radu/yippie,
+# apps/home); the list of services comes from yippie-api
+# (keycloak/home-catalog.yaml), sign-in from Keycloak's `home` client.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: home
+  namespace: home
+spec:
+  # One per site.
+  replicas: 2
+  selector:
+    matchLabels:
+      app: home
+  template:
+    metadata:
+      labels:
+        app: home
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: home
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      containers:
+        - name: home
+          image: git.radunenu.com/radu/yippie-home:main@sha256:5e93bb041f1117f96a3b486ea0ecf012e4ffe0a6a317645a71d5f9eb1b7d08a2
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 5m, memory: 16Mi}
+            limits: {memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            # nginx's pid file and caches; the rest of the filesystem is read-only.
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: home
+  namespace: home
+spec:
+  selector:
+    app: home
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

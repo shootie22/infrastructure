@@ -160,6 +160,32 @@ data:
           displayHeader: User metadata
           displayDescription: Attributes, which refer to user metadata
     clients:
+      # Home (kubernetes/services/home): signs people in quietly to show their
+      # services first. Public, PKCE; the person's groups go in the ID token.
+      # No gate: everyone in the realm may see Home.
+      - clientId: home
+        name: Home
+        description: hub.radunenu.com
+        enabled: true
+        publicClient: true
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        redirectUris: ["https://hub.radunenu.com/*"]
+        webOrigins: ["https://hub.radunenu.com"]
+        attributes:
+          pkce.code.challenge.method: S256
+          post.logout.redirect.uris: "https://hub.radunenu.com/*"
+        protocolMappers:
+          - name: groups
+            protocol: openid-connect
+            protocolMapper: oidc-group-membership-mapper
+            config:
+              claim.name: groups
+              full.path: "false"
+              id.token.claim: "true"
+              access.token.claim: "false"
+              userinfo.token.claim: "true"
+              introspection.token.claim: "false"
       # yippie-api.yaml: profile pictures. Only a service account, which may
       # read and change users (to set `picture`).
       - clientId: yippie-api

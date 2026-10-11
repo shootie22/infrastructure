@@ -6,6 +6,7 @@ keep:
 - config-cli.sops.yaml
 - config-cli.yaml
 - database.yaml
+- home-catalog.yaml
 - ingress.yaml
 - keycloak.yaml
 - namespace.yaml

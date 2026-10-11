@@ -206,6 +206,38 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
+    # Home (kubernetes/services/home): hub, and five easier names that
+    # redirect to it.
+    "radunenu.com/hub/CNAME" = {
+      zone    = "radunenu.com", name = "hub", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "radunenu.com/apps/CNAME" = {
+      zone    = "radunenu.com", name = "apps", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "radunenu.com/net/CNAME" = {
+      zone    = "radunenu.com", name = "net", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "radunenu.com/network/CNAME" = {
+      zone    = "radunenu.com", name = "network", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "radunenu.com/services/CNAME" = {
+      zone    = "radunenu.com", name = "services", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "radunenu.com/yippie/CNAME" = {
+      zone    = "radunenu.com", name = "yippie", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
     "radunenu.com/pbin/CNAME" = {
       zone    = "radunenu.com", name = "pbin", type = "CNAME"
       content = "beacon.radunenu.com"
