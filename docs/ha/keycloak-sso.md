@@ -4,12 +4,26 @@ Putting services behind Keycloak at `auth.radunenu.com`. This waits for Keycloak
 
 Tasks are in the [Keycloak SSO milestone](https://github.com/shootie22/infrastructure/milestone/11).
 
+## Realms
+
+Three of them, and every service goes in one of the two below master. The rule: if anyone besides me will ever use it, it goes in network-yippie.
+
+| Realm | Login page says | Who logs in | What's in it | Access by |
+|---|---|---|---|---|
+| `master` | Keycloak Admin | me, only to manage Keycloak | the admin account, `config-cli` | nothing else, ever |
+| `network-admin` | Network Admin | me | admin tools: Grafana, Hub | a role per app (`grafana-admin`) |
+| `network-yippie` | Yippie Network | friends, family, my everyday account | services other people use: Send | a group per app (`share-uploaders`) |
+
+master is Keycloak's own realm and can't be renamed or deleted. It's the key to everything else, so no app ever logs in through it. network-admin and network-yippie were called `infra` and `main` until 11 Oct.
+
+A service's login URL is `https://auth.radunenu.com/realms/<realm>`. It goes in the Deployment as a plain value, not in the secret, so the realm a service uses is visible in Git.
+
 ## How services connect
 
 - Native OIDC when the app supports it. Real users inside the app, and mobile and desktop clients keep working.
 - oauth2-proxy with a Traefik ForwardAuth middleware for apps with no login of their own. Browser only, so it breaks API and sync clients.
 - Every app keeps a local admin login as a fallback.
-- Client secrets go in a `*.sops.yaml` next to the service. Grafana (`kubernetes/services/monitoring/workloads.yaml`) is already set up this way.
+- Client secrets go in a `*.sops.yaml` next to the service, the login URL in the Deployment. Grafana (`kubernetes/services/monitoring/workloads.yaml`) is set up this way.
 
 ## Realms from Git
 
@@ -26,7 +40,7 @@ Setting it up once, in the admin UI, realm `master`:
 
 | Service | Support | Plan |
 |---|---|---|
-| Grafana | OIDC | Already done, move to the new realm |
+| Grafana | OIDC | Done, network-admin |
 | Argo CD | none | No UI exposed, only the webhook; Hub shows its state |
 | Audiobookshelf | OIDC | Do it, set up in the web UI |
 | Send | none | oauth2-proxy on uploads only |

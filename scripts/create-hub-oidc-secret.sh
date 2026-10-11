@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Puts the Keycloak client secret of Hub's client (realm infra, client hub)
+# Puts the Keycloak client secret of Hub's client (realm network-admin, client hub)
 # into kubernetes/services/hub/oidc.sops.yaml, encrypted. The secret is read
 # without echoing and never written anywhere in plain text.
 set -euo pipefail

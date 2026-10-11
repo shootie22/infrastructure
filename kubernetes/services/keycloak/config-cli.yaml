@@ -12,10 +12,7 @@ metadata:
   namespace: keycloak
 spec:
   schedule: "*/10 * * * *"
-  # Paused while infra and main are renamed to network-admin and
-  # network-yippie: with the old names in realms.yaml it would make them
-  # again, empty.
-  suspend: true
+  suspend: false
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 3
