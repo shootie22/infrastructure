@@ -25,7 +25,9 @@ spec:
       # yeetus-api and passes the Keycloak username on (ingress.yaml), so
       # Baïkal runs in its "Apache" mode and trusts it (nginx below). This
       # sets that in Baïkal's own config, which lives on the node; it logs
-      # what was there before. To go back, set AUTH_TYPE to that.
+      # what was there before. To go back, set AUTH_TYPE to that and keep
+      # this container: in Apache mode with the image's own nginx, Baïkal
+      # trusts any Basic username.
       initContainers:
         - name: auth-type
           image: docker.io/library/busybox:1.37@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e
