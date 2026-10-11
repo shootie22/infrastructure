@@ -196,7 +196,7 @@ With the edge down, Prometheus's alerts had nowhere to go. mixi runs the same re
 
 ## 2026-10-07: The nameservers switch to deSEC by themselves (#77)
 
-The edge, mixi and fuji each ask Cloudflare's nameservers for every zone (not nuke.zip, which belongs to the Matrix stack). When two of them agree a zone has been unanswered for 45 minutes, while deSEC answers fine, they switch that zone's nameservers at Porkbun to deSEC. Back after 6 hours of Cloudflare answering everyone, at most once a day per zone. It runs as a dry run first, reporting what it would do.
+The edge, mixi and fuji each ask Cloudflare's nameservers for every zone (not nuke.zip, which belongs to the Matrix stack). When two of them agree a zone has been unanswered for 45 minutes, while deSEC answers fine, they switch that zone's nameservers at Porkbun to deSEC. Back after 6 hours of Cloudflare answering everyone, at most once a day per zone. It ran as a dry run first, reporting what it would do, and went live on 11 Oct.
 
 ## 2026-10-07: Our own tailnet relay on the edge, Tailscale's as fallback (#38)
 

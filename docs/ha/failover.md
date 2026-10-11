@@ -53,6 +53,6 @@ After any switch the checkers won't fail over again for an hour.
 The same module in dotfiles (`modules/nixos/failover-checker/`) runs two more, built the same way: each one probes from outside, serves its view over Nebula, reads the others' and acts when they agree.
 
 - **Front checker** (mixi, fuji; #160): fetches Element Web through the edge and through RO. When every usable voter has seen the edge fail for a minute and RO serve fine, it points element.radunenu.com (which c.nuke.zip and call.nuke.zip follow) at RO, on Cloudflare and deSEC. Back to the edge after 10 healthy minutes. A false alarm is harmless, since RO serves Element Web too. Tested 2026-10-07: moved in 52 s, back exactly 10 minutes after the edge returned.
-- **Nameserver checker** (the edge, mixi, fuji; #77): see [decisions.md](decisions.md#2026-10-07-the-nameservers-switch-to-desec-by-themselves-77). Dry run for now.
+- **Nameserver checker** (the edge, mixi, fuji; #77): see [decisions.md](decisions.md#2026-10-07-the-nameservers-switch-to-desec-by-themselves-77). Live since 11 Oct, after a dry run from 7 Oct.
 
 Every switch goes through the alert relays, the edge's first and mixi's if the edge doesn't answer.
