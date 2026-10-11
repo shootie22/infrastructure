@@ -1,6 +1,6 @@
 # Keycloak SSO
 
-Putting services behind Keycloak at `auth.radunenu.com`. This waits for Keycloak HA (Phase 5), since otherwise one pod on fuji would decide whether I can log in to anything.
+Putting services behind Keycloak at `auth.yeetus.net` (`auth.radunenu.com` until 11 Oct, still answering). This waits for Keycloak HA (Phase 5), since otherwise one pod on fuji would decide whether I can log in to anything.
 
 Tasks are in the [Keycloak SSO milestone](https://github.com/shootie22/infrastructure/milestone/11).
 
@@ -16,7 +16,7 @@ Three of them, and every service goes in one of the two below master. The rule: 
 
 master is Keycloak's own realm and can't be renamed or deleted. It's the key to everything else, so no app ever logs in through it. network-admin and network-yippie were called `infra` and `main` until 11 Oct.
 
-A service's login URL is `https://auth.radunenu.com/realms/<realm>`. It goes in the Deployment as a plain value, not in the secret, so the realm a service uses is visible in Git.
+A service's login URL is `https://auth.yeetus.net/realms/<realm>`. It goes in the Deployment as a plain value, not in the secret, so the realm a service uses is visible in Git.
 
 ## How services connect
 

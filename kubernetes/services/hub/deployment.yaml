@@ -59,7 +59,7 @@ spec:
             - {name: HUB_PROMETHEUS, value: "ro=http://prometheus.monitoring.svc:9090,dk=http://prometheus-dk.monitoring.svc:9090"}
             - {name: HUB_LOKI, value: "ro=http://loki.monitoring.svc:3100,dk=http://loki-dk.monitoring.svc:3100"}
             - {name: HUB_ALERTMANAGER, value: "http://alertmanager.monitoring.svc:9093"}
-            - {name: HUB_OIDC_ISSUER, value: "https://auth.radunenu.com/realms/network-admin"}
+            - {name: HUB_OIDC_ISSUER, value: "https://auth.yeetus.net/realms/network-admin"}
             - {name: HUB_OIDC_CLIENT_ID, value: hub}
             - {name: HUB_OIDC_CLIENT_SECRET_FILE, value: /secrets/oidc/client-secret}
             # Read-only keys for the outside checks' history (infra-hub #37); optional.

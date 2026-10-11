@@ -17,11 +17,10 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - mon.radunenu.com
         - mon.yeetus.net
       secretName: grafana-tls
   rules:
-    - host: mon.radunenu.com
+    - host: mon.yeetus.net
       http:
         paths:
           - path: /
@@ -31,7 +30,38 @@ spec:
                 name: grafana
                 port:
                   number: 3000
-    - host: mon.yeetus.net
+---
+# mon.radunenu.com moved to mon.yeetus.net: the old name redirects there
+# with the path kept. The new name doesn't match, so it passes straight
+# through.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: to-yeetus
+  namespace: monitoring
+spec:
+  redirectRegex:
+    regex: ^https?://mon\.radunenu\.com/(.*)$
+    replacement: https://mon.yeetus.net/${1}
+    permanent: true
+---
+# mon.radunenu.com, the old name: redirects to the new one (to-yeetus). No
+# homepage annotation, so the status probes only check the new name.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-old-name
+  namespace: monitoring
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: monitoring-to-yeetus@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - mon.radunenu.com
+      secretName: grafana-tls
+  rules:
+    - host: mon.radunenu.com
       http:
         paths:
           - path: /

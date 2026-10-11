@@ -71,9 +71,9 @@ spec:
             - name: GF_PLUGINS_PREINSTALL_DISABLED
               value: "true"
             - name: GF_SERVER_DOMAIN
-              value: mon.radunenu.com
+              value: mon.yeetus.net
             - name: GF_SERVER_ROOT_URL
-              value: https://mon.radunenu.com
+              value: https://mon.yeetus.net
             - name: GF_ANALYTICS_REPORTING_ENABLED
               value: "false"
             - name: GF_ANALYTICS_CHECK_FOR_UPDATES
@@ -98,11 +98,11 @@ spec:
               value: /var/lib/grafana/dashboards/observability/platform-overview.json
             # Keycloak realm network-admin (docs/ha/keycloak-sso.md).
             - name: GF_AUTH_GENERIC_OAUTH_AUTH_URL
-              value: https://auth.radunenu.com/realms/network-admin/protocol/openid-connect/auth
+              value: https://auth.yeetus.net/realms/network-admin/protocol/openid-connect/auth
             - name: GF_AUTH_GENERIC_OAUTH_TOKEN_URL
-              value: https://auth.radunenu.com/realms/network-admin/protocol/openid-connect/token
+              value: https://auth.yeetus.net/realms/network-admin/protocol/openid-connect/token
             - name: GF_AUTH_GENERIC_OAUTH_API_URL
-              value: https://auth.radunenu.com/realms/network-admin/protocol/openid-connect/userinfo
+              value: https://auth.yeetus.net/realms/network-admin/protocol/openid-connect/userinfo
             - name: GF_DATABASE_TYPE
               value: postgres
             - name: GF_DATABASE_HOST

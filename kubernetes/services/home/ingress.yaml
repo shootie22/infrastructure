@@ -14,10 +14,47 @@ metadata:
 spec:
   ingressClassName: traefik
   tls:
-    - hosts: [hub.radunenu.com, hub.yeetus.net]
+    - hosts: [yeetus.net]
       secretName: hub-radunenu-com-le
   rules:
-    - host: hub.radunenu.com
+    - host: yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: home
+                port:
+                  number: 8080
+---
+# Every other name for Home (www, hub, and the easier ones on both domains)
+# sends people to yeetus.net with the path kept.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: to-home
+  namespace: home
+spec:
+  redirectRegex:
+    regex: ^https?://[^/]+(.*)$
+    replacement: https://yeetus.net${1}
+    permanent: true
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: home-aliases
+  namespace: home
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: home-to-home@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [www.yeetus.net, hub.yeetus.net, apps.yeetus.net, net.yeetus.net, network.yeetus.net, services.yeetus.net, yippie.yeetus.net, hub.radunenu.com, apps.radunenu.com, net.radunenu.com, network.radunenu.com, services.radunenu.com, yippie.radunenu.com]
+      secretName: hub-radunenu-com-le
+  rules:
+    - host: www.yeetus.net
       http:
         paths:
           - path: /
@@ -37,34 +74,7 @@ spec:
                 name: home
                 port:
                   number: 8080
----
-# yippie, network, net, services and apps.radunenu.com: easier to remember,
-# same place. Redirected with the path kept.
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: to-hub
-  namespace: home
-spec:
-  redirectRegex:
-    regex: ^https?://[^/]+(.*)$
-    replacement: https://hub.radunenu.com${1}
-    permanent: true
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: home-aliases
-  namespace: home
-  annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: home-to-hub@kubernetescrd
-spec:
-  ingressClassName: traefik
-  tls:
-    - hosts: [yippie.radunenu.com, network.radunenu.com, net.radunenu.com, services.radunenu.com, apps.radunenu.com]
-      secretName: hub-radunenu-com-le
-  rules:
-    - host: yippie.radunenu.com
+    - host: apps.yeetus.net
       http:
         paths:
           - path: /
@@ -74,7 +84,57 @@ spec:
                 name: home
                 port:
                   number: 8080
-    - host: network.radunenu.com
+    - host: net.yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: home
+                port:
+                  number: 8080
+    - host: network.yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: home
+                port:
+                  number: 8080
+    - host: services.yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: home
+                port:
+                  number: 8080
+    - host: yippie.yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: home
+                port:
+                  number: 8080
+    - host: hub.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: home
+                port:
+                  number: 8080
+    - host: apps.radunenu.com
       http:
         paths:
           - path: /
@@ -94,6 +154,16 @@ spec:
                 name: home
                 port:
                   number: 8080
+    - host: network.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: home
+                port:
+                  number: 8080
     - host: services.radunenu.com
       http:
         paths:
@@ -104,7 +174,7 @@ spec:
                 name: home
                 port:
                   number: 8080
-    - host: apps.radunenu.com
+    - host: yippie.radunenu.com
       http:
         paths:
           - path: /

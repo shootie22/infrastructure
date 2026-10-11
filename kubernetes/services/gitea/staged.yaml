@@ -48,7 +48,11 @@ spec:
             # in front of git.radunenu.com only carries HTTP. The host keys
             # are in /data/ssh and go along with the standby copy.
             - {name: GITEA__server__DISABLE_SSH, value: "false"}
-            - {name: GITEA__server__SSH_DOMAIN, value: ssh.git.radunenu.com}
+            - {name: GITEA__server__SSH_DOMAIN, value: ssh.git.yeetus.net}
+            # Its main address; git.radunenu.com keeps answering (Ingress) for old
+            # clones, remotes and image names.
+            - {name: GITEA__server__DOMAIN, value: git.yeetus.net}
+            - {name: GITEA__server__ROOT_URL, value: "https://git.yeetus.net/"}
             - {name: GITEA__server__SSH_PORT, value: "2022"}
             # LFS objects over the SSH connection too (git-lfs-transfer), so
             # they skip Cloudflare's 100 MB upload limit. Over HTTPS they
@@ -130,11 +134,10 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - git.radunenu.com
         - git.yeetus.net
       secretName: git-radunenu-com-tls
   rules:
-    - host: git.radunenu.com
+    - host: git.yeetus.net
       http:
         paths:
           - path: /
@@ -144,7 +147,23 @@ spec:
                 name: gitea
                 port:
                   number: 80
-    - host: git.yeetus.net
+---
+# git.radunenu.com, the old name: still served as is, so old links, clones
+# and apps keep working. No homepage annotation, so the status probes only
+# check the new name.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gitea-old-name
+  namespace: gitea
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - git.radunenu.com
+      secretName: git-radunenu-com-tls
+  rules:
+    - host: git.radunenu.com
       http:
         paths:
           - path: /

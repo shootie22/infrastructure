@@ -1,4 +1,4 @@
-# Home at hub.radunenu.com (#222): every service on Yippie Network, yours
+# Home at yeetus.net (#222): every service on Yippie Network, yours
 # first. Static files in nginx (source: git.radunenu.com/radu/yippie,
 # apps/home); the list of services comes from yippie-api
 # (keycloak/home-catalog.yaml), sign-in from Keycloak's `home` client.

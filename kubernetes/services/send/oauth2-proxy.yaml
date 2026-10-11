@@ -45,7 +45,7 @@ spec:
             - until wget -q -T 5 -O /dev/null "$OAUTH2_PROXY_OIDC_ISSUER_URL/.well-known/openid-configuration"; do sleep 5; done
           env:
             - name: OAUTH2_PROXY_OIDC_ISSUER_URL
-              value: https://auth.radunenu.com/realms/network-yippie
+              value: https://auth.yeetus.net/realms/network-yippie
           resources:
             requests: {cpu: 5m, memory: 8Mi}
             limits: {memory: 32Mi}
@@ -66,7 +66,7 @@ spec:
             - --code-challenge-method=S256
             - --allowed-role=share:upload
             - --email-domain=*
-            - --redirect-url=https://share.radunenu.com/oauth2/callback
+            - --redirect-url=https://share.yeetus.net/oauth2/callback
             - --reverse-proxy=true
             - --upstream=static://202
             - --skip-provider-button=true
@@ -77,7 +77,7 @@ spec:
           env:
             # Keycloak realm network-yippie (docs/ha/keycloak-sso.md).
             - name: OAUTH2_PROXY_OIDC_ISSUER_URL
-              value: https://auth.radunenu.com/realms/network-yippie
+              value: https://auth.yeetus.net/realms/network-yippie
           envFrom:
             # OAUTH2_PROXY_CLIENT_SECRET, OAUTH2_PROXY_COOKIE_SECRET
             - secretRef: {name: send-oauth2}

@@ -1,5 +1,7 @@
-# One certificate for Home and the five names that send people to it.
-# HTTP-01, like the other sites.
+# One certificate for Home (yeetus.net) and every name that sends people
+# to it. HTTP-01, like the other sites. Same name and secret as when Home
+# was hub.radunenu.com, so the old certificate keeps serving until the new one
+# is issued.
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -8,13 +10,20 @@ metadata:
 spec:
   secretName: hub-radunenu-com-le
   dnsNames:
-    - hub.radunenu.com
-    - yippie.radunenu.com
-    - network.radunenu.com
-    - net.radunenu.com
-    - services.radunenu.com
-    - apps.radunenu.com
+    - yeetus.net
+    - www.yeetus.net
     - hub.yeetus.net
+    - apps.yeetus.net
+    - net.yeetus.net
+    - network.yeetus.net
+    - services.yeetus.net
+    - yippie.yeetus.net
+    - hub.radunenu.com
+    - apps.radunenu.com
+    - net.radunenu.com
+    - network.radunenu.com
+    - services.radunenu.com
+    - yippie.radunenu.com
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer

@@ -16,11 +16,10 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - puml.radunenu.com
         - puml.yeetus.net
       secretName: puml-radunenu-com-tls
   rules:
-    - host: puml.radunenu.com
+    - host: puml.yeetus.net
       http:
         paths:
           - path: /
@@ -30,7 +29,38 @@ spec:
                 name: plantuml
                 port:
                   number: 80
-    - host: puml.yeetus.net
+---
+# puml.radunenu.com moved to puml.yeetus.net: the old name redirects there
+# with the path kept. The new name doesn't match, so it passes straight
+# through.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: to-yeetus
+  namespace: plantuml
+spec:
+  redirectRegex:
+    regex: ^https?://puml\.radunenu\.com/(.*)$
+    replacement: https://puml.yeetus.net/${1}
+    permanent: true
+---
+# puml.radunenu.com, the old name: redirects to the new one (to-yeetus). No
+# homepage annotation, so the status probes only check the new name.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: plantuml-old-name
+  namespace: plantuml
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: plantuml-to-yeetus@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - puml.radunenu.com
+      secretName: puml-radunenu-com-tls
+  rules:
+    - host: puml.radunenu.com
       http:
         paths:
           - path: /
