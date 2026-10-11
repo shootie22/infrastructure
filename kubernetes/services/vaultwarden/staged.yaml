@@ -43,6 +43,17 @@ spec:
             - {name: USER_SEND_LIMIT, value: "0"}
             # Just me; nobody else gets an account by finding the address.
             - {name: SIGNUPS_ALLOWED, value: "false"}
+            # Sign-in through Keycloak (client `vaultwarden` in network-yeetus,
+            # #66). An existing account is linked by its (verified) email on
+            # the first SSO sign-in. The master password stays: it's what
+            # encrypts the vault, and Keycloak never sees it. Email+password
+            # login stays too until SSO_ONLY. The client secret is
+            # SSO_CLIENT_SECRET in vaultwarden-env.
+            - {name: SSO_ENABLED, value: "true"}
+            - {name: SSO_AUTHORITY, value: "https://auth.yeetus.net/realms/network-yeetus"}
+            # Vaultwarden adds openid itself; listing it again is refused.
+            - {name: SSO_SCOPES, value: "profile email offline_access"}
+            - {name: SSO_CLIENT_ID, value: vaultwarden}
           ports:
             - {name: http, containerPort: 80}
           securityContext:
