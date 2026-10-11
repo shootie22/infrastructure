@@ -824,6 +824,16 @@ data:
             annotations:
               summary: "The certificate of {{ $labels.instance }} expires in less than 7 days"
               description: Seen by the in-cluster blackbox probe.
+          # The profile card is a static image: if its hourly run stops, the card
+          # keeps showing a green dot with an old timestamp.
+          - alert: ProfileStatusStale
+            expr: time() - kube_cronjob_status_last_successful_time{job="kube-state-metrics", namespace="profile-status", cronjob="profile-status"} > 3 * 3600
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: The GitHub profile's infrastructure card hasn't been updated for over 3 hours
+              description: "Check the profile-status CronJob's last Job: kubectl -n profile-status logs job/<name>."
           # Early warning, so a filling disk gets noticed days before it becomes
           # critical (thinkcentre's 31 GB root reached 92% unnoticed, 2026-10-02).
           - alert: NodeFilesystemFillingUp

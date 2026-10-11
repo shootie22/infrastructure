@@ -58,6 +58,7 @@ Decided 6 Oct ([#88](https://github.com/shootie22/infrastructure/issues/88), [de
 | steamhappy | fuji (home) | Matrix session, small | Survives | file copy and site-failover, multi-arch image |
 | Gitea runners | thinkcentre, mixi | caches | already one per site | |
 | github-commit-sync | mixi or minima (arm64 image) | none | Survives | moves 30 s after its node is gone |
+| profile-status | any node, hourly CronJob | none | Waits for RO | reads RO's Prometheus, the only one with 15 days; while RO is gone the run fails, the card keeps its last state and ProfileStatusStale fires after 3 h |
 | Pinga | thinkcentre | 2.3 GB | Retired 6 Oct | radunenu.com's status page reads from Prometheus (status-api) instead; data left in /home/main/services/pinga and in Borg |
 | picshare | thinkcentre | small | Retired 6 Oct | Manifests removed; data left in /home/main/services/picshare and in Borg |
 

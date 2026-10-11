@@ -1,0 +1,16 @@
+# Made by scripts/create-profile-status-app.sh, which encrypts it; this file
+# only shows the shape. The App: Contents read & write on shootie22/shootie22
+# only, no webhook.
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+  name: profile-status-github-app
+  namespace: profile-status
+spec:
+  secretTemplates:
+    - name: profile-status-github-app
+      stringData:
+        app-id: "<App ID, from the App's settings page>"
+        installation-id: "<the number at the end of the installation's settings URL>"
+        private-key.pem: |
+          <the private key GitHub generated for the App>
