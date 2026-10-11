@@ -1,0 +1,23 @@
+# Keycloak's realms as code (#56), applied by config-cli.yaml every 10
+# minutes. Only what's written here is managed: a realm setting, client or
+# group left out stays as it was made in the admin UI. Nothing is ever
+# deleted: take something out of here, then delete it in the admin UI.
+#
+# Client secrets don't go here: write $(env:SOME_SECRET) and put SOME_SECRET
+# in config-cli.sops.yaml.
+#
+# master isn't here on purpose: it only holds the admin account.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-realms
+  namespace: keycloak
+data:
+  # Admin tools: Grafana, Hub. Only me.
+  infra.yaml: |
+    realm: infra
+    enabled: true
+  # Friends' accounts and the services they use.
+  main.yaml: |
+    realm: main
+    enabled: true
