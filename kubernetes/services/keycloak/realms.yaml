@@ -176,3 +176,18 @@ data:
         enabled: true
         clientRoles:
           realm-management: [view-users, manage-users]
+    # One group per app: being in it is what lets someone into that app (its
+    # client role `access`, checked by the app's login flow) and what Home
+    # shows as Open instead of Ask. Members are added in the admin UI.
+    # share-uploaders (Send) was made by hand and stays as it is.
+    groups:
+      - name: audiobooks
+        attributes: {description: [Audiobookshelf]}
+      - name: notes
+        attributes: {description: [Joplin]}
+      - name: passwords
+        attributes: {description: [Vaultwarden]}
+      - name: git
+        attributes: {description: [Gitea]}
+      - name: calendar
+        attributes: {description: [Baïkal, with app passwords]}
