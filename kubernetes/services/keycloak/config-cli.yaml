@@ -12,8 +12,7 @@ metadata:
   namespace: keycloak
 spec:
   schedule: "*/10 * * * *"
-  # Until config-cli.sops.yaml exists.
-  suspend: true
+  suspend: false
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 3

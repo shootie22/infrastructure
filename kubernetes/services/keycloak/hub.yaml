@@ -3,6 +3,7 @@
 # fails `hub render --check`.
 keep:
 - certificate.yaml
+- config-cli.sops.yaml
 - config-cli.yaml
 - database.yaml
 - ingress.yaml
