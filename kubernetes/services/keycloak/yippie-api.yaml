@@ -1,0 +1,87 @@
+# yippie-api (source: git.radunenu.com/radu/yippie, apps/api): profile
+# pictures for Yippie Network, set as each user's `picture` attribute.
+# Served under auth.radunenu.com/yippie/ (ingress.yaml) so the account page
+# reaches it without CORS. Its Postgres is yippie-api-db.yaml; its Keycloak
+# client (yippie-api, network-yippie) is in realms.yaml, with the secret in
+# yippie-api.sops.yaml and config-cli.sops.yaml.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yippie-api
+  namespace: keycloak
+spec:
+  # One per site; it keeps nothing itself.
+  replicas: 2
+  selector:
+    matchLabels:
+      app: yippie-api
+  template:
+    metadata:
+      labels:
+        app: yippie-api
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: yippie-api
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      containers:
+        - name: yippie-api
+          image: git.radunenu.com/radu/yippie-api:main@sha256:4c2c0e8e48a205af5d350b032d04026550b30f2d1632fa994bb9bdf9e94cf415
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: yippie-api-db-app, key: uri}
+            - name: KEYCLOAK_URL
+              value: http://keycloak:8080
+            - name: ISSUER_BASE
+              value: https://auth.radunenu.com
+            - name: REALM
+              value: network-yippie
+            - name: PUBLIC_URL
+              value: https://auth.radunenu.com/yippie
+            - name: CLIENT_SECRET
+              valueFrom:
+                secretKeyRef: {name: yippie-api-env, key: CLIENT_SECRET}
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: {path: /yippie/healthz, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /yippie/healthz, port: http}
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 10m, memory: 64Mi}
+            limits: {memory: 384Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yippie-api
+  namespace: keycloak
+spec:
+  selector:
+    app: yippie-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

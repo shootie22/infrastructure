@@ -78,7 +78,32 @@ data:
           required: {roles: [user]}
           permissions: {view: [admin, user], edit: [admin, user]}
           multivalued: false
+        # Address of the profile picture, set by yippie-api when someone
+        # uploads one on the account page. The standard `picture` claim.
+        - name: picture
+          displayName: Picture
+          validations:
+            length: {max: 2048}
+          permissions: {view: [admin, user], edit: [admin]}
+          multivalued: false
       groups:
         - name: user-metadata
           displayHeader: User metadata
           displayDescription: Attributes, which refer to user metadata
+    clients:
+      # yippie-api.yaml: profile pictures. Only a service account, which may
+      # read and change users (to set `picture`).
+      - clientId: yippie-api
+        name: yippie-api
+        enabled: true
+        publicClient: false
+        secret: $(env:YIPPIE_API_SECRET)
+        standardFlowEnabled: false
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: true
+    users:
+      - username: service-account-yippie-api
+        serviceAccountClientId: yippie-api
+        enabled: true
+        clientRoles:
+          realm-management: [view-users, manage-users]

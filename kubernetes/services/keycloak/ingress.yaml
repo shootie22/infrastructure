@@ -23,6 +23,14 @@ spec:
     - host: auth.radunenu.com
       http:
         paths:
+          # yippie-api: profile pictures (yippie-api.yaml).
+          - path: /yippie/
+            pathType: Prefix
+            backend:
+              service:
+                name: yippie-api
+                port:
+                  number: 8080
           - path: /
             pathType: Prefix
             backend:

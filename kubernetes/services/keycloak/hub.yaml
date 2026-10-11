@@ -11,5 +11,8 @@ keep:
 - namespace.yaml
 - realms.yaml
 - secret.sops.yaml
+- yippie-api-db.yaml
+- yippie-api.sops.yaml
+- yippie-api.yaml
 kind: kept
 name: keycloak
