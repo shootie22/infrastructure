@@ -22,6 +22,12 @@ data:
             redir https://git.radunenu.com{uri} 301
         }
 
+        # The Kronorite Discord (#73).
+        @discord_redirect host discord.kronorite.com
+        handle @discord_redirect {
+            redir https://discord.gg/3Evw4QN 302
+        }
+
         handle {
             respond "unknown host" 404
         }

@@ -20,6 +20,9 @@ spec:
         - www.radunenu.com
         - git.kronorite.com
       secretName: legacy-redirects-extra-tls
+    - hosts:
+        - discord.kronorite.com
+      secretName: legacy-redirects-discord-tls
   rules:
     - host: byradu.com
       http: &redirect_paths
@@ -44,4 +47,6 @@ spec:
     - host: www.radunenu.com
       http: *redirect_paths
     - host: git.kronorite.com
+      http: *redirect_paths
+    - host: discord.kronorite.com
       http: *redirect_paths
