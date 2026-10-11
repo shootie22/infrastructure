@@ -100,6 +100,9 @@ data:
     # Everyone has a short username (the same as on Gitea) and can sign in
     # with it or their email. Apps go by the username, so it isn't the email.
     registrationEmailAsUsername: false
+    # Lets admins rename users (Keycloak 26 locks usernames for admins too
+    # without it). Users still can't: the profile below allows admins only.
+    editUsernameAllowed: true
     loginWithEmailAllowed: true
     duplicateEmailsAllowed: false
     # The Yeetus login and account pages (git.yeetus.net/radu/yeetus).
