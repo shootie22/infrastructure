@@ -29,3 +29,7 @@ data:
     realm: network-yippie
     displayName: Yippie Network
     enabled: true
+    # The Yippie pages (git.radunenu.com/radu/yippie). Needs the
+    # yippie-keycloak image; without it Keycloak falls back to its own pages.
+    loginTheme: yippie
+    rememberMe: true
