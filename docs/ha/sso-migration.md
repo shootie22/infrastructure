@@ -79,12 +79,17 @@ Risk: medium. Do it on a copy of the database first (CNPG can clone it) and chec
 
 CalDAV and CardDAV clients (phones, Thunderbird, DAVx5) only do a username and password. There's no way to send them through a Keycloak login page, so OIDC is out for the sync itself. Baïkal's other option is LDAP, and Keycloak can read LDAP but not be one.
 
-Options:
-1. Keep Baïkal's own accounts. Calendars keep syncing exactly as now. Home lists it as "own password".
-2. A small proxy that checks the DAV username and password against Keycloak (password grant) and passes the user to Baïkal. Same password everywhere, but it breaks for anyone with a two-step code, and the password grant is on its way out.
-3. Move to a DAV server with app passwords tied to SSO (Nextcloud does this). Big change for one calendar, and every device needs setting up again.
+What I looked at:
+1. Keep Baïkal's own accounts. Nothing changes, but it's a second password.
+2. Check the DAV password against Keycloak (password grant). Breaks for anyone with a two-step code, every password change means retyping it on every device, and OAuth 2.1 drops the password grant.
+3. Nextcloud, which has app passwords tied to SSO. A whole new app for one calendar.
+4. App passwords of our own. This is the one.
 
-I'd go with 1. Nothing breaks and nobody touches their phones.
+App passwords, the way Google and Apple do it for calendar apps:
+- On the account page, Sign-in & security gets a "Calendar apps" row: make a password per device ("Mirela's phone"), shown once, delete it when the phone is gone.
+- The same small service that keeps profile pictures stores them (hashed) and answers a Traefik forwardAuth in front of cal.radunenu.com: right app password, then Baïkal gets the Keycloak username (its "Apache" auth mode, which trusts the user the web server passes on).
+- Works with two-step codes, and changing the Keycloak password doesn't break sync.
+- Each device gets its new app password once. Baïkal's usernames have to match the Keycloak usernames, or get renamed to match first. Calendars and contacts stay in Baïkal's database, untouched.
 
 ### Minecraft servers
 

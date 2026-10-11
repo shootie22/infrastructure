@@ -51,7 +51,7 @@ Setting it up once, in the admin UI, realm `master`:
 | Headlamp | none | Retired: Hub shows the cluster |
 | Vaultwarden | SSO | Link by email; the master password stays and still unlocks the vault |
 | Joplin | SAML | Matched by email, so emails get locked in Keycloak first |
-| Baïkal | none | Stays on its own passwords: CalDAV clients only do username and password |
+| Baïkal | none | App passwords from the account page, checked in front of Baïkal (CalDAV clients only do username and password) |
 | Matrix | via MAS | Separate project |
 
 Public sites, SearXNG, Ollama, bots, runners and game servers don't need it.
