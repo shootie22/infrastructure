@@ -9,6 +9,7 @@ spec:
           stringData:
             KEYCLOAK_CLIENTSECRET: ENC[AES256_GCM,data:QRZ/UW3OV9uWDCdvphoUp4pVl1EhK3iSlNaRDYZTTVI=,iv:AZax//XgwYFaoojsWJB9t/5szWZovabw9h1XpdJ/YOQ=,tag:O4aXkG/PY55ZwzItMmt4HA==,type:str]
             YIPPIE_API_SECRET: ENC[AES256_GCM,data:70rnpCKK0CFcuynRoSWVAee+plu6qRYavy5PRnmopBsNPfhtGOoKSg==,iv:XQRSsLfP2YMaSLAgSH78x0NDGETjMRzMB5AbbtTQgqw=,tag:NcTotN752HbUfPD4/TRW8A==,type:str]
+            AUDIOBOOKSHELF_SECRET: ENC[AES256_GCM,data:VzuQCuRLXmqhlqHzhiVHmfTZHgZbu1RoW/lt03kBv2+ZsXUJ+72LqQ==,iv:c4nGE89/f2h2Bntw4hIEVTuEuR3+YTDnihhnCYGXwmo=,tag:Mha1Enfw3A7QtAXRFRDZpA==,type:str]
 sops:
     age:
         - enc: |
@@ -30,6 +31,6 @@ sops:
             -----END AGE ENCRYPTED FILE-----
           recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
     encrypted_suffix: Templates
-    lastmodified: "2026-10-11T13:23:45Z"
-    mac: ENC[AES256_GCM,data:E5inCSWCY33py35q/a9jwNEGYU8Bx/vpUhhLwbakMbXJumrgXgv4plLkKpBi1ZEstnvyPkHYkoXJDuOH/zhUQ9fE4/jT0w6yv6OnZ0kxzewKq6mRp2vfRW5iaTr7C5YYqMm77FSAZ/te3WzXVzRabH19mXGiBMDI1svp49qNF1M=,iv:ZW+LuGP2ZdbVQoaXakvf5SQvEtvwB14WcGl9dqzo49w=,tag:2Mfsqqlsy0IYG3h4EG8yqw==,type:str]
+    lastmodified: "2026-10-11T17:28:33Z"
+    mac: ENC[AES256_GCM,data:FCS+2BWcbaD3va9odew6VJq7+SG7C0STRp6maFGg8KANXrJIdPiHxZlCxoex2OE2HLJaUrKhVpoM09pLu9Xal945M1825V6OxcbA5bCS4YDAXD2PFicEEZq+sRfiweYlgOycGGZXqWBMuuORHlblHtbDaGImLAH+mi0E2wuF7s0=,iv:3HD/6TthBF3ZaE2liycvGPPdzi9n9Ya4/9j4ag2kNQc=,tag:vxZxal5MOJs+7cwQDTnbKA==,type:str]
     version: 3.13.3

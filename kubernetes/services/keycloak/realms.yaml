@@ -196,6 +196,75 @@ data:
         standardFlowEnabled: false
         directAccessGrantsEnabled: false
         serviceAccountsEnabled: true
+      # Audiobookshelf (books.yeetus.net, #59). Its OIDC settings live in its
+      # own web UI (Settings, Authentication), with this client's secret.
+      # Behind the gate below: only the audiobooks group gets in.
+      - clientId: audiobookshelf
+        name: Audiobooks
+        description: books.yeetus.net
+        enabled: true
+        publicClient: false
+        secret: $(env:AUDIOBOOKSHELF_SECRET)
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        redirectUris:
+          - https://books.yeetus.net/auth/openid/callback
+          - https://books.yeetus.net/auth/openid/mobile-redirect
+        webOrigins: ["https://books.yeetus.net"]
+        attributes:
+          pkce.code.challenge.method: S256
+          post.logout.redirect.uris: "https://books.yeetus.net/*"
+        authenticationFlowBindingOverrides:
+          browser: gate audiobookshelf
+    roles:
+      client:
+        audiobookshelf:
+          - name: access
+            description: May sign in to Audiobookshelf
+    authenticatorConfig:
+      - alias: audiobookshelf no access
+        config: {condUserRole: audiobookshelf.access, negate: "true"}
+      - alias: audiobookshelf deny
+        config: {denyErrorMessage: yippieNoAccess}
+    # Each gated app: Keycloak's browser flow, then "no access role, no entry"
+    # (docs/ha/keycloak-sso.md, "Who gets into which app").
+    authenticationFlows:
+      - alias: gate audiobookshelf
+        description: Sign in, then only with audiobookshelf's access role
+        providerId: basic-flow
+        topLevel: true
+        builtIn: false
+        authenticationExecutions:
+          - {flowAlias: gate audiobookshelf sign in, requirement: REQUIRED, priority: 10, autheticatorFlow: true}
+          - {flowAlias: gate audiobookshelf check, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+      - alias: gate audiobookshelf sign in
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: auth-cookie, requirement: ALTERNATIVE, priority: 10}
+          - {flowAlias: gate audiobookshelf forms, requirement: ALTERNATIVE, priority: 20, autheticatorFlow: true}
+      - alias: gate audiobookshelf forms
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: auth-username-password-form, requirement: REQUIRED, priority: 10}
+          - {flowAlias: gate audiobookshelf 2fa, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+      - alias: gate audiobookshelf 2fa
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: conditional-user-configured, requirement: REQUIRED, priority: 10}
+          - {authenticator: auth-otp-form, requirement: ALTERNATIVE, priority: 20}
+      - alias: gate audiobookshelf check
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: conditional-user-role, authenticatorConfig: audiobookshelf no access, requirement: REQUIRED, priority: 10}
+          - {authenticator: deny-access-authenticator, authenticatorConfig: audiobookshelf deny, requirement: REQUIRED, priority: 20}
     users:
       - username: service-account-yippie-api
         serviceAccountClientId: yippie-api
@@ -209,6 +278,8 @@ data:
     groups:
       - name: audiobooks
         attributes: {description: [Audiobookshelf]}
+        clientRoles:
+          audiobookshelf: [access]
       - name: notes
         attributes: {description: [Joplin]}
       - name: passwords
