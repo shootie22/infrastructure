@@ -1,6 +1,8 @@
 # yeetus-api (source: git.yeetus.net/radu/yeetus, apps/api; it was yippie-api):
 # profile pictures for Yeetus Network and Network Admin, set as each user's
-# `picture` attribute, and Home's list of services with their status. Served
+# `picture` attribute, and Home's list of services with their status. Also
+# calendar app passwords: made on the account page, checked for Baïkal by
+# Traefik through the dav-auth port (8081), which no Ingress routes to. Served
 # under auth.yeetus.net/yeetus/ (ingress.yaml) so the account page reaches it
 # without CORS. Its Postgres is yeetus-api-db.yaml; its Keycloak client
 # (yeetus-api, both realms) is in realms.yaml, with the secret in
@@ -40,7 +42,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: yeetus-api
-          image: git.radunenu.com/radu/yeetus-api:main@sha256:cc1f61f060cf34599c094a719a41570734bd179a07f010577506302fecd98bca
+          image: git.radunenu.com/radu/yeetus-api:main@sha256:36be517612b25802dbb8b59de89ae1e77f06aeac4b181a027f97ac1ed2ec1a31
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -63,9 +65,19 @@ spec:
               value: http://prometheus.monitoring.svc:9090,http://prometheus-dk.monitoring.svc:9090
             - name: HOME_ORIGIN
               value: https://yeetus.net,https://hub.yeetus.net,https://hub.radunenu.com
+            # Calendar app passwords: who may have them, and what the account page
+            # tells people to put in their app.
+            - name: DAV_REALM
+              value: network-yeetus
+            - name: DAV_GROUP
+              value: calendar
+            - name: DAV_SERVER
+              value: https://cal.yeetus.net/dav.php
           ports:
             - name: http
               containerPort: 8080
+            - name: dav-auth
+              containerPort: 8081
           readinessProbe:
             httpGet: {path: /yeetus/healthz, port: http}
             periodSeconds: 5
@@ -99,3 +111,6 @@ spec:
     - name: http
       port: 8080
       targetPort: http
+    - name: dav-auth
+      port: 8081
+      targetPort: dav-auth
