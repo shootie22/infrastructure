@@ -21,6 +21,34 @@ spec:
         app: baikal
     spec:
       automountServiceAccountToken: false
+      # Calendar app passwords (#233): Traefik checks every DAV request with
+      # yeetus-api and passes the Keycloak username on (ingress.yaml), so
+      # Baïkal runs in its "Apache" mode and trusts it (nginx below). This
+      # sets that in Baïkal's own config, which lives on the node; it logs
+      # what was there before. To go back, set AUTH_TYPE to that and keep
+      # this container: in Apache mode with the image's own nginx, Baïkal
+      # trusts any Basic username.
+      initContainers:
+        - name: auth-type
+          image: docker.io/library/busybox:1.37@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e
+          env:
+            - name: AUTH_TYPE
+              value: Apache
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              f=/var/www/baikal/config/baikal.yaml
+              echo "before: $(grep 'dav_auth_type:' "$f")"
+              # Written in place, so the file keeps its owner and mode.
+              sed "s/^\([[:space:]]*dav_auth_type:\).*/\1 '$AUTH_TYPE'/" "$f" > /tmp/baikal.yaml
+              cat /tmp/baikal.yaml > "$f"
+              grep -q "dav_auth_type: '$AUTH_TYPE'" "$f"
+              echo "now: $(grep 'dav_auth_type:' "$f")"
+          volumeMounts:
+            - name: config
+              mountPath: /var/www/baikal/config
       # Runs on whichever of fuji and the thinkcentre holds the label; the
       # other has a copy and takes over when this site is gone (dotfiles
       # modules/nixos/site-failover).
@@ -47,7 +75,14 @@ spec:
               mountPath: /var/www/baikal/Specific
             - name: config
               mountPath: /var/www/baikal/config
+            - name: nginx
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+              readOnly: true
       volumes:
+        - name: nginx
+          configMap:
+            name: baikal-nginx
         - name: specific
           hostPath:
             path: /srv/ha/baikal/Specific
@@ -69,3 +104,67 @@ spec:
     - name: http
       port: 80
       targetPort: http
+---
+# The image's own nginx config (ckulka/baikal-docker, 0.10.1-nginx) with the
+# DAV endpoints split off: they need the username Traefik's forwardAuth
+# passes on, and never see the app's own Authorization header.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: baikal-nginx
+  namespace: baikal
+data:
+  default.conf: |
+    server {
+      listen 80;
+      listen [::]:80;
+      server_name _;
+
+      root   /var/www/baikal/html;
+      index index.php;
+
+      rewrite ^/.well-known/caldav /dav.php redirect;
+      rewrite ^/.well-known/carddav /dav.php redirect;
+
+      charset utf-8;
+
+      # Behind Traefik nginx only sees http, so its redirects (well-known
+      # below) would send apps to http://. Relative ones keep them on https.
+      absolute_redirect off;
+
+      location ~ /(\.ht|Core|Specific) {
+        deny all;
+        return 404;
+      }
+
+      # No username, no entry: Baïkal takes an empty REMOTE_USER as signed
+      # in, and with none at all it falls back to the username in the app's
+      # Basic header, which nobody has checked.
+      location ~ ^/(dav|cal|card)\.php(/|$) {
+        if ($http_x_yeetus_user = "") {
+          return 401;
+        }
+        try_files $fastcgi_script_name =404;
+        include        /etc/nginx/fastcgi_params;
+        fastcgi_split_path_info  ^(.+\.php)(.*)$;
+        fastcgi_pass   unix:/var/run/php-fpm.sock;
+        fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_name;
+        fastcgi_param  PATH_INFO          $fastcgi_path_info;
+        fastcgi_param  REMOTE_USER        $http_x_yeetus_user;
+        fastcgi_param  HTTP_AUTHORIZATION "";
+      }
+
+      # Everything else (the admin pages, with their own login): as it was.
+      location ~ ^(.+\.php)(.*)$ {
+        try_files $fastcgi_script_name =404;
+        include        /etc/nginx/fastcgi_params;
+        fastcgi_split_path_info  ^(.+\.php)(.*)$;
+        fastcgi_pass   unix:/var/run/php-fpm.sock;
+        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+        fastcgi_param  PATH_INFO        $fastcgi_path_info;
+      }
+
+      location ~ /.ht {
+        deny all;
+      }
+    }

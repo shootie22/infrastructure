@@ -1,0 +1,21 @@
+# Baïkal believes whoever X-Yeetus-User names (ingress.yaml), so only
+# Traefik, which sets that header itself, may reach it.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: baikal-ingress
+  namespace: baikal
+spec:
+  podSelector:
+    matchLabels:
+      app: baikal
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: traefik}
+      ports:
+        - {protocol: TCP, port: 80}
