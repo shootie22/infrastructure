@@ -274,6 +274,38 @@ data:
           access.token.lifespan: "600"
         authenticationFlowBindingOverrides:
           browser: gate vaultwarden
+      # Gitea (git.yeetus.net, #61). Its side is the `keycloak` login source,
+      # added by an init container in gitea/staged.yaml. Gitea links a first
+      # sign-in to the existing account with the same username (then email),
+      # so repos, keys and issues stay where they are. The groups claim gives
+      # Gitea admin to gitea-admins (and takes it away from everyone else at
+      # sign-in). No PKCE: Gitea doesn't send it; the client secret covers
+      # the code exchange.
+      - clientId: gitea
+        name: Git
+        description: git.yeetus.net
+        enabled: true
+        publicClient: false
+        secret: $(env:GITEA_OIDC_SECRET)
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        redirectUris: ["https://git.yeetus.net/user/oauth2/keycloak/callback"]
+        webOrigins: ["https://git.yeetus.net"]
+        attributes:
+          post.logout.redirect.uris: "https://git.yeetus.net/*"
+        protocolMappers:
+          - name: groups
+            protocol: openid-connect
+            protocolMapper: oidc-group-membership-mapper
+            config:
+              claim.name: groups
+              full.path: "false"
+              id.token.claim: "true"
+              access.token.claim: "false"
+              userinfo.token.claim: "true"
+              introspection.token.claim: "false"
+        authenticationFlowBindingOverrides:
+          browser: gate gitea
     roles:
       client:
         audiobookshelf:
@@ -285,6 +317,9 @@ data:
         vaultwarden:
           - name: access
             description: May sign in to Vaultwarden
+        gitea:
+          - name: access
+            description: May sign in to Gitea
     authenticatorConfig:
       - alias: audiobookshelf no access
         config: {condUserRole: audiobookshelf.access, negate: "true"}
@@ -297,6 +332,10 @@ data:
       - alias: vaultwarden no access
         config: {condUserRole: vaultwarden.access, negate: "true"}
       - alias: vaultwarden deny
+        config: {denyErrorMessage: yeetusNoAccess}
+      - alias: gitea no access
+        config: {condUserRole: gitea.access, negate: "true"}
+      - alias: gitea deny
         config: {denyErrorMessage: yeetusNoAccess}
     # Each gated app: Keycloak's browser flow, then "no access role, no entry"
     # (docs/ha/keycloak-sso.md, "Who gets into which app").
@@ -409,6 +448,42 @@ data:
         authenticationExecutions:
           - {authenticator: conditional-user-role, authenticatorConfig: vaultwarden no access, requirement: REQUIRED, priority: 10}
           - {authenticator: deny-access-authenticator, authenticatorConfig: vaultwarden deny, requirement: REQUIRED, priority: 20}
+      - alias: gate gitea
+        description: Sign in, then only with gitea's access role
+        providerId: basic-flow
+        topLevel: true
+        builtIn: false
+        authenticationExecutions:
+          - {flowAlias: gate gitea sign in, requirement: REQUIRED, priority: 10, autheticatorFlow: true}
+          - {flowAlias: gate gitea check, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+      - alias: gate gitea sign in
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: auth-cookie, requirement: ALTERNATIVE, priority: 10}
+          - {flowAlias: gate gitea forms, requirement: ALTERNATIVE, priority: 20, autheticatorFlow: true}
+      - alias: gate gitea forms
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: auth-username-password-form, requirement: REQUIRED, priority: 10}
+          - {flowAlias: gate gitea 2fa, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+      - alias: gate gitea 2fa
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: conditional-user-configured, requirement: REQUIRED, priority: 10}
+          - {authenticator: auth-otp-form, requirement: ALTERNATIVE, priority: 20}
+      - alias: gate gitea check
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: conditional-user-role, authenticatorConfig: gitea no access, requirement: REQUIRED, priority: 10}
+          - {authenticator: deny-access-authenticator, authenticatorConfig: gitea deny, requirement: REQUIRED, priority: 20}
     users:
       - username: service-account-yeetus-api
         serviceAccountClientId: yeetus-api
@@ -434,5 +509,10 @@ data:
           vaultwarden: [access]
       - name: git
         attributes: {description: [Gitea]}
+        clientRoles:
+          gitea: [access]
+      # Gitea admin (through the groups claim; not an access group).
+      - name: gitea-admins
+        attributes: {description: [Gitea admins]}
       - name: calendar
         attributes: {description: [Baïkal, with app passwords]}
