@@ -10,6 +10,7 @@ spec:
   secretName: auth-radunenu-com-le
   dnsNames:
     - auth.radunenu.com
+    - auth.yeetus.net
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer

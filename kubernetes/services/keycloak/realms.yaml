@@ -165,16 +165,16 @@ data:
       # No gate: everyone in the realm may see Home.
       - clientId: home
         name: Home
-        description: hub.radunenu.com
+        description: yeetus.net (Home)
         enabled: true
         publicClient: true
         standardFlowEnabled: true
         directAccessGrantsEnabled: false
-        redirectUris: ["https://hub.radunenu.com/*"]
-        webOrigins: ["https://hub.radunenu.com"]
+        redirectUris: ["https://yeetus.net/*", "https://hub.yeetus.net/*", "https://hub.radunenu.com/*"]
+        webOrigins: ["https://yeetus.net", "https://hub.yeetus.net", "https://hub.radunenu.com"]
         attributes:
           pkce.code.challenge.method: S256
-          post.logout.redirect.uris: "https://hub.radunenu.com/*"
+          post.logout.redirect.uris: "https://yeetus.net/*##https://hub.yeetus.net/*##https://hub.radunenu.com/*"
         protocolMappers:
           - name: groups
             protocol: openid-connect

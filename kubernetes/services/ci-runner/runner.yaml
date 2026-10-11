@@ -149,7 +149,7 @@ data:
       # which turns away request bodies over 100 MB (image layers).
       hostAliases:
         - ip: "10.43.120.87" # traefik.kube-system
-          hostnames: ["git.radunenu.com"]
+          hostnames: ["git.radunenu.com", "git.yeetus.net"]
       nodeSelector:
         kubernetes.io/hostname: __NODE__
       initContainers:
@@ -268,7 +268,7 @@ data:
       privileged: false
       valid_volumes: []
       # Job containers get Docker's /etc/hosts, not the pod's.
-      options: --add-host=git.radunenu.com:10.43.120.87
+      options: --add-host=git.radunenu.com:10.43.120.87 --add-host=git.yeetus.net:10.43.120.87
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -290,7 +290,7 @@ spec:
       enableServiceLinks: false
       hostAliases:
         - ip: "10.43.120.87" # traefik.kube-system
-          hostnames: ["git.radunenu.com"]
+          hostnames: ["git.radunenu.com", "git.yeetus.net"]
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

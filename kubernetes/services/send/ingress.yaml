@@ -42,9 +42,20 @@ spec:
   tls:
     - hosts:
         - share.radunenu.com
+        - share.yeetus.net
       secretName: share-radunenu-com-tls
   rules:
     - host: share.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: send
+                port:
+                  number: 80
+    - host: share.yeetus.net
       http:
         paths:
           - path: /
@@ -68,9 +79,48 @@ spec:
   tls:
     - hosts:
         - share.radunenu.com
+        - share.yeetus.net
       secretName: share-radunenu-com-tls
   rules:
     - host: share.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Exact
+            backend:
+              service:
+                name: send
+                port:
+                  number: 80
+          - path: /login
+            pathType: Exact
+            backend:
+              service:
+                name: send
+                port:
+                  number: 80
+          - path: /api/ws
+            pathType: Prefix
+            backend:
+              service:
+                name: send
+                port:
+                  number: 80
+          - path: /api/upload
+            pathType: Prefix
+            backend:
+              service:
+                name: send
+                port:
+                  number: 80
+          - path: /api/filelist
+            pathType: Prefix
+            backend:
+              service:
+                name: send
+                port:
+                  number: 80
+    - host: share.yeetus.net
       http:
         paths:
           - path: /
@@ -119,9 +169,20 @@ spec:
   tls:
     - hosts:
         - share.radunenu.com
+        - share.yeetus.net
       secretName: share-radunenu-com-tls
   rules:
     - host: share.radunenu.com
+      http:
+        paths:
+          - path: /oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth2-proxy
+                port:
+                  number: 80
+    - host: share.yeetus.net
       http:
         paths:
           - path: /oauth2

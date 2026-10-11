@@ -14,10 +14,20 @@ metadata:
 spec:
   ingressClassName: traefik
   tls:
-    - hosts: [hub.radunenu.com]
+    - hosts: [hub.radunenu.com, hub.yeetus.net]
       secretName: hub-radunenu-com-le
   rules:
     - host: hub.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: home
+                port:
+                  number: 8080
+    - host: hub.yeetus.net
       http:
         paths:
           - path: /

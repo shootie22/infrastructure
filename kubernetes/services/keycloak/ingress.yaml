@@ -17,10 +17,29 @@ spec:
   tls:
     - hosts:
         - auth.radunenu.com
+        - auth.yeetus.net
       # Renewed by cert-manager (certificate.yaml).
       secretName: auth-radunenu-com-le
   rules:
     - host: auth.radunenu.com
+      http:
+        paths:
+          # yippie-api: profile pictures (yippie-api.yaml).
+          - path: /yippie/
+            pathType: Prefix
+            backend:
+              service:
+                name: yippie-api
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 8080
+    - host: auth.yeetus.net
       http:
         paths:
           # yippie-api: profile pictures (yippie-api.yaml).

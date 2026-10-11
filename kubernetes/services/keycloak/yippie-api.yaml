@@ -40,7 +40,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: yippie-api
-          image: git.radunenu.com/radu/yippie-api:main@sha256:8fda8525605aaea422173f92af5f7f3f1d308a9157674028d03a9e660a812b8d
+          image: git.radunenu.com/radu/yippie-api:main@sha256:db4fa409070abe81f6993b521ebaa38883fd73a3933fd89a1ce04914669a51a5
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -62,7 +62,7 @@ spec:
             - name: PROMETHEUS
               value: http://prometheus.monitoring.svc:9090,http://prometheus-dk.monitoring.svc:9090
             - name: HOME_ORIGIN
-              value: https://hub.radunenu.com
+              value: https://yeetus.net,https://hub.yeetus.net,https://hub.radunenu.com
           ports:
             - name: http
               containerPort: 8080
