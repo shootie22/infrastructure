@@ -37,7 +37,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: home
-          image: git.radunenu.com/radu/yippie-home:main@sha256:84d3c83a5d9de64fade48832a713c55359fd613d3956b917425213867099b495
+          image: git.radunenu.com/radu/yippie-home:main@sha256:0bc432b5ef23948187920e85a52be9f245c9aa0c608b29f13b98795276d3422d
           ports:
             - name: http
               containerPort: 8080
