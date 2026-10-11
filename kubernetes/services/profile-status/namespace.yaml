@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: profile-status
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+  annotations:
+    hub.radunenu.com/description: Draws the live infrastructure card on the GitHub profile
