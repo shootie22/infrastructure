@@ -27,6 +27,70 @@ data:
     loginTheme: yippie
     accountTheme: yippie
     rememberMe: false
+    # Keycloak's default profile plus `picture`, set by yippie-api like in
+    # network-yippie. Only I am in this realm, so the rest stays editable.
+    attributes:
+      userProfileEnabled: "true"
+    userProfile:
+      attributes:
+        - name: username
+          displayName: "${username}"
+          validations:
+            length: {min: 3, max: 255}
+            username-prohibited-characters: {}
+            up-username-not-idn-homograph: {}
+          permissions: {view: [admin, user], edit: [admin, user]}
+          multivalued: false
+        - name: email
+          displayName: "${email}"
+          validations:
+            email: {}
+            length: {max: 255}
+          required: {roles: [user]}
+          permissions: {view: [admin, user], edit: [admin, user]}
+          multivalued: false
+        - name: firstName
+          displayName: "${firstName}"
+          validations:
+            length: {max: 255}
+            person-name-prohibited-characters: {}
+          required: {roles: [user]}
+          permissions: {view: [admin, user], edit: [admin, user]}
+          multivalued: false
+        - name: lastName
+          displayName: "${lastName}"
+          validations:
+            length: {max: 255}
+            person-name-prohibited-characters: {}
+          required: {roles: [user]}
+          permissions: {view: [admin, user], edit: [admin, user]}
+          multivalued: false
+        - name: picture
+          displayName: Picture
+          validations:
+            length: {max: 2048}
+          permissions: {view: [admin, user], edit: [admin]}
+          multivalued: false
+      groups:
+        - name: user-metadata
+          displayHeader: User metadata
+          displayDescription: Attributes, which refer to user metadata
+    clients:
+      # yippie-api.yaml, same as in network-yippie (same secret).
+      - clientId: yippie-api
+        name: yippie-api
+        enabled: true
+        publicClient: false
+        secret: $(env:YIPPIE_API_SECRET)
+        standardFlowEnabled: false
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: true
+    users:
+      - username: service-account-yippie-api
+        serviceAccountClientId: yippie-api
+        enabled: true
+        clientRoles:
+          realm-management: [view-users, manage-users]
   # Everyone else (friends, family, my everyday account) and the services
   # they use. Access by a group per app.
   network-yippie.yaml: |
