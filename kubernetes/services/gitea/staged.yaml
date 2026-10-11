@@ -35,7 +35,7 @@ spec:
             - secretRef: {name: gitea-env}
           # Postgres on CNPG since Oct 2026 (#31); overrides the database settings
           # in gitea-env, and Gitea writes them into app.ini at start.
-          env:
+          env: &gitea-env
             - {name: GITEA__database__HOST, value: "gitea-pg-rw:5432"}
             - {name: GITEA__database__NAME, value: gitea}
             - name: GITEA__database__USER
@@ -68,12 +68,37 @@ spec:
             # runner (kubernetes/services/ci-runner). Gitea adds it at start.
             - name: GITEA_RUNNER_REGISTRATION_TOKEN
               valueFrom: {secretKeyRef: {name: runner-registration, key: token}}
+            # Sign-in through Keycloak (#61, login source `keycloak`, see
+            # oidc-source.sh below). A first Keycloak sign-in links to the
+            # existing account with the same username, or email (auto),
+            # someone new gets an account named after their Keycloak username.
+            # Password sign-in stays until everyone has moved. OIDC_* are for
+            # the init container; the client secret is in gitea-env.
+            - {name: GITEA__oauth2_client__ENABLE_AUTO_REGISTRATION, value: "true"}
+            - {name: GITEA__oauth2_client__ACCOUNT_LINKING, value: auto}
+            - {name: GITEA__oauth2_client__USERNAME, value: preferred_username}
+            - {name: GITEA__oauth2_client__UPDATE_AVATAR, value: "true"}
+            - {name: OIDC_CLIENT_ID, value: gitea}
+            - {name: OIDC_DISCOVERY_URL, value: "https://auth.yeetus.net/realms/network-yeetus/.well-known/openid-configuration"}
           ports:
             - {name: http, containerPort: 3000}
             - {name: ssh, containerPort: 22}
           volumeMounts:
             - {name: data, mountPath: /data}
             - {name: localtime, mountPath: /etc/localtime, readOnly: true}
+      initContainers:
+        # Sign-in through Keycloak (#61): adds Gitea's `keycloak` login source,
+        # or brings it in line with oidc-source.sh, before Gitea starts. Same
+        # image, data and settings as Gitea itself.
+        - name: oidc-source
+          image: docker.gitea.com/gitea:1.27.3@sha256:87a67ee09d3ae0d1df5fda5dcda3e2a1f9236a45b0a59025d6e00e46adc43bef
+          command: ["/bin/sh", "/scripts/oidc-source.sh"]
+          envFrom:
+            - secretRef: {name: gitea-env}
+          env: *gitea-env
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: oidc-source, mountPath: /scripts, readOnly: true}
       volumes:
         - name: data
           hostPath:
@@ -81,6 +106,9 @@ spec:
             type: Directory
         - name: localtime
           hostPath: {path: /etc/localtime, type: File}
+        - name: oidc-source
+          configMap:
+            name: gitea-oidc-source
 ---
 apiVersion: v1
 kind: Service
@@ -173,3 +201,37 @@ spec:
                 name: gitea
                 port:
                   number: 80
+---
+# What the oidc-source init container runs.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitea-oidc-source
+  namespace: gitea
+data:
+  oidc-source.sh: |
+    #!/bin/sh
+    # Adds Gitea's Keycloak login source, or brings it in line with these
+    # settings, before Gitea starts. Same data and settings as Gitea itself.
+    set -eu
+    cfg=/data/gitea/conf/app.ini
+    run() { su-exec git gitea --config "$cfg" "$@"; }
+    su-exec git environment-to-ini --config "$cfg"
+    set -- \
+      --name keycloak \
+      --provider openidConnect \
+      --key "$OIDC_CLIENT_ID" \
+      --secret "$OIDC_CLIENT_SECRET" \
+      --auto-discover-url "$OIDC_DISCOVERY_URL" \
+      --scopes "email profile" \
+      --group-claim-name groups \
+      --admin-group gitea-admins \
+      --skip-local-2fa
+    id=$(run admin auth list --vertical-bars | awk -F'|' 'NR > 1 { gsub(/[[:space:]]/, "", $1); gsub(/[[:space:]]/, "", $2); if ($2 == "keycloak") print $1 }')
+    if [ -z "$id" ]; then
+      run admin auth add-oauth "$@"
+      echo "keycloak login source added"
+    else
+      run admin auth update-oauth --id "$id" "$@"
+      echo "keycloak login source $id updated"
+    fi
