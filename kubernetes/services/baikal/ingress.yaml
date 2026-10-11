@@ -7,6 +7,7 @@ spec:
   secretName: cal-radunenu-com-tls
   dnsNames:
     - cal.radunenu.com
+    - cal.yeetus.net
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
@@ -30,9 +31,20 @@ spec:
   tls:
     - hosts:
         - cal.radunenu.com
+        - cal.yeetus.net
       secretName: cal-radunenu-com-tls
   rules:
     - host: cal.radunenu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: baikal
+                port:
+                  number: 80
+    - host: cal.yeetus.net
       http:
         paths:
           - path: /

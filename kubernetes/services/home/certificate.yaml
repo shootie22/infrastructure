@@ -14,6 +14,7 @@ spec:
     - net.radunenu.com
     - services.radunenu.com
     - apps.radunenu.com
+    - hub.yeetus.net
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer

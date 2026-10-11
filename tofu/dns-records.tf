@@ -267,6 +267,77 @@ locals {
       zone    = "yeetus.net", name = "20250921-n4s4._domainkey", type = "TXT"
       content = "\"v=DKIM1;k=rsa;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAy1H3bNnKI3X1KWWKhEL8CRE/yt7m+j5ho1T8wFkWVGyfku5+MQqsrgRXsWpzThMa41F/UQVVLMsI8/5quRQE2dHNGlRGecx4QTYjIVmYHDKFPJBD6uG/xvHrzf/tluRHAQZutbIvK7vTUl3waKlBwMFm59LB7f9Cf/x8aoEJnnVeZjJsFsKgSY3E/vCmshgCFmb\" \"4lx11NBFvniB1XCfS1D7CRjS5mJTq/EIUwNei7tgH9pJq9nWrGotU5yt1sEUH3BtChcIbz497jTM0ul8YpKM4cGZ55nBxFJqIMAD/yhk8lV846NSO7c56L7pWrCRenPQBqcSkv18ZxRGGIB8ETQIDAQAB\""
     }
+    # The network moves to yeetus.net (radunenu.com keeps the website, mail
+    # and the plumbing). share and ssh.git are DNS only, like their
+    # radunenu.com names: Send uploads go past Cloudflare's 100 MB, SSH isn't HTTP.
+    "yeetus.net/auth/CNAME" = {
+      zone    = "yeetus.net", name = "auth", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "yeetus.net/git/CNAME" = {
+      zone    = "yeetus.net", name = "git", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "yeetus.net/cal/CNAME" = {
+      zone    = "yeetus.net", name = "cal", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "yeetus.net/pbin/CNAME" = {
+      zone    = "yeetus.net", name = "pbin", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "yeetus.net/puml/CNAME" = {
+      zone    = "yeetus.net", name = "puml", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "yeetus.net/mon/CNAME" = {
+      zone    = "yeetus.net", name = "mon", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "yeetus.net/hub/CNAME" = {
+      zone    = "yeetus.net", name = "hub", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "yeetus.net/apps/CNAME" = {
+      zone    = "yeetus.net", name = "apps", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "yeetus.net/net/CNAME" = {
+      zone    = "yeetus.net", name = "net", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "yeetus.net/network/CNAME" = {
+      zone    = "yeetus.net", name = "network", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "yeetus.net/services/CNAME" = {
+      zone    = "yeetus.net", name = "services", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "yeetus.net/yippie/CNAME" = {
+      zone    = "yeetus.net", name = "yippie", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+    "yeetus.net/share/CNAME" = {
+      zone    = "yeetus.net", name = "share", type = "CNAME"
+      content = "beacon.radunenu.com"
+    }
+    "yeetus.net/ssh.git/CNAME" = {
+      zone    = "yeetus.net", name = "ssh.git", type = "CNAME"
+      content = "ro.radunenu.com"
+    }
     "yeetus.net/@/CNAME" = {
       zone    = "yeetus.net", name = "@", type = "CNAME"
       content = "beacon.radunenu.com"

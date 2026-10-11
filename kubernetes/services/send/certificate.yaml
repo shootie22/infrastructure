@@ -5,5 +5,5 @@ metadata:
   namespace: send
 spec:
   secretName: share-radunenu-com-tls
-  dnsNames: [share.radunenu.com]
+  dnsNames: [share.radunenu.com, share.yeetus.net]
   issuerRef: {name: letsencrypt-prod, kind: ClusterIssuer}
