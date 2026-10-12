@@ -43,7 +43,7 @@ spec:
             - name: profile-status
               # Placeholder until the first image is pushed: replace with
               # :v0.1.0@sha256:<digest> (see the worker's README).
-              image: git.radunenu.com/radu/profile-status:v0.1.0
+              image: git.radunenu.com/radu/profile-status:v0.1.1@sha256:PASTE_DIGEST
               env:
                 - name: PROMETHEUS_URL
                   value: http://prometheus.monitoring.svc:9090

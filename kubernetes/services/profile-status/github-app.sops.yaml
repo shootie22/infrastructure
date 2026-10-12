@@ -1,0 +1,36 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: profile-status-github-app
+    namespace: profile-status
+spec:
+    secretTemplates:
+        - name: ENC[AES256_GCM,data:vl//X7nAOEaJVg3ZCifWG330tvcPWzs9SA==,iv:PWyFtqeQbnK/jtwTRvuM3Dud2RwUTrjJBCx2LiLkohY=,tag:uLKkk7E1/tlo6twU+2wV/A==,type:str]
+          stringData:
+            app-id: ENC[AES256_GCM,data:x8FbxDmKtA==,iv:miOQnrv8bmeMJWzxWvs5k1Kb6AfMdzOavwhRLMpRB8Q=,tag:f2a8fEw87Z0q7Ffaqt1mTQ==,type:str]
+            installation-id: ENC[AES256_GCM,data:VLBJPr8ZHo3M,iv:/HR8KJmFxd0vFq2FCAv9eJaiIiAPvuvOmJFkAaxPacc=,tag:jCxr/ot1ZxiCgoFIDkd87g==,type:str]
+            private-key.pem: ENC[AES256_GCM,data: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,iv:gc03zg+Xy90HdJqCp7yDgcXZq0NICcz6VXVi2NUZ23o=,tag:BxlDactaXzNgC/oP7gBgwg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBHbmlGRjNrVW4xY2Y4cWpN
+            TFk3WjdpYU8rUG1JdytDUnFWVlFjSmFwd2t3CjRjU2J5dmVBZE1IbEg0aGNxYWho
+            OXFOQ1I1R2YvMWRCWXJoN3J2YnRTeFkKLS0tIEJxK1RITzh4NkVkek9WWGtGNFF1
+            cVNCc002QndTYU9QelhKblBHek4xRVEK1lRBVoPzw4k3QH9IrlB165o3DdW5G8ju
+            97keT6ThSjxdB0B7fwOxmjKerOmZ9NlF065qdZ59x3YdPIRt7rL8mQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBneVdMQjFHalo5dHBCMCtB
+            U25aZGRxVU91Q3B0emdQclZuUFRwZWZZc1QwCktIOFJDckFGcVZoeTg2eFh3SkFR
+            ZzJaN1A0eVpQUVJMZHNCUUlMSW81a3MKLS0tIGxBZUVCeWVUYm9JTVk3bDNDaFRR
+            emF4OE14MTNxaytQYWF2eTBlaTNzSzQKrL02cN7hEiHWdJ1kZ0BmCg7xR8lpWKYI
+            gcdjssPXTYCZi80CRzDx9s08bIaZnSz1EyFAEL3MB2A9nepENF/sYg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
+    encrypted_suffix: Templates
+    lastmodified: "2026-10-12T18:54:08Z"
+    mac: ENC[AES256_GCM,data:IFp8NxVineuNM0GURwK7154lKlMWb9hm2lCO9c5B90ok8QErAVRNhEgl5vmXSPTZIKYtfx/bMfvu27h8lzUyz1NrJkbEhisWrQEZxyFhuVM9cMXJzbDfSsFEnoCUVA8kWmgXdjVvk2Ee+g2Jb8c4C8wabcR9VMUZ3MF+WRCpqxo=,iv:CkXr+JOmgrYo9x1x2wobDrUIRJ1Qt71Cbt4jXhne4Dk=,tag:eg6Nm2OzDuHEhMfU/hI+zg==,type:str]
+    version: 3.13.3

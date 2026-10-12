@@ -3,6 +3,7 @@
 # fails `hub render --check`.
 keep:
 - cronjob.yaml
+- github-app.sops.yaml
 - github-app.sops.yaml.example
 - namespace.yaml
 - networkpolicy.yaml
