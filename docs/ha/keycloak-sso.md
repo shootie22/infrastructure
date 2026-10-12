@@ -128,6 +128,14 @@ authenticationFlows:
 
 Public sites, SearXNG, Ollama, bots, runners and game servers don't need it.
 
+## Email
+
+Keycloak sends through Mailfence, as `noreply@yeetus.net` for network-yeetus and `noreply@radunenu.com` for network-admin. The SMTP settings live in the admin UI (Realm settings, Email), not in `realms.yaml`, because config-cli would replace them and drop the password. The sender has to be an address on the Mailfence account. If it isn't, Mailfence takes the login and then refuses every message with `554 Transaction failed (223E)`, which is what yeetus.net did until the alias existed.
+
+Both realms use the `yeetus` email theme (yeetus repo, `apps/login/src/email`): the night panel from the sign-in pages, no images (the logo is three table cells), system fonts, and a plain-text part in the same shape. Password reset, email confirmation, account setup and the test email have their own wording. Keycloak's other emails (failed login, password changed) keep its wording inside the same frame.
+
+To send someone the set-a-password email again: Users, the person, Credentials, Credential reset, action Update Password. The link works for 12 hours.
+
 ## Baïkal: app passwords
 
 Calendar and contacts apps only do a username and a password, so they never see Keycloak. People in the `calendar` group make one password per device on the account page (Sign-in & security, Calendar apps); yeetus-api keeps a SHA-256 of each.
