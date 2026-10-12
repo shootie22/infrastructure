@@ -37,7 +37,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: home
-          image: git.radunenu.com/radu/yeetus-home:main@sha256:a3d17d9dd5a3f2dd10e1e2f9eea74fb4e59b67be035f370137d18af2c3165ba1
+          image: git.radunenu.com/radu/yeetus-home:main@sha256:c3f68bc5cc54dae3fc1fa88c8c0d4123800dadbdc9199845ca39ea7fef8d5231
           ports:
             - name: http
               containerPort: 8080
