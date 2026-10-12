@@ -82,31 +82,13 @@ spec:
             - {name: GITEA__oauth2_client__UPDATE_AVATAR, value: "true"}
             - {name: OIDC_CLIENT_ID, value: gitea}
             - {name: OIDC_DISCOVERY_URL, value: "https://auth.yeetus.net/realms/network-yeetus/.well-known/openid-configuration"}
-            # The look (yeetus repo, apps/gitea; copied in by the `look` init
-            # container): our themes next to Gitea's own, Yeetus for everyone
-            # who hasn't picked one (Settings, Appearance), our mark as the
-            # logo, and our page for people who aren't signed in.
-            - {name: GITEA__ui__THEMES, value: "yeetus,github-auto,github-light,github-dark,minecraft,doom,gitea-auto,gitea-light,gitea-dark"}
-            - {name: GITEA__ui__DEFAULT_THEME, value: yeetus}
-            # /metrics, for the repository count on that page (yeetus-api),
-            # behind GITEA__metrics__TOKEN in gitea-env.
-            - {name: GITEA__metrics__ENABLED, value: "true"}
           ports:
             - {name: http, containerPort: 3000}
             - {name: ssh, containerPort: 22}
           volumeMounts:
             - {name: data, mountPath: /data}
             - {name: localtime, mountPath: /etc/localtime, readOnly: true}
-            # Over the custom folder in /data: only these two places, so
-            # anything else kept there stays as it is.
-            - {name: look, mountPath: /data/gitea/public/assets, subPath: assets, readOnly: true}
-            - {name: look, mountPath: /data/gitea/templates/home.tmpl, subPath: templates/home.tmpl, readOnly: true}
       initContainers:
-        - name: look
-          image: git.radunenu.com/radu/yeetus-gitea:main@sha256:727446346301d9d437bde3319b09e1116a068cacb8129b202387ba34aec707f8
-          volumeMounts:
-            - {name: look, mountPath: /custom/assets, subPath: assets}
-            - {name: look, mountPath: /custom/templates, subPath: templates}
         # Sign-in through Keycloak (#61): adds Gitea's `keycloak` login source,
         # or brings it in line with oidc-source.sh, before Gitea starts. Same
         # image, data and settings as Gitea itself.
@@ -129,8 +111,6 @@ spec:
         - name: oidc-source
           configMap:
             name: gitea-oidc-source
-        - name: look
-          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
