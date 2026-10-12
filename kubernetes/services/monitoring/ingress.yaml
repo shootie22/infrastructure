@@ -46,20 +46,23 @@ spec:
     permanent: true
 ---
 # mon.radunenu.com, the old name: redirects to the new one (to-yeetus). No
-# homepage annotation, so the status probes only check the new name.
+# homepage annotation, so the status probes only check the new name. Its own
+# certificate: grafana-tls only has mon.yeetus.net, and Cloudflare turned
+# the old name away (526) when it got that one.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: grafana-old-name
   namespace: monitoring
   annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
     traefik.ingress.kubernetes.io/router.middlewares: monitoring-to-yeetus@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
     - hosts:
         - mon.radunenu.com
-      secretName: grafana-tls
+      secretName: grafana-old-tls
   rules:
     - host: mon.radunenu.com
       http:
