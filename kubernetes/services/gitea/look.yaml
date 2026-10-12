@@ -55,7 +55,7 @@ subjects:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: gitea-look-702baa65
+  name: gitea-look-fa13189c
   namespace: gitea
 spec:
   backoffLimit: 2
@@ -77,7 +77,7 @@ spec:
         # Copies the files (the image's install.sh) and leaves
         # /done/restart when Gitea has to restart.
         - name: copy
-          image: git.radunenu.com/radu/yeetus-gitea:main@sha256:702baa65fc99f74f6519b7a47bf5e6c4d33998c65816a53c83f5bd964486bcc5
+          image: git.radunenu.com/radu/yeetus-gitea:main@sha256:fa13189c83d350d7f1b2c4aae9c8101a3ab49268ab9a5f848aa89447de5993d1
           volumeMounts:
             - {name: custom, mountPath: /custom}
             - {name: done, mountPath: /done}
