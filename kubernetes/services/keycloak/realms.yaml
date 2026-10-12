@@ -26,6 +26,7 @@ data:
     # Same pages with a red card, so it never looks like the everyday account.
     loginTheme: yeetus
     accountTheme: yeetus
+    emailTheme: yeetus
     rememberMe: false
     # Keycloak's default profile plus `picture`, set by yeetus-api like in
     # network-yeetus. Only I am in this realm, so the rest stays editable.
@@ -105,10 +106,13 @@ data:
     editUsernameAllowed: true
     loginWithEmailAllowed: true
     duplicateEmailsAllowed: false
-    # The Yeetus login and account pages (git.yeetus.net/radu/yeetus).
+    # The Yeetus login and account pages and emails (git.yeetus.net/radu/yeetus).
     # Need the yeetus-keycloak image; without it Keycloak uses its own pages.
+    # The SMTP settings are set in the admin console, not here: config-cli
+    # would replace them and drop the password.
     loginTheme: yeetus
     accountTheme: yeetus
+    emailTheme: yeetus
     rememberMe: true
     # Email and username: only an admin changes them. Joplin and the email
     # matching in the other apps trust the email Keycloak sends, so letting
