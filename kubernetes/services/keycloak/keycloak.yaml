@@ -45,7 +45,7 @@ spec:
         - name: keycloak
           # Keycloak 26.5.5 with the Yeetus login and account pages added (git.yeetus.net/radu/yeetus).
           # Realms use them through loginTheme/accountTheme: yeetus in realms.yaml.
-          image: git.radunenu.com/radu/yeetus-keycloak:main@sha256:dc025748f37773b5cfb3f7bc6243a2215b66f0c332a12f2502a5f8c51319741c
+          image: git.radunenu.com/radu/yeetus-keycloak:main@sha256:de45fbf5b74509e7a3e3ed9a9a88d8c35ff931d20d446f3c197130684a7fdb14
           imagePullPolicy: IfNotPresent
           args:
             - start
