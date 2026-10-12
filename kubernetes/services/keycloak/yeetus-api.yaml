@@ -42,7 +42,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: yeetus-api
-          image: git.radunenu.com/radu/yeetus-api:main@sha256:f328a2a2a1b60016049c29fd3606561038c403089dd61a63efebecf7c9940515
+          image: git.radunenu.com/radu/yeetus-api:main@sha256:c5fcddb2fc21cef3b604244e1937d5cc252e8b04bb1649611a7b5a1009be76b4
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -71,6 +71,11 @@ spec:
             # (its /metrics, with the token Gitea has too) and public repos.
             - name: GITEA_URL
               value: http://gitea.gitea.svc.cluster.local
+            # Gitea's database as runner_view, for every CI runner (also the
+            # ones outside the cluster). Optional: without it, the runner pods.
+            - name: GITEA_DB_URL
+              valueFrom:
+                secretKeyRef: {name: yeetus-api-env, key: GITEA_DB_URL, optional: true}
             - name: GITEA_METRICS_TOKEN
               valueFrom:
                 secretKeyRef: {name: yeetus-api-env, key: GITEA_METRICS_TOKEN}
