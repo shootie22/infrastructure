@@ -1,5 +1,5 @@
 # Where Hub may connect: DNS, its database, the monitoring stack, the game
-# agents, the Kubernetes API and the checkers and relays on the Nebula mesh,
+# agents, the Kubernetes API, Traefik and the checkers and relays on the Nebula mesh,
 # plus HTTPS and DNS out (Keycloak, GitHub, the authoritative nameservers).
 # Nothing else in the cluster.
 apiVersion: networking.k8s.io/v1
@@ -56,6 +56,16 @@ spec:
         - {protocol: TCP, port: 9181}
         - {protocol: TCP, port: 9182}
         - {protocol: TCP, port: 9190}
+    # Traefik's HTTPS entry point, for the DNS page asking it about each
+    # name (the certificate it hands out, any redirect). Its Service listens
+    # on 443 but the pods on 8443, and this policy sees the pod's port.
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: traefik}
+      ports:
+        - {protocol: TCP, port: 8443}
     - ports:
         - {protocol: TCP, port: 443}
         - {protocol: UDP, port: 53}
