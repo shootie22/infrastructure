@@ -1,0 +1,121 @@
+# git.yeetus.net's look (yeetus repo, apps/gitea): our themes next to Gitea's
+# own, our mark as the logo and our front page, copied into Gitea's custom
+# folder on the node that runs Gitea. That folder is in /srv/ha/gitea, so the
+# standby has a copy too.
+#
+# A Job of its own, not part of Gitea's pod: the image is on Gitea's own
+# registry, and when Gitea's pod pulled it, Gitea couldn't start again once
+# the old pod was gone (#267). Now a look that can't be pulled leaves Gitea as
+# it is. It restarts Gitea only when the front page or the set of themes
+# changed; Gitea reads CSS, fonts and images from disk as they are. Before the
+# files are there, Gitea still works, just without theme colours.
+#
+# A Job can't be edited, so its name ends in the start of the image's digest:
+# a new look is a new Job, and Argo prunes the old one. To run the same one
+# again after it failed, delete it and Argo makes it again.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gitea-look
+  namespace: gitea
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: gitea-look
+  namespace: gitea
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["gitea"]
+    verbs: ["get", "patch"]
+  # rollout status lists and watches the Deployment and its ReplicaSets. A
+  # list can't be limited to one name.
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gitea-look
+  namespace: gitea
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: gitea-look
+subjects:
+  - kind: ServiceAccount
+    name: gitea-look
+    namespace: gitea
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gitea-look-17a3f2cd
+  namespace: gitea
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 900
+  template:
+    spec:
+      serviceAccountName: gitea-look
+      restartPolicy: Never
+      nodeSelector:
+        ha.radunenu.com/gitea: active
+      securityContext:
+        # git in Gitea's image, who owns the custom folder.
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # Copies the files (the image's install.sh) and leaves
+        # /done/restart when Gitea has to restart.
+        - name: copy
+          image: git.radunenu.com/radu/yeetus-gitea:main@sha256:17a3f2cd5f43e86834ae68e62207180e8c5c7efd499bec189822084bbd029ae0
+          volumeMounts:
+            - {name: custom, mountPath: /custom}
+            - {name: done, mountPath: /done}
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {memory: 64Mi}
+          securityContext: &locked
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      containers:
+        - name: restart
+          image: docker.io/alpine/k8s:1.35.9@sha256:b9cb6db0091a2327c0a56ecda69d37fa830c7a96ea669e7382b3ee778aa07a24
+          command: ["/bin/sh", "-euc"]
+          args:
+            - |
+              if [ ! -f /done/restart ]; then
+                echo "nothing that needs a restart"
+                exit 0
+              fi
+              kubectl rollout restart deployment/gitea
+              kubectl rollout status deployment/gitea --timeout=10m
+              # Only now, so a restart that didn't happen is tried next time.
+              cp /done/restart /custom/.yeetus-look
+          env:
+            - {name: HOME, value: /done}
+          volumeMounts:
+            - {name: custom, mountPath: /custom}
+            - {name: done, mountPath: /done}
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {memory: 128Mi}
+          securityContext: *locked
+      volumes:
+        - name: custom
+          hostPath:
+            path: /srv/ha/gitea/gitea
+            type: Directory
+        - name: done
+          emptyDir: {}

@@ -56,6 +56,12 @@ jobs:
             echo "no service has a hub.yaml yet"
             exit 0
           fi
+          # Hub's image is on Gitea. When Gitea is down this can't run, and it
+          # mustn't keep the fix for Gitea from being merged (#267).
+          if ! curl -fsS -o /dev/null --max-time 20 https://git.radunenu.com/api/healthz; then
+            echo "::warning::Gitea is down, so Hub's image can't be pulled. Skipped."
+            exit 0
+          fi
           docker run --rm -v "$PWD:/w:ro" git.radunenu.com/radu/infra-hub:main \
             render --check --infra /w/infrastructure --dotfiles /w/dotfiles
 

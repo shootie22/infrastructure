@@ -3,6 +3,7 @@
 # fails `hub render --check`.
 keep:
 - database.yaml
+- look.yaml
 - runner-registration.sops.yaml
 - secret.sops.yaml
 - staged.yaml
