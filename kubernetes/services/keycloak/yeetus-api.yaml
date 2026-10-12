@@ -42,7 +42,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: yeetus-api
-          image: git.radunenu.com/radu/yeetus-api:main@sha256:36be517612b25802dbb8b59de89ae1e77f06aeac4b181a027f97ac1ed2ec1a31
+          image: git.radunenu.com/radu/yeetus-api:main@sha256:f328a2a2a1b60016049c29fd3606561038c403089dd61a63efebecf7c9940515
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -63,8 +63,17 @@ spec:
               value: /config/catalog.yaml
             - name: PROMETHEUS
               value: http://prometheus.monitoring.svc:9090,http://prometheus-dk.monitoring.svc:9090
+            # Our public pages that read /yeetus/api/home and /yeetus/api/git
+            # from the browser: Home, and git.yeetus.net's front page.
             - name: HOME_ORIGIN
-              value: https://yeetus.net,https://hub.yeetus.net,https://hub.radunenu.com
+              value: https://yeetus.net,https://hub.yeetus.net,https://hub.radunenu.com,https://git.yeetus.net,https://git.radunenu.com
+            # git.yeetus.net's front page numbers: Gitea's repository count
+            # (its /metrics, with the token Gitea has too) and public repos.
+            - name: GITEA_URL
+              value: http://gitea.gitea.svc.cluster.local
+            - name: GITEA_METRICS_TOKEN
+              valueFrom:
+                secretKeyRef: {name: yeetus-api-env, key: GITEA_METRICS_TOKEN}
             # Calendar app passwords: who may have them, and what the account page
             # tells people to put in their app.
             - name: DAV_REALM
