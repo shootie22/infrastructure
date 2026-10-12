@@ -90,6 +90,10 @@ spec:
             # /metrics, for the repository count on the front page (yeetus-api),
             # behind GITEA__metrics__TOKEN in gitea-env.
             - {name: GITEA__metrics__ENABLED, value: "true"}
+            # /assets for 10 minutes instead of 6 hours, in browsers and at
+            # Cloudflare: the theme files keep their names, so a new look
+            # would otherwise take hours to show.
+            - {name: GITEA__server__STATIC_CACHE_TIME, value: 10m}
           ports:
             - {name: http, containerPort: 3000}
             - {name: ssh, containerPort: 22}
