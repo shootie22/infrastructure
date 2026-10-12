@@ -23,6 +23,9 @@ data:
     # still set it back.
     loginTheme: yeetus
     emailTheme: yeetus
+    # Like network-admin: no "keep me signed in" for the admin console.
+    # "Forgot?" stays, master sends email too.
+    rememberMe: false
   # Admin tools only I use: Grafana, Hub. Access by a role per app.
   network-admin.yaml: |
     realm: network-admin
