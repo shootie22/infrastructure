@@ -8,6 +8,7 @@ spec:
         - name: ENC[AES256_GCM,data:GdIC77tIX8lilPBU13I=,iv:xBsoSlxYFyXNRvKFpKNo5R7q39D0aPngSbJivMAjY6M=,tag:+rQ/iS8mxOJ+odFys/VG6w==,type:str]
           stringData:
             CLIENT_SECRET: ENC[AES256_GCM,data:cZXcd3MGZXTGAv8Lbslze+LO/UPicgFn0ckcG8MU5m8oL3a7OY5ZfQ==,iv:Qx/qFBgwotrmfcPaC19jWw/pnu1aaChon1kndNE+4G0=,tag:aPkQBUKWZh8/nP2esWpzLQ==,type:str]
+            GITEA_METRICS_TOKEN: ENC[AES256_GCM,data:MnnJOkjqoLjaim18yQDz9aNOHDQEJ/YM/qwPz//+rqbN8RYjf9aVzOnWeuAXHODY,iv:G9KDPxl6Zzne2qqwYLIRPpp2Ol0aBozYdDtNXPU5DOc=,tag:FBKe9qh3itD03rCPrugQjQ==,type:str]
 sops:
     age:
         - enc: |
@@ -29,6 +30,6 @@ sops:
             -----END AGE ENCRYPTED FILE-----
           recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
     encrypted_suffix: Templates
-    lastmodified: "2026-10-11T17:36:41Z"
-    mac: ENC[AES256_GCM,data:7Icx3Y0vNx9CcH3pLUKaEPo4ivJBeYbhUWpKPelENF18rOLvA3F9Khk5rkA8zzD89m5D6SjeHCHb9ERZN0xVvCGiO8eE7RX2vv3MlDEZgwHg7MMlq9QSGEzxFlyiffkjvVHmeUq3aZwQ5nM16Zc7JB/4v5wfXYnspkdZwYYqU5I=,iv:cCKgiuY1jlQTv88NfBwM7KRAjeR6AQ3smbIieHaRwGg=,tag:SPBA6hz+n3wuJSu+y7Ig6w==,type:str]
+    lastmodified: "2026-10-12T08:24:32Z"
+    mac: ENC[AES256_GCM,data:F5uoqij275GqTpCc5KYOgFosy4Uua/dxsRK+tI/3PskM+K5OFhDSrPrPMpVq5YvdOue0wZEBw/RTuLlfQ3gtjZqKU9MB0gY+2V4jpeADWUwUf5lpI7+rENZCjxKm0UNQN1aYcQmeonjaB3pAbsjln+3RTlK29qHB8SxzTwkjQVo=,iv:5Q/gAlPIau0w/MHTtgAQSwXhnj0rsSqkMYqcj/CL5Ns=,tag:j41mekxibjuTNtITCGTJtw==,type:str]
     version: 3.13.3
