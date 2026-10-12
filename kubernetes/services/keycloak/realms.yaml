@@ -18,6 +18,11 @@ data:
   master.yaml: |
     realm: master
     displayName: Keycloak Admin
+    # The admin console's sign-in in the red admin look, like network-admin.
+    # If it ever breaks, config-cli (client credentials, no login page) can
+    # still set it back.
+    loginTheme: yeetus
+    emailTheme: yeetus
   # Admin tools only I use: Grafana, Hub. Access by a role per app.
   network-admin.yaml: |
     realm: network-admin
