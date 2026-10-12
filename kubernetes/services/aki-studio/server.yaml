@@ -1,0 +1,121 @@
+# Aki Studio's server (git.yeetus.net/radu/akistudio, deploy/helm rendered
+# and adapted). A quick test, in DK so RO's router needs no new port:
+#
+# - The web part: aki.yeetus.net is a DNS-only name for the edge, whose
+#   HAProxy passes it to Traefik like any name it doesn't serve itself. No
+#   Cloudflare proxy, so recordings over 100 MB can be uploaded.
+# - Jam rooms: clients look for the relay on UDP 7000 at the same name, so
+#   aki-jam claims the edge's public address. kube-proxy on the edge sends
+#   those packets to the pod over the cluster network; the server sees the
+#   edge's address instead of the player's.
+#
+# One replica: everyone in a jam room has to reach the same pod. Sign-up is
+# open (the server has no other way to make accounts) with limits on file
+# size, storage per session and age; close it once the test accounts exist.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: aki-media
+  namespace: aki-studio
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aki
+  namespace: aki-studio
+spec:
+  replicas: 1
+  # The old pod hands its sessions over after the new one is ready. Same
+  # node, so both can mount the local volume.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 1, maxUnavailable: 0}
+  selector:
+    matchLabels: {app: aki}
+  template:
+    metadata:
+      labels: {app: aki}
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        fsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: server
+          image: git.radunenu.com/radu/akistudio-server:main@sha256:49c375e0ded3ad206dd40c680f551e8070ce7f154f7f36151712bd7faf85a94e
+          ports:
+            - {name: http, containerPort: 8080}
+            - {name: jam, containerPort: 7000, protocol: UDP}
+          env:
+            - {name: AKI_LOG, value: info}
+            - {name: AKI_ALLOW_ANONYMOUS, value: "false"}
+            - {name: AKI_ALLOW_SIGNUP, value: "true"}
+            - {name: AKI_MAX_PEERS, value: "32"}
+            - {name: AKI_PUBLIC_URL, value: "https://aki.yeetus.net"}
+            - {name: AKI_DOWNLOAD_URL, value: ""}
+            - name: AKI_POD_NAME
+              valueFrom: {fieldRef: {fieldPath: metadata.name}}
+            - {name: AKI_LEASE_TTL, value: "15"}
+            - {name: AKI_MEDIA_DIR, value: /data/media}
+            - {name: AKI_JAM_UDP, value: "0.0.0.0:7000"}
+            # Limits while sign-up is open: 1 GB a file, 5 GB a session,
+            # sessions nobody touched for 90 days go.
+            - {name: AKI_MAX_MEDIA_MB, value: "1024"}
+            - {name: AKI_SESSION_QUOTA_MB, value: "5120"}
+            - {name: AKI_RETENTION_DAYS, value: "90"}
+            - name: AKI_DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: aki-pg-app, key: uri}
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: {path: /readyz, port: http}
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 100m, memory: 64Mi}
+            limits: {memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - {name: media, mountPath: /data/media}
+      volumes:
+        - name: media
+          persistentVolumeClaim:
+            claimName: aki-media
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aki
+  namespace: aki-studio
+spec:
+  selector: {app: aki}
+  ports:
+    - {name: http, port: 80, targetPort: http}
+---
+# UDP 7000 on the edge's public address (radunenu.com/edge in tofu). If the
+# edge moves to a new VPS, this address changes with it.
+apiVersion: v1
+kind: Service
+metadata:
+  name: aki-jam
+  namespace: aki-studio
+spec:
+  selector: {app: aki}
+  externalIPs: ["141.95.67.178"]
+  ports:
+    - {name: jam, port: 7000, targetPort: jam, protocol: UDP}
