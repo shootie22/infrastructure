@@ -1,0 +1,21 @@
+# Aki Studio's accounts and sessions. One instance on the thinkcentre while
+# it's a test; a second one in RO makes it like the others (instances: 2,
+# nodeSelector db: "true").
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: aki-pg
+  namespace: aki-studio
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+  bootstrap:
+    initdb:
+      database: aki
+      owner: aki
+  storage:
+    size: 2Gi
+    storageClass: local-path
+  affinity:
+    nodeSelector:
+      kubernetes.io/hostname: thinkcentre
