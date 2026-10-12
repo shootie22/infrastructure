@@ -397,15 +397,6 @@ locals {
       content = "edge.radunenu.com"
     }
 
-    # Aki Studio, a test in DK (kubernetes/services/aki-studio): the edge
-    # passes the web part to Traefik and claims UDP 7000 for its jam relay,
-    # which clients look for at this same name. DNS only, so no Cloudflare
-    # upload limit and UDP reaches the edge.
-    "yeetus.net/aki/CNAME" = {
-      zone    = "yeetus.net", name = "aki", type = "CNAME"
-      content = "edge.radunenu.com"
-    }
-
     # The tailnet's own relay (DERP) on the edge (#38), next to Tailscale's.
     "radunenu.com/derp/CNAME" = {
       zone    = "radunenu.com", name = "derp", type = "CNAME"
