@@ -404,9 +404,10 @@ spec:
       containers:
         - name: kube-state-metrics
           image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.19.1@sha256:85108987d044b18a098126732f98602df408888c0f7d456241f5abefb9744bc1
-          # Node zones only (topology.kubernetes.io/zone): the profile card names
-          # the sites from kube_node_labels.
-          args: [--port=8080, "--metric-labels-allowlist=nodes=[topology.kubernetes.io/zone]"]
+          # Two node labels for the profile card: the zone names the sites, and
+          # profile.radunenu.com/node=workstation keeps the workstation out of
+          # its node count (profile-status).
+          args: [--port=8080, "--metric-labels-allowlist=nodes=[topology.kubernetes.io/zone,profile.radunenu.com/node]"]
           ports:
             - name: http
               containerPort: 8080
