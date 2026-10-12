@@ -4,8 +4,12 @@
 # with the image, so for a minute one replica can serve the new page and the
 # other a 404 for its files). Errors there are never cached at the edge now;
 # good answers still follow Keycloak's own headers.
+#
+# Gitea's /assets/: browsers keep them as long as Gitea says (10 minutes,
+# STATIC_CACHE_TIME), not the zone's 4 hours. The theme files keep their
+# names, so a new look would otherwise take up to 4 hours to show.
 locals {
-  # Zones with a Keycloak name: the new one and the old one, still served.
+  # Zones with a Keycloak and a Gitea name: the new one and the old one, still served.
   keycloak_zones = toset(["yeetus.net", "radunenu.com"])
 
   # Rules made by hand in the dashboard before this file, kept as they were.
@@ -51,6 +55,15 @@ resource "cloudflare_ruleset" "cache" {
           value             = -1
         }]
       }
+    }
+    }, {
+    description = "Gitea assets: browsers follow Gitea's own max-age"
+    expression  = "(http.host eq \"git.${each.key}\" and starts_with(http.request.uri.path, \"/assets/\"))"
+    action      = "set_cache_settings"
+    action_parameters = {
+      cache       = true
+      edge_ttl    = { mode = "respect_origin" }
+      browser_ttl = { mode = "respect_origin" }
     }
   }])
 }
