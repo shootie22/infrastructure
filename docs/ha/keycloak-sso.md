@@ -110,20 +110,22 @@ authenticationFlows:
 
 ## Services
 
+How each app moved without anyone losing data, and the way back: [sso-migration.md](sso-migration.md).
+
 | Service | Support | Plan |
 |---|---|---|
 | Grafana | OIDC | Done, network-admin |
 | Argo CD | none | No UI exposed, only the webhook; Hub shows its state |
-| Audiobookshelf | OIDC | Do it, set up in the web UI |
-| Send | none | oauth2-proxy on uploads only |
-| Gitea | OIDC | Do it, existing accounts get linked, not recreated |
+| Audiobookshelf | OIDC | Done, Keycloak only (#59) |
+| Send | none | Done, oauth2-proxy on uploads only |
+| Gitea | OIDC | Done, Keycloak only, existing accounts linked (#61) |
 | Rybbit | unclear | OIDC if the version supports it, else forward-auth on the dashboard |
-| Homepage, picshare, pinga admin | none | Shared oauth2-proxy |
+| Hub | OIDC | Done, network-admin |
 | Headscale | OIDC | Careful: existing users and nodes have to move |
 | Headlamp | none | Retired: Hub shows the cluster |
-| Vaultwarden | SSO | Optional, the master password still does the real work |
-| Joplin | SAML | Done, password login kept for now |
-| Baïkal | none | App passwords from the account page, checked by Traefik (below) |
+| Vaultwarden | SSO | Done, Keycloak only, the master password still unlocks the vault |
+| Joplin | SAML | Done, Keycloak only |
+| Baïkal | none | Done, app passwords from the account page, checked by Traefik (below) |
 | Matrix | via MAS | Separate project |
 
 Public sites, SearXNG, Ollama, bots, runners and game servers don't need it.
