@@ -3,5 +3,7 @@ kind: Namespace
 metadata:
   name: headlamp
   annotations:
-    hub.radunenu.com/url: https://hl.infra.radunenu.com
-    hub.radunenu.com/description: Kubernetes dashboard, read-only login
+    # Headlamp is gone; the namespace keeps its name (README.md) and Hub
+    # shows it as what it is now.
+    hub.radunenu.com/name: tailnet-proxy
+    hub.radunenu.com/description: HTTPS on the tailnet for Hub, Ollama and SearXNG
