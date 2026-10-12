@@ -25,6 +25,18 @@ spec:
     liveness:
       isolationCheck:
         enabled: true
+  # runner_view: yeetus-api's login for git.yeetus.net's runner count. It
+  # reads a runner's name, labels and last check-in and nothing else
+  # (runner-view.yaml grants those columns). Password in gitea-env's
+  # SopsSecret (gitea-pg-runner-view) and in yeetus-api's GITEA_DB_URL.
+  managed:
+    roles:
+      - name: runner_view
+        ensure: present
+        login: true
+        connectionLimit: 2
+        passwordSecret:
+          name: gitea-pg-runner-view
 ---
 # Hourly dump into fuji's Borg folder (#32), as for the others.
 apiVersion: batch/v1

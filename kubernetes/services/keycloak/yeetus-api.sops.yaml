@@ -5,31 +5,32 @@ metadata:
     namespace: keycloak
 spec:
     secretTemplates:
-        - name: ENC[AES256_GCM,data:GdIC77tIX8lilPBU13I=,iv:xBsoSlxYFyXNRvKFpKNo5R7q39D0aPngSbJivMAjY6M=,tag:+rQ/iS8mxOJ+odFys/VG6w==,type:str]
+        - name: ENC[AES256_GCM,data:1PKvNAAlc+OEPtrvnD8=,iv:eW0FXGMaEevtVuZBqzEEAxaIgJGuHMiqzOIP6OqOsjA=,tag:l27etwPugsWQCikJmXtEMw==,type:str]
           stringData:
-            CLIENT_SECRET: ENC[AES256_GCM,data:cZXcd3MGZXTGAv8Lbslze+LO/UPicgFn0ckcG8MU5m8oL3a7OY5ZfQ==,iv:Qx/qFBgwotrmfcPaC19jWw/pnu1aaChon1kndNE+4G0=,tag:aPkQBUKWZh8/nP2esWpzLQ==,type:str]
-            GITEA_METRICS_TOKEN: ENC[AES256_GCM,data:MnnJOkjqoLjaim18yQDz9aNOHDQEJ/YM/qwPz//+rqbN8RYjf9aVzOnWeuAXHODY,iv:G9KDPxl6Zzne2qqwYLIRPpp2Ol0aBozYdDtNXPU5DOc=,tag:FBKe9qh3itD03rCPrugQjQ==,type:str]
+            CLIENT_SECRET: ENC[AES256_GCM,data:Zy8wYP2t1qnPtRFj73ng3WT2FjmaObDhrIJbIKP2f1TEj4qO4xePCw==,iv:CHTB3WEKrSaChFoaC0zT2NtMkuaTnyk+L9GzoOj7EYU=,tag:p+wwkgvsYNoxpfPcwY06PA==,type:str]
+            GITEA_METRICS_TOKEN: ENC[AES256_GCM,data:jjat+uHBYJTdfc8ur8pwF50Hdl/zHiaLqGEg9Pexsf7OERA3n038xGty3wQNaPH7,iv:ncPptZ6phJZgrt9CjW0Clrx5VQ9oD0VhfesN7xdZYGU=,tag:vyWOYIUX+UO2rU26RxbTXw==,type:str]
+            GITEA_DB_URL: ENC[AES256_GCM,data:wlhXR7XfnOARGa9W9Xox4zDJrgqXRPNYwwYX1KUn1A/dFMmOrOnA8aW2s6QC2k5C2rgHvBN4+nSsBFXOduIWhKDByPeRnPy9x+C6n+jtBIlAPleUPkVS1dJm9cvS0pXtaYVJWtyxYA==,iv:W22iT0NYtC/Z1PMKQ2RKK6OzW3OEJUMYLYdQYbJTuTQ=,tag:BTrYDPrjWCn0FoLUfICpgQ==,type:str]
 sops:
     age:
         - enc: |
             -----BEGIN AGE ENCRYPTED FILE-----
-            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBRbzZkSUU1THF1UjFXY0Zr
-            WXZlUXgrbjJ5cUtCbWNtZXV2VFVId1hvL0RvCm5oTUtMVFUvUW5ody9aRmNacEQz
-            SG5BdnVrbjhZV3lpVEtaTWhkVDlyaDAKLS0tIGVzVWd1YVZJeG5MeGVkMGZmZVh1
-            Y0dUTUFHQ1FKM3ArMWRFODdoYThLQ0EKzWHJno2yOQqMPBWTDyzPt/l0NUqH3VqF
-            XMdOubcFTias+Upv7N2V8VL7Rr7IMNz1rhd8fYuMkhOyRtOFwImtjw==
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBIZHF6b1hNajlXZXZLQWo1
+            aW1scHhhMFlUKzJET1dKSDJ6SE5KVVd5T3lvCk1pSFVCTHVnK1ZTdjI2d2FpaFRl
+            ZEczUnhQNmYxdGlvbWFRK0EvbGc5SkUKLS0tIFB1dG9FK3JxdzE0T21Yc0hUNCtk
+            VStORTZOeDNNQzhRMXQ4UDVVb0srOW8Kv8yKDhWe++RUgrqgSxtrb9DFQ95EU6Li
+            r4hCngK1nyEFM+zfsdyJE7pKiSCcgVF7thYVQzkp+UviLeTYcFCFWg==
             -----END AGE ENCRYPTED FILE-----
           recipient: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l
         - enc: |
             -----BEGIN AGE ENCRYPTED FILE-----
-            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBVbks2aHpjTjR4aGRmMkxK
-            MXFGVFJ3Tm5yZnk2eXJTRzlveTJWQTVPNW1VCllzaU9rOFRmeGs2Y20yMzlqNVA0
-            aTlDZUJzMjhjMTRWOU1qSkVad0xUbUUKLS0tIHBCdHorYmZTa0packpDMXB4TE5F
-            c0ViMk0zemZ0eGpIaWdqN0sycFcrK28KM0XAZ1zBWop67IlvK5aWu+xVRXpK3JUu
-            SwSr1If3C0RZqUpCnASlxuKP7TMkoM1jUxmHtbuq61mi+poHxxMGhw==
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBvUUZFbzlQN2NaSTRmZkV1
+            RjkzUll6NERkSExoRFZDNWlGenFuakR6WWw4CnE3a1B0cm8rVWxFWDlKZUYrWk9C
+            VjhmbnZjaEh6NlVlQVRzL2pMcktxWGMKLS0tIEY5Qkh1NGJpTTRVeXhKYVdoSkx2
+            TzcrcnFiZlYxRFlEcGJCUjMzYzVrczgKCLgTL+NKt0fJYyegxySSbSCrysWCQef1
+            Vrd5URUXUKP1k3ztE5E40gSgrFl6fgOGdI5w6SgiVST4YS+vmCdgag==
             -----END AGE ENCRYPTED FILE-----
           recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
     encrypted_suffix: Templates
-    lastmodified: "2026-10-12T08:24:32Z"
-    mac: ENC[AES256_GCM,data:F5uoqij275GqTpCc5KYOgFosy4Uua/dxsRK+tI/3PskM+K5OFhDSrPrPMpVq5YvdOue0wZEBw/RTuLlfQ3gtjZqKU9MB0gY+2V4jpeADWUwUf5lpI7+rENZCjxKm0UNQN1aYcQmeonjaB3pAbsjln+3RTlK29qHB8SxzTwkjQVo=,iv:5Q/gAlPIau0w/MHTtgAQSwXhnj0rsSqkMYqcj/CL5Ns=,tag:j41mekxibjuTNtITCGTJtw==,type:str]
+    lastmodified: "2026-10-12T15:41:18Z"
+    mac: ENC[AES256_GCM,data:J5MBIqyOAPtkEn4XcWwn0T08KgIIbwaW/GBdUZ0VZEpRzlvA41V9hSSkT+DiwW59r9Oa5Z0CAad66vap22WrrIRkOFZ9nIp2Tqu92uPpWfv5k8iuE0bSN3PBmTfQo/0AsBICyhZ2Or/i0bSGlPAca5V/LfJUnQreC0oyxZ8hZuQ=,iv:AGEwM5k7EXVXp51IMqYr5jViHvEzHMUFmbNwa6j33i8=,tag:Z5PUBoBedFc2NwZ2GGzyzw==,type:str]
     version: 3.13.3

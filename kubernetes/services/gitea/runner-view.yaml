@@ -1,0 +1,48 @@
+# What runner_view (database.yaml) may read: in Gitea's action_runner table,
+# a runner's name, labels, last check-in and whether it's deleted or
+# disabled. Not its token, and nothing else in Gitea. yeetus-api uses it
+# for the runner count on git.yeetus.net's front page.
+#
+# A grant on a table goes when Gitea rebuilds the table in an upgrade, so
+# this sets it again every 15 minutes. Run by Gitea's own database owner.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: runner-view-grant
+  namespace: gitea
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 120
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 26
+            runAsGroup: 26
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: grant
+              image: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+              command: ["psql", "-v", "ON_ERROR_STOP=1", "-h", "gitea-pg-rw", "-U", "gitea", "-d", "gitea", "-c"]
+              args:
+                - GRANT SELECT (name, last_online, agent_labels, deleted, is_disabled) ON action_runner TO runner_view
+              env:
+                - name: PGPASSWORD
+                  valueFrom: {secretKeyRef: {name: gitea-pg-app, key: password}}
+              resources:
+                requests: {cpu: 10m, memory: 16Mi}
+                limits: {memory: 64Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]

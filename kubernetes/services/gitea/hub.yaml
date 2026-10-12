@@ -5,6 +5,7 @@ keep:
 - database.yaml
 - look.yaml
 - runner-registration.sops.yaml
+- runner-view.yaml
 - secret.sops.yaml
 - staged.yaml
 kind: kept
