@@ -47,7 +47,11 @@ spec:
         kubernetes.io/hostname: thinkcentre
       terminationGracePeriodSeconds: 30
       securityContext:
+        # The image says "nonroot:nonroot", a name Kubernetes can't check
+        # against runAsNonRoot, so the number (distroless nonroot).
         runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
         fsGroup: 65532
         seccompProfile: {type: RuntimeDefault}
       containers:
