@@ -7,18 +7,37 @@
 locals {
   # Zones with a Keycloak name: the new one and the old one, still served.
   keycloak_zones = toset(["yeetus.net", "radunenu.com"])
+
+  # Rules made by hand in the dashboard before this file, kept as they were.
+  # A zone has one cache ruleset, so they live in the same one.
+  earlier_cache_rules = {
+    "yeetus.net" = [{
+      description       = "websocket audiobookshelf"
+      expression        = "(http.request.full_uri wildcard r\"https://books.yeetus.net/socket.io/*\")"
+      action            = "set_cache_settings"
+      action_parameters = { cache = false }
+      enabled           = false
+    }]
+  }
+}
+
+# yeetus.net already had its cache ruleset (made in the dashboard in 2025),
+# and a zone can't have two: tofu takes that one over.
+import {
+  to = cloudflare_ruleset.cache["yeetus.net"]
+  id = "zones/50d92439a525c2ba9d25b5c8f673d195/d318e1c178f0413fa67315fbf13e8598"
 }
 
 resource "cloudflare_ruleset" "cache" {
   for_each = local.keycloak_zones
 
   zone_id     = local.cloudflare_zone_ids[each.key]
-  name        = "Cache rules"
+  name        = "default"
   description = "Managed in the infrastructure repo (tofu/cache-rules.tf)"
   kind        = "zone"
   phase       = "http_request_cache_settings"
 
-  rules = [{
+  rules = concat(lookup(local.earlier_cache_rules, each.key, []), [{
     description = "Keycloak resources: never keep an error"
     expression  = "(http.host eq \"auth.${each.key}\" and starts_with(http.request.uri.path, \"/resources/\"))"
     action      = "set_cache_settings"
@@ -33,5 +52,5 @@ resource "cloudflare_ruleset" "cache" {
         }]
       }
     }
-  }]
+  }])
 }
