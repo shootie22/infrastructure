@@ -2,11 +2,6 @@
 # Defaults: proxied = false, ttl = 1 (automatic). See dns.tf.
 locals {
   dns_records = {
-    "byradu.com/7zile7arte/CNAME" = {
-      zone    = "byradu.com", name = "7zile7arte", type = "CNAME"
-      content = "archive.radunenu.com"
-      proxied = true
-    }
     "byradu.com/@/CNAME" = {
       zone    = "byradu.com", name = "@", type = "CNAME"
       content = "beacon.radunenu.com"
@@ -35,11 +30,6 @@ locals {
       zone     = "byradu.com", name = "_autodiscover._tcp", type = "SRV"
       data     = { priority = 10, weight = 10, port = 443, target = "webmail.porkbun.com" }
       priority = 10
-    }
-    "byradu.com/analytics/CNAME" = {
-      zone    = "byradu.com", name = "analytics", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
     }
     "byradu.com/api/CNAME" = {
       zone    = "byradu.com", name = "api", type = "CNAME"
@@ -76,11 +66,6 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
-    "kronorite.com/aki/CNAME" = {
-      zone    = "kronorite.com", name = "aki", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
     "kronorite.com/discord/CNAME" = {
       zone    = "kronorite.com", name = "discord", type = "CNAME"
       content = "beacon.radunenu.com"
@@ -88,11 +73,6 @@ locals {
     }
     "kronorite.com/git/CNAME" = {
       zone    = "kronorite.com", name = "git", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "kronorite.com/kairi/CNAME" = {
-      zone    = "kronorite.com", name = "kairi", type = "CNAME"
       content = "beacon.radunenu.com"
       proxied = true
     }
@@ -157,11 +137,6 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
-    "radunenu.com/archive/CNAME" = {
-      zone    = "radunenu.com", name = "archive", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
     "radunenu.com/argocd-webhook/CNAME" = {
       zone    = "radunenu.com", name = "argocd-webhook", type = "CNAME"
       content = "beacon.radunenu.com"
@@ -179,11 +154,6 @@ locals {
     }
     "radunenu.com/cal/CNAME" = {
       zone    = "radunenu.com", name = "cal", type = "CNAME"
-      content = "beacon.radunenu.com"
-      proxied = true
-    }
-    "radunenu.com/cats/CNAME" = {
-      zone    = "radunenu.com", name = "cats", type = "CNAME"
       content = "beacon.radunenu.com"
       proxied = true
     }

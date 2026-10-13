@@ -46,13 +46,16 @@ These are live, or mail and verification records:
 
 - `git.kronorite.com`: redirect to git.radunenu.com. Fixed in legacy-redirects.
 - `www.radunenu.com`: redirect to the apex. Fixed in legacy-redirects.
-- `cats.radunenu.com`: landing page for the cats archive.
-- `aki.kronorite.com` and `kairi.kronorite.com`: redirect to `aki.radunenu.com` and `kairi.radunenu.com`, read-only galleries of a friend's cats. The radunenu.com names don't exist in DNS yet.
-- `7zile7arte.byradu.com`: an archive site made for a friend. Its target, `archive.radunenu.com`, stays too.
-- `analytics.byradu.com`: one of the old APIs.
 - `discord.kronorite.com`: probably a redirect to a Discord invite.
 
-The content for these isn't in this repo or in the OVH retirement archives on fuji.
+## Dropped (13 Oct 2026, #263)
+
+Their backends ran on the OVH box and weren't brought over. The content isn't in any repo, in the OVH retirement archives on fuji, or on the Internet Archive (it only has an empty file-browser page for `cats.radunenu.com/aki/`). The records went; any of them can come back if a copy turns up.
+
+- `cats.radunenu.com`: landing page for the cats archive.
+- `aki.kronorite.com` and `kairi.kronorite.com`: redirects to read-only galleries of a friend's cats.
+- `7zile7arte.byradu.com` and its target `archive.radunenu.com`: an archive site made for a friend.
+- `analytics.byradu.com`: one of the old APIs.
 
 ## Game servers
 
