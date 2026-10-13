@@ -60,21 +60,39 @@ data:
         </Directory>
     </VirtualHost>
 
-    # cats.yeetus.net: the landing page (cats-landing.yaml) at /, Aki's and
-    # Kairi's galleries (the old PHP file browser, from the Dell server's
-    # backup) at /aki/ and /kairi/, the landing's photos at /covers/.
+    # cats.yeetus.net: the landing page (cats-landing.yaml) at /, the gallery
+    # page (cats-gallery.yaml) at /aki/ and /kairi/, which reads each cat's
+    # manifest.json, thumbnails, photos and videos from sites/cats/<cat>/.
+    # Only files: PHP is off here, and the old file browser and the
+    # originals (still in files/, with their metadata) aren't served.
     <VirtualHost *:80>
         ServerName cats.yeetus.net
         DocumentRoot /var/www/sites/cats
         AliasMatch "^/$" "/var/www/cats-landing/index.html"
         AliasMatch "^/index\.html$" "/var/www/cats-landing/index.html"
+        AliasMatch "^/(aki|kairi)/$" "/var/www/cats-gallery/index.html"
+        Alias "/_gallery/" "/var/www/cats-gallery/"
+        RedirectMatch permanent "^/(aki|kairi)$" "/$1/"
 
         <Directory /var/www/sites/cats>
             Require all granted
             AllowOverride None
             Options -Indexes
+            <IfModule php_module>
+                php_admin_flag engine off
+            </IfModule>
+            <FilesMatch "\.(php|phtml|phar|md)$">
+                Require all denied
+            </FilesMatch>
         </Directory>
+        <DirectoryMatch "^/var/www/sites/cats/[^/]+/(files|assets)(/|$)">
+            Require all denied
+        </DirectoryMatch>
         <Directory /var/www/cats-landing>
+            Require all granted
+            AllowOverride None
+        </Directory>
+        <Directory /var/www/cats-gallery>
             Require all granted
             AllowOverride None
         </Directory>

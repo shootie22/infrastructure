@@ -59,10 +59,16 @@ spec:
             - name: cats-landing
               mountPath: /var/www/cats-landing
               readOnly: true
+            - name: cats-gallery
+              mountPath: /var/www/cats-gallery
+              readOnly: true
       volumes:
         - name: cats-landing
           configMap:
             name: cats-landing
+        - name: cats-gallery
+          configMap:
+            name: cats-gallery
         # The local-path volume's folder (pvc.yaml) on fuji, the copy on the
         # thinkcentre.
         - name: data
