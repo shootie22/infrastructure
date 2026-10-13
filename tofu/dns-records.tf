@@ -287,7 +287,7 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
-        "yeetus.net/cal/CNAME" = {
+    "yeetus.net/cal/CNAME" = {
       zone    = "yeetus.net", name = "cal", type = "CNAME"
       content = "beacon.radunenu.com"
       proxied = true
