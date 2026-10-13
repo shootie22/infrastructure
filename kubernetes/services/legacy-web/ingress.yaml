@@ -59,3 +59,45 @@ spec:
                   number: 80
     - host: www.kronorite.com
       http: *kronorite_paths
+---
+# The restored sites (#73): the cat galleries, their old names (redirects),
+# and the 7 arte site under both its names.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: legacy-sites
+  namespace: legacy-web
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - cats.yeetus.net
+        - cats.radunenu.com
+        - aki.kronorite.com
+        - kairi.kronorite.com
+        - archive.radunenu.com
+        - 7zile7arte.byradu.com
+      secretName: legacy-sites-tls
+  rules:
+    - host: cats.yeetus.net
+      http: &legacy_sites_paths
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: legacy-api
+                port:
+                  number: 80
+    - host: cats.radunenu.com
+      http: *legacy_sites_paths
+    - host: aki.kronorite.com
+      http: *legacy_sites_paths
+    - host: kairi.kronorite.com
+      http: *legacy_sites_paths
+    - host: archive.radunenu.com
+      http: *legacy_sites_paths
+    - host: 7zile7arte.byradu.com
+      http: *legacy_sites_paths

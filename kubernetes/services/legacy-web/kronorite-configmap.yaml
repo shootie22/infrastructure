@@ -14,9 +14,19 @@ data:
       @root path /
       redir @root https://store.steampowered.com/app/876780 302
 
-      # The old site's pages (#73). On the OVH box each was an index.html
-      # with a meta refresh; these are the same targets. /atestat and /bbtom
-      # had real content and aren't back yet.
+      # /atestat and /bbtom had real pages and files: Apache serves them
+      # (sites/kronorite in legacy-web's data folder, #73).
+      # In a handle so it runs before the respond 404 below (Caddy orders
+      # respond ahead of reverse_proxy).
+      @pages path /atestat /atestat/* /bbtom /bbtom/*
+      handle @pages {
+        reverse_proxy legacy-api.legacy-web.svc.cluster.local:80 {
+          header_up Host kronorite-pages.legacy-web
+        }
+      }
+
+      # The old site's other pages (#73). On the OVH box each was an
+      # index.html with a meta refresh; these are the same targets.
       @steam path /kronorite-has-released /kronorite-has-released/ /play-kronorite /play-kronorite/ /steam-store-page /steam-store-page/
       redir @steam https://store.steampowered.com/app/876780/Kronorite/ 302
       @discord path /discord-server /discord-server/ /contact-us /contact-us/ /august-open-beta-join-our-discord /august-open-beta-join-our-discord/ /open-beta-live-come-grab-your-key /open-beta-live-come-grab-your-key/

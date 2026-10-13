@@ -51,7 +51,18 @@ spec:
             - name: apache-sites
               mountPath: /etc/apache2/sites-enabled
               readOnly: true
+            # The restored sites (#73), read-only.
+            - name: data
+              mountPath: /var/www/sites
+              subPath: sites
+              readOnly: true
+            - name: cats-landing
+              mountPath: /var/www/cats-landing
+              readOnly: true
       volumes:
+        - name: cats-landing
+          configMap:
+            name: cats-landing
         # The local-path volume's folder (pvc.yaml) on fuji, the copy on the
         # thinkcentre.
         - name: data
