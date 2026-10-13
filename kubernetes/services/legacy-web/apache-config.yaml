@@ -5,6 +5,13 @@ metadata:
   namespace: legacy-web
 data:
   000-default.conf: |
+    # The restored sites (#73) sit in the same data folder, under sites/,
+    # mounted on their own at /var/www/sites. The old API's web root is the
+    # whole folder, so it must never hand them out.
+    <Directory /var/www/api-old.radunenu.com/sites>
+        Require all denied
+    </Directory>
+
     <VirtualHost *:80>
         ServerName api-old.radunenu.com
         DocumentRoot /var/www/api-old.radunenu.com
@@ -50,5 +57,66 @@ data:
         <Directory /var/www/api-old.radunenu.com/v2/stats/mazegame>
             Require all granted
             AllowOverride None
+        </Directory>
+    </VirtualHost>
+
+    # cats.yeetus.net: the landing page (cats-landing.yaml) at /, Aki's and
+    # Kairi's galleries (the old PHP file browser, from the Dell server's
+    # backup) at /aki/ and /kairi/, the landing's photos at /covers/.
+    <VirtualHost *:80>
+        ServerName cats.yeetus.net
+        DocumentRoot /var/www/sites/cats
+        AliasMatch "^/$" "/var/www/cats-landing/index.html"
+        AliasMatch "^/index\.html$" "/var/www/cats-landing/index.html"
+
+        <Directory /var/www/sites/cats>
+            Require all granted
+            AllowOverride None
+            Options -Indexes
+        </Directory>
+        <Directory /var/www/cats-landing>
+            Require all granted
+            AllowOverride None
+        </Directory>
+    </VirtualHost>
+
+    # The galleries' old names go to their new place, keeping the path.
+    <VirtualHost *:80>
+        ServerName cats.radunenu.com
+        Redirect permanent / https://cats.yeetus.net/
+    </VirtualHost>
+    <VirtualHost *:80>
+        ServerName aki.kronorite.com
+        Redirect permanent / https://cats.yeetus.net/aki/
+    </VirtualHost>
+    <VirtualHost *:80>
+        ServerName kairi.kronorite.com
+        Redirect permanent / https://cats.yeetus.net/kairi/
+    </VirtualHost>
+
+    # Săptămâna celor 7 arte, made for Costin: static, as it was.
+    <VirtualHost *:80>
+        ServerName archive.radunenu.com
+        ServerAlias 7zile7arte.byradu.com
+        DocumentRoot /var/www/sites/costin
+
+        <Directory /var/www/sites/costin>
+            Require all granted
+            AllowOverride None
+            Options -Indexes
+        </Directory>
+    </VirtualHost>
+
+    # kronorite.com's /atestat and /bbtom, which had real pages and files.
+    # kronorite.com itself is Caddy (redirects); it hands these two paths to
+    # this name inside the cluster.
+    <VirtualHost *:80>
+        ServerName kronorite-pages.legacy-web
+        DocumentRoot /var/www/sites/kronorite
+
+        <Directory /var/www/sites/kronorite>
+            Require all granted
+            AllowOverride None
+            Options -Indexes
         </Directory>
     </VirtualHost>

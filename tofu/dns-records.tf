@@ -280,7 +280,14 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
-    "yeetus.net/cal/CNAME" = {
+    # Aki and Kairi, the cat galleries brought back from the Dell server backup
+    # (#73); cats.radunenu.com and the kronorite names redirect here.
+    "yeetus.net/cats/CNAME" = {
+      zone    = "yeetus.net", name = "cats", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
+        "yeetus.net/cal/CNAME" = {
       zone    = "yeetus.net", name = "cal", type = "CNAME"
       content = "beacon.radunenu.com"
       proxied = true

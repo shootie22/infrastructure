@@ -3,6 +3,7 @@
 # fails `hub render --check`.
 keep:
 - apache-config.yaml
+- cats-landing.yaml
 - deployment.yaml
 - ingress.yaml
 - kronorite-configmap.yaml
