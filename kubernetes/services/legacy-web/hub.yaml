@@ -2,6 +2,7 @@
 # are and are edited in place; any file in this folder not listed here
 # fails `hub render --check`.
 keep:
+- analytics-archive.yaml
 - apache-config.yaml
 - cats-gallery.yaml
 - cats-landing.yaml

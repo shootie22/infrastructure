@@ -62,6 +62,9 @@ spec:
             - name: cats-gallery
               mountPath: /var/www/cats-gallery
               readOnly: true
+            - name: analytics-archive
+              mountPath: /var/www/analytics-archive
+              readOnly: true
       volumes:
         - name: cats-landing
           configMap:
@@ -69,6 +72,9 @@ spec:
         - name: cats-gallery
           configMap:
             name: cats-gallery
+        - name: analytics-archive
+          configMap:
+            name: analytics-archive
         # The local-path volume's folder (pvc.yaml) on fuji, the copy on the
         # thinkcentre.
         - name: data

@@ -98,6 +98,19 @@ data:
         </Directory>
     </VirtualHost>
 
+    # analytics.byradu.com: one page about Analytix (analytics-archive.yaml),
+    # the app itself is gone. Any old link lands on the page.
+    <VirtualHost *:80>
+        ServerName analytics.byradu.com
+        DocumentRoot /var/www/analytics-archive
+        AliasMatch "^/.+" "/var/www/analytics-archive/index.html"
+        <Directory /var/www/analytics-archive>
+            Require all granted
+            AllowOverride None
+            Options -Indexes
+        </Directory>
+    </VirtualHost>
+
     # The galleries' old names go to their new place, keeping the path.
     <VirtualHost *:80>
         ServerName cats.radunenu.com
