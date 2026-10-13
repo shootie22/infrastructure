@@ -41,9 +41,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: profile-status
-              # Placeholder until the first image is pushed: replace with
-              # :v0.1.0@sha256:<digest> (see the worker's README).
-              image: git.radunenu.com/radu/profile-status:v0.1.2@
+              image: git.radunenu.com/radu/profile-status:v0.1.2@sha256:c6fdeff077e600ee0813265c98dbed4b6a4dbad1aa8207b5bc537b34c3e194ec
               env:
                 - name: PROMETHEUS_URL
                   value: http://prometheus.monitoring.svc:9090
