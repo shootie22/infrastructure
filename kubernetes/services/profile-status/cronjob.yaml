@@ -41,7 +41,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: profile-status
-              image: git.radunenu.com/radu/profile-status:v0.1.2@sha256:c6fdeff077e600ee0813265c98dbed4b6a4dbad1aa8207b5bc537b34c3e194ec
+              image: git.radunenu.com/radu/profile-status:v0.1.3@sha256:441a4520839d2440268def03a442911ef21d53679ea18455a8b4a46947363522
               env:
                 - name: PROMETHEUS_URL
                   value: http://prometheus.monitoring.svc:9090
