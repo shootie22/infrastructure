@@ -57,7 +57,7 @@ MAS (matrix-authentication-service) does the login for Synapse, using Synapse's 
 - The Matrix name comes from Keycloak: localpart `{{ user.preferred_username }}`, required (no username, no account), so everyone is `@<keycloak username>:yeetus.net` with nothing to choose. Name and email are copied from Keycloak at every sign-in.
 - Users can't change their Keycloak username (admins can). MAS links accounts by Keycloak's `sub`, so even an admin rename keeps the old Matrix ID.
 - Access through the usual gate: a `matrix` client with an `access` role, granted by the Keycloak group `chat`. Someone outside it gets the "no access" page.
-- Leaving: remove from the group, then end their sessions in MAS (runbook to come).
+- Leaving: remove from the group, then end their sessions in MAS ([runbooks/offboarding.md](runbooks/offboarding.md)).
 
 ## Calls
 
