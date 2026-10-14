@@ -1,0 +1,405 @@
+# Element Call's media server, LiveKit (docs/matrix/architecture.md "Calls").
+#
+# Two separate SFUs, never one call split across them:
+# - livekit-ro on fuji: the one in use. Its media ports come in through RO's
+#   router (port forwards 50881/tcp and 50882/udp to fuji).
+# - livekit-edge on the edge: the standby, on the edge's public address.
+#
+# Signalling (wss://sfu.yeetus.net) goes through Traefik to the `livekit`
+# Service, which only sends to the SFU that is ready, and the media then go
+# straight to that SFU's address. Which one is ready is decided by the
+# `router` sidecar (ready.sh below):
+# - fuji's takes new calls unless calls are still running on the edge's;
+# - the edge's only while fuji's can't be reached, or while it still has
+#   calls of its own.
+# So calls move to the edge when fuji's SFU dies and come back only once
+# the edge is idle. A call on an SFU that dies drops and reconnects.
+#
+# Ports are deliberately not LiveKit's defaults (7881/7882). Signalling and
+# metrics (7880, 6789) are host ports too, reachable over Nebula and from
+# pods on the node only; the hosts' firewalls keep them off the internet.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: livekit
+  namespace: matrix
+data:
+  livekit.yaml: |
+    port: 7880
+    prometheus_port: 6789
+    key_file: /keys/keys.yaml
+    rtc:
+      tcp_port: 50881
+      udp_port: 50882
+      # The public address, found over STUN at start (RO's is dynamic: see
+      # livekit-ro-address below).
+      use_external_ip: true
+      enable_loopback_candidate: false
+    room:
+      # Rooms are made by lk-jwt-service, for our own users only.
+      auto_create: false
+      empty_timeout: 300
+    logging:
+      json: true
+      level: info
+  # The router sidecar's readiness: is this SFU the one to send calls to?
+  ready.sh: |
+    #!/bin/sh
+    # ROLE: primary (fuji) or standby (edge). PEER: the other's Nebula address.
+    ok() { wget -q -T 2 -O /dev/null "http://$1:7880/"; }
+    rooms() { wget -q -T 2 -O - "http://$1:6789/metrics" 2>/dev/null | awk '/^livekit_room_total[{ ]/ {n += $NF} END {print n + 0}'; }
+    ok 127.0.0.1 || exit 1
+    case "$ROLE" in
+      primary)
+        # Unless calls are still running on the standby.
+        ok "$PEER" || exit 0
+        [ "$(rooms "$PEER")" -eq 0 ]
+        ;;
+      standby)
+        # Only while the primary is gone, or while calls are still here.
+        ok "$PEER" || exit 0
+        [ "$(rooms 127.0.0.1)" -gt 0 ]
+        ;;
+      *) exit 1 ;;
+    esac
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: livekit-ro
+  namespace: matrix
+spec:
+  replicas: 1
+  # Host ports: the old pod has to go before the new one can bind them.
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: livekit, site: ro}
+  template:
+    metadata:
+      labels: {app: livekit, site: ro}
+      annotations:
+        config-revision: "1"
+    spec:
+      automountServiceAccountToken: false
+      priorityClassName: matrix-critical
+      nodeSelector:
+        kubernetes.io/hostname: fuji
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      securityContext:
+        fsGroup: 65532
+      containers:
+        - name: livekit
+          image: docker.io/livekit/livekit-server:v1.13.10@sha256:89ca9ce0791e18d6e03bf6e2c49ceb27e1c754eae8bd50c989386c1a5963791a
+          args: [--config, /etc/livekit/livekit.yaml]
+          ports:
+            - {name: http, containerPort: 7880}
+            - {name: rtc-tcp, containerPort: 50881}
+            - {name: rtc-udp, containerPort: 50882, protocol: UDP}
+            - {name: metrics, containerPort: 6789}
+          # An SFU forwards packets; CPU only matters during calls, and then
+          # it must not wait behind a build.
+          resources:
+            requests: {cpu: 250m, memory: 128Mi}
+            limits: {memory: 1Gi}
+          livenessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 15
+            failureThreshold: 4
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: config, mountPath: /etc/livekit/livekit.yaml, subPath: livekit.yaml, readOnly: true}
+            - {name: keys, mountPath: /keys, readOnly: true}
+        - name: router
+          image: docker.io/library/nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+          command: [/bin/sh, -c, "trap 'exit 0' TERM; while :; do sleep 3600 & wait $!; done"]
+          env:
+            - {name: ROLE, value: primary}
+            - {name: PEER, value: 10.99.0.1} # the edge, over Nebula
+          readinessProbe:
+            exec: {command: [/bin/sh, /etc/livekit/ready.sh]}
+            periodSeconds: 3
+            timeoutSeconds: 8
+            failureThreshold: 1
+            successThreshold: 1
+          resources:
+            requests: {cpu: 5m, memory: 8Mi}
+            limits: {memory: 32Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: config, mountPath: /etc/livekit/ready.sh, subPath: ready.sh, readOnly: true}
+      volumes:
+        - name: config
+          configMap: {name: livekit}
+        - name: keys
+          secret:
+            secretName: livekit-keys
+            # LiveKit refuses a key file others can read; group-readable for
+            # its user through fsGroup.
+            defaultMode: 0440
+            items: [{key: keys.yaml, path: keys.yaml}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: livekit-edge
+  namespace: matrix
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: livekit, site: edge}
+  template:
+    metadata:
+      labels: {app: livekit, site: edge}
+      annotations:
+        config-revision: "1"
+    spec:
+      automountServiceAccountToken: false
+      priorityClassName: matrix-critical
+      nodeSelector:
+        kubernetes.io/hostname: edge
+      tolerations:
+        - {key: node-role.kubernetes.io/etcd, operator: Exists, effect: NoExecute}
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      securityContext:
+        fsGroup: 65532
+      containers:
+        - name: livekit
+          image: docker.io/livekit/livekit-server:v1.13.10@sha256:89ca9ce0791e18d6e03bf6e2c49ceb27e1c754eae8bd50c989386c1a5963791a
+          args: [--config, /etc/livekit/livekit.yaml]
+          ports:
+            - {name: http, containerPort: 7880}
+            - {name: rtc-tcp, containerPort: 50881}
+            - {name: rtc-udp, containerPort: 50882, protocol: UDP}
+            - {name: metrics, containerPort: 6789}
+          livenessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 15
+            failureThreshold: 4
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: config, mountPath: /etc/livekit/livekit.yaml, subPath: livekit.yaml, readOnly: true}
+            - {name: keys, mountPath: /keys, readOnly: true}
+          # The edge is small (2 cores, 2-4 GB): it only carries calls while
+          # fuji's SFU is down.
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 512Mi}
+        - name: router
+          image: docker.io/library/nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+          command: [/bin/sh, -c, "trap 'exit 0' TERM; while :; do sleep 3600 & wait $!; done"]
+          readinessProbe:
+            exec: {command: [/bin/sh, /etc/livekit/ready.sh]}
+            periodSeconds: 3
+            timeoutSeconds: 8
+            failureThreshold: 1
+            successThreshold: 1
+          resources:
+            requests: {cpu: 5m, memory: 8Mi}
+            limits: {memory: 32Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: config, mountPath: /etc/livekit/ready.sh, subPath: ready.sh, readOnly: true}
+          env:
+            - {name: ROLE, value: standby}
+            - {name: PEER, value: 10.99.0.2} # fuji, over Nebula
+      volumes:
+        - name: config
+          configMap: {name: livekit}
+        - name: keys
+          secret:
+            secretName: livekit-keys
+            # LiveKit refuses a key file others can read; group-readable for
+            # its user through fsGroup.
+            defaultMode: 0440
+            items: [{key: keys.yaml, path: keys.yaml}]
+---
+# Both SFUs; only the ready one gets traffic (see the top).
+apiVersion: v1
+kind: Service
+metadata:
+  name: livekit
+  namespace: matrix
+spec:
+  selector: {app: livekit}
+  ports:
+    - {name: http, port: 7880, targetPort: 7880}
+---
+# The token service for Element Call: checks a Matrix user with Synapse and
+# hands out a LiveKit token for the call's room, making rooms only for our
+# own users. Plain token mode, so it holds no state and runs twice.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lk-jwt-service
+  namespace: matrix
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 0, maxUnavailable: 1}
+  selector:
+    matchLabels: {app: lk-jwt-service}
+  template:
+    metadata:
+      labels: {app: lk-jwt-service}
+    spec:
+      automountServiceAccountToken: false
+      priorityClassName: matrix-critical
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchLabels: {app: lk-jwt-service}
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      containers:
+        - name: lk-jwt-service
+          image: ghcr.io/element-hq/lk-jwt-service:0.9.0@sha256:d210fd778ba38b7e42e6fc64e8a24a7d66ccc3b938fb20d73bd713224af2dfea
+          env:
+            - {name: LIVEKIT_URL, value: "wss://sfu.yeetus.net"}
+            - {name: LIVEKIT_JWT_BIND, value: ":8080"}
+            # Only our own server's users may start calls (later nuke.zip too).
+            - {name: LIVEKIT_FULL_ACCESS_HOMESERVERS, value: "yeetus.net"}
+            - name: LIVEKIT_KEY
+              valueFrom: {secretKeyRef: {name: livekit-keys, key: LIVEKIT_KEY}}
+            - name: LIVEKIT_SECRET
+              valueFrom: {secretKeyRef: {name: livekit-keys, key: LIVEKIT_SECRET}}
+          ports:
+            - {name: http, containerPort: 8080}
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {memory: 128Mi}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 15
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+            capabilities: {drop: [ALL]}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lk-jwt-service
+  namespace: matrix
+spec:
+  selector: {app: lk-jwt-service}
+  ports:
+    - {name: http, port: 8080, targetPort: http}
+---
+# RO's public address is dynamic, and LiveKit only looks it up at start. When
+# noc-studios.go.ro (the router's dynamic DNS) changes, restart fuji's SFU
+# so it announces the new one. The last address seen is kept in a
+# ConfigMap; the first run only records it.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: livekit-ro-address
+  namespace: matrix
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: livekit-ro-address
+  namespace: matrix
+rules:
+  - apiGroups: [""]
+    resources: [configmaps]
+    resourceNames: [livekit-ro-address]
+    verbs: [get, update, patch]
+  - apiGroups: [""]
+    resources: [configmaps]
+    verbs: [create]
+  - apiGroups: [apps]
+    resources: [deployments]
+    resourceNames: [livekit-ro]
+    verbs: [get, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: livekit-ro-address
+  namespace: matrix
+subjects:
+  - {kind: ServiceAccount, name: livekit-ro-address, namespace: matrix}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: livekit-ro-address
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: livekit-ro-address
+  namespace: matrix
+spec:
+  schedule: "*/2 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 90
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: livekit-ro-address
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+          containers:
+            - name: check
+              image: docker.io/alpine/k8s:1.35.9@sha256:b9cb6db0091a2327c0a56ecda69d37fa830c7a96ea669e7382b3ee778aa07a24
+              command: [/bin/sh, -ec]
+              args:
+                - |
+                  now=$(nslookup -type=a noc-studios.go.ro 1.1.1.1 2>/dev/null | awk '/^Address: / {a = $2} END {print a}')
+                  case "$now" in *.*.*.*) ;; *) echo "couldn't resolve RO's address, leaving it"; exit 0 ;; esac
+                  was=$(kubectl -n matrix get configmap livekit-ro-address -o jsonpath='{.data.address}' 2>/dev/null || true)
+                  if [ -z "$was" ]; then
+                    kubectl -n matrix create configmap livekit-ro-address --from-literal=address="$now"
+                    echo "recorded $now"
+                  elif [ "$was" != "$now" ]; then
+                    echo "RO's address changed: $was -> $now, restarting livekit-ro"
+                    kubectl -n matrix patch configmap livekit-ro-address --type merge -p "{\"data\":{\"address\":\"$now\"}}"
+                    kubectl -n matrix rollout restart deployment livekit-ro
+                  fi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities: {drop: [ALL]}
+              resources:
+                requests: {cpu: 10m, memory: 32Mi}
+                limits: {memory: 128Mi}

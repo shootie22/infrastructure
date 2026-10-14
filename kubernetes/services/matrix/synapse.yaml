@@ -76,6 +76,12 @@ data:
       msc4222_enabled: true   # state_after in sync
       msc4354_enabled: true   # sticky events, for call memberships
     max_event_delay_duration: 24h
+    # Where calls go (MSC4143), for clients that ask Synapse rather than the
+    # well-known. Same token service.
+    matrix_rtc:
+      transports:
+        - type: livekit
+          livekit_service_url: https://rtc.yeetus.net
     rc_message:
       per_second: 0.5
       burst_count: 30

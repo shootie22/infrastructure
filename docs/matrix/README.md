@@ -28,7 +28,7 @@ Planned on 2026-10-14. Nothing is built yet.
 | 0 | Audit hetzy, read-only: Synapse version, database, media size, auth, federation, bots | done 14 Oct |
 | 1 | Platform: Matrix's Postgres (synchronous), the `matrix` site-failover label, media copied every minute, the database primary following Synapse, fuji's CI slot down to 2 CPUs | in review |
 | 2 | yeetus.net: Synapse, MAS, the Keycloak client, Element Web config, monitoring, a canary bot | built, in review (canary bot to do) |
-| 3 | Calls: LiveKit on fuji with a standby on the edge, the JWT service, Element Call | |
+| 3 | Calls: LiveKit on fuji with a standby on the edge, the JWT service, Element Call | built, in review; needs RO port forwards |
 | 4 | Drills. yeetus.net counts as production only after these pass | |
 | 5 | nuke.zip moves into the cluster, same name and keys, rehearsed first | |
 | 6 | nuke.zip and yeetus.net federate, users switch at their own pace | |

@@ -11,7 +11,10 @@ metadata:
 data:
   client: |
     {
-      "m.homeserver": {"base_url": "https://matrix.yeetus.net"}
+      "m.homeserver": {"base_url": "https://matrix.yeetus.net"},
+      "org.matrix.msc4143.rtc_foci": [
+        {"type": "livekit", "livekit_service_url": "https://rtc.yeetus.net"}
+      ]
     }
   nginx.conf: |
     worker_processes 1;
@@ -54,7 +57,7 @@ spec:
     metadata:
       labels: {app: wellknown}
       annotations:
-        config-revision: "1"
+        config-revision: "2"
     spec:
       automountServiceAccountToken: false
       priorityClassName: matrix-critical
