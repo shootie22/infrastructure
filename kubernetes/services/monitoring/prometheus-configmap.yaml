@@ -779,6 +779,28 @@ data:
             annotations:
               summary: "Standby copy {{ $labels.copy }} to {{ $labels.to }} is over an hour old"
               description: Check `journalctl -u standby-copy-{{ $labels.copy }}` on the sending host.
+          # Matrix's media are copied every minute, not every 10 (docs/matrix/
+          # architecture.md), so they get their own, much shorter limit.
+          - alert: MatrixMediaCopyStale
+            expr: time() - standby_copy_last_success_timestamp_seconds{copy=~"matrix.*"} > 600
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Matrix's media copy to {{ $labels.to }} is {{ $value | humanizeDuration }} old"
+              description: A failover now would lose the uploads since then. Check `journalctl -u standby-copy-{{ $labels.copy }}` on the sending host.
+          # Synapse and its Postgres primary in different sites: every query
+          # crosses the WAN and Matrix gets slow. site-failover switches the
+          # primary over by itself after a minute (dotfiles, `cnpg`); this
+          # fires when that didn't happen.
+          - alert: MatrixDbElsewhere
+            expr: max by (service, cluster) (site_failover_db_elsewhere) == 1
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "{{ $labels.cluster }}'s primary isn't next to {{ $labels.service }}"
+              description: Check `journalctl -u site-failover` on the node running it, and `kubectl cnpg status {{ $labels.cluster }} -n matrix`.
           # The servers' own overlay (dotfiles lib/nebula.nix, #141). Scraped from
           # fuji over the mesh, so this also means fuji can't reach the host there.
           - alert: NebulaHostUnreachable

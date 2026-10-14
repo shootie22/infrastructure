@@ -76,10 +76,12 @@ metadata:
   namespace: ci-runner
 data:
   # One line per node: node, its runs-on labels, and the Docker sidecar's
-  # CPU and memory limit (the job runs there).
+  # CPU and memory limit (the job runs there). fuji gets 2 of its 4 cores, not
+  # 3: it's Matrix's home and Synapse runs on one thread (docs/matrix/
+  # architecture.md, "Gitea runners on the same nodes").
   slots: |
     thinkcentre linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-thinkcentre:docker://docker.gitea.com/runner-images:ubuntu-latest 2 6Gi
-    fuji linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-fuji:docker://docker.gitea.com/runner-images:ubuntu-latest 3 8Gi
+    fuji linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-fuji:docker://docker.gitea.com/runner-images:ubuntu-latest 2 8Gi
     mixi linux-arm64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-arm64-mixi:docker://docker.gitea.com/runner-images:ubuntu-latest 3 2560Mi
 
   register.yaml: |

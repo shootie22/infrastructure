@@ -44,9 +44,9 @@ What isn't possible: Synapse running in both sites at once. Its main process is 
 
 ## Media
 
-On the node's disk at `/srv/ha/matrix`, copied to the other site like the other services with files, but **near-continuously** (on every change, or every minute) instead of every 10 minutes. Uploaded media never changes once written, so the copies are cheap. Only our own uploads and thumbnails are copied; other servers' media and URL previews are caches and can be fetched again.
+On the node's disk at `/srv/ha/matrix`, copied to the other site like the other services with files, but **every minute** instead of every 10 (`copyEvery = "minutely"` in dotfiles). Uploaded media never changes once written, so the copies are cheap. Only our own uploads and thumbnails are copied; other servers' media and URL previews are caches and can be fetched again.
 
-Messages are in Postgres, so they're never part of this. An abrupt site failure can lose at most the last few seconds of uploads.
+Messages are in Postgres, so they're never part of this. An abrupt site failure can lose at most the last minute or so of uploads. A message referring to such a file stays, the file shows as missing. `MatrixMediaCopyStale` fires if the copy falls more than 10 minutes behind.
 
 Also looked at: Garage (our own S3) refuses writes with one of two sites down unless the edge holds a third copy; an outside S3 adds a dependency and a bill (the Backblaze plan I have is Personal Backup, not S3).
 
@@ -122,12 +122,20 @@ What actually hides things:
 
 ## Gitea runners on the same nodes
 
-It can be felt, on fuji. A CI job's Docker may use 3 of fuji's 4 cores (`ci-runner` `slots`) with no disk limit, Synapse runs on a single thread, a build's disk writes hold up Postgres's, and image downloads share RO's uplink with calls on fuji's SFU.
+The verdict: **there's enough CPU, chat shouldn't lag, and calls are where it could be felt**, through RO's uplink rather than the CPU. To be confirmed by measuring (Phase 4).
 
-- Matrix gets the `matrix-critical` PriorityClass and real requests, so under contention it gets most of the CPU.
-- fuji's CI slot goes down to 2 CPUs.
-- Then measure: the heaviest build during a call, watching Synapse's response times, Postgres commit times and the livekit-quality probe.
-- If it's still felt: the runner skips whichever node holds the `matrix` label.
+What Matrix needs is small. On hetzy today, everything (Synapse, Postgres, LiveKit, coturn, two bots, monitoring) runs on 4 vCPUs with a load around 0.07, and Synapse uses 1.4 GB. In the cluster, fuji carries Synapse (one thread, about 1.5 GB), the Postgres primaries (about 1 GB), MAS and the LiveKit SFU (a few hundred MB, and an SFU only forwards packets). After Phase 5, nuke.zip's Synapse and database come on top: roughly 4-6 GB in all on fuji, and a replica's worth on the thinkcentre.
+
+What a CI job can take on fuji: 2 of its 4 cores and 8 GiB (`ci-runner` `slots`, down from 3 cores), inside a Kata VM, with no limit on disk or network.
+
+| What a build competes for | Effect on Matrix | What's done |
+|---|---|---|
+| CPU | Synapse slower to answer if it waits for a core | `matrix-critical` priority; real CPU requests (Synapse, Postgres) against the job's 250m, so under contention Matrix gets the much bigger share. With the job capped at 2 cores, 2 stay for everything else. Not expected to be felt |
+| Memory | none while fuji has room for both | needs fuji's RAM to confirm (the job may use 8 GiB) |
+| Disk | Postgres commits wait behind a build's writes: tens of ms at worst, next to the 13-55 ms synchronous replication already adds | not noticeable in chat; measure. If it is: the job's disk image onto fuji's other SSD |
+| RO's uplink | **calls on fuji's SFU get choppy** while a job pushes an image (Gitea is in DK, so a push from fuji crosses RO's uplink) or pulls a big one | measure during a call; if felt, cap CI pods' bandwidth on fuji, or let the runner skip the node holding the `matrix` label |
+
+The measurement: the heaviest build on fuji during a group call, watching Synapse's response times, Postgres commit times and the livekit-quality probe.
 
 ## Open federation, if we ever want it
 

@@ -218,9 +218,9 @@ The exception to asynchronous replication: Synapse's and MAS's databases use CNP
 
 Also on the table: asynchronous like everything else (a failover could lose the last seconds of messages, not acceptable for Matrix), and strict synchronous (writes stop whenever the other site is down).
 
-## 2026-10-14: Matrix media are files, copied near-continuously
+## 2026-10-14: Matrix media are files, copied every minute
 
-Synapse's media stay on disk in `/srv/ha/matrix` and go to the other site with standby-copy, like the other services with files, but on every change instead of every 10 minutes. Uploads never change once written, so the copies are cheap. Caches (other servers' media, URL previews) aren't copied.
+Synapse's media stay on disk in `/srv/ha/matrix` and go to the other site with standby-copy, like the other services with files, but every minute instead of every 10. Uploads never change once written, so the copies are cheap. Caches (other servers' media, URL previews) aren't copied.
 
 Also on the table: Garage (our own S3; refuses writes with one of two sites down unless the edge holds a third copy, and the edge stays stateless), an outside S3 (a new dependency and bill; the Backblaze plan is Personal Backup, not S3).
 
