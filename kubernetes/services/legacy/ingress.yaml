@@ -1,0 +1,60 @@
+# legacy.yeetus.net, all of it behind the network-admin login. /oauth2 goes
+# to oauth2-proxy itself; Traefik ranks routers by rule length, so it wins
+# over /. No gethomepage.dev/name, so it stays off the public status page.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: login
+  namespace: legacy
+spec:
+  forwardAuth:
+    address: http://oauth2-proxy.legacy.svc.cluster.local/
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: legacy
+  namespace: legacy
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: legacy-login@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - legacy.yeetus.net
+      secretName: legacy-yeetus-net-tls
+  rules:
+    - host: legacy.yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: legacy
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: oauth2-proxy
+  namespace: legacy
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - legacy.yeetus.net
+      secretName: legacy-yeetus-net-tls
+  rules:
+    - host: legacy.yeetus.net
+      http:
+        paths:
+          - path: /oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth2-proxy
+                port:
+                  number: 80

@@ -9,6 +9,7 @@ keep:
 - home-catalog.yaml
 - ingress.yaml
 - keycloak.yaml
+- legacy-client.sops.yaml
 - namespace.yaml
 - realms.yaml
 - secret.sops.yaml

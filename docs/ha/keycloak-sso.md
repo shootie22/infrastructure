@@ -11,7 +11,7 @@ Three of them, and every service goes in one of the two below master. The rule: 
 | Realm | Login page says | Who logs in | What's in it | Access by |
 |---|---|---|---|---|
 | `master` | Keycloak Admin | me, only to manage Keycloak | the admin account, `config-cli` | nothing else, ever |
-| `network-admin` | Network Admin | me | admin tools: Grafana, Hub | a role per app (`grafana-admin`) |
+| `network-admin` | Network Admin | me | admin tools: Grafana, Hub, Legacy | a role per app (`grafana-admin`) |
 | `network-yeetus` | Yeetus Network | friends, family, my everyday account | services other people use: Send | a group per app (`share-uploaders`) |
 
 master is Keycloak's own realm and can't be renamed or deleted. It's the key to everything else, so no app ever logs in through it. network-admin and network-yeetus were called `infra` and `main` until 11 Oct, and network-yeetus was network-yippie for an evening after that.

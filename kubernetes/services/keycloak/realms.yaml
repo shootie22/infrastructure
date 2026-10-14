@@ -26,7 +26,7 @@ data:
     # Like network-admin: no "keep me signed in" for the admin console.
     # "Forgot?" stays, master sends email too.
     rememberMe: false
-  # Admin tools only I use: Grafana, Hub. Access by a role per app.
+  # Admin tools only I use: Grafana, Hub, Legacy. Access by a role per app.
   network-admin.yaml: |
     realm: network-admin
     displayName: Network Admin
@@ -94,6 +94,36 @@ data:
         standardFlowEnabled: false
         directAccessGrantsEnabled: false
         serviceAccountsEnabled: true
+      # kubernetes/services/legacy: oauth2-proxy in front of legacy.yeetus.net.
+      # The secret is in legacy-client.sops.yaml and, same value, in
+      # legacy/secret.sops.yaml; scripts/create-legacy-oauth2-secret.sh makes
+      # both. The role access is given to my user by hand in the admin UI.
+      - clientId: legacy
+        name: Legacy
+        description: legacy.yeetus.net, the old pages and APIs
+        enabled: true
+        publicClient: false
+        secret: $(env:LEGACY_OAUTH2_SECRET)
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        redirectUris: ["https://legacy.yeetus.net/oauth2/callback"]
+        webOrigins: ["https://legacy.yeetus.net"]
+        attributes:
+          pkce.code.challenge.method: S256
+        protocolMappers:
+          # oauth2-proxy rejects tokens without its own client in aud.
+          - name: audience
+            protocol: openid-connect
+            protocolMapper: oidc-audience-mapper
+            config:
+              included.client.audience: legacy
+              id.token.claim: "false"
+              access.token.claim: "true"
+    roles:
+      client:
+        legacy:
+          - name: access
+            description: May open legacy.yeetus.net
     users:
       - username: service-account-yeetus-api
         serviceAccountClientId: yeetus-api

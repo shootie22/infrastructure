@@ -1,0 +1,22 @@
+# A drain takes one copy at a time, never both sites' at once.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: legacy
+  namespace: legacy
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: legacy
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: oauth2-proxy
+  namespace: legacy
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oauth2-proxy
