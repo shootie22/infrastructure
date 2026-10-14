@@ -1,0 +1,18 @@
+# yeetus.net's Matrix homeserver (#139, docs/matrix/). Phase 1: the
+# namespace, the priority and the databases; Synapse and MAS come next.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: matrix
+---
+# Matrix outranks everything else on a node (docs/matrix/architecture.md):
+# it's how we talk. With real requests next to it, a CI job on the same node
+# gets the smaller share of the CPU, and when a node is full it's the other
+# pods that wait or get evicted.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: matrix-critical
+value: 1000
+globalDefault: false
+description: Matrix (Synapse, MAS, its databases, LiveKit), ahead of every other service.

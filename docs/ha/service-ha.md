@@ -65,7 +65,7 @@ Decided 6 Oct ([#88](https://github.com/shootie22/infrastructure/issues/88), [de
 
 ### Not covered yet
 
-- **Matrix** (nuke.zip's homeserver, on the Hetzner VPS): one server. If it's down, Element loads but can't log in. nuke.zip's DNS is only on Cloudflare too. Both wait until the HA work is done ([#139](https://github.com/shootie22/infrastructure/issues/139)).
+- **Matrix** (nuke.zip's homeserver, on the Hetzner VPS): one server. If it's down, Element loads but can't log in. nuke.zip's DNS is only on Cloudflare too. Both wait until the HA work is done ([#139](https://github.com/shootie22/infrastructure/issues/139)). Planned 14 Oct: [../matrix/](../matrix/README.md).
 - **The edge and RO down at the same time:** DK has no way in from outside ([#107](https://github.com/shootie22/infrastructure/issues/107)).
 - **The nameserver switch** ([#77](https://github.com/shootie22/infrastructure/issues/77)) only reports what it would do until it has run clean for a while.
 

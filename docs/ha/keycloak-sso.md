@@ -124,7 +124,7 @@ authenticationFlows:
 | Vaultwarden | SSO | Optional, the master password still does the real work |
 | Joplin | SAML | Done, password login kept for now |
 | Baïkal | none | App passwords from the account page, checked by Traefik (below) |
-| Matrix | via MAS | Separate project |
+| Matrix | via MAS | Separate project, planned in [../matrix/](../matrix/README.md) |
 
 Public sites, SearXNG, Ollama, bots, runners and game servers don't need it.
 

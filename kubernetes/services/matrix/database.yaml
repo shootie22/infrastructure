@@ -1,0 +1,169 @@
+# Synapse's and MAS's Postgres: one instance in each site, asynchronous like
+# the other databases (#31). Synchronous was tried and dropped (decisions,
+# 2026-10-14): when the replica's site died, writes hung for minutes until
+# CNPG noticed (dotfiles tests/cnpg-across-sites.nix, step 8), and the
+# thinkcentre has no UPS. Async loses at most the last moment of writes when
+# the primary's site dies abruptly; PostgresReplicationLag watches the lag.
+#
+# The primary follows Synapse: site-failover promotes the instance next to
+# it, so Synapse never queries across the WAN (dotfiles
+# modules/nixos/site-failover, `cnpg`).
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: synapse-db
+  namespace: matrix
+spec:
+  instances: 2
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+  priorityClassName: matrix-critical
+  bootstrap:
+    initdb:
+      database: synapse
+      owner: synapse
+      # Synapse refuses any other collation: sorting must not change with the
+      # C library's version.
+      encoding: UTF8
+      localeCollate: C
+      localeCType: C
+  # Requests only, no limits: a CPU share that a build on the same node
+  # can't take away, without throttling Postgres when the node is idle.
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  storage:
+    size: 10Gi
+    storageClass: local-path
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: required
+    topologyKey: topology.kubernetes.io/zone
+    nodeSelector:
+      db: "true"
+  probes:
+    liveness:
+      # A primary that can't see the operator or the other instance stops
+      # taking writes, so a site cut off from the rest never has a second
+      # primary.
+      isolationCheck:
+        enabled: true
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: mas-db
+  namespace: matrix
+spec:
+  instances: 2
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+  priorityClassName: matrix-critical
+  bootstrap:
+    initdb:
+      database: mas
+      owner: mas
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  storage:
+    size: 2Gi
+    storageClass: local-path
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: required
+    topologyKey: topology.kubernetes.io/zone
+    nodeSelector:
+      db: "true"
+  probes:
+    liveness:
+      isolationCheck:
+        enabled: true
+---
+# Hourly dumps into the folder on fuji that its nightly Borg job picks up
+# (#32), taken from the replica when there is one.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: synapse-db-dump
+  namespace: matrix
+spec:
+  schedule: "23 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          nodeSelector:
+            kubernetes.io/hostname: fuji
+          containers:
+            - name: dump
+              image: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+              command: ["/bin/sh", "-ec"]
+              args:
+                - |
+                  host=synapse-db-ro
+                  pg_isready -q -h $host || host=synapse-db-r
+                  pg_dump -h $host -U synapse -d synapse -Fc -f /backup/matrix-synapse.dump.tmp
+                  mv /backup/matrix-synapse.dump.tmp /backup/matrix-synapse.dump
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef: {name: synapse-db-app, key: password}
+              securityContext:
+                allowPrivilegeEscalation: false
+              volumeMounts:
+                - {name: backup, mountPath: /backup}
+          volumes:
+            - name: backup
+              hostPath:
+                path: /var/lib/pg-dumps
+                type: Directory
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mas-db-dump
+  namespace: matrix
+spec:
+  schedule: "27 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          nodeSelector:
+            kubernetes.io/hostname: fuji
+          containers:
+            - name: dump
+              image: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+              command: ["/bin/sh", "-ec"]
+              args:
+                - |
+                  host=mas-db-ro
+                  pg_isready -q -h $host || host=mas-db-r
+                  pg_dump -h $host -U mas -d mas -Fc -f /backup/matrix-mas.dump.tmp
+                  mv /backup/matrix-mas.dump.tmp /backup/matrix-mas.dump
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef: {name: mas-db-app, key: password}
+              securityContext:
+                allowPrivilegeEscalation: false
+              volumeMounts:
+                - {name: backup, mountPath: /backup}
+          volumes:
+            - name: backup
+              hostPath:
+                path: /var/lib/pg-dumps
+                type: Directory
