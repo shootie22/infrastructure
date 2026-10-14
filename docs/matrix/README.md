@@ -15,7 +15,7 @@ Matrix is the service with the most users (about 10 a day) and the one that matt
 - [migration.md](migration.md): how nuke.zip moves in and how its users switch
 - [questions.md](questions.md): the questions asked while planning, with the answers
 - [../ha/decisions.md](../ha/decisions.md): the decisions, dated 2026-10-14
-- `nuke-zip-audit.md`: what's actually on hetzy (Phase 0, not done yet)
+- [nuke-zip-audit.md](nuke-zip-audit.md): what's actually on hetzy
 - `drills.md`: failover drills with the measured downtime (Phase 4)
 - runbooks: written as each procedure gets tested
 
@@ -25,7 +25,7 @@ Planned on 2026-10-14. Nothing is built yet.
 
 | Phase | What | Status |
 |---|---|---|
-| 0 | Audit hetzy, read-only: Synapse version, database, media size, auth, federation, bots | waiting for SSH access |
+| 0 | Audit hetzy, read-only: Synapse version, database, media size, auth, federation, bots | done 14 Oct |
 | 1 | Platform: Matrix's Postgres (synchronous), the `matrix` site-failover label, near-continuous media copy, the edge front door | |
 | 2 | yeetus.net: Synapse, MAS, the Keycloak client, Element Web config, monitoring, a canary bot | |
 | 3 | Calls: LiveKit on fuji with a standby on the edge, the JWT service, Element Call | |

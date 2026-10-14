@@ -30,7 +30,7 @@ Why fuji is home: it has the UPS, RO's port forwards, and the edge's HAProxy tri
 | `rtc.yeetus.net` | lk-jwt-service |
 | `sfu.yeetus.net` | LiveKit signalling |
 
-They all go through the edge's HAProxy, like Element Web: passed through to fuji's Traefik, the thinkcentre's when fuji's doesn't answer (about 2 seconds). If the edge itself dies, the front checker moves the names to RO's front door after a minute. That's much faster than the 3-minute `ro` DNS failover the other services use.
+They're DNS-only (not through Cloudflare's proxy, which caps uploads at 100 MB; nuke.zip allows 5000 MB today). They all go through the edge's HAProxy, like Element Web: passed through to fuji's Traefik, the thinkcentre's when fuji's doesn't answer (about 2 seconds). If the edge itself dies, the front checker moves the names to RO's front door after a minute. That's much faster than the 3-minute `ro` DNS failover the other services use.
 
 ## Synapse
 

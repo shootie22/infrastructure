@@ -15,9 +15,24 @@ A Matrix ID belongs to its server name for good. `@user:nuke.zip` can't become `
    4. point nuke.zip's DNS at the edge front door (nuke.zip goes into tofu and onto the deSEC standby first)
    5. check: log in, history, media, a call, the bots
 4. **Keep hetzy stopped but intact** for 2-4 weeks as the way back, then cancel it. LiveKit, the metrics tunnels and matrix-webhook-bot move off it too.
-5. **Federate nuke.zip and yeetus.net** with each other and nobody else. Users switch when they're ready.
+5. **Federate nuke.zip and yeetus.net** with each other and nobody else. nuke.zip has federation off today ([audit](nuke-zip-audit.md)), so this turns it on with yeetus.net as the only allowed server. Users switch when they're ready.
 
-nuke.zip keeps the login it has today, so nobody has to do anything for step 3: their apps reconnect, and that's all they see. If nuke.zip is SQLite rather than Postgres, step 3 includes `synapse_port_db` (Phase 0 finds out).
+nuke.zip keeps the login it has today (passwords), so nobody has to do anything for step 3: their apps reconnect, and that's all they see.
+
+What moves, from the [audit](nuke-zip-audit.md):
+
+- the database: Postgres 16, 1.8 GB, `C` collation. `pg_dump`/`pg_restore` into CNPG (Postgres 18) with the same collation. No SQLite port needed; the SQLite file `homeserver.yaml` names is an unused leftover.
+- the media: 30 GB. Copied ahead of time while nuke.zip runs. The final rsync in the window only sends what changed.
+- the signing key, and the lk-jwt-service appservice registration.
+- the GIF bot and the free games bot, **with their E2EE stores and sessions**, so they don't come back as new unverified devices. They run in the cluster like steamhappy (file copy, site-failover).
+- the sticker picker (`s.nuke.zip`, 749 MB of static files), as a static site with a copy per site.
+- Synapse at the same version as on hetzy, or newer. Its schema only migrates forward.
+
+Not moved: Element Web's old copy on hetzy (the cluster serves c.nuke.zip since #160), and the monitoring containers. The dead vhosts (`g.nuke.zip`, `j.nuke.zip`, `auth.radunenu.com`) also stay behind. coturn only moves if something still uses old-style calls.
+
+nuke.zip uploads can be up to 5000 MB, so its names stay DNS-only to the edge, not through Cloudflare's proxy (100 MB cap).
+
+Optional before the move: removing devices nobody has used in months. Messages queued for them (`device_inbox`) are 1.25 GB of the 1.8 GB database. It's a change on production, so only with an explicit go.
 
 ## What a user does to switch (guide to write)
 
