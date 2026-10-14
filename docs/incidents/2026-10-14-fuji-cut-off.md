@@ -1,8 +1,8 @@
 # 2026-10-14: fuji cut off from the cluster, sites down behind RO
 
-**Open.** Written while it's still going on, to be finished once fuji is back and the cause is known.
+**Open.** Public services are back since about 21:30 UTC, through the edge and the thinkcentre. fuji is still cut off, powered and idle, until it's power-cycled on 15 Oct; the cause gets confirmed from its logs then.
 
-fuji dropped off Nebula and Tailscale at about 21:02 UTC while staying up: its Traefik kept answering on RO's public address. Every site that reaches the cluster through RO returned 504 (radunenu.com, yeetus.net, git, ...). DNS failover didn't move anything, because to the checkers RO looked healthy. Element Web (c.nuke.zip) kept working from the edge.
+fuji dropped off Nebula and Tailscale at about 21:02 UTC while staying up: its Traefik kept answering on RO's public address. Every site that reaches the cluster through RO returned 504 (radunenu.com, yeetus.net, git, ...) for about 28 minutes. DNS failover didn't move anything, because to the checkers RO looked healthy. Element Web (c.nuke.zip) kept working from the edge throughout.
 
 ## Timeline (UTC)
 
@@ -15,15 +15,21 @@ fuji dropped off Nebula and Tailscale at about 21:02 UTC while staying up: its T
 | ~21:03 | fuji NotReady. Its pods are evicted after 30 s; those with a replica pinned per site (Keycloak, oauth2-proxy, blackbox, grafana-standby) can't go anywhere else in RO. |
 | ~21:03 | site-failover on the thinkcentre takes over fuji's services with files (Headscale, Baikal, legacy-web, steamhappy), as designed. Matrix stays unclaimed, also as designed: no whole copy had reached the thinkcentre yet. |
 | 21:04 | fuji is still reachable from the internet on 443 (Traefik's 404), RO's router answers ping. From the tailnet and over Nebula (from the thinkcentre), fuji doesn't answer at all. Sites through RO: 504 after 6 s; Keycloak, with a pod on fuji, still answers. |
-| ~21:40 | From the Mac mini on RO's LAN: fuji drops ping and SSH (22) on its LAN address too, while 443 (Traefik's hostPort, forwarded to its pod) is open. So it's fuji's INPUT side refusing everything, not Nebula or Tailscale themselves. No remote shell is possible. |
+| ~21:20 | From the Mac mini on RO's LAN: fuji drops ping and SSH (22) on its LAN address too, while 443 (Traefik's hostPort, forwarded to its pod) is open. So it's fuji's INPUT side refusing everything, not Nebula or Tailscale themselves. No remote shell is possible. |
+| ~21:25 | dotfiles PR #4 (the revert of PR #3) merged. thinkcentre and the edge go back to the old config; fuji can't fetch it. |
+| ~21:25 | RO router (reached through the Mac mini): 80/443 forwards to fuji turned off. |
+| ~21:29 | The checkers on the edge and mixi see RO down and point `ro.radunenu.com` at the edge (about 3 minutes, as designed). The edge's HAProxy already treated fuji as down, so traffic goes to the thinkcentre. |
+| 21:31 | Checked from outside: radunenu.com, yeetus.net, git, Vaultwarden, Keycloak, Element and Headscale all answer in 0.1-0.2 s. Public outage over, about 28 minutes after it began. |
+| 21:33 | fuji's smart plug shows 10-12 W (the Mac mini's: about 3 W): idle, not stuck in anything heavy. Decision: leave fuji as it is overnight, power-cycle it on 15 Oct. |
 
 ## Cause
 
-Not known yet; needs fuji's console or logs. What's established:
+Not confirmed yet; needs fuji's logs after the power cycle. What's established:
 
 - fuji's kernel, its LAN and the port forward to its pods work (Traefik answers from the internet and from the LAN), but nothing addressed to fuji itself gets an answer, not even on its own LAN: ping, SSH, Nebula, Tailscale. Traffic **to** fuji (iptables INPUT) is dropped while traffic **through** it to pods (FORWARD, DNAT) still flows. Confirmed from the Mac mini on the same LAN.
 - It started within a minute of comin deploying PR #3, which also reloaded fuji's firewall (new ports: 50881/tcp and 50882/udp on `eno1`, 7880 and 6789/tcp on `cni0`). The firewall uses iptables, not nftables, and the change only added ports. The thinkcentre (no firewall change) and the edge (firewall change, global lists) are fine after the same deploy.
-- Not resource pressure: fuji had 51% of its CPU and 16% of its memory requested, and the scheduler reported preemption as not helpful.
+- Not resource pressure: fuji had 51% of its CPU and 16% of its memory requested, and the scheduler reported preemption as not helpful. Not stuck either: 10-12 W at the plug is idle for it.
+- Not a site-wide problem: RO's router, its connection and the Mac mini next to fuji were fine throughout.
 
 To check on fuji: `iptables -L INPUT -nv`, `iptables -L nixos-fw -nv`, `journalctl -u firewall -u comin -u nebula@mesh -u tailscaled -b`.
 
@@ -46,10 +52,42 @@ Not decided; for working through together.
 - **Firewall changes on their own**: never bundled with features; one host at a time, watched.
 - **Out-of-band access**: a jump path through minima or the Mac mini (SSH to fuji's LAN address), initrd SSH for unlocking the disk, a smart plug for a hard power cycle.
 
+## Overnight (14-15 Oct)
+
+fuji stays powered and cut off; its own fence has stopped its services, and nothing public depends on it. What that means until it's back:
+
+| | Effect | Covered by |
+|---|---|---|
+| etcd | 2 of 3 members (thinkcentre, edge) | still has quorum; losing either one too stops the Kubernetes API (running pods and DNS failover keep working). The thinkcentre has no UPS. |
+| Postgres | every primary in DK | the hourly `pg_dump` jobs are pinned to fuji, so no new dump files; the data is safe on the instances in DK |
+| Services with files | Headscale, Baikal, legacy-web, steamhappy on the thinkcentre | no standby copy until fuji is back; `StandbyCopyStale` alerts expected |
+| Monitoring | fuji's Prometheus (15 days) unreachable | Prometheus in DK (3 days) and both Alertmanagers keep alerting; the profile-status card goes stale after about 3 hours |
+| Public services | none run only on fuji | everything through the edge to the thinkcentre |
+| Matrix (new) | its two databases are empty, unused, primaries on fuji | nothing to do |
+
+## Bringing fuji back (15 Oct)
+
+1. Power-cycle fuji with its smart plug (the 10-12 W one; the plugs sit between the UPS and the machines, so cutting the plug really cuts power). Whether it turns on by itself when power returns depends on its BIOS ("restore on AC power loss"), unknown; if it doesn't, it needs its power button.
+2. Unlock its disk over early-boot SSH through the Mac mini (asks for the passphrase):
+
+   ```sh
+   ssh -J radu@macminim4 -p 2222 root@192.168.100.136
+   ```
+
+3. Before changing anything, collect the logs from the broken boot:
+
+   ```sh
+   ssh -J radu@macminim4 fuji@192.168.100.136 \
+     'sudo journalctl -b -1 -u firewall -u comin -u nebula@mesh -u tailscaled --no-pager | tail -150'
+   ```
+
+4. comin then applies PR #4 (the revert) within about a minute, which reloads fuji's firewall again. If fuji drops off again right after, the reload is confirmed as the cause; one more power cycle fixes it, since fuji then boots straight into the reverted config.
+5. Once fuji is Ready (`kubectl get nodes`) and Nebula works (`ping 10.99.0.2` from the thinkcentre): turn the router's 80/443 forwards back on. DNS fails back by itself after 10 healthy minutes. The moved services stay on the thinkcentre; copies go to fuji again.
+
 ## Recovery
 
 Two paths, both without touching fuji physically:
 
 - **Get into fuji over its LAN**: not possible, fuji refuses SSH on its LAN too (tried from the Mac mini). It takes a power cycle; its disk can then be unlocked over early-boot SSH from the Mac mini. If a shell ever works: check the firewall (above), `systemctl restart firewall`, and if Nebula and Tailscale don't come back, `nixos-rebuild switch --rollback`. Hold dotfiles `revert-matrix-phase1` until fuji's logs are read: a revert is itself another firewall reload on fuji, the prime suspect.
-- **Simplest: take fuji off RO's port forwards.** The router's admin page (192.168.100.1) is reachable through the Mac mini (`ssh -L 8081:192.168.100.1:80 radu@macminim4`). Without the 80/443 forwards the checkers see RO down and fail over to the edge by themselves, and fail back once the forwards return.
+- **Used: take fuji off RO's port forwards.** The router's admin page (192.168.100.1) is reachable through the Mac mini (`ssh -L 8081:192.168.100.1:80 radu@macminim4`). Without the 80/443 forwards the checkers see RO down and fail over to the edge by themselves, and fail back once the forwards return.
 - **Send RO's traffic through the edge** while fuji stays broken: stop `failover-checker` on the edge and mixi, then point `ro.radunenu.com` at `edge.radunenu.com` in Cloudflare. HAProxy on the edge already treats fuji as down, so traffic goes to the thinkcentre. Undo both once fuji is back.
