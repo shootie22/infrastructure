@@ -5,6 +5,7 @@ keep:
 - cluster.yaml
 - database.yaml
 - ingress.yaml
+- livekit.yaml
 - mas.yaml
 - secrets.sops.yaml
 - synapse.yaml

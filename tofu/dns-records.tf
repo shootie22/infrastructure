@@ -409,6 +409,21 @@ locals {
       zone    = "yeetus.net", name = "chat", type = "CNAME"
       content = "element.radunenu.com"
     }
+    # Element Call, its token service and LiveKit's signalling. The media
+    # themselves go to the SFU's own address (RO's or the edge's), which
+    # LiveKit announces; no record needed for them.
+    "yeetus.net/call/CNAME" = {
+      zone    = "yeetus.net", name = "call", type = "CNAME"
+      content = "element.radunenu.com"
+    }
+    "yeetus.net/rtc/CNAME" = {
+      zone    = "yeetus.net", name = "rtc", type = "CNAME"
+      content = "element.radunenu.com"
+    }
+    "yeetus.net/sfu/CNAME" = {
+      zone    = "yeetus.net", name = "sfu", type = "CNAME"
+      content = "element.radunenu.com"
+    }
 
     # The one record that says where RO is, DNS only. Everything else points
     # here (DNS-only names) or at beacon (proxied names). Failover changes this.

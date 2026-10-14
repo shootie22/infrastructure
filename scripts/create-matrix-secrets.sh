@@ -146,4 +146,4 @@ printf '%s' "\"$client_secret\"" | sops set --value-stdin "$keycloak" '["spec"][
 unset db_password macaroon form_secret mas_shared client_secret mas_encryption signing_key
 printf 'Created %s and added MATRIX_SECRET to %s.\n' "$target" "$keycloak"
 printf 'Keep a copy of Synapse'"'"'s signing key in Vaultwarden:\n'
-printf '  sops decrypt --extract '"'"'["spec"]["secretTemplates"][1]["stringData"]["signing.key"]'"'"' %s\n' "$target"
+printf '  sops decrypt %s | yq '"'"'.spec.secretTemplates[] | select(.name == "synapse-secrets") | .stringData["signing.key"]'"'"'\n' "$target"

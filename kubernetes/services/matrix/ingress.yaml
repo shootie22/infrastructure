@@ -13,7 +13,7 @@ metadata:
   namespace: matrix
 spec:
   secretName: matrix-tls
-  dnsNames: [matrix.yeetus.net, account.yeetus.net, yeetus.net]
+  dnsNames: [matrix.yeetus.net, account.yeetus.net, rtc.yeetus.net, sfu.yeetus.net, yeetus.net]
   issuerRef: {name: letsencrypt-prod, kind: ClusterIssuer}
 ---
 apiVersion: traefik.io/v1alpha1
@@ -41,6 +41,14 @@ spec:
       priority: 100
       services:
         - {name: wellknown, port: 8080}
+    # Element Call (livekit.yaml): the token service, and LiveKit's signalling,
+    # which only reaches the SFU that is ready.
+    - match: Host(`rtc.yeetus.net`)
+      services:
+        - {name: lk-jwt-service, port: 8080}
+    - match: Host(`sfu.yeetus.net`)
+      services:
+        - {name: livekit, port: 7880}
   tls:
     secretName: matrix-tls
 ---
@@ -64,7 +72,7 @@ metadata:
 spec:
   entryPoints: [web]
   routes:
-    - match: Host(`matrix.yeetus.net`) || Host(`account.yeetus.net`)
+    - match: Host(`matrix.yeetus.net`) || Host(`account.yeetus.net`) || Host(`rtc.yeetus.net`) || Host(`sfu.yeetus.net`)
       middlewares:
         - {name: to-https}
       services:
