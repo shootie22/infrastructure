@@ -235,3 +235,9 @@ Also on the table: fuji only (calls stop with RO), keeping LiveKit on a cheaper 
 A Matrix ID belongs to its server name, so nuke.zip users can't become yeetus.net users in place. yeetus.net is built and drilled first. Then nuke.zip moves into the cluster with its own name, signing key, database and media (rehearsed on a sealed-off copy), which loses nothing and asks nothing of its users. Then the two servers federate with each other only, users move to yeetus.net accounts when they're ready, and nuke.zip stays up as the archive. Details in [../matrix/migration.md](../matrix/migration.md).
 
 Also on the table: keeping everyone on nuke.zip (no yeetus.net IDs), and moving everyone to yeetus.net while nuke.zip stays on the VPS (not seamless, and the VPS keeps costing until the last user has moved).
+
+## 2026-10-14: Matrix's Postgres stays asynchronous after all
+
+Replaces the synchronous entry above. The VM rehearsal (dotfiles `tests/cnpg-across-sites.nix`, step 8) showed that `dataDurability: preferred` only drops the lost standby once the CNPG operator notices, after the cluster has marked the node gone: when the replica's machine crashed, writes on the primary hung for about 216 seconds. With synchronous replication, losing either site would pause chat for minutes, and the thinkcentre, the likely standby, has no UPS. Asynchronous, losing the standby's site changes nothing; losing the primary's site abruptly can lose the last moment of writes, which on a quiet chat is milliseconds of lag (PostgresReplicationLag fires if it grows).
+
+Also on the table: keeping synchronous (no confirmed message ever lost, minutes of paused sending on every site loss), and shortening the cluster's node detection (affects every service, and the WAN makes it twitchy).

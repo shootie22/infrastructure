@@ -1,8 +1,9 @@
-# Synapse's and MAS's Postgres: one instance in each site, like the other
-# databases (#31), but synchronous (decision 2026-10-14): a write is only
-# confirmed once both sites have it, so a failover loses no message. With one
-# site gone, `preferred` lets the survivor carry on alone instead of
-# blocking. Each commit waits one WAN round trip, 13-55 ms.
+# Synapse's and MAS's Postgres: one instance in each site, asynchronous like
+# the other databases (#31). Synchronous was tried and dropped (decisions,
+# 2026-10-14): when the replica's site died, writes hung for minutes until
+# CNPG noticed (dotfiles tests/cnpg-across-sites.nix, step 8), and the
+# thinkcentre has no UPS. Async loses at most the last moment of writes when
+# the primary's site dies abruptly; PostgresReplicationLag watches the lag.
 #
 # The primary follows Synapse: site-failover promotes the instance next to
 # it, so Synapse never queries across the WAN (dotfiles
@@ -25,11 +26,6 @@ spec:
       encoding: UTF8
       localeCollate: C
       localeCType: C
-  postgresql:
-    synchronous:
-      method: any
-      number: 1
-      dataDurability: preferred
   # Requests only, no limits: a CPU share that a build on the same node
   # can't take away, without throttling Postgres when the node is idle.
   resources:
@@ -66,11 +62,6 @@ spec:
     initdb:
       database: mas
       owner: mas
-  postgresql:
-    synchronous:
-      method: any
-      number: 1
-      dataDurability: preferred
   resources:
     requests:
       cpu: 100m
