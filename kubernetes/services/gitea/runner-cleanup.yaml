@@ -1,0 +1,74 @@
+# Removes our CI runners' dead registrations from Gitea's runner list.
+#
+# Each of our runners registers once per job (ephemeral): the pods in
+# ci-runner (ci-<node>), the workstation's VM and the Mac (minima-mac).
+# Gitea removes a registration once it has run its job, but one whose runner
+# died waiting (a reboot, a failed pod) stays as an offline duplicate for
+# good. Each of these registers anew only once the previous runner is gone,
+# so a registration with a newer one of the same name behind it is dead.
+#
+# Deleted here, with the same statement Gitea uses for spent ones: our
+# runners' registrations that
+# - have a newer registration of the same name and scope (the newest one
+#   always stays, even while its machine is off),
+# - haven't checked in for 10 minutes (a live one does every 30 seconds),
+# - and hold no unfinished job.
+# Runner 3.1.0 (the Mac, the workstation) keeps retrying forever when its
+# registration goes, which is why nothing here goes by age alone.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: runner-cleanup
+  namespace: gitea
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 120
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 26
+            runAsGroup: 26
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: cleanup
+              image: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+              command: ["psql", "-v", "ON_ERROR_STOP=1", "-h", "gitea-pg-rw", "-U", "gitea", "-d", "gitea", "-c"]
+              # Task statuses 5-8: waiting, running, blocked, cancelling.
+              args:
+                - |
+                  DELETE FROM action_runner AS old
+                  WHERE old.ephemeral
+                    AND (old.name LIKE 'ci-%' OR old.name IN ('minima-mac', 'workstation'))
+                    AND EXISTS (
+                      SELECT 1 FROM action_runner AS new
+                      WHERE new.name = old.name
+                        AND new.owner_id = old.owner_id
+                        AND new.repo_id = old.repo_id
+                        AND new.id > old.id)
+                    AND greatest(old.last_online, old.created) < extract(epoch FROM now()) - 600
+                    AND NOT EXISTS (
+                      SELECT 1 FROM action_task AS t
+                      WHERE t.runner_id = old.id AND t.status IN (5, 6, 7, 8))
+                  RETURNING old.id, old.name, to_timestamp(old.created) AS registered,
+                    to_timestamp(nullif(old.last_online, 0)) AS last_seen
+              env:
+                - name: PGPASSWORD
+                  valueFrom: {secretKeyRef: {name: gitea-pg-app, key: password}}
+              resources:
+                requests: {cpu: 10m, memory: 16Mi}
+                limits: {memory: 64Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]

@@ -4,6 +4,7 @@
 keep:
 - database.yaml
 - look.yaml
+- runner-cleanup.yaml
 - runner-registration.sops.yaml
 - runner-view.yaml
 - secret.sops.yaml
