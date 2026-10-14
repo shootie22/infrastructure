@@ -3,7 +3,7 @@
 yeetus.net's Synapse runs on whichever of fuji and the thinkcentre holds `ha.radunenu.com/matrix=active`, like the other services with files ([../../ha/runbooks/site-failover.md](../../ha/runbooks/site-failover.md)). Two things are different for Matrix:
 
 - **The media copy runs every minute**, not every 10 (`standby-copy-matrix`). `MatrixMediaCopyStale` fires past 10 minutes.
-- **The databases follow Synapse.** site-failover on the node running Synapse switches the CNPG primary of `synapse-db` and `mas-db` to the instance next to it, a minute after it finds it in the other site and only while CNPG is healthy (at most once per 10 minutes). With synchronous replication that loses nothing. `MatrixDbElsewhere` fires if they're apart for 5 minutes anyway.
+- **The databases follow Synapse.** site-failover on the node running Synapse switches the CNPG primary of `synapse-db` and `mas-db` to the instance next to it, a minute after it finds it in the other site and only while CNPG is healthy (at most once per 10 minutes). It's a clean switchover (the replica catches up first), so it loses nothing. `MatrixDbElsewhere` fires if they're apart for 5 minutes anyway.
 
 MAS, lk-jwt-service and the well-known run in both sites all the time; nothing to move.
 

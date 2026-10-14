@@ -7,8 +7,8 @@ The design for yeetus.net's homeserver, and later nuke.zip's. Planned 2026-10-14
 | Piece | Runs on | Data | How it survives |
 |---|---|---|---|
 | Synapse | fuji (home), thinkcentre (standby) | Postgres, media on `/srv/ha/matrix` | one process; site-failover moves it with its media (label `ha.radunenu.com/matrix`) |
-| Synapse's Postgres (`synapse-db`) | fuji and the thinkcentre | 2 instances | CNPG, **synchronous** replication, falls back to async when one site is gone |
-| MAS (login) | fuji and the thinkcentre | its own Postgres (`mas-db`, synchronous) | two replicas, nothing on disk |
+| Synapse's Postgres (`synapse-db`) | fuji and the thinkcentre | 2 instances | CNPG, asynchronous like the other databases; the primary follows Synapse |
+| MAS (login) | fuji and the thinkcentre | its own Postgres (`mas-db`, same as Synapse's) | two replicas, nothing on disk |
 | lk-jwt-service | two replicas, one per site | none | either answers |
 | LiveKit SFU | fuji (active), the edge (standby) | none | signalling fails over to the edge's SFU; calls reconnect |
 | Element Web, Element Call | the edge and both sites | none | as today (#160): `chat.yeetus.net` and `call.yeetus.net` next to the nuke.zip names |
@@ -37,7 +37,7 @@ They're DNS-only (not through Cloudflare's proxy, which caps uploads at 100 MB; 
 - **Synapse**, not Dendrite (maintenance mode) or tuwunel/continuwuity (an embedded database that can't be replicated across sites, less mature). It's the only one with Postgres, MAS and everything Element Call needs.
 - **One process, no workers.** Ten users don't need them, and workers bring Redis and more things that can break. Revisit only for open federation.
 - **Never two at once.** A Deployment with one replica and `Recreate`. Synapse's main process can't run twice; there's no leader election.
-- **Next to its database.** Synapse makes many queries one after another, so 13-55 ms across the WAN on each would make every request slow. When site-failover moves the `matrix` label, it also switches the CNPG primary to that node (with synchronous replication that takes seconds and loses nothing). `MatrixDbCrossSite` fires if they end up in different sites anyway. Gitea has the same latent problem and can reuse this.
+- **Next to its database.** Synapse makes many queries one after another, so 13-55 ms across the WAN on each would make every request slow. When site-failover moves the `matrix` label, it also switches the CNPG primary to that node. That is a planned switchover: CNPG stops the old primary cleanly and the replica catches up before taking over, so it takes seconds and loses nothing. `MatrixDbElsewhere` fires if they end up in different sites anyway. Gitea has the same latent problem and can reuse this.
 - **Priority.** A `matrix-critical` PriorityClass and real CPU and memory requests, so a build on the same node gets the smaller share.
 
 What isn't possible: Synapse running in both sites at once. Its main process is a singleton, and HA Synapse only exists in Element's paid Synapse Pro. So a site failure costs a couple of minutes, not zero.
@@ -90,11 +90,11 @@ Estimates until the drills measure them (Phase 4, with a canary bot that sends a
 | fuji, or all of RO | 2-3 min: the cluster marks fuji not ready, site-failover moves the label, Synapse starts on the thinkcentre with the database promoted there |
 | Planned maintenance | about 30 s, moved on purpose at a quiet time |
 
-During any of these, clients keep messages as "sending" and send them once the server is back. Calls drop and reconnect.
+During any of these, clients keep messages as "sending" and send them once the server is back. Calls drop and reconnect. Losing the thinkcentre while Matrix runs on fuji costs nothing at all.
 
 ## Data safety
 
-- **Postgres synchronous** (CNPG `synchronous: {method: any, number: 1, dataDurability: preferred}`). A message counts as sent only once both sites have it. If one site is down, it carries on alone instead of blocking.
+- **Postgres asynchronous**, like the other databases. Synchronous was tried and dropped: when the replica's machine crashed in the VM rehearsal, writes hung for about 216 s until CNPG noticed ([decisions](../ha/decisions.md)). Losing the standby's site now changes nothing; losing the primary's site abruptly can lose the last moment of writes (milliseconds of lag on a quiet chat; `PostgresReplicationLag` fires if it grows). Moving Matrix on purpose loses nothing (a clean switchover).
 - Hourly `pg_dump` and nightly Borg, as for every database.
 - The signing keys are in SopsSecrets, **and a copy is in Vaultwarden**. Losing a server's signing key means losing its identity.
 - Upgrades: a dump first. Synapse's schema migrations can't be rolled back.
@@ -139,7 +139,7 @@ What a CI job can take on fuji: 2 of its 4 cores and 8 GiB (`ci-runner` `slots`,
 |---|---|---|
 | CPU | Synapse slower to answer if it waits for a core | `matrix-critical` priority; real CPU requests (Synapse, Postgres) against the job's 250m, so under contention Matrix gets the much bigger share. With the job capped at 2 cores, 2 stay for everything else. Not expected to be felt |
 | Memory | none while fuji has room for both | needs fuji's RAM to confirm (the job may use 8 GiB) |
-| Disk | Postgres commits wait behind a build's writes: tens of ms at worst, next to the 13-55 ms synchronous replication already adds | not noticeable in chat; measure. If it is: the job's disk image onto fuji's other SSD |
+| Disk | Postgres commits wait behind a build's writes: tens of ms at worst | not noticeable in chat; measure. If it is: the job's disk image onto fuji's other SSD |
 | RO's uplink | **calls on fuji's SFU get choppy** while a job pushes an image (Gitea is in DK, so a push from fuji crosses RO's uplink) or pulls a big one | measure during a call; if felt, cap CI pods' bandwidth on fuji, or let the runner skip the node holding the `matrix` label |
 
 The measurement: the heaviest build on fuji during a group call, watching Synapse's response times, Postgres commit times and the livekit-quality probe.
