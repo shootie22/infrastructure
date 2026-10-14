@@ -205,3 +205,33 @@ When two devices can't reach each other directly, their traffic goes through a r
 ## 2026-10-07: Backups go to the Mac only, and from there to Backblaze
 
 Considered: a second Borg repository in the other site for each host. Not done: two sets of backups means two places to choose from when restoring, for a case Backblaze already covers. The Mac's external disk keeps the local history, Backblaze the offsite copy of all of it.
+
+## 2026-10-14: Matrix runs on Synapse, one process, in the cluster (#139)
+
+Matrix moves off the Hetzner VPS into the cluster, starting with a new homeserver for yeetus.net. Synapse, because it's the only homeserver with replicated Postgres, MAS for logging in through Keycloak and everything Element Call needs. One process without workers: ten users don't need them, and workers bring Redis and more parts that can break. It runs in one site at a time and moves with site-failover (label `ha.radunenu.com/matrix`, home fuji for its UPS and port forwards), and the CNPG primary is switched to follow it so Synapse never queries its database across the WAN. Design in [../matrix/architecture.md](../matrix/architecture.md).
+
+Also on the table: Dendrite (maintenance mode), tuwunel and continuwuity (an embedded database that can't be replicated across sites), Element's ESS Community chart (Helm, a bundled Postgres, and HA and S3 only in the paid version), and Synapse with workers (no gain at this size). Synapse in both sites at once isn't possible without the paid Synapse Pro, so losing fuji costs a couple of minutes.
+
+## 2026-10-14: Matrix's Postgres replicates synchronously
+
+The exception to asynchronous replication: Synapse's and MAS's databases use CNPG's synchronous replication with `dataDurability: preferred`. A message is only confirmed once both sites have it, so a failover loses none. With one site down it carries on alone instead of blocking writes. Each commit waits one WAN round trip (13-55 ms), which a chat with ten people doesn't notice.
+
+Also on the table: asynchronous like everything else (a failover could lose the last seconds of messages, not acceptable for Matrix), and strict synchronous (writes stop whenever the other site is down).
+
+## 2026-10-14: Matrix media are files, copied near-continuously
+
+Synapse's media stay on disk in `/srv/ha/matrix` and go to the other site with standby-copy, like the other services with files, but on every change instead of every 10 minutes. Uploads never change once written, so the copies are cheap. Caches (other servers' media, URL previews) aren't copied.
+
+Also on the table: Garage (our own S3; refuses writes with one of two sites down unless the edge holds a third copy, and the edge stays stateless), an outside S3 (a new dependency and bill; the Backblaze plan is Personal Backup, not S3).
+
+## 2026-10-14: LiveKit on fuji, a standby on the edge
+
+Element Call's media server needs public ports, which RO has (fuji, port forwards) and DK doesn't. fuji runs it; the edge runs a second, stateless one that takes new calls while fuji's is down. Nothing else from Matrix goes on the edge.
+
+Also on the table: fuji only (calls stop with RO), keeping LiveKit on a cheaper VPS (still no failover), and relaying UDP from the edge to DK (the SFU can only announce one address).
+
+## 2026-10-14: nuke.zip moves in as itself; users switch to yeetus.net later
+
+A Matrix ID belongs to its server name, so nuke.zip users can't become yeetus.net users in place. yeetus.net is built and drilled first. Then nuke.zip moves into the cluster with its own name, signing key, database and media (rehearsed on a sealed-off copy), which loses nothing and asks nothing of its users. Then the two servers federate with each other only, users move to yeetus.net accounts when they're ready, and nuke.zip stays up as the archive. Details in [../matrix/migration.md](../matrix/migration.md).
+
+Also on the table: keeping everyone on nuke.zip (no yeetus.net IDs), and moving everyone to yeetus.net while nuke.zip stays on the VPS (not seamless, and the VPS keeps costing until the last user has moved).
