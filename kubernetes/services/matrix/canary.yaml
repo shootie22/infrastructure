@@ -1,0 +1,171 @@
+# The canary (docs/matrix/architecture.md "How long a switch takes"): once a
+# minute it sends a message to its own room through the public path
+# (https://matrix.yeetus.net: DNS, the edge, Traefik, Synapse, Postgres) and
+# reads it back. Prometheus scrapes the result, so every outage and every
+# failover drill gets a measured duration, as users would have seen it.
+#
+# Its account and token are made once by hand (docs/matrix/runbooks/
+# canary.md) into the matrix-canary Secret; until then it waits.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: canary
+  namespace: matrix
+data:
+  canary.sh: |
+    #!/bin/sh
+    # Writes Prometheus metrics to /metrics/index.html for the web sidecar.
+    base=https://matrix.yeetus.net
+    out=/metrics/index.html
+    write() { # success, seconds
+      cat > $out.tmp <<EOF
+    # HELP matrix_canary_success Whether the last send-and-read-back worked.
+    # TYPE matrix_canary_success gauge
+    matrix_canary_success $1
+    # HELP matrix_canary_duration_seconds How long the last send-and-read-back took.
+    # TYPE matrix_canary_duration_seconds gauge
+    matrix_canary_duration_seconds $2
+    # HELP matrix_canary_last_success_timestamp_seconds When it last worked.
+    # TYPE matrix_canary_last_success_timestamp_seconds gauge
+    matrix_canary_last_success_timestamp_seconds ${last_ok:-0}
+    EOF
+      mv $out.tmp $out
+    }
+    n=0
+    while :; do
+      if [ ! -s /secret/token ] || [ ! -s /secret/room ]; then
+        echo "no matrix-canary secret yet, waiting"; sleep 60; continue
+      fi
+      token=$(cat /secret/token); room=$(cat /secret/room)
+      auth="Authorization: Bearer $token"
+      n=$((n + 1)); txn="canary-$(date +%s)-$n"
+      ok=0; took=0
+      # curl's own timing (busybox date has no sub-seconds): the last line
+      # of each answer is the request's total time.
+      sent=$(curl -sS -m 20 -X PUT -H "$auth" -H 'Content-Type: application/json' -w '\n%{http_code} %{time_total}' \
+        -d "{\"msgtype\":\"m.notice\",\"body\":\"canary $(date -u +%FT%TZ)\"}" \
+        "$base/_matrix/client/v3/rooms/$room/send/m.room.message/$txn" 2>/dev/null) || sent=
+      event=$(echo "$sent" | sed '$d' | jq -r '.event_id // empty' 2>/dev/null)
+      t1=$(echo "$sent" | tail -n 1 | awk '{print $2 + 0}')
+      if [ -n "$event" ]; then
+        read=$(curl -sS -m 20 -o /dev/null -H "$auth" -w '%{http_code} %{time_total}' \
+          "$base/_matrix/client/v3/rooms/$room/event/$event" 2>/dev/null) || read=
+        set -- $read
+        if [ "${1:-}" = 200 ]; then
+          ok=1; last_ok=$(date +%s)
+          took=$(echo "$t1 ${2:-0}" | awk '{printf "%.3f", $1 + $2}')
+        fi
+      fi
+      write $ok $took
+      [ $ok = 1 ] || echo "$(date -u +%FT%TZ) send-and-read-back failed"
+      sleep 60
+    done
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: canary
+  namespace: matrix
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: canary}
+  template:
+    metadata:
+      labels: {app: canary}
+      annotations:
+        config-revision: "1"
+        monitoring.radunenu.com/scrape: "true"
+        monitoring.radunenu.com/port: "8080"
+        monitoring.radunenu.com/path: /
+    spec:
+      automountServiceAccountToken: false
+      # Not on fuji or the thinkcentre if it can help it: it should see
+      # Matrix the way users do while those two fail over.
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - {key: db, operator: DoesNotExist}
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: canary
+          image: docker.io/alpine/k8s:1.35.9@sha256:b9cb6db0091a2327c0a56ecda69d37fa830c7a96ea669e7382b3ee778aa07a24
+          command: [/bin/sh, /etc/canary/canary.sh]
+          resources:
+            requests: {cpu: 5m, memory: 16Mi}
+            limits: {memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: script, mountPath: /etc/canary, readOnly: true}
+            - {name: secret, mountPath: /secret, readOnly: true}
+            - {name: metrics, mountPath: /metrics}
+        - name: web
+          image: docker.io/library/nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+          command: [nginx, -c, /etc/canary/nginx.conf, -g, "daemon off;"]
+          ports:
+            - {name: metrics, containerPort: 8080}
+          resources:
+            requests: {cpu: 5m, memory: 8Mi}
+            limits: {memory: 32Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: web-config, mountPath: /etc/canary/nginx.conf, subPath: nginx.conf, readOnly: true}
+            - {name: metrics, mountPath: /srv, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: script
+          configMap: {name: canary}
+        - name: web-config
+          configMap: {name: canary-web}
+        - name: secret
+          secret:
+            secretName: matrix-canary
+            optional: true
+            defaultMode: 0440
+        - name: metrics
+          emptyDir: {medium: Memory, sizeLimit: 1Mi}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: canary-web
+  namespace: matrix
+data:
+  nginx.conf: |
+    worker_processes 1;
+    pid /tmp/nginx.pid;
+    error_log /dev/stderr warn;
+    events { worker_connections 64; }
+    http {
+      access_log off;
+      client_body_temp_path /tmp/body;
+      proxy_temp_path /tmp/proxy;
+      fastcgi_temp_path /tmp/fastcgi;
+      uwsgi_temp_path /tmp/uwsgi;
+      scgi_temp_path /tmp/scgi;
+      server {
+        listen 8080;
+        root /srv;
+        default_type text/plain;
+      }
+    }

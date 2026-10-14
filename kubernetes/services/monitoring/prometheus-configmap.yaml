@@ -878,6 +878,17 @@ data:
             annotations:
               summary: Only one of MAS's two replicas is up
               description: Login still works, but losing that site would stop it.
+          # The canary (matrix/canary.yaml): a message sent and read back once a
+          # minute through the public path, what users would see.
+          - alert: MatrixCanaryFailing
+            expr: max(matrix_canary_success) == 0
+            for: 5m
+            labels:
+              severity: critical
+              page: "true"
+            annotations:
+              summary: Sending a message on yeetus.net doesn't work
+              description: The canary couldn't send and read back a message for 5 minutes, through matrix.yeetus.net as users reach it. Check `kubectl -n matrix logs deploy/canary -c canary`, then MatrixSynapseDown, the front door (element.radunenu.com) and Traefik.
           # Calls (matrix/livekit.yaml): fuji's SFU, the edge's as the standby.
           - alert: MatrixCallsDown
             expr: absent(up{job="livekit", host=~"fuji|edge"} == 1)
