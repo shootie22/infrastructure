@@ -394,6 +394,21 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
+    # yeetus.net's Matrix (#139, docs/matrix/architecture.md "Names"): the same
+    # front door as Element Web (element.radunenu.com: the edge, RO when the
+    # edge is down). DNS only: uploads go up to 5000 MB, past Cloudflare's 100.
+    "yeetus.net/matrix/CNAME" = {
+      zone    = "yeetus.net", name = "matrix", type = "CNAME"
+      content = "element.radunenu.com"
+    }
+    "yeetus.net/account/CNAME" = {
+      zone    = "yeetus.net", name = "account", type = "CNAME"
+      content = "element.radunenu.com"
+    }
+    "yeetus.net/chat/CNAME" = {
+      zone    = "yeetus.net", name = "chat", type = "CNAME"
+      content = "element.radunenu.com"
+    }
 
     # The one record that says where RO is, DNS only. Everything else points
     # here (DNS-only names) or at beacon (proxied names). Failover changes this.

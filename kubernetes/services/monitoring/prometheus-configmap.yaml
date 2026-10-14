@@ -380,6 +380,27 @@ data:
               stack: matrix
               os: linux
 
+      # yeetus.net's Synapse in the cluster (#139). Its own job so the
+      # Synapse dashboard lists it next to nuke.zip's (it picks jobs from
+      # the metrics).
+      - job_name: synapse-yeetus
+        metrics_path: /_synapse/metrics
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces: {names: [matrix]}
+            selectors:
+              - {role: pod, label: app=synapse}
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: metrics
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: host
+          - target_label: service
+            replacement: synapse
+          - target_label: stack
+            replacement: matrix
+
       - job_name: livekit
         metrics_path: /livekit/metrics
         static_configs:
@@ -801,6 +822,42 @@ data:
             annotations:
               summary: "{{ $labels.cluster }}'s primary isn't next to {{ $labels.service }}"
               description: Check `journalctl -u site-failover` on the node running it, and `kubectl cnpg status {{ $labels.cluster }} -n matrix`.
+          # yeetus.net's Matrix (#139). Synapse is one process, so down means
+          # nobody can chat: page. A failover takes 2-3 minutes by design.
+          - alert: MatrixSynapseDown
+            expr: absent(up{job="synapse-yeetus"} == 1)
+            for: 4m
+            labels:
+              severity: critical
+              page: "true"
+            annotations:
+              summary: yeetus.net's Synapse is down
+              description: Nobody can send or receive. Check `kubectl -n matrix get pods -o wide`, the `matrix` label (`kubectl get nodes -L ha.radunenu.com/matrix`) and `journalctl -u site-failover` on fuji and the thinkcentre.
+          - alert: MatrixSynapseSlow
+            expr: histogram_quantile(0.95, sum by (le) (rate(synapse_http_server_response_time_seconds_bucket{job="synapse-yeetus"}[5m]))) > 2
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "yeetus.net's Synapse answers slowly (p95 {{ $value | humanizeDuration }})"
+              description: Is its database primary in the other site (MatrixDbElsewhere), or a build hogging its node?
+          - alert: MatrixLoginDown
+            expr: absent(up{job="kubernetes-pods", namespace="matrix", pod=~"mas-.*"} == 1)
+            for: 4m
+            labels:
+              severity: critical
+              page: "true"
+            annotations:
+              summary: yeetus.net's login (MAS) is down
+              description: Nobody can sign in, and apps can't refresh their sessions. Check `kubectl -n matrix get pods -l app=mas -o wide`.
+          - alert: MatrixLoginDegraded
+            expr: count(up{job="kubernetes-pods", namespace="matrix", pod=~"mas-.*"} == 1) < 2
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: Only one of MAS's two replicas is up
+              description: Login still works, but losing that site would stop it.
           # The servers' own overlay (dotfiles lib/nebula.nix, #141). Scraped from
           # fuji over the mesh, so this also means fuji can't reach the host there.
           - alert: NebulaHostUnreachable

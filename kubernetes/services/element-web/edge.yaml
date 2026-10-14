@@ -20,7 +20,7 @@ spec:
       labels:
         app.kubernetes.io/name: element-web-edge
       annotations:
-        config-revision: "3"
+        config-revision: "4"
     spec:
       automountServiceAccountToken: false
       nodeSelector:
@@ -70,6 +70,10 @@ spec:
             - name: config
               mountPath: /app/config.json
               subPath: config.json
+              readOnly: true
+            - name: config
+              mountPath: /app/config.chat.yeetus.net.json
+              subPath: config.chat.yeetus.net.json
               readOnly: true
       volumes:
         - name: config

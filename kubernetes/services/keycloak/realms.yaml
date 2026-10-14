@@ -316,6 +316,24 @@ data:
           access.token.lifespan: "600"
         authenticationFlowBindingOverrides:
           browser: gate vaultwarden
+      # Matrix (yeetus.net, #139). The client is MAS (matrix/mas.yaml and the
+      # provider in matrix/secrets.sops.yaml), which turns the Keycloak
+      # username into @username:yeetus.net. The ID at the end of the redirect
+      # URI is that provider's (scripts/create-matrix-secrets.sh).
+      - clientId: matrix
+        name: Matrix
+        description: chat.yeetus.net
+        enabled: true
+        publicClient: false
+        secret: $(env:MATRIX_SECRET)
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        redirectUris: ["https://account.yeetus.net/upstream/callback/01M4Y0DJAF93XBH0ATM5HJWXKT"]
+        webOrigins: ["https://account.yeetus.net"]
+        attributes:
+          pkce.code.challenge.method: S256
+        authenticationFlowBindingOverrides:
+          browser: gate matrix
       # Gitea (git.yeetus.net, #61). Its side is the `keycloak` login source,
       # added by an init container in gitea/staged.yaml. Gitea links a first
       # sign-in to the existing account with the same username (then email),
@@ -359,6 +377,9 @@ data:
         vaultwarden:
           - name: access
             description: May sign in to Vaultwarden
+        matrix:
+          - name: access
+            description: May sign in to Matrix
         gitea:
           - name: access
             description: May sign in to Gitea
@@ -374,6 +395,10 @@ data:
       - alias: vaultwarden no access
         config: {condUserRole: vaultwarden.access, negate: "true"}
       - alias: vaultwarden deny
+        config: {denyErrorMessage: yeetusNoAccess}
+      - alias: matrix no access
+        config: {condUserRole: matrix.access, negate: "true"}
+      - alias: matrix deny
         config: {denyErrorMessage: yeetusNoAccess}
       - alias: gitea no access
         config: {condUserRole: gitea.access, negate: "true"}
@@ -490,6 +515,42 @@ data:
         authenticationExecutions:
           - {authenticator: conditional-user-role, authenticatorConfig: vaultwarden no access, requirement: REQUIRED, priority: 10}
           - {authenticator: deny-access-authenticator, authenticatorConfig: vaultwarden deny, requirement: REQUIRED, priority: 20}
+      - alias: gate matrix
+        description: Sign in, then only with matrix's access role
+        providerId: basic-flow
+        topLevel: true
+        builtIn: false
+        authenticationExecutions:
+          - {flowAlias: gate matrix sign in, requirement: REQUIRED, priority: 10, autheticatorFlow: true}
+          - {flowAlias: gate matrix check, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+      - alias: gate matrix sign in
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: auth-cookie, requirement: ALTERNATIVE, priority: 10}
+          - {flowAlias: gate matrix forms, requirement: ALTERNATIVE, priority: 20, autheticatorFlow: true}
+      - alias: gate matrix forms
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: auth-username-password-form, requirement: REQUIRED, priority: 10}
+          - {flowAlias: gate matrix 2fa, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+      - alias: gate matrix 2fa
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: conditional-user-configured, requirement: REQUIRED, priority: 10}
+          - {authenticator: auth-otp-form, requirement: ALTERNATIVE, priority: 20}
+      - alias: gate matrix check
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: conditional-user-role, authenticatorConfig: matrix no access, requirement: REQUIRED, priority: 10}
+          - {authenticator: deny-access-authenticator, authenticatorConfig: matrix deny, requirement: REQUIRED, priority: 20}
       - alias: gate gitea
         description: Sign in, then only with gitea's access role
         providerId: basic-flow
@@ -549,6 +610,10 @@ data:
         attributes: {description: [Vaultwarden]}
         clientRoles:
           vaultwarden: [access]
+      - name: chat
+        attributes: {description: [Matrix]}
+        clientRoles:
+          matrix: [access]
       - name: git
         attributes: {description: [Gitea]}
         clientRoles:

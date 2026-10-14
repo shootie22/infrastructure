@@ -30,6 +30,10 @@ locals {
     "Home"         = "https://yeetus.net/"
     "Keycloak"     = "https://auth.yeetus.net/"
     "Element Web"  = "https://c.nuke.zip/"
+    # yeetus.net's Matrix (#139): the API, the login, and how apps find it.
+    "Matrix"           = "https://matrix.yeetus.net/_matrix/client/versions"
+    "Matrix login"     = "https://account.yeetus.net/.well-known/openid-configuration"
+    "Matrix discovery" = "https://yeetus.net/.well-known/matrix/client"
   }
 }
 

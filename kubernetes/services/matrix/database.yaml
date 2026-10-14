@@ -21,6 +21,10 @@ spec:
     initdb:
       database: synapse
       owner: synapse
+      # Our own password (secrets.sops.yaml) instead of a generated one:
+      # Synapse can only take it in its config.
+      secret:
+        name: synapse-db-credentials
       # Synapse refuses any other collation: sorting must not change with the
       # C library's version.
       encoding: UTF8
