@@ -1,0 +1,110 @@
+# yeetus.net/.well-known/matrix/client: how apps find matrix.yeetus.net from
+# a @user:yeetus.net name. Its own two small replicas, one per site, instead
+# of Synapse answering it: apps still find the server while Synapse restarts
+# or moves, and then simply retry. No /.well-known/matrix/server: nobody
+# federates with yeetus.net (until nuke.zip, docs/matrix/migration.md).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wellknown
+  namespace: matrix
+data:
+  client: |
+    {
+      "m.homeserver": {"base_url": "https://matrix.yeetus.net"}
+    }
+  nginx.conf: |
+    worker_processes 1;
+    pid /tmp/nginx.pid;
+    error_log /dev/stderr warn;
+    events { worker_connections 256; }
+    http {
+      access_log off;
+      client_body_temp_path /tmp/body;
+      proxy_temp_path /tmp/proxy;
+      fastcgi_temp_path /tmp/fastcgi;
+      uwsgi_temp_path /tmp/uwsgi;
+      scgi_temp_path /tmp/scgi;
+      server {
+        listen 8080;
+        location = /.well-known/matrix/client {
+          default_type application/json;
+          add_header Access-Control-Allow-Origin "*" always;
+          add_header Cache-Control "public, max-age=3600" always;
+          alias /srv/client;
+        }
+        location = /healthz { return 200 "ok\n"; }
+        location / { return 404; }
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wellknown
+  namespace: matrix
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 0, maxUnavailable: 1}
+  selector:
+    matchLabels: {app: wellknown}
+  template:
+    metadata:
+      labels: {app: wellknown}
+      annotations:
+        config-revision: "1"
+    spec:
+      automountServiceAccountToken: false
+      priorityClassName: matrix-critical
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchLabels: {app: wellknown}
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: nginx
+          image: docker.io/library/nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+          command: [nginx, -c, /etc/wellknown/nginx.conf, -g, "daemon off;"]
+          ports:
+            - {name: http, containerPort: 8080}
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {memory: 64Mi}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: config, mountPath: /etc/wellknown/nginx.conf, subPath: nginx.conf, readOnly: true}
+            - {name: config, mountPath: /srv/client, subPath: client, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: config
+          configMap:
+            name: wellknown
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wellknown
+  namespace: matrix
+spec:
+  selector: {app: wellknown}
+  ports:
+    - {name: http, port: 8080, targetPort: http}

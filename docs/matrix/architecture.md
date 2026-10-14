@@ -54,9 +54,9 @@ Also looked at: Garage (our own S3) refuses writes with one of two sites down un
 
 MAS (matrix-authentication-service) does the login for Synapse, using Synapse's native MAS support, which Element X needs. Its only provider is Keycloak (`network-yeetus`). No local passwords, no registration, no guests.
 
-- The Matrix name comes from Keycloak: localpart `{{ user.preferred_username }}`, forced, so everyone is `@<keycloak username>:yeetus.net`.
-- Usernames can't be edited in Keycloak, so a name never changes under someone. MAS links accounts by Keycloak's `sub` anyway.
-- Access through the usual gate: a `matrix` client with an `access` role, granted by a group.
+- The Matrix name comes from Keycloak: localpart `{{ user.preferred_username }}`, required (no username, no account), so everyone is `@<keycloak username>:yeetus.net` with nothing to choose. Name and email are copied from Keycloak at every sign-in.
+- Users can't change their Keycloak username (admins can). MAS links accounts by Keycloak's `sub`, so even an admin rename keeps the old Matrix ID.
+- Access through the usual gate: a `matrix` client with an `access` role, granted by the Keycloak group `chat`. Someone outside it gets the "no access" page.
 - Leaving: remove from the group, then end their sessions in MAS (runbook to come).
 
 ## Calls
@@ -114,7 +114,7 @@ Where it's free, though:
 
 What actually hides things:
 
-- **A wildcard certificate** (`*.yeetus.net`, DNS-01 like Headlamp's issuer). Every certificate is published in Certificate Transparency logs, and scanners try new names within minutes. With a wildcard, `matrix`, `account`, `rtc` and `sfu` never appear there.
+- **A wildcard certificate** (`*.yeetus.net`, DNS-01 like Headlamp's issuer), *not done yet*. Every certificate is published in Certificate Transparency logs, and scanners try new names within minutes. Phase 2 uses ordinary per-name certificates (HTTP-01, the existing issuer) because DNS-01 needs a Cloudflare token scoped to `yeetus.net`. Little is lost meanwhile: `matrix`, `account` and `rtc` are public in the well-known anyway; only `sfu` would stay hidden.
 - SNI routing: asking the address without the right name gets Traefik's 404, as today.
 - Admin paths not routed at all, rate limits in Synapse and MAS, updates through Renovate.
 

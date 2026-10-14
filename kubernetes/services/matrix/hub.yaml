@@ -4,5 +4,10 @@
 keep:
 - cluster.yaml
 - database.yaml
+- ingress.yaml
+- mas.yaml
+- secrets.sops.yaml
+- synapse.yaml
+- wellknown.yaml
 kind: kept
 name: matrix
