@@ -287,6 +287,12 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
+    # The admin page about the restored pages and APIs (kubernetes/services/legacy).
+    "yeetus.net/legacy/CNAME" = {
+      zone    = "yeetus.net", name = "legacy", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
     "yeetus.net/cal/CNAME" = {
       zone    = "yeetus.net", name = "cal", type = "CNAME"
       content = "beacon.radunenu.com"

@@ -41,6 +41,7 @@ Decided 6 Oct ([#88](https://github.com/shootie22/infrastructure/issues/88), [de
 | Gitea | thinkcentre (home) | Postgres + 61 GB of repos | Survives | CNPG, repos/LFS/packages copied every 10 minutes, site-failover |
 | Audiobookshelf | thinkcentre (home) | 14 GB library, 34 MB database | Survives | file copy and site-failover |
 | Legacy web (old API, Kronorite) | fuji (home) | 2 GB of files | Survives | file copy and site-failover |
+| Legacy (legacy.yeetus.net, the page about them) | two replicas, and oauth2-proxy | none | Stateless copy | one per site |
 | Rybbit | thinkcentre (home) | Postgres + ClickHouse | Survives | CNPG; ClickHouse copied with merges paused, site-failover |
 | Minecraft HC, Skyblock, Hytale | thinkcentre | worlds, up to 8 GB | Survives | site-failover; Minecraft saves over RCON before each copy, Hytale is copied live |
 | Vintage Story | (not running) | 96 GB world | Retired 6 Oct | not played in a while; the world stays in /home/main/game_servers/vintage_story and in Borg |

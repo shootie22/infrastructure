@@ -80,6 +80,11 @@ spec:
               envFrom:
                 - secretRef:
                     name: keycloak-config-cli
+                # LEGACY_OAUTH2_SECRET, in a file of its own so the script
+                # that makes it needs no key to the one above
+                # (legacy-client.sops.yaml).
+                - secretRef:
+                    name: keycloak-config-cli-legacy
               resources:
                 requests:
                   cpu: 100m

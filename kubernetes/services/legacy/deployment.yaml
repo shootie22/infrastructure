@@ -1,0 +1,98 @@
+# The page (site.yaml) served by Caddy. Nothing on disk, so one copy per
+# site and either can serve it alone (#89).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legacy
+  namespace: legacy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: legacy
+  template:
+    metadata:
+      annotations:
+        # Bump when site.yaml changes; Caddy only reads it at start.
+        config-revision: "1"
+      labels:
+        app.kubernetes.io/name: legacy
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      containers:
+        - name: caddy
+          image: caddy:2.10.0-alpine@sha256:ae4458638da8e1a91aafffb231c5f8778e964bca650c8a8cb23a7e8ac557aa3c
+          args: [caddy, run, --config, /etc/caddy/Caddyfile, --adapter, caddyfile]
+          ports:
+            - {name: http, containerPort: 8080}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+              # The official Caddy binary carries this file capability.
+              add: [NET_BIND_SERVICE]
+          # Traefik needs a moment to stop sending requests here (#89).
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+          volumeMounts:
+            - {name: caddyfile, mountPath: /etc/caddy, readOnly: true}
+            - {name: page, mountPath: /srv, readOnly: true}
+            - {name: data, mountPath: /data}
+            - {name: runtime-config, mountPath: /config}
+      volumes:
+        # Two mounts of one ConfigMap, so the Caddyfile isn't in what's served.
+        - name: caddyfile
+          configMap:
+            name: legacy-site
+            items:
+              - {key: Caddyfile, path: Caddyfile}
+        - name: page
+          configMap:
+            name: legacy-site
+            items:
+              - {key: index.html, path: index.html}
+        - name: data
+          emptyDir: {}
+        - name: runtime-config
+          emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: legacy
+  # No third site for a surge pod, so replace one at a time.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
