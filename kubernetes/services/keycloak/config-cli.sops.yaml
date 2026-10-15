@@ -13,6 +13,7 @@ spec:
             AUDIOBOOKSHELF_SECRET: ENC[AES256_GCM,data:krDVbub4BJ4RIuH15AYB7h0VFv3PFZV4B8++QI0iSq2tzHUvwZowyQ==,iv:DmMg5YZk0HcGhVecjmLd3bn9eUYNdTZuW6HlvDUYUXM=,tag:n4rt0oN30FcJN4OTQsIO/A==,type:str]
             VAULTWARDEN_SECRET: ENC[AES256_GCM,data:GM0EHqT8WO1wmgt5WQYVKwEUuHxkcqzmenMVgkMe6Vzm5W1bPwnq6Q==,iv:6qk02dkxx0YTgfWg0bxAVt5p5BLfMvyHxwa2g35IFyg=,tag:iB+FVgVdh6ixbgiCedJIhw==,type:str]
             GITEA_OIDC_SECRET: ENC[AES256_GCM,data:yESpIJW49O9QoyS0Au6cHnH4/L2iLqu6uOBpVY9kagzzONPAITy8,iv:AWrMF+dDTaGzzTM4FH9iFY+IR5wxIZ70bYsOF5U55aM=,tag:VK9th2aISGpVh6iTTWaItA==,type:str]
+            MATRIX_SECRET: ENC[AES256_GCM,data:X7I5vS6EZfRIeZNgxM8X9qyh1S6n+TDRSNrYKVTuGxWyjjNExwFmT5wJVJ35rOJt,iv:ReF+ypIooZBu3awPLqb9ccuuHKgAUfwykG7tvlwTtxs=,tag:HXBlrlnLz2yjHMm3anvJOg==,type:str]
 sops:
     age:
         - enc: |
@@ -34,6 +35,6 @@ sops:
             -----END AGE ENCRYPTED FILE-----
           recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
     encrypted_suffix: Templates
-    lastmodified: "2026-10-11T19:32:59Z"
-    mac: ENC[AES256_GCM,data:+tNLF85TQnNZ+VT2IWSV2jA9600sHDiKOOT322GkkSLxaeYLOXZdfNPN6YdNGH5+i46txSYV/ZDONcrvOjuNH0cSRZ5AsjIOpG0O+YFftHN/Ja51V6pIJuM2vOoyE+m0eQoAAYNe8O5iTOrEYQQdiaeCOuA2csG80qyTtJfDA50=,iv:o3zKZ0ekPOw9WUQ3VvD8zXzMr5YNvRxJQ+UaTl4WXSY=,tag:5HAqnk59IFjWwsDo87MH9Q==,type:str]
+    lastmodified: "2026-10-14T20:07:29Z"
+    mac: ENC[AES256_GCM,data:veSzjWM/PECfgP2XAML3mFCiRp7Jd4rLH3wDzYFtHmHPW5/O9pUTHsLqn1Jni1ud5qgZ/BZoqk5AZlD1uuYdH8yWFfKcwOGxUCRoLh1Fcor4k9LV3yQ7rB7UKXBLzv+RUpYNMajKfxC1BDQ2b9ETybwwdLLkG4bAZgQr2X6Z8Kk=,iv:tMFQTQ/PHYpLM16+d2PnNPuUTJ/AIP8RGKRmN1kWpLU=,tag:4MRpuXr2UGfCrAwD//3UUw==,type:str]
     version: 3.13.3

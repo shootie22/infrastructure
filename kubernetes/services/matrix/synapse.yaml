@@ -1,0 +1,225 @@
+# yeetus.net's Synapse (docs/matrix/architecture.md). One process, never two:
+# one replica with Recreate. It runs where the `matrix` label is (fuji at
+# home, the thinkcentre after a failover; dotfiles site-failover), with its
+# media in /srv/ha/matrix, copied to the other site every minute.
+# Login is MAS's (mas.yaml); secrets.sops.yaml has the database block, the
+# MAS shared secret and the signing key, loaded after this config.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: synapse
+  namespace: matrix
+data:
+  homeserver.yaml: |
+    server_name: yeetus.net
+    public_baseurl: https://matrix.yeetus.net/
+    report_stats: false
+    signing_key_path: /secrets/signing.key
+    media_store_path: /data/media
+    log_config: /config/log.yaml
+    pid_file: /tmp/homeserver.pid
+
+    listeners:
+      # Client API only: no federation resource, so nothing answers
+      # /_matrix/federation or /_matrix/key even from inside the cluster.
+      - port: 8008
+        type: http
+        tls: false
+        x_forwarded: true
+        bind_addresses: ["0.0.0.0"]
+        resources:
+          - names: [client]
+            compress: false
+      - port: 9000
+        type: metrics
+        bind_addresses: ["0.0.0.0"]
+    enable_metrics: true
+
+    # Closed federation (decision 2026-10-14): nobody. With nuke.zip later,
+    # it goes here and each server lists only the other.
+    federation_domain_whitelist: []
+    trusted_key_servers: []
+    suppress_key_server_warning: true
+    allow_public_rooms_over_federation: false
+    allow_public_rooms_without_auth: false
+    serve_server_wellknown: false
+
+    # Accounts only through MAS and Keycloak.
+    enable_registration: false
+    # Required with MAS: Synapse refuses to start with its own passwords on.
+    password_config:
+      enabled: false
+    allow_guest_access: false
+
+    # Privacy.
+    require_auth_for_profile_requests: true
+    limit_profile_requests_to_users_who_share_rooms: true
+    include_profile_data_on_invite: false
+    encryption_enabled_by_default_for_room_type: all
+    url_preview_enabled: false
+    user_directory:
+      enabled: true
+      search_all_users: false
+
+    # Same as nuke.zip today, so nobody notices a smaller limit. The names are
+    # DNS-only (not Cloudflare's 100 MB) and Traefik reads for up to 30 min.
+    max_upload_size: 5000M
+    media_retention:
+      remote_media_lifetime: 90d
+
+    # Element Call (docs/matrix/architecture.md "Calls"); the LiveKit pieces
+    # come with phase 3. Delayed events (MSC4140) are on with
+    # max_event_delay_duration alone in 1.163, and the room summary API
+    # (MSC3266) is no longer experimental.
+    experimental_features:
+      msc4143_enabled: true   # RTC transports (matrix_rtc)
+      msc4222_enabled: true   # state_after in sync
+      msc4354_enabled: true   # sticky events, for call memberships
+    max_event_delay_duration: 24h
+    rc_message:
+      per_second: 0.5
+      burst_count: 30
+    rc_delayed_event_mgmt:
+      per_second: 1
+      burst_count: 20
+
+  log.yaml: |
+    version: 1
+    formatters:
+      precise:
+        format: '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(request)s - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: precise
+    loggers:
+      synapse.storage.SQL:
+        level: INFO
+    root:
+      level: INFO
+      handlers: [console]
+    disable_existing_loggers: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: synapse
+  namespace: matrix
+spec:
+  replicas: 1
+  # Never two Synapse processes at once: the old one stops before the new
+  # one starts.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: {app: synapse}
+  template:
+    metadata:
+      labels: {app: synapse}
+      annotations:
+        # Bump after changing the ConfigMap, so the pod picks it up.
+        config-revision: "1"
+        # Prometheus scrapes it with its own job, synapse-yeetus
+        # (monitoring/prometheus-configmap.yaml).
+    spec:
+      automountServiceAccountToken: false
+      priorityClassName: matrix-critical
+      nodeSelector:
+        ha.radunenu.com/matrix: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      # Synapse may take a moment to finish requests and flush on stop.
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsUser: 991
+        runAsGroup: 991
+        fsGroup: 991
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+        # The media folder: /srv/ha/matrix is made by site-failover as root.
+        - name: media-dir
+          image: ghcr.io/element-hq/synapse:v1.163.0@sha256:e98ab72138d90fa8b8876c6421fe78a9fdb181c0d7cc690ad740e5173e0c65e6
+          command: ["/bin/sh", "-ec", "mkdir -p /data/media && chown 991:991 /data/media"]
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL], add: [CHOWN]}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+        # Starting before Postgres answers only ends in crash-backoff, which
+        # then delays the start long after the database is back (as Keycloak
+        # did after a failover).
+        - name: wait-for-db
+          image: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+          command: ["/bin/sh", "-c", "until pg_isready -q -h synapse-db-rw -p 5432; do sleep 2; done"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+      containers:
+        - name: synapse
+          image: ghcr.io/element-hq/synapse:v1.163.0@sha256:e98ab72138d90fa8b8876c6421fe78a9fdb181c0d7cc690ad740e5173e0c65e6
+          # Straight to Synapse (the image's start.py would generate a config).
+          command:
+            - python
+            - -m
+            - synapse.app.homeserver
+            - --config-path=/config/homeserver.yaml
+            - --config-path=/secrets/secrets.yaml
+          ports:
+            - {name: http, containerPort: 8008}
+            - {name: metrics, containerPort: 9000}
+          # Requests and no CPU limit: a CPU share a build on the same node
+          # can't take, without throttling. The memory limit stops a leak
+          # before it takes the node.
+          resources:
+            requests: {cpu: 1000m, memory: 1Gi}
+            limits: {memory: 4Gi}
+          # Schema migrations after an upgrade can take minutes; nothing
+          # restarts Synapse in the middle of one.
+          startupProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 5
+            failureThreshold: 180
+          readinessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 5
+            failureThreshold: 2
+          livenessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 8
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: config, mountPath: /config, readOnly: true}
+            - {name: secrets, mountPath: /secrets, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: data
+          hostPath:
+            path: /srv/ha/matrix
+            type: Directory
+        - name: config
+          configMap:
+            name: synapse
+        - name: secrets
+          secret:
+            secretName: synapse-secrets
+            defaultMode: 0440
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: synapse
+  namespace: matrix
+spec:
+  selector: {app: synapse}
+  ports:
+    - {name: http, port: 8008, targetPort: http}

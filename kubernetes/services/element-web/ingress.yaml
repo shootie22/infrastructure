@@ -20,9 +20,23 @@ spec:
     - hosts:
         - c.nuke.zip
       secretName: element-web-tls
+    # yeetus.net's Matrix (#139): same pods, config.chat.yeetus.net.json.
+    - hosts:
+        - chat.yeetus.net
+      secretName: chat-yeetus-net-tls
 
   rules:
     - host: c.nuke.zip
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: element-web
+                port:
+                  number: 80
+    - host: chat.yeetus.net
       http:
         paths:
           - path: /

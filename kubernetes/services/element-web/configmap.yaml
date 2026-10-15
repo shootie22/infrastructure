@@ -1,4 +1,6 @@
-# Element Web config for c.nuke.zip. Bump config-revision in deployment.yaml and edge.yaml
+# Element Web config: config.json for c.nuke.zip, config.chat.yeetus.net.json for
+# chat.yeetus.net (Element loads config.<hostname>.json first, #139). Bump
+# config-revision in deployment.yaml and edge.yaml
 # after editing so the pods pick it up (the image copies it at startup).
 # "features" locks a labs flag for everyone (users cannot toggle it);
 # "setting_defaults" only changes the default, users can still toggle it.
@@ -25,6 +27,45 @@ data:
       },
       "element_call": {
         "url": "https://call.nuke.zip",
+        "use_exclusively": true
+      },
+      "show_labs_settings": true,
+      "features": {
+        "feature_video_rooms": true,
+        "feature_element_call_video_rooms": true,
+        "feature_ask_to_join": true,
+        "feature_jump_to_date": true,
+        "feature_latex_maths": true,
+        "feature_render_reaction_images": true,
+        "feature_location_share_live": true,
+        "feature_wysiwyg_composer": true,
+        "feature_pdf_viewer": true,
+        "feature_msc4095_url_preview_bundle": true,
+        "feature_user_status": true
+      },
+      "setting_defaults": {
+        "RoomList.showMessagePreview": true
+      }
+    }
+  config.chat.yeetus.net.json: |-
+    {
+      "default_server_config": {
+        "m.homeserver": {
+          "base_url": "https://matrix.yeetus.net",
+          "server_name": "yeetus.net"
+        }
+      },
+      "brand": "Element",
+      "disable_guests": true,
+      "disable_custom_urls": false,
+      "default_country_code": "RO",
+      "room_directory": {
+        "servers": [
+          "yeetus.net"
+        ]
+      },
+      "element_call": {
+        "url": "https://call.yeetus.net",
         "use_exclusively": true
       },
       "show_labs_settings": true,

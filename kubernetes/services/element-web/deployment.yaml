@@ -23,7 +23,7 @@ spec:
       labels:
         app.kubernetes.io/name: element-web
       annotations:
-        config-revision: "3"
+        config-revision: "4"
     spec:
       automountServiceAccountToken: false
       containers:
@@ -62,6 +62,10 @@ spec:
             - name: config
               mountPath: /app/config.json
               subPath: config.json
+              readOnly: true
+            - name: config
+              mountPath: /app/config.chat.yeetus.net.json
+              subPath: config.chat.yeetus.net.json
               readOnly: true
           # Traefik needs a moment to stop sending requests here (#89).
           lifecycle:

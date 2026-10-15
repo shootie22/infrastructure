@@ -6,7 +6,7 @@ Asked while planning on 2026-10-14, kept here so the answers don't get lost.
 Synapse. It's the only one with replicated Postgres, MAS for Keycloak login and everything Element Call needs (delayed events, MSC4222). Dendrite is in maintenance mode. tuwunel and continuwuity are fast but keep their data in an embedded database that can't be replicated across sites. Details in [architecture.md](architecture.md#synapse).
 
 **How fast can it switch when something goes down?**
-Seconds for most things, 2-3 minutes if fuji or all of RO dies. Synapse's main process can only run once, so true active-active needs Element's paid Synapse Pro. Clients hold messages as "sending" meanwhile, so nothing is lost. Table in [architecture.md](architecture.md#how-long-a-switch-takes).
+Seconds for most things, 2-3 minutes if fuji or all of RO dies. Synapse's main process can only run once, so true active-active needs Element's paid Synapse Pro. Clients hold messages as "sending" meanwhile and send them afterwards. An abrupt loss of the database primary's site can lose the last moment of writes (replication is asynchronous: synchronous was tested and paused chat for minutes on any site loss). Table in [architecture.md](architecture.md#how-long-a-switch-takes).
 
 **How much work is open federation later?**
 Possible and reversible. The cost depends on which rooms we join: big public rooms mean gigabytes of state and CPU spikes on fuji. It needs workers (and Redis), cleanup jobs, a moderation bot and a bigger database. [architecture.md](architecture.md#open-federation-if-we-ever-want-it)
