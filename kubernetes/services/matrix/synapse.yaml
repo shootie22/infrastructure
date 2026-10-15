@@ -65,9 +65,13 @@ data:
     # Joined without an invite; users can't post in it.
     server_notices:
       system_mxid_localpart: updates
-      system_mxid_display_name: Network Updates
-      room_name: Network Updates
-      room_topic: Maintenance, upgrades and outages on yeetus.net. Read-only.
+      system_mxid_display_name: "🌵 network updates 🌵"
+      room_name: "🌵 network updates 🌵"
+      room_topic: maintenance, upgrades and outages on yeetus.net. read-only.
+      # The yeetus.net logo (docs/matrix/network-updates-avatar.svg, as the
+      # site draws it), uploaded once (runbooks/network-updates.md).
+      system_mxid_avatar_url: mxc://yeetus.net/ojOUjPcAqZTCtIRMPxxHfSRQ
+      room_avatar_url: mxc://yeetus.net/ojOUjPcAqZTCtIRMPxxHfSRQ
       auto_join: true
     encryption_enabled_by_default_for_room_type: all
     url_preview_enabled: false
@@ -138,7 +142,7 @@ spec:
       labels: {app: synapse}
       annotations:
         # Bump after changing the ConfigMap, so the pod picks it up.
-        config-revision: "4"
+        config-revision: "5"
         # Prometheus scrapes it with its own job, synapse-yeetus
         # (monitoring/prometheus-configmap.yaml).
     spec:

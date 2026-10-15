@@ -1,6 +1,6 @@
 # Network Updates
 
-Everyone on yeetus.net has a room with **Network Updates** (`@updates:yeetus.net`), Synapse's [server notices](https://element-hq.github.io/synapse/latest/server_notices.html). Element pins it as System Alerts. It's read-only, joined without an invite, and it's where news about the server goes: planned maintenance, upgrades, outages. Like Discord's system messages.
+Everyone on yeetus.net has a room with **🌵 network updates 🌵** (`@updates:yeetus.net`), Synapse's [server notices](https://element-hq.github.io/synapse/latest/server_notices.html). Element pins it as System Alerts. It's read-only, joined without an invite, and it's where news about the server goes: planned maintenance, upgrades, outages. Like Discord's system messages.
 
 `kubernetes/services/matrix/updates.yaml` has all of it:
 
@@ -8,7 +8,7 @@ Everyone on yeetus.net has a room with **Network Updates** (`@updates:yeetus.net
 - **Upgrade notices.** The same job announces a new Synapse version once, to everyone, with a link to the release notes. The first run only records the version.
 - **Broadcasts by hand**, see below.
 
-The texts are `welcome.txt` and `upgrade.txt` in the `network-updates` ConfigMap; edit them there. The bots (`@canary`, `@updates-admin`) get nothing (`NOTICES_SKIP`).
+The texts are `welcome.txt` and `upgrade.txt` in the `network-updates` ConfigMap; edit them there. The name, the topic and the avatar (the yeetus.net logo, `docs/matrix/network-updates-avatar.svg`) are in Synapse's config (`server_notices` in `synapse.yaml`); rooms that already exist take a change with the next notice. The bots (`@canary`, `@updates-admin`) get nothing (`NOTICES_SKIP`).
 
 ## Sending a notice
 
@@ -85,3 +85,14 @@ To replace the token: `mas-cli manage kill-sessions updates-admin` (in the MAS p
 ## When it goes wrong
 
 `CronJobFailed` fires when the job's last run failed for 15 minutes. Its log says why; the usual ones are Synapse being down (it tries again in 5 minutes) and a token that no longer works (401: replace it as above).
+
+## A new avatar
+
+Synapse wants the avatar as an `mxc://` address, so the picture is uploaded once, as the `updates-admin` account, from the Synapse pod (the PNG is small enough to go inline):
+
+```sh
+png=$(base64 -w0 docs/matrix/network-updates-avatar.png)   # on the workstation; paste the result below
+kubectl -n matrix exec deploy/synapse -c synapse -- python -c 'import base64,json,urllib.request as u; t=open("/network-updates-token/token").read().strip(); r=u.Request("http://localhost:8008/_matrix/media/v3/upload?filename=network-updates.png", data=base64.b64decode("<the base64>"), headers={"Authorization": "Bearer "+t, "Content-Type": "image/png"}, method="POST"); print(json.load(u.urlopen(r))["content_uri"])'
+```
+
+Put the printed `mxc://yeetus.net/...` in `system_mxid_avatar_url` and `room_avatar_url`, bump `config-revision`, and send a notice so the existing rooms change too. The PNG comes from the SVG: `nix shell nixpkgs#resvg nixpkgs#oxipng -c sh -c 'resvg network-updates-avatar.svg network-updates-avatar.png && oxipng -o max --strip all network-updates-avatar.png'`.
