@@ -81,6 +81,10 @@ spec:
         config-revision: "1"
     spec:
       automountServiceAccountToken: false
+      # No Service environment variables: the `livekit` Service would give
+      # every pod LIVEKIT_PORT=tcp://..., which LiveKit reads as its own
+      # --port and refuses to start.
+      enableServiceLinks: false
       priorityClassName: matrix-critical
       nodeSelector:
         kubernetes.io/hostname: fuji
@@ -166,6 +170,7 @@ spec:
         config-revision: "1"
     spec:
       automountServiceAccountToken: false
+      enableServiceLinks: false   # as livekit-ro
       priorityClassName: matrix-critical
       nodeSelector:
         kubernetes.io/hostname: edge
@@ -269,6 +274,8 @@ spec:
       labels: {app: lk-jwt-service}
     spec:
       automountServiceAccountToken: false
+      # LIVEKIT_* is its configuration too (as livekit-ro).
+      enableServiceLinks: false
       priorityClassName: matrix-critical
       affinity:
         podAntiAffinity:
