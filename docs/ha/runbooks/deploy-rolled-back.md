@@ -17,7 +17,7 @@ Tested in dotfiles `tests/switch-guard.nix`, not yet for real.
 ## When the alert comes
 
 1. Which deploy it was: `cat /var/lib/switch-guard/rolled-back-from` on the host, and `journalctl -u switch-guard -u switch-guard-rollback` for the timeline.
-2. Fix `main` in dotfiles: revert the commit, or fix it. Don't let comin go before that, or it deploys the same thing again.
+2. Fix `main` in dotfiles: revert the commit, or fix it. Don't let comin go before that, or it deploys the same thing again. The later hosts won't deploy it meanwhile: deploys go in stages (thinkcentre and mixi, then fuji and minima, then the edge; [decisions](../decisions.md)), and a host whose comin is held blocks the stages after it.
 3. Let comin go again:
 
    ```sh
@@ -34,6 +34,10 @@ journalctl -u switch-guard -n 20 --no-pager
 cat /var/lib/switch-guard/good; readlink -f /run/current-system
 ls /var/lib/switch-guard/hold 2>/dev/null && echo "comin is held"
 ```
+
+## Deploys in stages
+
+thinkcentre and mixi deploy a commit at once; fuji and minima after both have run it for 30 minutes; the edge after fuji. On a later host, `journalctl -u deploy-gate -n 5` says what it's waiting for, and `sudo comin confirmation accept` lets a commit through by hand (a fix that has to go out now). A commit that doesn't change the earlier hosts goes after 60 minutes, as long as they stayed healthy.
 
 ## Turning it off on one host
 
