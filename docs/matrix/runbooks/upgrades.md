@@ -14,7 +14,7 @@ Renovate opens the PRs (images are pinned by digest). Matrix is the one service 
    ```
 
 3. Merge at a quiet time. Synapse restarts (Recreate: about 30 s of "sending..."), its startup probe allows 15 minutes for migrations. MAS rolls one replica at a time.
-4. Check: `kubectl -n matrix logs deploy/synapse | grep -i -E 'error|migrat'`, the canary stays green, sign in once.
+4. Check: `kubectl -n matrix logs deploy/synapse | grep -i -E 'error|migrat'`, the canary stays green, sign in once. Within 5 minutes everyone gets an upgrade notice in Network Updates ([network-updates.md](network-updates.md)); for a long migration, send a notice before merging.
 
 If it goes wrong: going back means restoring the dump into the database ([restore.md](restore.md)) and reverting the image, losing whatever was sent since the dump.
 

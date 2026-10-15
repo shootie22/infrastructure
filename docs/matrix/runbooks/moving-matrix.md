@@ -20,6 +20,7 @@ kubectl -n matrix get endpoints livekit     # which SFU takes calls
 
 At a quiet moment, both nodes up (from site-failover.md, with `matrix` as the service):
 
+0. A few hours before, tell people in Network Updates ([network-updates.md](network-updates.md)): about 30 s of "sending...", and calls may drop once.
 1. On the active node: `systemctl start standby-copy-matrix` and check it succeeded.
 2. Right after: `kubectl label node <active> ha.radunenu.com/matrix-` then `kubectl label node <other> ha.radunenu.com/matrix=active`. The old node fences Synapse within seconds.
 3. `kubectl -n matrix delete pod -l app=synapse`; the new one starts on the other node (about 30 s of "sending...").

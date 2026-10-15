@@ -24,17 +24,18 @@ Matrix is the service with the most users (about 10 a day) and the one that matt
   - [restore.md](runbooks/restore.md): databases from the dumps, media from the copies and Borg
   - [offboarding.md](runbooks/offboarding.md): someone leaves
   - [canary.md](runbooks/canary.md): the canary's account, room and token
+  - [network-updates.md](runbooks/network-updates.md): the Network Updates room everyone has, and sending a notice
 
 ## Status
 
-Planned on 2026-10-14. Phases 1-3 are written (branches `matrix-phase1` to `matrix-phase3`, and dotfiles `matrix-phase1`) but not deployed yet; [runbooks/first-deploy.md](runbooks/first-deploy.md) is the way in.
+Planned on 2026-10-14. yeetus.net is up since 15 Oct (Phases 1 and 2); calls are in review.
 
 | Phase | What | Status |
 |---|---|---|
 | 0 | Audit hetzy, read-only: Synapse version, database, media size, auth, federation, bots | done 14 Oct |
-| 1 | Platform: Matrix's Postgres (one instance per site), the `matrix` site-failover label, media copied every minute, the database primary following Synapse, fuji's CI slot down to 2 CPUs | in review |
-| 2 | yeetus.net: Synapse, MAS, the Keycloak client, Element Web config, monitoring, a canary bot | built, in review (canary bot to do) |
-| 3 | Calls: LiveKit on fuji with a standby on the edge, the JWT service, Element Call | built, in review; needs RO port forwards |
+| 1 | Platform: Matrix's Postgres (one instance per site), the `matrix` site-failover label, media copied every minute, the database primary following Synapse, fuji's CI slot down to 2 CPUs | done 15 Oct |
+| 2 | yeetus.net: Synapse, MAS, the Keycloak client, Element Web config, monitoring, a canary bot, Network Updates (server notices) | up 15 Oct; the canary and Network Updates wait for their accounts |
+| 3 | Calls: LiveKit on fuji with a standby on the edge, the JWT service, Element Call | in review; RO port forwards done |
 | 4 | Drills. yeetus.net counts as production only after these pass | |
 | 5 | nuke.zip moves into the cluster, same name and keys, rehearsed first | |
 | 6 | nuke.zip and yeetus.net federate, users switch at their own pace | |

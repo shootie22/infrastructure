@@ -1,0 +1,264 @@
+# Network Updates (docs/matrix/runbooks/network-updates.md): Synapse's server
+# notices. Everyone gets a read-only room with @updates:yeetus.net, which
+# Element pins as System Alerts, for maintenance, upgrades and outages.
+#
+# updates.py does all of it through the admin API, with the token of the
+# updates-admin account (made once by hand into the matrix-admin-token
+# Secret; until then it does nothing):
+# - every 5 minutes (the CronJob below) it welcomes accounts that have no
+#   notices room yet, so everyone has one from their first login, and
+#   announces a new Synapse version once;
+# - `send` broadcasts by hand, run in the Synapse pod, which mounts the
+#   script and the token too (synapse.yaml):
+#     kubectl -n matrix exec deploy/synapse -c synapse -- \
+#       python /network-updates/updates.py send "The text"
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: network-updates
+  namespace: matrix
+data:
+  welcome.txt: |-
+    Welcome to yeetus.net!
+
+    This is Network Updates: news about the server itself comes here, like planned maintenance, upgrades and outages. It's read-only, so replies in this room go nowhere.
+
+    Your address is %USER%. People can find you by it.
+  upgrade.txt: |-
+    yeetus.net was upgraded: Synapse, the server behind it, went from {old} to {new}. Nothing for you to do.
+
+    What changed: https://github.com/element-hq/synapse/releases/tag/v{new}
+  updates.py: |
+    """Network Updates: Synapse's server notices for yeetus.net
+    (docs/matrix/runbooks/network-updates.md).
+
+      python updates.py send "text" [@user:yeetus.net ...]
+          one notice, to everyone, or only to the users named
+      python updates.py cron
+          welcome accounts without a notices room, announce a new Synapse
+    """
+    import json
+    import os
+    import ssl
+    import sys
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+
+    SYSTEM = "@updates:yeetus.net"
+    API = os.environ.get("SYNAPSE_URL", "http://localhost:8008") + "/_synapse/admin"
+    TOKEN_FILE = "/network-updates-token/token"
+    TEXTS = "/network-updates"
+    # Accounts that aren't people: the canary, the admin account itself.
+    SKIP = {SYSTEM, *os.environ.get("NOTICES_SKIP", "").split()}
+
+    # The CronJob keeps the last Synapse version it saw in a ConfigMap.
+    SA = "/var/run/secrets/kubernetes.io/serviceaccount"
+    STATE = "https://kubernetes.default.svc/api/v1/namespaces/matrix/configmaps"
+    STATE_NAME = "network-updates-state"
+
+
+    def call(method, url, body=None, headers=None, context=None):
+        data = None if body is None else json.dumps(body).encode()
+        headers = {"Content-Type": "application/json", **(headers or {})}
+        request = urllib.request.Request(url, data=data, method=method, headers=headers)
+        with urllib.request.urlopen(request, timeout=20, context=context) as response:
+            return json.load(response)
+
+
+    def admin(method, path, body=None):
+        with open(TOKEN_FILE) as f:
+            token = f.read().strip()
+        return call(method, API + path, body, {"Authorization": "Bearer " + token})
+
+
+    def enc(s):
+        return urllib.parse.quote(s, safe="")
+
+
+    def people():
+        users = admin("GET", "/v2/users?deactivated=false&guests=false&limit=1000")["users"]
+        return [u["name"] for u in users if u["name"] not in SKIP and not u.get("locked")]
+
+
+    def notice(user, text):
+        admin("POST", "/v1/send_server_notice",
+              {"user_id": user, "content": {"msgtype": "m.text", "body": text}})
+
+
+    def broadcast(users, text):
+        failed = 0
+        for user in users:
+            try:
+                notice(user, text)
+                print("sent to", user)
+            except urllib.error.URLError as e:
+                failed += 1
+                print("not sent to", user, e, file=sys.stderr)
+        return failed
+
+
+    def noticed():
+        """Everyone who has, or had, a notices room: every member, even one
+        who left since, of the system user's rooms. Before the first notice
+        the system user doesn't exist and this is empty."""
+        rooms = admin("GET", f"/v1/users/{enc(SYSTEM)}/joined_rooms")["joined_rooms"]
+        members = set()
+        for room in rooms:
+            for event in admin("GET", f"/v1/rooms/{enc(room)}/state")["state"]:
+                if event["type"] == "m.room.member":
+                    members.add(event["state_key"])
+        return members
+
+
+    def state(key, value=None):
+        context = ssl.create_default_context(cafile=SA + "/ca.crt")
+        with open(SA + "/token") as f:
+            auth = {"Authorization": "Bearer " + f.read().strip()}
+        if value is None:
+            try:
+                return call("GET", f"{STATE}/{STATE_NAME}", headers=auth, context=context).get("data", {}).get(key)
+            except urllib.error.HTTPError as e:
+                if e.code == 404:
+                    return None
+                raise
+        try:
+            call("PATCH", f"{STATE}/{STATE_NAME}", {"data": {key: value}},
+                 {**auth, "Content-Type": "application/merge-patch+json"}, context)
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                raise
+            call("POST", STATE, {"metadata": {"name": STATE_NAME}, "data": {key: value}}, auth, context)
+
+
+    def text(name):
+        with open(f"{TEXTS}/{name}") as f:
+            return f.read()
+
+
+    def cron():
+        if not os.path.exists(TOKEN_FILE):
+            print("no matrix-admin-token Secret yet (docs/matrix/runbooks/network-updates.md); nothing to do")
+            return 0
+        failed = 0
+        welcomed = noticed()
+        for user in people():
+            if user not in welcomed:
+                failed += broadcast([user], text("welcome.txt").replace("%USER%", user))
+
+        version = admin("GET", "/v1/server_version")["server_version"]
+        known = state("synapse")
+        if known is None:
+            # The first run: nothing to compare with yet.
+            state("synapse", version)
+        elif known != version:
+            # Recorded first: a run that fails halfway never announces twice.
+            state("synapse", version)
+            print(f"Synapse {known} -> {version}")
+            failed += broadcast(people(), text("upgrade.txt").format(old=known, new=version))
+        return 1 if failed else 0
+
+
+    if __name__ == "__main__":
+        if len(sys.argv) >= 3 and sys.argv[1] == "send":
+            sys.exit(1 if broadcast(sys.argv[3:] or people(), sys.argv[2]) else 0)
+        if sys.argv[1:] == ["cron"]:
+            sys.exit(cron())
+        print(__doc__, file=sys.stderr)
+        sys.exit(2)
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: network-updates
+  namespace: matrix
+---
+# Only its own state: create it the first time, then read and update it.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: network-updates
+  namespace: matrix
+rules:
+  - apiGroups: [""]
+    resources: [configmaps]
+    verbs: [create]
+  - apiGroups: [""]
+    resources: [configmaps]
+    resourceNames: [network-updates-state]
+    verbs: [get, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: network-updates
+  namespace: matrix
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: network-updates
+subjects:
+  - kind: ServiceAccount
+    name: network-updates
+    namespace: matrix
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: network-updates
+  namespace: matrix
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 240
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 240
+      template:
+        spec:
+          serviceAccountName: network-updates
+          restartPolicy: Never
+          # Synapse's image, for its Python; fuji and the thinkcentre have it
+          # already.
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - {key: db, operator: Exists}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 991
+            runAsGroup: 991
+            fsGroup: 991
+            seccompProfile: {type: RuntimeDefault}
+          containers:
+            - name: updates
+              image: ghcr.io/element-hq/synapse:v1.163.0@sha256:e98ab72138d90fa8b8876c6421fe78a9fdb181c0d7cc690ad740e5173e0c65e6
+              command: [python, /network-updates/updates.py, cron]
+              env:
+                - {name: SYNAPSE_URL, value: "http://synapse.matrix.svc.cluster.local:8008"}
+                - {name: NOTICES_SKIP, value: "@canary:yeetus.net @updates-admin:yeetus.net"}
+                - {name: PYTHONDONTWRITEBYTECODE, value: "1"}
+              resources:
+                requests: {cpu: 10m, memory: 32Mi}
+                limits: {memory: 128Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+              volumeMounts:
+                - {name: script, mountPath: /network-updates, readOnly: true}
+                - {name: token, mountPath: /network-updates-token, readOnly: true}
+          volumes:
+            - name: script
+              configMap: {name: network-updates}
+            - name: token
+              secret:
+                secretName: matrix-admin-token
+                optional: true
+                defaultMode: 0440
