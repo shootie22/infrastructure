@@ -55,6 +55,14 @@ signing_key="ed25519 a_$(rand 4) $(openssl rand 32 | base64 | tr -d '=\n')"
 indent() { sed 's/^/                  /' "$1"; }
 
 cat > "$work/plain.yaml" <<YAML
+# The comments stay out of spec.secretTemplates: sops turns a comment inside
+# an encrypted list into an item of its own, which the SopsSecret CRD rejects.
+#   synapse-db-credentials: Synapse's database user, given to CNPG at bootstrap
+#     (database.yaml). Synapse can't read a password from a file, so it's in
+#     its config too.
+#   synapse-secrets: loaded after synapse.yaml's homeserver.yaml; Synapse
+#     replaces whole top-level keys, so each block here is complete.
+#   mas-secrets: loaded after mas.yaml's config.yaml; these sections are only here.
 apiVersion: isindir.github.com/v1alpha3
 kind: SopsSecret
 metadata:
@@ -62,15 +70,11 @@ metadata:
   namespace: matrix
 spec:
   secretTemplates:
-    # Synapse's database user, given to CNPG at bootstrap (database.yaml):
-    # Synapse can't read a password from a file, so it's in its config too.
     - name: synapse-db-credentials
       type: kubernetes.io/basic-auth
       stringData:
         username: synapse
         password: "$db_password"
-    # Loaded after synapse.yaml's homeserver.yaml; Synapse replaces whole
-    # top-level keys, so each block here is complete.
     - name: synapse-secrets
       stringData:
         signing.key: "$signing_key"
@@ -94,7 +98,6 @@ spec:
             enabled: true
             endpoint: http://mas.matrix.svc.cluster.local:8080/
             secret: "$mas_shared"
-    # Loaded after mas.yaml's config.yaml; these sections are only here.
     - name: mas-secrets
       stringData:
         secrets.yaml: |

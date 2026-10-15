@@ -52,6 +52,16 @@ spec:
       # primary.
       isolationCheck:
         enabled: true
+  # The synapse user keeps the password in synapse-db-credentials, also when
+  # the database already existed before that secret did (bootstrap only reads
+  # it the first time): Synapse has it in its config.
+  managed:
+    roles:
+      - name: synapse
+        ensure: present
+        login: true
+        passwordSecret:
+          name: synapse-db-credentials
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
@@ -118,7 +128,7 @@ spec:
               env:
                 - name: PGPASSWORD
                   valueFrom:
-                    secretKeyRef: {name: synapse-db-app, key: password}
+                    secretKeyRef: {name: synapse-db-credentials, key: password}
               securityContext:
                 allowPrivilegeEscalation: false
               volumeMounts:
