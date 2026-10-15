@@ -19,6 +19,8 @@ The same change goes to deSEC, so the standby stays in step. On deSEC the zone a
 
 From outside RO, every 15 seconds: an HTTPS request to RO's public address (whatever `noc-studios.go.ro` resolves to) with SNI `edge-check.invalid`, expecting Traefik's 404. That covers the router, the port forward, fuji and Traefik in one go, which is exactly the path that broke on 2026-10-01.
 
+Traefik answering isn't enough on its own: on 2026-10-14 fuji was cut off from the cluster while its Traefik kept answering, so every site behind RO failed for about 28 minutes and nothing failed over ([incident](../incidents/2026-10-14-fuji-cut-off.md)). So RO also needs fuji to say it reaches the cluster: its site-failover status page (`10.99.0.2:9112/gitea`, over Nebula) must say `cluster=ok`, the same check the edge's HAProxy makes before sending anything to fuji. `cluster=lost`, or no answer while the checker can read the thinkcentre's page, counts as RO down. If the checker can't read the thinkcentre's page either, its own Nebula is the problem, and Traefik alone decides, as before. The reason RO looks down is in each checker's view and log.
+
 A checker's answer only counts if its own network works: it must also reach Cloudflare's and deSEC's nameservers and the edge (or DK). Otherwise it abstains.
 
 ## Who decides
