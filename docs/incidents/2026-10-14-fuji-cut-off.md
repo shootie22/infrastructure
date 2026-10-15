@@ -71,10 +71,10 @@ To check on fuji: `iptables -L INPUT -nv`, `iptables -L nixos-fw -nv`, `journalc
 
 Not decided; for working through together.
 
-- **Checkers that test the cluster too**: count RO as up only if Traefik answers *and* fuji's site-failover status says `cluster=ok`, the same test HAProxy uses. Careful: the checkers then depend on Nebula, so a Nebula problem could cause a failover.
+- **Done 15 Oct: checkers that test the cluster too** (dotfiles PR #5, [failover.md](../ha/failover.md)): count RO as up only if Traefik answers *and* fuji's site-failover status says `cluster=ok`, the same test HAProxy uses. Careful: the checkers then depend on Nebula, so a Nebula problem could cause a failover.
 - **A manual hold**: a file or a DNS TXT record the checkers obey ("stay on the edge" / "stay on RO"), with an alert while it's set.
 - **Staged deploys**: hosts follow different branches, or comin waits per host (thinkcentre first, fuji an hour later, the edge last), so a bad change only takes one entrance.
-- **Rollback when a switch breaks the node**: after a switch, a timer checks the node still reaches the cluster (or Nebula peers); if not within a few minutes, it switches back to the previous generation. That's deploy-rs's idea, done locally.
+- **In review: rollback when a switch breaks the node** (dotfiles `switch-guard`, [runbook](../ha/runbooks/deploy-rolled-back.md)): after a switch, a timer checks the node still reaches the cluster (or Nebula peers); if not within a few minutes, it switches back to the previous generation. That's deploy-rs's idea, done locally.
 - **Firewall changes on their own**: never bundled with features; one host at a time, watched.
 - **A smaller dotfiles repo**: find what makes it 1.3 GiB and move it out (history included), so a re-fetch is cheap.
 - **Out-of-band access**: a jump path through minima or the Mac mini (SSH to fuji's LAN address), initrd SSH for unlocking the disk, a smart plug for a hard power cycle.
