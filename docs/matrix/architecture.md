@@ -57,17 +57,24 @@ MAS (matrix-authentication-service) does the login for Synapse, using Synapse's 
 - The Matrix name comes from Keycloak: localpart `{{ user.preferred_username }}`, required (no username, no account), so everyone is `@<keycloak username>:yeetus.net` with nothing to choose. Name and email are copied from Keycloak at every sign-in.
 - Users can't change their Keycloak username (admins can). MAS links accounts by Keycloak's `sub`, so even an admin rename keeps the old Matrix ID.
 - Access through the usual gate: a `matrix` client with an `access` role, granted by the Keycloak group `chat`. Someone outside it gets the "no access" page.
-- Leaving: remove from the group, then end their sessions in MAS (runbook to come).
+- Leaving: remove from the group, then end their sessions in MAS ([runbooks/offboarding.md](runbooks/offboarding.md)).
 
 ## Calls
 
-Element Call needs LiveKit (the media server, SFU) and lk-jwt-service (hands out call tokens to Matrix users).
+Element Call needs LiveKit (the media server, SFU) and lk-jwt-service (hands out call tokens to Matrix users). All in `kubernetes/services/matrix/livekit.yaml`.
 
-- **SFU on fuji**, on the host network, with RO's router forwarding its media ports. RO has a dynamic address, so the SFU restarts when it changes.
-- **Standby SFU on the edge**, on the host network, with the same keys.
-- `sfu.yeetus.net` goes to fuji's SFU while it's healthy, to the edge's when it isn't. Media follows whichever one took the signalling, so a call never splits between the two. If the active one dies mid-call, the call drops and reconnects to the other.
-- lk-jwt-service only gives full access to our own servers (`LIVEKIT_FULL_ACCESS_HOMESERVERS`: yeetus.net, later nuke.zip too). One LiveKit serves both servers.
-- Synapse: `msc3266_enabled`, `msc4222_enabled`, delayed events (`max_event_delay_duration: 24h`), the rate limits Element Call asks for, `rtc_foci` in the client well-known.
+- **Two separate SFUs**: `livekit-ro` on fuji (the one in use: UPS, RO's port forwards) and `livekit-edge` on the edge (the standby), both on the host network with the same keys.
+- **Media ports 50881/tcp and 50882/udp**, deliberately not LiveKit's defaults. RO's router forwards them to fuji; the edge opens them itself. Signalling (7880) and metrics (6789) are host ports reachable only over Nebula and from pods on the node.
+- **Which SFU takes calls**: `wss://sfu.yeetus.net` goes through Traefik to one Service with both SFUs in it, and a small sidecar next to each decides whether its SFU counts as ready:
+  - fuji's takes new calls, unless calls are still running on the edge's;
+  - the edge's takes them only while fuji's can't be reached, or while it still has calls of its own.
+
+  So calls move to the edge within seconds when fuji's SFU dies, and come back only once the edge is idle. A call is never split across the two. If the SFU under a running call dies, the call drops and reconnects on the other. Tested against LiveKit and with faked room counts; to be drilled for real in Phase 4.
+- **RO's address is dynamic.** LiveKit looks it up once at start, so a CronJob checks `noc-studios.go.ro` every 2 minutes and restarts fuji's SFU when it changes. The first run only records it.
+- **lk-jwt-service**, two replicas, plain token mode (stateless; the newer appservice mode keeps state in memory or Redis). Only our own server may start calls (`LIVEKIT_FULL_ACCESS_HOMESERVERS=yeetus.net`, later nuke.zip too); one LiveKit serves both servers.
+- **How clients find it**: `org.matrix.msc4143.rtc_foci` in the well-known and `matrix_rtc` in Synapse, both pointing at `https://rtc.yeetus.net`. Element Web loads Element Call from `call.yeetus.net`; Element X has it built in.
+- Synapse: `msc4143`, `msc4222`, `msc4354` (sticky events), delayed events (`max_event_delay_duration: 24h`), the rate limits Element Call asks for.
+- Alerts: `MatrixCallsDown` (neither SFU up, pages), `MatrixCallsOnStandby` (fuji's down for 10 minutes).
 - Later: TURN over TLS on 443, for networks that only allow 443.
 
 ## How long a switch takes

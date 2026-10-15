@@ -20,9 +20,24 @@ spec:
     - hosts:
         - call.nuke.zip
       secretName: element-call-tls
+    # yeetus.net's Matrix (#139). Element Web loads Element Call from here as a
+    # widget; the call itself uses yeetus.net's own LiveKit (matrix/livekit.yaml).
+    - hosts:
+        - call.yeetus.net
+      secretName: call-yeetus-net-tls
 
   rules:
     - host: call.nuke.zip
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: element-call
+                port:
+                  number: 80
+    - host: call.yeetus.net
       http:
         paths:
           - path: /

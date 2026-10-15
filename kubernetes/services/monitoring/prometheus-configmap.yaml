@@ -383,6 +383,26 @@ data:
       # yeetus.net's Synapse in the cluster (#139). Its own job so the
       # Synapse dashboard lists it next to nuke.zip's (it picks jobs from
       # the metrics).
+      # The cluster's LiveKit SFUs (matrix/livekit.yaml), host-network pods on
+      # fuji and the edge. Labelled job="livekit" like the Hetzner one, so the
+      # LiveKit dashboard shows them too.
+      - job_name: livekit-cluster
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces: {names: [matrix]}
+            selectors:
+              - {role: pod, label: app=livekit}
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: metrics
+          - target_label: job
+            replacement: livekit
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: host
+          - target_label: stack
+            replacement: matrix
+
       - job_name: synapse-yeetus
         metrics_path: /_synapse/metrics
         kubernetes_sd_configs:
@@ -858,6 +878,35 @@ data:
             annotations:
               summary: Only one of MAS's two replicas is up
               description: Login still works, but losing that site would stop it.
+          # The canary (matrix/canary.yaml): a message sent and read back once a
+          # minute through the public path, what users would see.
+          - alert: MatrixCanaryFailing
+            expr: max(matrix_canary_success) == 0
+            for: 5m
+            labels:
+              severity: critical
+              page: "true"
+            annotations:
+              summary: Sending a message on yeetus.net doesn't work
+              description: The canary couldn't send and read back a message for 5 minutes, through matrix.yeetus.net as users reach it. Check `kubectl -n matrix logs deploy/canary -c canary`, then MatrixSynapseDown, the front door (element.radunenu.com) and Traefik.
+          # Calls (matrix/livekit.yaml): fuji's SFU, the edge's as the standby.
+          - alert: MatrixCallsDown
+            expr: absent(up{job="livekit", host=~"fuji|edge"} == 1)
+            for: 4m
+            labels:
+              severity: critical
+              page: "true"
+            annotations:
+              summary: Neither of yeetus.net's call servers (LiveKit) is up
+              description: Chat works, calls don't. Check `kubectl -n matrix get pods -l app=livekit -o wide`.
+          - alert: MatrixCallsOnStandby
+            expr: absent(up{job="livekit", host="fuji"} == 1)
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: fuji's call server is down, calls go to the edge's
+              description: Calls work, on the small edge VPS. Check `kubectl -n matrix get pods -l app=livekit,site=ro` and RO's port forwards (50881/tcp, 50882/udp to fuji).
           # The servers' own overlay (dotfiles lib/nebula.nix, #141). Scraped from
           # fuji over the mesh, so this also means fuji can't reach the host there.
           - alert: NebulaHostUnreachable
