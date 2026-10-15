@@ -20,7 +20,9 @@ jobs:
       - name: kubeconform
         run: |
           curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
-          find kubernetes -name '*.yaml' ! -name '*.sops.yaml' ! -name hub.yaml -print0 |
+          # The .sops.yaml files too: sops encrypts only the values, so their shape
+          # can be checked, and a comment sops turned into a list item breaks it.
+          find kubernetes -name '*.yaml' ! -name hub.yaml -print0 |
             xargs -0 ./kubeconform -summary -strict -ignore-missing-schemas \
               -schema-location default \
               -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
