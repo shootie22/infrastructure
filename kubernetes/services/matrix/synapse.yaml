@@ -60,6 +60,15 @@ data:
     # status" needs it). Still marked in development in Synapse; nuke.zip
     # has it on.
     include_profile_updates_in_sync: true
+    # Network Updates (updates.yaml): a read-only room for each user, which
+    # Element pins as System Alerts, for maintenance, upgrades and outages.
+    # Joined without an invite; users can't post in it.
+    server_notices:
+      system_mxid_localpart: updates
+      system_mxid_display_name: Network Updates
+      room_name: Network Updates
+      room_topic: Maintenance, upgrades and outages on yeetus.net. Read-only.
+      auto_join: true
     encryption_enabled_by_default_for_room_type: all
     url_preview_enabled: false
     user_directory:
@@ -129,7 +138,7 @@ spec:
       labels: {app: synapse}
       annotations:
         # Bump after changing the ConfigMap, so the pod picks it up.
-        config-revision: "3"
+        config-revision: "4"
         # Prometheus scrapes it with its own job, synapse-yeetus
         # (monitoring/prometheus-configmap.yaml).
     spec:
@@ -180,6 +189,8 @@ spec:
             - synapse.app.homeserver
             - --config-path=/config/homeserver.yaml
             - --config-path=/secrets/secrets.yaml
+          env:
+            - {name: NOTICES_SKIP, value: "@canary:yeetus.net @updates-admin:yeetus.net"}
           ports:
             - {name: http, containerPort: 8008}
             - {name: metrics, containerPort: 9000}
@@ -212,6 +223,9 @@ spec:
             - {name: config, mountPath: /config, readOnly: true}
             - {name: secrets, mountPath: /secrets, readOnly: true}
             - {name: tmp, mountPath: /tmp}
+            # updates.py and its token, for broadcasts by hand (updates.yaml).
+            - {name: network-updates, mountPath: /network-updates, readOnly: true}
+            - {name: network-updates-token, mountPath: /network-updates-token, readOnly: true}
       volumes:
         - name: data
           hostPath:
@@ -223,6 +237,13 @@ spec:
         - name: secrets
           secret:
             secretName: synapse-secrets
+            defaultMode: 0440
+        - name: network-updates
+          configMap: {name: network-updates}
+        - name: network-updates-token
+          secret:
+            secretName: matrix-admin-token
+            optional: true
             defaultMode: 0440
         - name: tmp
           emptyDir: {}

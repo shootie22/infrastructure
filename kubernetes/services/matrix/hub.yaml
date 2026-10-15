@@ -10,6 +10,7 @@ keep:
 - mas.yaml
 - secrets.sops.yaml
 - synapse.yaml
+- updates.yaml
 - wellknown.yaml
 kind: kept
 name: matrix
