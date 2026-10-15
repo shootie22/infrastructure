@@ -1,0 +1,34 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: matrix-admin-token
+    namespace: matrix
+spec:
+    secretTemplates:
+        - name: ENC[AES256_GCM,data:w8J7H+3PiOGHz9yDaS5DMe0S,iv:eSbB4zF27lbfKZB2rDgMtF2vPVVsWwv2PyrD3Se+5Oc=,tag:3yzDl7hyFVwjxBuKJ9tdPg==,type:str]
+          stringData:
+            token: ENC[AES256_GCM,data:nfzH3NE4i7DcYs25c1Q2Xjb9c4bll2FmsUsKPeQ29XL0LfjkVBCaRUE=,iv:LC+/BSQSjNdGOyHvl3+aSAV68/xuQUH+4ydpEFK7/lQ=,tag:j01QzYL9VbjA4GRfXZeu2w==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSArUnhWQU5nT3JZSTIvRFRT
+            Y2kzRnR2cnFQYnFJaHpXNVhQUDlCNDlKSzAwCnNXQ1Rac2hNYnNuVWRmSGw1MUY3
+            bWJUR0k5dFlwV29RUFdZVmwxaUcyYUEKLS0tIDBOT1Znd2VXUGNvMjZDY1BiQ2gv
+            YW1ZNFZyWlhneXR2N1JsRmZtYm81V0UKoaiTGwF6HLkcUdDY5AyyFszOqyqm4iGG
+            ewoEwE9426aLSHM04EpoGWNm3pIUmFjg+h4QaM8dy96GXsS6DBge2A==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBQQVRqOHRrQ0R4MHI1aFdG
+            aXJUcEh2dHdFQk82UGgrNlRRaXRhUk9mN0dVCk5vWC9MT3ZyT2cwbS9HK3p2bGcz
+            RWRNZ2JHU2ZJY25xc3l0eDRCTVBZZTgKLS0tIE8ycDZZVThjTkJSYlpobGdiZjZh
+            NmY2clRBVGloZGp4VGZ4a2Vnb2M4RTgKb0hnQwpuCJ9JEngpcNOriw0m8h+qy5xg
+            9Yjz1VML96/cusAjTvYmR2aZGPPGlAdjk0/TX9nT6fLd3XsiHLqWfw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
+    encrypted_suffix: Templates
+    lastmodified: "2026-10-15T18:24:05Z"
+    mac: ENC[AES256_GCM,data:RYxSlX1XXsf1/O/HnEb6cy7KSYAhAJyFm3Mv//2okf76/AjuQcMSp8cucXJkfhwn1akCGW48eN+GiZP+uPgakK61o/yfIPaJY5dk4NE0ZRstfI35x4bt2YHnUL1jWE3aRhif+3fYDLuUa2y8Le6MnBMxaS3Q3cs6ingHDGZmmig=,iv:r7ik+qmcAPtflQi0/Rz0ppuZvDO+ZyoqWncqjkdEYpg=,tag:ibB7tiUHvD3QgQDPxD7UDA==,type:str]
+    version: 3.13.3
