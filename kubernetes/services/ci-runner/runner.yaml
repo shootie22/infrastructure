@@ -78,11 +78,16 @@ data:
   # One line per node: node, its runs-on labels, and the Docker sidecar's
   # CPU and memory limit (the job runs there). fuji gets 2 of its 4 cores, not
   # 3: it's Matrix's home and Synapse runs on one thread (docs/matrix/
-  # architecture.md, "Gitea runners on the same nodes").
+  # architecture.md, "Gitea runners on the same nodes"). mixi's 3584Mi (was
+  # 2560Mi): cubitrix's arm64 release build needs one rustc of about 2.7 GB
+  # for cubitrix-matrix/matrix-sdk even at -j 1, and Docker and cargo take
+  # their share of the limit too. On mixi's 8 GB that leaves Ollama (1Gi
+  # requested, 4Gi at most) its room while idle; if it loads a model during
+  # a failover, the CI pod (priority -100) is what gets evicted.
   slots: |
     thinkcentre linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-thinkcentre:docker://docker.gitea.com/runner-images:ubuntu-latest 2 6Gi
     fuji linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-fuji:docker://docker.gitea.com/runner-images:ubuntu-latest 2 8Gi
-    mixi linux-arm64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-arm64-mixi:docker://docker.gitea.com/runner-images:ubuntu-latest 3 2560Mi
+    mixi linux-arm64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-arm64-mixi:docker://docker.gitea.com/runner-images:ubuntu-latest 3 3584Mi
 
   register.yaml: |
     runner:
@@ -286,7 +291,7 @@ spec:
     metadata:
       labels: {app: ci-dispatcher}
       # Bump when the dispatcher ConfigMap changes.
-      annotations: {config: "4"}
+      annotations: {config: "5"}
     spec:
       serviceAccountName: dispatcher
       enableServiceLinks: false
