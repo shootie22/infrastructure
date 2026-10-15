@@ -1,6 +1,6 @@
 # 2026-10-14: fuji cut off from the cluster, sites down behind RO
 
-**Open.** Public services are back since about 21:30 UTC, through the edge and the thinkcentre. fuji is still cut off, powered and idle, until it's power-cycled on 15 Oct; the cause gets confirmed from its logs then.
+**Recovered; cause not proven, follow-ups open.** Public services were down about 28 minutes on 14 Oct and back from 21:31 UTC through the edge and the thinkcentre. fuji was power-cycled on 15 Oct and everything was back to normal at 07:49 UTC.
 
 fuji dropped off Nebula and Tailscale at about 21:02 UTC while staying up: its Traefik kept answering on RO's public address. Every site that reaches the cluster through RO returned 504 (radunenu.com, yeetus.net, git, ...) for about 28 minutes. DNS failover didn't move anything, because to the checkers RO looked healthy. Element Web (c.nuke.zip) kept working from the edge throughout.
 
@@ -24,6 +24,9 @@ fuji dropped off Nebula and Tailscale at about 21:02 UTC while staying up: its T
 | 15 Oct 07:08 | fuji power-cycled, its disk unlocked over early-boot SSH from the Mac mini. comin stopped straight away so the revert wouldn't be applied unwatched. |
 | 07:12 | fuji fine on the very generation that broke it (PR #3, `flggsdn…`): Nebula, Tailscale and every route up, thinkcentre reachable over Nebula. |
 | 07:19 | Controlled test: a timer armed to save the rules and restart the firewall after 4 minutes, then comin started. It switched fuji to the revert (back to `gw34k…`), reloading the firewall again. fuji stayed reachable over Tailscale and its LAN the whole time (checked every 15 s for 5 minutes); the timer's firewall restart changed nothing either. |
+| ~07:30 | fuji Ready, every database cluster back to 2 of 2 instances. The two new Matrix clusters were stuck (their primaries were evicted from fuji in the night and never came back, the replicas' join jobs had been waiting 10 hours); deleted, and Argo recreated them empty. |
+| 07:38 | RO router: 80/443 forwards to fuji back on. |
+| 07:49 | The checkers point `ro.radunenu.com` back at RO, after 10 healthy minutes as designed. Every site answered on every check (every 30 s) before, during and after the switch back. |
 
 ## Cause
 
