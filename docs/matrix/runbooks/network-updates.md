@@ -1,6 +1,6 @@
 # Network Updates
 
-Everyone on yeetus.net has a room with **🌵 network updates 🌵** (`@updates:yeetus.net`), Synapse's [server notices](https://element-hq.github.io/synapse/latest/server_notices.html). Element pins it as System Alerts. It's read-only, joined without an invite, and it's where news about the server goes: planned maintenance, upgrades, outages. Like Discord's system messages.
+Everyone on yeetus.net has a room called **🌵 network updates 🌵** with `@updates:yeetus.net` (shown as 🌵), Synapse's [server notices](https://element-hq.github.io/synapse/latest/server_notices.html). Element pins it as System Alerts. It's read-only, joined without an invite, and it's where news about the server goes: planned maintenance, upgrades, outages. Like Discord's system messages.
 
 `kubernetes/services/matrix/updates.yaml` has all of it:
 

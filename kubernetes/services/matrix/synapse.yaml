@@ -65,7 +65,10 @@ data:
     # Joined without an invite; users can't post in it.
     server_notices:
       system_mxid_localpart: updates
-      system_mxid_display_name: "🌵 network updates 🌵"
+      # Short, so the room list's preview reads "🌵: message" under the
+      # room's name instead of repeating it (Element prefixes the sender
+      # everywhere but in DMs).
+      system_mxid_display_name: "🌵"
       room_name: "🌵 network updates 🌵"
       room_topic: maintenance, upgrades and outages on yeetus.net. read-only.
       # The yeetus.net logo (docs/matrix/network-updates-avatar.svg, as the
@@ -142,7 +145,7 @@ spec:
       labels: {app: synapse}
       annotations:
         # Bump after changing the ConfigMap, so the pod picks it up.
-        config-revision: "5"
+        config-revision: "6"
         # Prometheus scrapes it with its own job, synapse-yeetus
         # (monitoring/prometheus-configmap.yaml).
     spec:
