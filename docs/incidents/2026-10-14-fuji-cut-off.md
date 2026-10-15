@@ -21,10 +21,31 @@ fuji dropped off Nebula and Tailscale at about 21:02 UTC while staying up: its T
 | ~21:29 | The checkers on the edge and mixi see RO down and point `ro.radunenu.com` at the edge (about 3 minutes, as designed). The edge's HAProxy already treated fuji as down, so traffic goes to the thinkcentre. |
 | 21:31 | Checked from outside: radunenu.com, yeetus.net, git, Vaultwarden, Keycloak, Element and Headscale all answer in 0.1-0.2 s. Public outage over, about 28 minutes after it began. |
 | 21:33 | fuji's smart plug shows 10-12 W (the Mac mini's: about 3 W): idle, not stuck in anything heavy. Decision: leave fuji as it is overnight, power-cycle it on 15 Oct. |
+| 15 Oct 07:08 | fuji power-cycled, its disk unlocked over early-boot SSH from the Mac mini. comin stopped straight away so the revert wouldn't be applied unwatched. |
+| 07:12 | fuji fine on the very generation that broke it (PR #3, `flggsdn…`): Nebula, Tailscale and every route up, thinkcentre reachable over Nebula. |
+| 07:19 | Controlled test: a timer armed to save the rules and restart the firewall after 4 minutes, then comin started. It switched fuji to the revert (back to `gw34k…`), reloading the firewall again. fuji stayed reachable over Tailscale and its LAN the whole time (checked every 15 s for 5 minutes); the timer's firewall restart changed nothing either. |
 
 ## Cause
 
-Not confirmed yet; needs fuji's logs after the power cycle. What's established:
+Still not proven. The logs from the broken boot (fuji's local time, UTC+3) show, in one minute:
+
+| fuji time | UTC | What |
+|---|---|---|
+| 00:00:18 | 21:00:18 | `comin-unstick` restarts comin |
+| 00:01:14-00:01:46 | 21:01:14-46 | comin fetches the dotfiles repo, **1.34 GiB** at about 45 MiB/s (a full re-fetch) |
+| 00:01:28-00:02:12 | 21:01:28-22:12 | the new Matrix databases' init pods run on fuji |
+| 00:01:52 | 21:01:52 | the last node status the cluster got from fuji |
+| 00:02:30-00:02:35 | 21:02:30-35 | comin switches to PR #3: stops site-failover, **reloads the firewall**, starts site-failover, the `matrix` copy timer and a mount; NetworkManager's dispatcher runs. Reported successful. |
+| until the power cycle | | incoming dropped, outgoing to Nebula and pod addresses fails with `network is unreachable`, DNS fails |
+
+What the test on 15 Oct settled: the generation itself is fine (fuji booted on it and worked), and reloading the firewall on a quiet fuji, in both directions, breaks nothing. What remains:
+
+- **A race**: the firewall reload rewriting NixOS's chains while k3s (kube-proxy, kube-router) and Tailscale were rewriting theirs, with new pods and Services appearing on fuji in the same seconds. Fits "outgoing refused too", but nothing shows it directly; the broken rules were gone with the reboot.
+- **The 1.34 GiB fetch** saturating fuji's link right before: explains etcd and the heartbeat going quiet for a moment, not 10 hours of broken routes.
+
+Either way the trigger was a live switch on a busy node, and nothing could undo it remotely.
+
+What was established on the night:
 
 - fuji's kernel, its LAN and the port forward to its pods work (Traefik answers from the internet and from the LAN), but nothing addressed to fuji itself gets an answer, not even on its own LAN: ping, SSH, Nebula, Tailscale. Traffic **to** fuji (iptables INPUT) is dropped while traffic **through** it to pods (FORWARD, DNAT) still flows. Confirmed from the Mac mini on the same LAN.
 - It started within a minute of comin deploying PR #3, which also reloaded fuji's firewall (new ports: 50881/tcp and 50882/udp on `eno1`, 7880 and 6789/tcp on `cni0`). The firewall uses iptables, not nftables, and the change only added ports. The thinkcentre (no firewall change) and the edge (firewall change, global lists) are fine after the same deploy.
@@ -41,6 +62,8 @@ To check on fuji: `iptables -L INPUT -nv`, `iptables -L nixos-fw -nv`, `journalc
 4. **Every host gets a change at once.** comin deploys a merge to all hosts within minutes. A firewall change went to fuji and the edge, the two entrances, together.
 5. **No out-of-band access to fuji.** No remote console and no remote power. The Mac mini (tailnet `macminim4`, user `radu`) is on fuji's LAN and reaches the router's admin page and fuji's early-boot SSH; the minima VM (tailnet `minima`) refused the admin key for `radu`, also to look into. With fuji's INPUT shut, nothing gets a shell.
 
+6. **The dotfiles repo is about 1.3 GiB**, and comin re-fetches all of it whenever it re-clones, on every host. Half a minute of a saturated link on fuji right before it fell over.
+
 ## Ideas to discuss
 
 Not decided; for working through together.
@@ -50,6 +73,7 @@ Not decided; for working through together.
 - **Staged deploys**: hosts follow different branches, or comin waits per host (thinkcentre first, fuji an hour later, the edge last), so a bad change only takes one entrance.
 - **Rollback when a switch breaks the node**: after a switch, a timer checks the node still reaches the cluster (or Nebula peers); if not within a few minutes, it switches back to the previous generation. That's deploy-rs's idea, done locally.
 - **Firewall changes on their own**: never bundled with features; one host at a time, watched.
+- **A smaller dotfiles repo**: find what makes it 1.3 GiB and move it out (history included), so a re-fetch is cheap.
 - **Out-of-band access**: a jump path through minima or the Mac mini (SSH to fuji's LAN address), initrd SSH for unlocking the disk, a smart plug for a hard power cycle.
 
 ## Overnight (14-15 Oct)
