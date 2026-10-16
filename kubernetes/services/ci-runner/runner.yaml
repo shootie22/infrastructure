@@ -111,6 +111,8 @@ data:
         # runner killed mid-job leaves only a cut-off log in Gitea otherwise.
         if [ -n "${exited:-}" ] || [ "$phase" = Failed ]; then
           echo "$name ended: $($K -n $ns get pod "$name" -o jsonpath='{range .status.containerStatuses[*]}{.name}={.state.terminated.reason}/{.state.terminated.exitCode} {end}' 2>/dev/null)"
+          # And why, when the runner failed: its last lines.
+          case "${exited:-}" in Completed) ;; *) $K -n $ns logs "$name" -c runner --tail=15 2>/dev/null | sed "s/^/  $name runner: /" ;; esac
         fi
         # Done once the runner has exited, even if the Docker sidecar lingers.
         [ -n "${exited:-}" ] && phase=Succeeded
@@ -296,7 +298,7 @@ spec:
     metadata:
       labels: {app: ci-dispatcher}
       # Bump when the dispatcher ConfigMap changes.
-      annotations: {config: "6"}
+      annotations: {config: "7"}
     spec:
       serviceAccountName: dispatcher
       enableServiceLinks: false
