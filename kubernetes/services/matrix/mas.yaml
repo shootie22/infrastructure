@@ -33,6 +33,12 @@ data:
           binds:
             - address: "[::]:8081"
 
+    # Prometheus metrics on the internal listener: MAS exports none unless
+    # asked, and MatrixLoginDown reads a failed scrape as MAS being down.
+    telemetry:
+      metrics:
+        exporter: prometheus
+
     # CNPG's generated password, from its secret as a file.
     database:
       host: mas-db-rw.matrix.svc.cluster.local
@@ -78,7 +84,7 @@ spec:
     metadata:
       labels: {app: mas}
       annotations:
-        config-revision: "1"
+        config-revision: "2"
         monitoring.radunenu.com/scrape: "true"
         monitoring.radunenu.com/port: "8081"
         monitoring.radunenu.com/path: /metrics
