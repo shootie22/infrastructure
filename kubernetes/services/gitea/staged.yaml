@@ -30,7 +30,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: gitea
-          image: docker.gitea.com/gitea:1.27.3@sha256:87a67ee09d3ae0d1df5fda5dcda3e2a1f9236a45b0a59025d6e00e46adc43bef
+          image: docker.gitea.com/gitea:28.1.0@sha256:f505a0d3a41323b786e05942fc7a4075e07ae7c169fd9485649aa55ee543a21a
           envFrom:
             - secretRef: {name: gitea-env}
           # Postgres on CNPG since Oct 2026 (#31); overrides the database settings
@@ -105,7 +105,7 @@ spec:
         # or brings it in line with oidc-source.sh, before Gitea starts. Same
         # image, data and settings as Gitea itself.
         - name: oidc-source
-          image: docker.gitea.com/gitea:1.27.3@sha256:87a67ee09d3ae0d1df5fda5dcda3e2a1f9236a45b0a59025d6e00e46adc43bef
+          image: docker.gitea.com/gitea:28.1.0@sha256:f505a0d3a41323b786e05942fc7a4075e07ae7c169fd9485649aa55ee543a21a
           command: ["/bin/sh", "/scripts/oidc-source.sh"]
           envFrom:
             - secretRef: {name: gitea-env}
