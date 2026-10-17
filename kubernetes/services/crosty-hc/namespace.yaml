@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: crosty-hc
+  annotations:
+    hub.radunenu.com/description: "hardcore with crosty and maybe luca"
+  # Hub reaches the game agents in namespaces with this label.
+  labels:
+    hub.radunenu.com/games: "true"

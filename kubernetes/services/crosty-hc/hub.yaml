@@ -1,0 +1,36 @@
+# Written by Hub's deploy tool: the answers this service was deployed with.
+# The other files in this folder are made from it (`hub render`); change
+# this and render again rather than editing them.
+data:
+  kind: files
+  path: /data
+description: hardcore with crosty and maybe luca
+exposure: none
+ha:
+  home: thinkcentre
+  pattern: site-failover
+image: docker.io/itzg/minecraft-server:java25@sha256:46cfd0bcbd9bbd16900a765fcdd5d6f57bc0cf3471c383ad96f87e84998d93e8
+kind: game
+minecraft:
+  build: "134"
+  eula: true
+  memory: 4G
+  port: 25567
+  properties:
+    motd: crazy shared life hardcore
+  running: true
+  type: paper
+  version: "26.2"
+name: crosty-hc
+ports:
+- name: java
+  port: 25567
+  protocol: TCP
+resources:
+  cpu: 500m
+  memory: 5120Mi
+  memoryLimit: 6144Mi
+secrets:
+- generate: true
+  name: RCON_PASSWORD
+statusPage: false
