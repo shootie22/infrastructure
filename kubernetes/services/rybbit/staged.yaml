@@ -196,7 +196,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: backend
-          image: git.radunenu.com/radu/rybbit-backend:migration-20260924
+          image: git.radunenu.com/radu/rybbit-backend:migration-20260924@sha256:2557458ac893b9b3cffcf00823ed16a6bd438083d10aa8c126ccd9947011fc07
           securityContext:
             allowPrivilegeEscalation: false
           # In Gitea's registry, so fuji and the thinkcentre can both pull it.
@@ -278,7 +278,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: client
-          image: git.radunenu.com/radu/rybbit-client:migration-20260924
+          image: git.radunenu.com/radu/rybbit-client:migration-20260924@sha256:2611a29a599dd766b2d3f0019fb83bebdd9f4af34faf41da69a6ae2697c5158d
           securityContext:
             allowPrivilegeEscalation: false
           # In Gitea's registry, so fuji and the thinkcentre can both pull it.
