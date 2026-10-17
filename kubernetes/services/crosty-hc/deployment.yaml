@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crosty-hc
+  namespace: crosty-hc
+spec:
+  # Runs on whichever of thinkcentre and fuji holds the label; the other
+  # has a copy of the files and takes over when this site is gone (dotfiles
+  # modules/nixos/site-failover).
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: crosty-hc
+  template:
+    metadata:
+      labels:
+        app: crosty-hc
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        ha.radunenu.com/crosty-hc: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      # The image stops the server over RCON and waits up to a minute for it
+      # to save (STOP_DURATION).
+      terminationGracePeriodSeconds: 90
+      containers:
+        - name: crosty-hc
+          image: docker.io/itzg/minecraft-server:java25@sha256:46cfd0bcbd9bbd16900a765fcdd5d6f57bc0cf3471c383ad96f87e84998d93e8
+          # Once this setup (HUB_SETUP) has started here, start it from what's
+          # in /data without the download sites: no content or list syncing,
+          # and the server jar the last install left (infra-hub #53). A new
+          # setup clears the old mod or plugin jars, so removing one works.
+          command:
+            - /bin/bash
+            - -c
+            - |
+              if [ "$(cat /data/.hub-setup 2>/dev/null)" = "$HUB_SETUP" ]; then
+                unset MODRINTH_PROJECTS PLUGINS MODS WHITELIST OPS
+                case "$TYPE" in
+                  PAPER) f=/data/.paper.env ;;
+                  PURPUR) f=/data/.purpur.env ;;
+                  MODRINTH) f=/data/.install-modrinth.env ;;
+                  AUTO_CURSEFORGE) f=/data/.install-curseforge.env ;;
+                  *) f= ;;
+                esac
+                server=$([ -n "$f" ] && sed -n 's/^SERVER="\(.*\.jar\)"$/\1/p' "$f")
+                if [ -n "$server" ] && [ -f "$server" ]; then
+                  export TYPE=CUSTOM CUSTOM_SERVER="$server"
+                  unset MODRINTH_MODPACK MODRINTH_VERSION CF_SLUG CF_FILE_ID
+                fi
+                echo "[hub] setup $HUB_SETUP started here before; starting from /data"
+              elif [ -n "$HUB_CONTENT_DIR" ] && [ -d "$HUB_CONTENT_DIR" ]; then
+                # A new setup: its jars are exactly the list. The last one's
+                # go first; their folders (settings, data) stay.
+                find "$HUB_CONTENT_DIR" -maxdepth 1 -type f -name '*.jar' -print -delete | sed 's/^/[hub] removed /'
+              fi
+              exec /image/scripts/start
+          env:
+            - {name: ENABLE_RCON, value: "true"}
+            - {name: ENABLE_ROLLING_LOGS, value: "false"}
+            - {name: EULA, value: "TRUE"}
+            - {name: HUB_CONTENT_DIR, value: "/data/plugins"}
+            - {name: HUB_SETUP, value: "d74e1916d7e9"}
+            - {name: MEMORY, value: "4G"}
+            - {name: MOTD, value: "crazy shared life hardcore"}
+            - {name: PAPER_BUILD, value: "134"}
+            - name: RCON_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: crosty-hc-env, key: RCON_PASSWORD}
+            - {name: RCON_PORT, value: "25575"}
+            - {name: SERVER_PORT, value: "25567"}
+            - {name: STOP_DURATION, value: "60"}
+            - {name: TYPE, value: "PAPER"}
+            - {name: VERSION, value: "26.2"}
+          # The game relay on fuji and the edge sends players here
+          # (dotfiles modules/nixos/game-relay.nix).
+          ports:
+            - name: java
+              containerPort: 25567
+              hostPort: 25567
+              protocol: TCP
+            # Inside the pod only: the copies and the game agent use it.
+            - name: rcon
+              containerPort: 25575
+              protocol: TCP
+          # Ready once the server answers a status ping; no liveness probe, so
+          # a long first start (a big pack) isn't killed halfway.
+          # Ready also writes down the setup that got this far.
+          readinessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - mc-health && { [ "$(cat /data/.hub-setup 2>/dev/null)" = "$HUB_SETUP" ] || printf %s "$HUB_SETUP" > /data/.hub-setup; }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            requests: {cpu: 500m, memory: 5120Mi}
+            limits: {memory: 6144Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          hostPath:
+            path: /srv/ha/crosty-hc
+            type: Directory
