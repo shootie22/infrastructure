@@ -60,11 +60,14 @@ spec:
               fi
               exec /image/scripts/start
           env:
+            - {name: DIFFICULTY, value: "hard"}
             - {name: ENABLE_RCON, value: "true"}
             - {name: ENABLE_ROLLING_LOGS, value: "false"}
             - {name: EULA, value: "TRUE"}
+            - {name: HARDCORE, value: "true"}
             - {name: HUB_CONTENT_DIR, value: "/data/plugins"}
             - {name: HUB_SETUP, value: "d74e1916d7e9"}
+            - {name: LEVEL, value: "hc-oct2026"}
             - {name: MEMORY, value: "4G"}
             - {name: MOTD, value: "crazy shared life hardcore"}
             - {name: PAPER_BUILD, value: "134"}
