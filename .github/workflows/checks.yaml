@@ -48,9 +48,22 @@ jobs:
       - uses: actions/checkout@v5
         with:
           path: infrastructure
+      # A Hub deploy opens a dotfiles PR on the same branch name; render
+      # against it, since dotfiles main doesn't have it until it's merged.
+      - name: Dotfiles branch (Hub's twin PR, else main)
+        id: dotfiles
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          if [[ "$BRANCH" == hub/* ]] && git ls-remote --exit-code --heads https://github.com/shootie22/dotfiles "$BRANCH" >/dev/null; then
+            echo "ref=$BRANCH" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=main" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v5
         with:
           repository: shootie22/dotfiles
+          ref: ${{ steps.dotfiles.outputs.ref }}
           path: dotfiles
       - name: Services match their hub.yaml
         run: |
