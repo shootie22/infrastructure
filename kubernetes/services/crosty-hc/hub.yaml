@@ -17,6 +17,9 @@ minecraft:
   memory: 4G
   port: 25567
   properties:
+    difficulty: hard
+    hardcore: "true"
+    level-name: hc-oct2026
     motd: crazy shared life hardcore
   running: true
   type: paper
