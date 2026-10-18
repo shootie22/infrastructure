@@ -66,9 +66,11 @@ spec:
             - {name: EULA, value: "TRUE"}
             - {name: HARDCORE, value: "true"}
             - {name: HUB_CONTENT_DIR, value: "/data/plugins"}
-            - {name: HUB_SETUP, value: "d74e1916d7e9"}
+            - {name: HUB_SETUP, value: "cd33e56578a0"}
             - {name: LEVEL, value: "hc-oct2026"}
             - {name: MEMORY, value: "4G"}
+            - {name: MODRINTH_DOWNLOAD_DEPENDENCIES, value: "none"}
+            - {name: MODRINTH_PROJECTS, value: "sharedhealthandhunger:YZURkOBN"}
             - {name: MOTD, value: "crazy shared life hardcore"}
             - {name: PAPER_BUILD, value: "134"}
             - name: RCON_PASSWORD

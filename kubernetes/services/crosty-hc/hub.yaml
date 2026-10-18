@@ -13,6 +13,11 @@ image: docker.io/itzg/minecraft-server:java25@sha256:46cfd0bcbd9bbd16900a765fcdd
 kind: game
 minecraft:
   build: "134"
+  content:
+  - id: sharedhealthandhunger
+    name: SharedHealthAndHunger
+    source: modrinth
+    version: YZURkOBN
   eula: true
   memory: 4G
   port: 25567
