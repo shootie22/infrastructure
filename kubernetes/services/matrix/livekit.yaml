@@ -158,6 +158,9 @@ kind: Deployment
 metadata:
   name: livekit-edge
   namespace: matrix
+  # The standby: unready while fuji serves, by design (ready.sh, the router
+  # container). docs/ha/standby.md.
+  labels: {radunenu.com/role: standby}
 spec:
   replicas: 1
   strategy: {type: Recreate}
@@ -165,9 +168,10 @@ spec:
     matchLabels: {app: livekit, site: edge}
   template:
     metadata:
-      labels: {app: livekit, site: edge}
+      labels: {app: livekit, site: edge, radunenu.com/role: standby}
       annotations:
         config-revision: "1"
+        radunenu.com/serving-container: router
     spec:
       automountServiceAccountToken: false
       enableServiceLinks: false   # as livekit-ro
