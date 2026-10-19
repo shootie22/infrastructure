@@ -612,7 +612,9 @@ data:
               summary: Prometheus target {{ $labels.job }}/{{ $labels.instance }} is down
               description: A core scrape target has failed continuously for ten minutes.
           - alert: KubernetesDeploymentReplicasUnavailable
-            expr: kube_deployment_spec_replicas{job="kube-state-metrics"} > kube_deployment_status_replicas_available{job="kube-state-metrics"}
+            # Not livekit-edge: the standby SFU stays unready on purpose while
+            # fuji's answers (matrix/livekit.yaml, ready.sh).
+            expr: kube_deployment_spec_replicas{job="kube-state-metrics",deployment!="livekit-edge"} > kube_deployment_status_replicas_available{job="kube-state-metrics"}
             for: 15m
             labels:
               severity: warning
