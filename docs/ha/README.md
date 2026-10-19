@@ -12,6 +12,7 @@ I'm also trying to keep VPS costs low. The only VPS in this plan is a cheap edge
 - [Milestones](https://github.com/shootie22/infrastructure/milestones): one per phase
 - [plan.md](plan.md): the layout and what each phase does
 - [decisions.md](decisions.md): what was decided and why
+- [standby.md](standby.md): workloads that run unready on purpose until they take over
 - [journal.md](journal.md): notes and learnings as it goes
 - [runbooks/](runbooks/): procedures, written as they get tested
 - [keycloak-sso.md](keycloak-sso.md): the follow-up project, putting services behind Keycloak

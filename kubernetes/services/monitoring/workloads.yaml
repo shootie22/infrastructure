@@ -406,8 +406,10 @@ spec:
           image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.19.1@sha256:85108987d044b18a098126732f98602df408888c0f7d456241f5abefb9744bc1
           # Two node labels for the profile card: the zone names the sites, and
           # profile.radunenu.com/node=workstation keeps the workstation out of
-          # its node count (profile-status).
-          args: [--port=8080, "--metric-labels-allowlist=nodes=[topology.kubernetes.io/zone,profile.radunenu.com/node]"]
+          # its node count (profile-status). radunenu.com/role=standby and the
+          # serving-container annotation tell a standby from a broken workload
+          # (docs/ha/standby.md).
+          args: [--port=8080, "--metric-labels-allowlist=nodes=[topology.kubernetes.io/zone,profile.radunenu.com/node],deployments=[radunenu.com/role],pods=[radunenu.com/role]", "--metric-annotations-allowlist=pods=[radunenu.com/serving-container]"]
           ports:
             - name: http
               containerPort: 8080
