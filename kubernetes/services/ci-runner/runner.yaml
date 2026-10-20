@@ -79,9 +79,10 @@ metadata:
   name: dispatcher
   namespace: ci-runner
 data:
-  # One line per node: node, its runs-on labels, and the Docker sidecar's
-  # CPU and memory limit (the job runs there). fuji gets 2 of its 4 cores, not
-  # 3: it's Matrix's home and Synapse runs on one thread (docs/matrix/
+  # One line per node: node, its runs-on labels, the Docker sidecar's CPU and
+  # memory limit (the job runs there), and the filesystem holding the node's
+  # container layers (/var/lib/rancher), which a job fills (dispatch.sh).
+  # fuji gets 2 of its 4 cores, not 3: it's Matrix's home and Synapse runs on one thread (docs/matrix/
   # architecture.md, "Gitea runners on the same nodes"). mixi's 3584Mi (was
   # 2560Mi): cubitrix's arm64 release build needs one rustc of about 2.7 GB
   # for cubitrix-matrix/matrix-sdk even at -j 1, and Docker and cargo take
@@ -89,9 +90,9 @@ data:
   # requested, 4Gi at most) its room while idle; if it loads a model during
   # a failover, the CI pod (priority -100) is what gets evicted.
   slots: |
-    thinkcentre linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-thinkcentre:docker://docker.gitea.com/runner-images:ubuntu-latest 2 6Gi
-    fuji linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-fuji:docker://docker.gitea.com/runner-images:ubuntu-latest 2 8Gi
-    mixi linux-arm64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-arm64-mixi:docker://docker.gitea.com/runner-images:ubuntu-latest 3 3584Mi
+    thinkcentre linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-thinkcentre:docker://docker.gitea.com/runner-images:ubuntu-latest 2 6Gi /home
+    fuji linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-fuji:docker://docker.gitea.com/runner-images:ubuntu-latest 2 8Gi /
+    mixi linux-arm64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-arm64-mixi:docker://docker.gitea.com/runner-images:ubuntu-latest 3 3584Mi /
 
   register.yaml: |
     runner:
@@ -101,8 +102,30 @@ data:
     set -u
     K=/opt/kubectl/bin/kubectl
     ns=ci-jobs
+    # A job takes up to 23 GB of the thinkcentre's /home while it runs
+    # (2026-10-20), and kubelet evicts pods once a disk is under 5% free. On
+    # top of a disk that was 11% free, that evicted nearly every pod there. So
+    # a job pod starts on a node only if the disk keeps 10% free plus this
+    # much. Prometheus not answering doesn't hold CI up.
+    PROM=http://prometheus.monitoring.svc.cluster.local:9090
+    NEED=$((35 * 1024 * 1024 * 1024))
+    declare -A held
+    urlencode() {
+      local s=$1 i c out=
+      for ((i = 0; i < ${#s}; i++)); do
+        c=${s:i:1}
+        case $c in [a-zA-Z0-9._~-]) out+=$c ;; *) printf -v c '%%%02X' "'$c"; out+=$c ;; esac
+      done
+      printf '%s' "$out"
+    }
+    # The node's spare room in bytes, beyond 10% free; empty if unknown.
+    room() {
+      local m="node=\"$1\",mountpoint=\"$2\""
+      wget -qO- -T 10 "$PROM/api/v1/query?query=$(urlencode "node_filesystem_avail_bytes{$m} - 0.10 * node_filesystem_size_bytes{$m}")" 2>/dev/null |
+        sed -n 's/.*"value":\[[^,]*,"\([^"]*\)"\].*/\1/p'
+    }
     while true; do
-      while read -r node labels cpu mem; do
+      while read -r node labels cpu mem fs; do
         [ -n "$node" ] || continue
         name="ci-$node"
         # Empty only when the pod is really gone; an API error skips the node
@@ -128,6 +151,14 @@ data:
             $K -n $ns delete pod "$name" --wait=true || continue
             sleep 60 ;;
         esac
+        r=$(room "$node" "${fs:-/}")
+        if [ -n "$r" ] && awk -v r="$r" -v n="$NEED" 'BEGIN { exit !(r < n) }'; then
+          [ -n "${held[$node]:-}" ] || echo "$name held back: $node's ${fs:-/} would go under 10% free with a job on it"
+          held[$node]=1
+          continue
+        fi
+        [ -z "${held[$node]:-}" ] || echo "$name: $node has room again"
+        unset "held[$node]"
         $K -n $ns delete secret "$name" --ignore-not-found >/dev/null || continue
         rm -f /work/.runner
         if ! gitea-runner register --no-interactive --ephemeral \
@@ -302,7 +333,7 @@ spec:
     metadata:
       labels: {app: ci-dispatcher}
       # Bump when the dispatcher ConfigMap changes.
-      annotations: {config: "7"}
+      annotations: {config: "8"}
     spec:
       serviceAccountName: dispatcher
       enableServiceLinks: false

@@ -41,8 +41,9 @@ spec:
         - {protocol: TCP, port: 443}
         - {protocol: TCP, port: 80}
 ---
-# The dispatcher: Gitea (through Traefik, to register runners) and the
-# Kubernetes API (to start job pods). Nothing reaches it.
+# The dispatcher: Gitea (through Traefik, to register runners), the
+# Kubernetes API (to start job pods) and Prometheus (each node's free disk,
+# dispatch.sh). Nothing reaches it.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -66,3 +67,18 @@ spec:
         - ipBlock: {cidr: 10.99.0.0/24}
       ports:
         - {protocol: TCP, port: 6443}
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: monitoring}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: prometheus}
+      ports:
+        - {protocol: TCP, port: 9090}
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+          podSelector:
+            matchLabels: {k8s-app: kube-dns}
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}

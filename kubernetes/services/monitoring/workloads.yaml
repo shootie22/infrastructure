@@ -440,6 +440,10 @@ spec:
       labels:
         app.kubernetes.io/name: node-exporter
     spec:
+      # Never evicted, and let back on a node under pressure: on 2026-10-20
+      # kubelet evicted it with everything else on the thinkcentre, and the
+      # disk the node was short of went unwatched.
+      priorityClassName: system-node-critical
       # The edge too (it only runs etcd, hence the taint), so its CPU, memory,
       # disk and host facts are known like the others'.
       tolerations:
@@ -502,6 +506,8 @@ spec:
       labels:
         app.kubernetes.io/name: alloy
     spec:
+      # The node's logs, most needed while it's in trouble (as node-exporter).
+      priorityClassName: system-node-critical
       serviceAccountName: alloy
       containers:
         - name: alloy

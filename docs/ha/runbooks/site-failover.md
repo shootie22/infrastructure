@@ -20,6 +20,7 @@ The service's folder on the active node is `/srv/ha/<service>`. On the other nod
 
 - **The active node dies:** about a minute after the cluster marks it not ready, the other node takes the label, if a whole copy has arrived there before. The service starts on the copy; files written since the last copy (at most 10 minutes) are lost.
 - **The active node is cut off but alive:** after 45 seconds without the cluster it kills the service's container and removes `/srv/ha/<service>`. The other site takes over afterwards, never at the same time.
+- **The active node is up but can't run the service** (disk or memory pressure, a broken container runtime): once a workload of the service has had no pod running and one stuck Pending there for 2 minutes (12 if it's on the node but its containers never started, which may be an image pull), the other node takes the label, with the same copy rule. Not for an image that can't be pulled or a pod that crashes, and at most once every 30 minutes per service ([2026-10-20](../../incidents/2026-10-20-thinkcentre-disk-pressure.md)). From then on the old node's copies are refused, so it can't write over the live folder.
 - **The old node comes back:** it stays the standby. The copies now go the other way and overwrite its old folder.
 
 The service doesn't move back by itself. That's deliberate: no second outage.
