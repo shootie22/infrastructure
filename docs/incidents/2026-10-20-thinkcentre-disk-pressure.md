@@ -1,6 +1,6 @@
 # 2026-10-20: thinkcentre's disk full, its services down, nothing moved
 
-**Ongoing.** From 20:35 UTC kubelet on the thinkcentre evicted nearly every pod there and turned new ones away: Gitea, Headscale, Baikal, PrivateBin, Send, Audiobookshelf, legacy-web, steamhappy, the game servers, Rybbit's ClickHouse, hub-test, CI, and the DK replicas of Keycloak, Joplin and SearXNG. The node stayed Ready the whole time, so site-failover moved nothing, although fuji had a fresh copy of every service.
+**Recovered.** Down about an hour: from 20:35 UTC kubelet on the thinkcentre evicted nearly every pod there and turned new ones away: Gitea, Headscale, Baikal, PrivateBin, Send, Audiobookshelf, legacy-web, steamhappy, the game servers, Rybbit's ClickHouse, hub-test, CI, and the DK replicas of Keycloak, Joplin and SearXNG. The node stayed Ready the whole time, so site-failover moved nothing, although fuji had a fresh copy of every service. DiskPressure cleared at 21:32 once 96 GiB were freed, and the services came back on the thinkcentre by themselves.
 
 ## Timeline (UTC)
 
@@ -13,7 +13,10 @@
 | 20:35-20:38 | The evicted pods come back Pending: the node is tainted `disk-pressure:NoSchedule` and their `ha.radunenu.com/<service>` label keeps them on it. `hs.radunenu.com` stops answering. |
 | 20:38 | `SiteFailoverServiceNotRunning` fires for all 17 services, but only because the thinkcentre's node-exporter was gone with its metrics; to site-failover every service was still "active" on the thinkcentre. |
 | 20:52 | 59 GiB free (14.3%), short of the 15% kubelet wants before it lets go. The only pod left to evict is Traefik, which it may not evict. DiskPressure stays on for good. |
-| 21:00-21:55 | Investigation. The copies (the first suspicion) were fine all along: every job in both directions finished within its 10 minutes. The retired Vintage Story world (96 GiB, untouched since Oct 2025) is copied to the 4 TB disk, ready to come off `/home`. |
+| 21:00-21:25 | Investigation. The copies (the first suspicion) were fine all along: every job in both directions finished within its 10 minutes. The retired Vintage Story world (96 GiB, untouched since Oct 2025) is copied to the 4 TB disk and checked with `diff`. |
+| ~21:28 | The world is removed from `/home`: 151 GiB free. |
+| 21:32 | DiskPressure clears. Pods are scheduled on the thinkcentre again; Git and Headscale answer within a few minutes. |
+| 21:35-21:55 | The DaemonSets' evicted pods are replaced (with the controller's backoff, up to 15 minutes for headlamp's tailnet proxy). The DK Postgres replicas catch up by 21:42, except Vaultwarden's, which stays in recovery: its base backup had been cut off, so it has to be cloned again. |
 
 ## Why nothing moved
 
@@ -33,6 +36,9 @@
 - **node-exporter and Alloy are `system-node-critical`**: kubelet neither evicts them nor turns them away under pressure.
 
 ## Follow-ups
+
+- Vaultwarden's DK replica (`vaultwarden-db-1`) cloned again: `kubectl cnpg destroy vaultwarden-db 1` (the primary on fuji is fine).
+- Vintage Story into its own Borg archive, outside the prune prefix, then off the 4 TB disk too.
 
 - Gitea's packages are 83 GiB on the thinkcentre's `/home`: a cleanup rule for old container image versions.
 - `/home/main/services/gitea-act-runner-thinkcentre` (12 GiB, root's, from before the CI runner moved into the cluster) looks unused.
