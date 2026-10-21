@@ -259,8 +259,9 @@ The rule: **every database and every service with files has a declared place, an
 | What | Declared as | Means |
 |---|---|---|
 | A CNPG cluster used by one service with files (Gitea, Matrix) | `placement.radunenu.com/follows: <service>` on the Cluster | its primary is wherever site-failover runs the service |
-| A CNPG cluster used by an app with a pod in each site (Keycloak, Vaultwarden, Joplin, Hub, yeetus-api, Grafana, MAS) | `placement.radunenu.com/home: ro` | its primary is in RO, where visitors come in; Traefik keeps each request in its own site (`trafficDistribution: PreferClose` on the app's Service), so RO's requests never cross the WAN |
+| A CNPG cluster used by an app with a pod in each site (Keycloak, Vaultwarden, Joplin, Hub, yeetus-api, Grafana, MAS) | `placement.radunenu.com/home: ro` | its primary is in RO, where visitors come in; each request stays in the site it came in through (the app's Service with `trafficDistribution: PreferClose`, which Traefik only honours when it goes through the Service's address, `nativeLB`), so RO's requests never cross the WAN |
 | A service with files | its `home` node in site-failover (today `initial`) | where it runs when nothing is wrong |
+| A pod tied to a service's label (Rybbit's backend to its ClickHouse) | the label in its node selector | runs on the node holding the label; one left behind after the label moved is rescheduled |
 
 A CI check rejects a CNPG Cluster without `follows` or `home`, and a site-failover service without a home.
 
@@ -268,6 +269,7 @@ A CI check rejects a CNPG Cluster without `follows` or `home`, and a site-failov
 
 - A primary that isn't where it's declared: switched over (CNPG's own switchover: a few seconds of paused writes, nothing lost) once both instances are healthy and it has stayed out of place for 2 minutes. `follows` already works this way for Matrix and, since this morning, Gitea.
 - A service with files that isn't on its home node: once the home node has been fit for 30 minutes (Ready, no pressure, cluster reachable, a whole copy there), a planned move. The service stops, a last copy goes home, the label moves, and it starts there. Nothing is lost, and visitors see 10-40 seconds of the outage page. It waits for a quiet hour (03:00-06:00 local) and for no CI job to be running on Gitea.
+- A pod tied to a service's label that's still on the node the label left (labels only steer scheduling): deleted, so it starts next to the service.
 - Guard rails: one move at a time across the cluster, never while any node is NotReady or under pressure, never twice for the same thing within an hour, and a move that fails is retried no sooner than the next quiet hour, with an alert.
 
 **Out of place too long alerts.** Anything away from its declared place for more than an hour pages, with what's holding it there (`site_failover_placement` per thing: where it is, where it belongs, why it hasn't moved).
