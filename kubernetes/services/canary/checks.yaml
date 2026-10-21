@@ -22,8 +22,8 @@ data:
     set -euo pipefail
     export GIT_TERMINAL_PROMPT=0 HOME=/tmp
     repo=radu/yeetusnet-canary
-    api=https://git.radunenu.com/api/v1
-    url="https://canary:${GITEA_TOKEN}@git.radunenu.com/${repo}.git"
+    api=https://git.yeetus.net/api/v1
+    url="https://canary:${GITEA_TOKEN}@git.yeetus.net/${repo}.git"
     branch="canary-$MODE"
     took() { echo $(( $(date +%s) - $1 )); }
 
