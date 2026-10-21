@@ -877,27 +877,38 @@ data:
             annotations:
               summary: "Matrix's media copy to {{ $labels.to }} is {{ $value | humanizeDuration }} old"
               description: A failover now would lose the uploads since then. Check `journalctl -u standby-copy-{{ $labels.copy }}` on the sending host.
-          # A database's primary away from where it's declared to belong
-          # (placement.radunenu.com/follows or /home on the Cluster; docs/ha/
-          # decisions.md, 2026-10-21). site-failover moves it back by itself
-          # within minutes; this says it didn't, and why (action, in the
-          # metric; its log has the rest). After 2026-10-20's failover the
-          # primaries stayed across the WAN for ten hours and nothing said so.
+          # Something away from where it's declared to belong (docs/ha/
+          # decisions.md, 2026-10-21): a database's primary (follows or home on
+          # the Cluster), or a service with files off its home node.
+          # site-failover moves it back by itself, databases within minutes,
+          # services in the quiet hours (that wait is action="quiet-hours" and
+          # doesn't count here); this says it didn't, and why (action; its log
+          # has the rest). After 2026-10-20's failover the primaries stayed
+          # across the WAN for ten hours and nothing said so.
           - alert: PlacementDrift
-            expr: max by (kind, name, how, at, action) (site_failover_out_of_place_seconds) > 600
+            expr: max by (kind, name, how, at, action) (site_failover_out_of_place_seconds{action!="quiet-hours"}) > 600
             labels:
               severity: warning
             annotations:
               summary: "{{ $labels.name }} has been away from where it belongs for {{ $value | humanizeDuration }}"
               description: "It's on {{ $labels.at }} ({{ $labels.how }}); site-failover is at {{ $labels.action }}. `journalctl -u site-failover | grep {{ $labels.name }}` on the node it belongs on."
           - alert: PlacementDriftLong
-            expr: max by (kind, name, how, at, action) (site_failover_out_of_place_seconds) > 3600
+            expr: max by (kind, name, how, at, action) (site_failover_out_of_place_seconds{action!="quiet-hours"}) > 3600
             labels:
               severity: critical
               page: "true"
             annotations:
               summary: "{{ $labels.name }} has been away from where it belongs for over an hour"
               description: "Everything still works, but slower or less safely than it should. It's on {{ $labels.at }} ({{ $labels.how }}); site-failover is at {{ $labels.action }}."
+          # Waiting for the quiet hours is fine, but a whole night going by
+          # without the service going home isn't.
+          - alert: PlacementNotHomeAfterQuietHours
+            expr: max by (kind, name, at) (site_failover_out_of_place_seconds{kind="service"}) > 36 * 3600
+            labels:
+              severity: warning
+            annotations:
+              summary: "{{ $labels.name }} has been away from its home node for over 36 hours"
+              description: "It's on {{ $labels.at }}; the quiet hours passed without it going home. `journalctl -u site-failover | grep {{ $labels.name }}` on its home node."
           # yeetus.net's Matrix (#139). Synapse is one process, so down means
           # nobody can chat: page. A failover takes 2-3 minutes by design.
           - alert: MatrixSynapseDown
