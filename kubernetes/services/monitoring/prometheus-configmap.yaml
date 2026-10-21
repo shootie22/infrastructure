@@ -877,18 +877,27 @@ data:
             annotations:
               summary: "Matrix's media copy to {{ $labels.to }} is {{ $value | humanizeDuration }} old"
               description: A failover now would lose the uploads since then. Check `journalctl -u standby-copy-{{ $labels.copy }}` on the sending host.
-          # Synapse and its Postgres primary in different sites: every query
-          # crosses the WAN and Matrix gets slow. site-failover switches the
-          # primary over by itself after a minute (dotfiles, `cnpg`); this
-          # fires when that didn't happen.
-          - alert: MatrixDbElsewhere
-            expr: max by (service, cluster) (site_failover_db_elsewhere) == 1
-            for: 5m
+          # A database's primary away from where it's declared to belong
+          # (placement.radunenu.com/follows or /home on the Cluster; docs/ha/
+          # decisions.md, 2026-10-21). site-failover moves it back by itself
+          # within minutes; this says it didn't, and why (action, in the
+          # metric; its log has the rest). After 2026-10-20's failover the
+          # primaries stayed across the WAN for ten hours and nothing said so.
+          - alert: PlacementDrift
+            expr: max by (kind, name, how, at, action) (site_failover_out_of_place_seconds) > 600
             labels:
               severity: warning
             annotations:
-              summary: "{{ $labels.cluster }}'s primary isn't next to {{ $labels.service }}"
-              description: Check `journalctl -u site-failover` on the node running it, and `kubectl cnpg status {{ $labels.cluster }} -n matrix`.
+              summary: "{{ $labels.name }} has been away from where it belongs for {{ $value | humanizeDuration }}"
+              description: "It's on {{ $labels.at }} ({{ $labels.how }}); site-failover is at {{ $labels.action }}. `journalctl -u site-failover | grep {{ $labels.name }}` on the node it belongs on."
+          - alert: PlacementDriftLong
+            expr: max by (kind, name, how, at, action) (site_failover_out_of_place_seconds) > 3600
+            labels:
+              severity: critical
+              page: "true"
+            annotations:
+              summary: "{{ $labels.name }} has been away from where it belongs for over an hour"
+              description: "Everything still works, but slower or less safely than it should. It's on {{ $labels.at }} ({{ $labels.how }}); site-failover is at {{ $labels.action }}."
           # yeetus.net's Matrix (#139). Synapse is one process, so down means
           # nobody can chat: page. A failover takes 2-3 minutes by design.
           - alert: MatrixSynapseDown
@@ -907,7 +916,7 @@ data:
               severity: warning
             annotations:
               summary: "yeetus.net's Synapse answers slowly (p95 {{ $value | humanizeDuration }})"
-              description: Is its database primary in the other site (MatrixDbElsewhere), or a build hogging its node?
+              description: Is its database primary in the other site (PlacementDrift), or a build hogging its node?
           - alert: MatrixLoginDown
             expr: absent(up{job="kubernetes-pods", namespace="matrix", pod=~"mas-.*"} == 1)
             for: 4m
