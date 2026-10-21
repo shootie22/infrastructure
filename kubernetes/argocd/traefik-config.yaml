@@ -48,30 +48,37 @@ spec:
     # Traefik cuts off a request body after 60 s by default. Image pushes to
     # Gitea's registry over Nebula (the CI runners, #150) take longer for a
     # big layer, so give uploads 30 minutes.
+    # Behind the front door (dotfiles modules/nixos/front-door.nix): an
+    # HAProxy on each node takes 80, 443 and 2022 and passes them to a
+    # Traefik that has its routes loaded (traefik-ready.yaml), this node's or
+    # the other's over Nebula. A Traefik that had just started used to take
+    # the connections itself and answer 404 for every site until it had
+    # loaded them (2026-10-21). So Traefik's own host ports are these, and
+    # it believes a PROXY header (who the visitor is) from the mesh: the
+    # front doors, and the edge's HAProxy (#95). From them a connection
+    # without one still works.
     ports:
       web:
-        hostPort: 80
-        # The edge's HAProxy says who the visitor is with a PROXY header
-        # (#95). Only it may; from it, a connection without one still works.
+        hostPort: 10080
         proxyProtocol:
-          trustedIPs: [10.99.0.1/32]
+          trustedIPs: [10.99.0.0/24]
         transport:
           respondingTimeouts:
             readTimeout: 30m
       websecure:
-        hostPort: 443
+        hostPort: 10443
         proxyProtocol:
-          trustedIPs: [10.99.0.1/32]
+          trustedIPs: [10.99.0.0/24]
         transport:
           respondingTimeouts:
             readTimeout: 30m
       # Git over SSH, passed on to Gitea's sshd (the gitea-ssh IngressRouteTCP).
       gitssh:
         port: 2022
-        hostPort: 2022
+        hostPort: 12022
         protocol: TCP
         proxyProtocol:
-          trustedIPs: [10.99.0.1/32]
+          trustedIPs: [10.99.0.0/24]
     # The address written into each Ingress's status. It used to come from the
     # LoadBalancer Service; the internal-only one has none, and Argo CD keeps
     # an Ingress without an address at Progressing. ro is where visitors
