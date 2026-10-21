@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The canaries' Gitea token (kubernetes/services/canary). Before running:
-#   1. create the private repository radu/canary on git.radunenu.com (empty)
+#   1. create the private repository radu/yeetusnet-canary on git.radunenu.com (empty)
 #   2. create a token for it: Settings -> Applications, scope
 #      "repository: read and write" (it pushes and reads the Actions runs)
 set -euo pipefail
@@ -23,14 +23,14 @@ umask 077
 tmp=$(mktemp "${target}.XXXXXX")
 trap 'rm -f "$tmp"' EXIT
 
-read -r -s -p 'Gitea token for radu/canary (input hidden): ' token
+read -r -s -p 'Gitea token for radu/yeetusnet-canary (input hidden): ' token
 printf '\n' >&2
 if [[ ! "$token" =~ ^[A-Za-z0-9_-]{20,}$ ]]; then
   printf 'Missing or unexpected token; no file was created.\n' >&2
   exit 1
 fi
-if ! curl -fsS -m 20 -o /dev/null -H "Authorization: token $token" https://git.radunenu.com/api/v1/repos/radu/canary; then
-  printf 'The token cannot see radu/canary; no file was created.\n' >&2
+if ! curl -fsS -m 20 -o /dev/null -H "Authorization: token $token" https://git.radunenu.com/api/v1/repos/radu/yeetusnet-canary; then
+  printf 'The token cannot see radu/yeetusnet-canary; no file was created.\n' >&2
   exit 1
 fi
 

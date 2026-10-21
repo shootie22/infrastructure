@@ -3,7 +3,7 @@
 # component was "up" for ten hours while CI took no job: Gitea answered the
 # runners too slowly. Only someone trying to use it noticed.
 #
-# - canary-git: push a commit to radu/canary and clone it back, every 10
+# - canary-git: push a commit to radu/yeetusnet-canary and clone it back, every 10
 #   minutes, within a minute. CanaryGitFailing after 30 minutes without a pass.
 # - canary-ci: push a commit whose workflow has to be picked up by a runner
 #   and pass, every 15 minutes. Allowed 25 minutes, since a runner can be
@@ -11,7 +11,7 @@
 #
 # Each push is a commit of its own on its own branch, force-pushed, so the
 # repository doesn't grow. The workflow comes with the commit. The token is
-# radu/canary's only (scripts/create-canary-secret.sh).
+# radu/yeetusnet-canary's only (scripts/create-canary-secret.sh).
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -21,7 +21,7 @@ data:
   check.sh: |
     set -euo pipefail
     export GIT_TERMINAL_PROMPT=0 HOME=/tmp
-    repo=radu/canary
+    repo=radu/yeetusnet-canary
     api=https://git.radunenu.com/api/v1
     url="https://canary:${GITEA_TOKEN}@git.radunenu.com/${repo}.git"
     branch="canary-$MODE"
