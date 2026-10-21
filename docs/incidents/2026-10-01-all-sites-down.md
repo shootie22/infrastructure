@@ -1,6 +1,6 @@
 # 2026-10-01: All sites down for about an hour
 
-**What went wrong:** Fuji lost its LAN address when the early-boot DHCP lease ran out, so nothing could reach the cluster, and nothing alerted.
+**What went wrong:** fuji lost its LAN address when the early-boot DHCP lease ran out, so nothing could reach the cluster, and nothing alerted.
 
 **Fix:** NetworkManager always owns fuji's network with a declared profile; alerts now go to the phone, and the edge with DNS failover means one site's address is no longer the only way in.
 
