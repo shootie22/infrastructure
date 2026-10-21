@@ -1,5 +1,9 @@
 # 2026-10-14: fuji cut off from the cluster, sites down behind RO
 
+**What went wrong:** A deploy left fuji refusing all traffic to itself while its Traefik still answered, so DNS failover thought RO was fine and sites were down about 28 minutes.
+
+**Fix:** Failover checks that a site really reaches the cluster, deploys roll out one host at a time, and a deploy that cuts a host off rolls itself back.
+
 **Recovered; cause not proven, follow-ups open.** Public services were down about 28 minutes on 14 Oct and back from 21:31 UTC through the edge and the thinkcentre. fuji was power-cycled on 15 Oct and everything was back to normal at 07:49 UTC.
 
 fuji dropped off Nebula and Tailscale at about 21:02 UTC while staying up: its Traefik kept answering on RO's public address. Every site that reaches the cluster through RO returned 504 (radunenu.com, yeetus.net, git, ...) for about 28 minutes. DNS failover didn't move anything, because to the checkers RO looked healthy. Element Web (c.nuke.zip) kept working from the edge throughout.
