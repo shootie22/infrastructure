@@ -6,6 +6,9 @@ metadata:
   name: hub-db
   namespace: hub
   annotations:
+    # Where the primary belongs (docs/ha/decisions.md, 2026-10-21): Hub has a pod in each site; visitors come in through RO.
+    # site-failover switches it back there by itself.
+    placement.radunenu.com/home: ro
     # Changed to make CNPG look at the managed roles again; it gave up on
     # hub_public before its password secret existed.
     hub.radunenu.com/roles-recheck: "1"
