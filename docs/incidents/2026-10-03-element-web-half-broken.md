@@ -1,5 +1,9 @@
 # 2026-10-03: Element Web half broken for six hours
 
+**What went wrong:** Two replicas ran different Element builds, so the page loaded but its files 404'd, and the outside check only looked at the page.
+
+**Fix:** Each browser sticks to one replica, and a check loads Element like a real browser every 10 minutes and alerts when it doesn't work.
+
 Element Web at c.nuke.zip loaded its page but failed to start, from about 06:30 to 12:25 UTC. About one request in six came back 404. No alert fired; I noticed when I tried to use it.
 
 ## Timeline (UTC)

@@ -1,5 +1,9 @@
 # 2026-10-20: thinkcentre's disk full, its services down, nothing moved
 
+**What went wrong:** A CI job filled the thinkcentre's disk, Kubernetes stopped running nearly everything there, and failover didn't move anything because the node still looked healthy; afterwards the databases stayed on the wrong side, which made Gitea too slow for CI until the next morning.
+
+**Fix:** Failover now moves services off a node that's up but can't run them, the disk is watched and CI waits for room, and databases follow their apps; next, a placement controller brings everything back to its right place by itself after any failover.
+
 **Recovered.** Down about an hour: from 20:35 UTC kubelet on the thinkcentre evicted nearly every pod there and turned new ones away: Gitea, Headscale, Baikal, PrivateBin, Send, Audiobookshelf, legacy-web, steamhappy, the game servers, Rybbit's ClickHouse, hub-test, CI, and the DK replicas of Keycloak, Joplin and SearXNG. The node stayed Ready the whole time, so site-failover moved nothing, although fuji had a fresh copy of every service. DiskPressure cleared at 21:32 once 96 GiB were freed, and the services came back on the thinkcentre by themselves.
 
 ## Timeline (UTC)
