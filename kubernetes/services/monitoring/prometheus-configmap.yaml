@@ -1038,6 +1038,34 @@ data:
           # The public probes only see that the page loads; Element Web loaded its
           # page while half its files 404'd on 2026-10-03. element-web-check
           # loads everything every 10 minutes; three failed runs in a row alert.
+          # Checks that do what users do (services/canary; docs/ha/decisions.md,
+          # 2026-10-21): every component "up" while CI took no job for ten
+          # hours, on 2026-10-20. Counted from the CronJob's creation too, so
+          # one that has never passed (no token yet) alerts as well.
+          - alert: CanaryGitFailing
+            expr: |
+              time() - max by (cronjob) (
+                kube_cronjob_status_last_successful_time{namespace="canary", cronjob="canary-git"}
+                or kube_cronjob_created{namespace="canary", cronjob="canary-git"}
+              ) > 1800
+            labels:
+              severity: critical
+              page: "true"
+            annotations:
+              summary: Pushing to Gitea and cloning back hasn't worked within a minute for 30 minutes
+              description: "`kubectl -n canary logs job/<last canary-git job>`; is Gitea slow (its database across the WAN?) or down?"
+          - alert: CanaryCIFailing
+            expr: |
+              time() - max by (cronjob) (
+                kube_cronjob_status_last_successful_time{namespace="canary", cronjob="canary-ci"}
+                or kube_cronjob_created{namespace="canary", cronjob="canary-ci"}
+              ) > 7200
+            labels:
+              severity: critical
+              page: "true"
+            annotations:
+              summary: No CI run has been picked up and passed for 2 hours
+              description: "A pushed commit's workflow should be taken by a runner and pass within 25 minutes. `kubectl -n canary logs job/<last canary-ci job>`, and the dispatcher's log (`kubectl -n ci-runner logs deploy/dispatcher`): runners giving up on Gitea (\"fetching a task timed out\") mean Gitea is slow."
           - alert: ElementWebBroken
             expr: time() - kube_cronjob_status_last_successful_time{namespace="element-web", cronjob="element-web-check"} > 1800
             for: 1m
