@@ -603,6 +603,18 @@ data:
             annotations:
               summary: Kubernetes node {{ $labels.node }} is unavailable
               description: The node has not reported Ready for at least ten minutes.
+          # Up and Ready, but kubelet evicts pods and admits only critical
+          # ones (2026-10-20: the thinkcentre's /home under 5% free, nearly
+          # every pod there evicted, Ready all along).
+          - alert: KubernetesNodeUnderPressure
+            expr: kube_node_status_condition{job="kube-state-metrics", condition=~"DiskPressure|MemoryPressure|PIDPressure", status="true"} == 1
+            for: 2m
+            labels:
+              severity: critical
+              page: "true"
+            annotations:
+              summary: "{{ $labels.node }} is under {{ $labels.condition }}"
+              description: Kubelet is evicting pods and turning new ones away. site-failover moves the services with files after about two minutes; the rest pinned there stays down until it's over. On the node, `df -h` and `journalctl -u k3s | grep eviction_manager`. docs/incidents/2026-10-20-thinkcentre-disk-pressure.md
           - alert: PrometheusTargetDown
             expr: up{job=~"prometheus|grafana|kubernetes-apiserver|kube-state-metrics|node-exporter|kubelet|kubelet-cadvisor|kubernetes-services"} == 0
             for: 10m
@@ -675,18 +687,21 @@ data:
             annotations:
               summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} cannot be scheduled
               description: Kubernetes has been unable to schedule this pod for fifteen minutes.
-          - alert: NodeRootFilesystemCriticallyLow
+          # / and /home: kubelet's and containerd's (the thinkcentre keeps
+          # /var/lib/rancher on /home). Kubelet starts evicting at 5% free.
+          - alert: NodeFilesystemCriticallyLow
             expr: |
-              node_filesystem_avail_bytes{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs"}
-              / node_filesystem_size_bytes{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs"} < 0.08
+              node_filesystem_avail_bytes{job="node-exporter", mountpoint=~"/|/home", fstype!~"tmpfs|overlay|squashfs"}
+              / node_filesystem_size_bytes{job="node-exporter", mountpoint=~"/|/home", fstype!~"tmpfs|overlay|squashfs"} < 0.10
               and on (node, device, mountpoint)
-              node_filesystem_readonly{job="node-exporter", mountpoint="/", fstype!~"tmpfs|overlay|squashfs"} == 0
-            for: 15m
+              node_filesystem_readonly{job="node-exporter", mountpoint=~"/|/home", fstype!~"tmpfs|overlay|squashfs"} == 0
+            for: 5m
             labels:
               severity: critical
+              page: "true"
             annotations:
-              summary: Root filesystem on {{ $labels.node }} is critically low
-              description: Less than 8% of the root filesystem has been available for fifteen minutes.
+              summary: "{{ $labels.mountpoint }} on {{ $labels.node }} is critically low"
+              description: Less than 10% free for five minutes. Kubelet evicts pods at 5%.
           # The edge passes traffic to Traefik in RO (fuji) and DK (thinkcentre).
           # If a site's path is down, failover to it would go nowhere.
           - alert: EdgeBackendDown
@@ -987,13 +1002,14 @@ data:
               summary: The GitHub profile's infrastructure card hasn't been updated for over 3 hours
               description: "Check the profile-status CronJob's last Job: kubectl -n profile-status logs job/<name>."
           # Early warning, so a filling disk gets noticed days before it becomes
-          # critical (thinkcentre's 31 GB root reached 92% unnoticed, 2026-10-02).
+          # critical (thinkcentre's 31 GB root reached 92% unnoticed, 2026-10-02;
+          # its /home sat at 11% free for days before 2026-10-20, unwatched).
           - alert: NodeFilesystemFillingUp
             expr: |
-              node_filesystem_avail_bytes{job="node-exporter", mountpoint=~"/|/boot|/boot/efi", fstype!~"tmpfs|overlay|squashfs"}
-              / node_filesystem_size_bytes{job="node-exporter", mountpoint=~"/|/boot|/boot/efi", fstype!~"tmpfs|overlay|squashfs"} < 0.20
+              node_filesystem_avail_bytes{job="node-exporter", mountpoint=~"/|/home|/boot|/boot/efi|/srv/standby", fstype!~"tmpfs|overlay|squashfs"}
+              / node_filesystem_size_bytes{job="node-exporter", mountpoint=~"/|/home|/boot|/boot/efi|/srv/standby", fstype!~"tmpfs|overlay|squashfs"} < 0.20
               and on (node, device, mountpoint)
-              node_filesystem_readonly{job="node-exporter", mountpoint=~"/|/boot|/boot/efi", fstype!~"tmpfs|overlay|squashfs"} == 0
+              node_filesystem_readonly{job="node-exporter", mountpoint=~"/|/home|/boot|/boot/efi|/srv/standby", fstype!~"tmpfs|overlay|squashfs"} == 0
             for: 30m
             labels:
               severity: warning
