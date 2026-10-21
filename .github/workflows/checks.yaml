@@ -26,6 +26,8 @@ jobs:
             xargs -0 ./kubeconform -summary -strict -ignore-missing-schemas \
               -schema-location default \
               -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+      - name: Every database declares where it belongs
+        run: pip install pyyaml && python3 scripts/check-placement
 
   monitoring:
     runs-on: ubuntu-latest

@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+"""Every database declares where it belongs (docs/ha/decisions.md, 2026-10-21).
+
+A CNPG Cluster carries exactly one of
+  placement.radunenu.com/follows: <service>   its primary is where site-failover
+                                              runs that service (a label
+                                              ha.radunenu.com/<service> some
+                                              workload here is tied to)
+  placement.radunenu.com/home: ro|dk          its primary is in that site
+site-failover moves the primary back there by itself; without one, nothing
+would after a failover (2026-10-20).
+"""
+
+import pathlib
+import re
+import sys
+
+import yaml
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent / "kubernetes"
+SITES = {"ro", "dk"}
+
+services, clusters = set(), []
+for f in sorted(ROOT.rglob("*.yaml")):
+    if f.name == "hub.yaml" or f.name.endswith(".sops.yaml"):
+        continue
+    text = f.read_text()
+    services |= set(re.findall(r"ha\.radunenu\.com/([a-z0-9-]+):\s*active", text))
+    for doc in yaml.safe_load_all(text):
+        if isinstance(doc, dict) and doc.get("kind") == "Cluster" and "postgresql.cnpg.io" in doc.get("apiVersion", ""):
+            clusters.append((f.relative_to(ROOT.parent), doc))
+
+errors = []
+for f, c in clusters:
+    name = f"{c['metadata'].get('namespace')}/{c['metadata']['name']}"
+    a = c["metadata"].get("annotations") or {}
+    follows, home = a.get("placement.radunenu.com/follows"), a.get("placement.radunenu.com/home")
+    if bool(follows) == bool(home):
+        errors.append(f"{f}: {name} needs exactly one of placement.radunenu.com/follows or /home")
+    elif follows and follows not in services:
+        errors.append(f"{f}: {name} follows {follows!r}, which no workload is tied to (ha.radunenu.com/{follows})")
+    elif home and home not in SITES:
+        errors.append(f"{f}: {name} has home {home!r}, not one of {sorted(SITES)}")
+
+if errors:
+    print("\n".join(errors))
+    sys.exit(1)
+print(f"placement: {len(clusters)} databases, each with a declared place")

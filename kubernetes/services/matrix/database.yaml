@@ -13,6 +13,10 @@ kind: Cluster
 metadata:
   name: synapse-db
   namespace: matrix
+  annotations:
+    # Where the primary belongs (docs/ha/decisions.md, 2026-10-21): Synapse runs where the matrix label is.
+    # site-failover switches it back there by itself.
+    placement.radunenu.com/follows: matrix
 spec:
   instances: 2
   imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
@@ -75,6 +79,10 @@ kind: Cluster
 metadata:
   name: mas-db
   namespace: matrix
+  annotations:
+    # Where the primary belongs (docs/ha/decisions.md, 2026-10-21): with Synapse's, so Matrix moves as one.
+    # site-failover switches it back there by itself.
+    placement.radunenu.com/follows: matrix
 spec:
   instances: 2
   imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
