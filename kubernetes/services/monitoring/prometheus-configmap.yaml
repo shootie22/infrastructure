@@ -832,8 +832,16 @@ data:
             annotations:
               summary: "{{ $labels.namespace }}/{{ $labels.cnpg_cluster }} has only one Postgres instance up"
               description: The database runs without its copy in the other site; a second failure would take it down.
+          # cnpg_pg_replication_lag is the time since the last transaction the
+          # replica replayed, so it grows on a quiet database too (yeetus-api-db
+          # all night on 2026-10-20). Not when the primary sees the replica
+          # connected and caught up; a replica that isn't connected has no row
+          # there and still counts.
           - alert: PostgresReplicationLag
-            expr: max by (namespace, cnpg_cluster) (cnpg_pg_replication_lag) > 300
+            expr: |
+              max by (namespace, cnpg_cluster) (cnpg_pg_replication_lag) > 300
+              unless on (namespace, cnpg_cluster)
+              max by (namespace, cnpg_cluster) (cnpg_pg_stat_replication_replay_diff_bytes) < 65536
             for: 10m
             labels:
               severity: warning
