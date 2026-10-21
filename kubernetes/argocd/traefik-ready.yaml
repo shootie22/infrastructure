@@ -1,0 +1,40 @@
+# The front doors' readiness check (dotfiles modules/nixos/front-door.nix):
+# https://traefik-ready.invalid/ping answers 200 only from a Traefik that has
+# its routes loaded. It's an ordinary Ingress (Traefik's Kubernetes Ingress
+# provider), and the request goes through the middlewares every entry point
+# has (the outage page and retry, from the CRD provider), so a Traefik that
+# hasn't loaded both answers 404, as every site would. Behind it, Traefik's
+# own /ping on its traefik port: nothing but Traefik itself has to be up.
+# .invalid can't be a real name, so this is never reachable from outside.
+#
+# Synced with the Middlewares (wave -1), before Traefik's config that moves
+# its ports behind the front doors.
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-ping
+  namespace: kube-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  selector:
+    app.kubernetes.io/name: traefik
+  ports:
+    - {name: ping, port: 9000, targetPort: 9000}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: traefik-ready
+  namespace: kube-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  rules:
+    - host: traefik-ready.invalid
+      http:
+        paths:
+          - path: /ping
+            pathType: Exact
+            backend:
+              service: {name: traefik-ping, port: {number: 9000}}
