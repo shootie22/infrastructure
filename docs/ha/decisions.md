@@ -247,3 +247,35 @@ Also on the table: keeping synchronous (no confirmed message ever lost, minutes 
 After the [2026-10-14 incident](../incidents/2026-10-14-fuji-cut-off.md), where one merge reached every host within minutes, both entrances included. thinkcentre and mixi deploy a commit at once; fuji and minima only after both have deployed it and run it for 30 minutes; the edge only after fuji has, in turn. A gate on each later host (dotfiles `modules/nixos/deploy-stages`) reads the upstream hosts' comin metrics over Nebula and accepts comin's waiting generation when they're done. A commit that doesn't change the upstream hosts never shows up there (comin doesn't record those), so it goes after 60 minutes instead, if the upstream hosts stayed healthy. An upstream host that can't take a change blocks the gate for good: after a rollback the switch guard holds comin there, so its metrics go silent. A fix that has to go out now: `comin confirmation accept` on the host.
 
 Also on the table: a plain delay per host (comin's `auto` confirmer; simple, but a bad commit still goes everywhere if nobody reacts in time), separate branches per stage advanced by a bot (needs push rights from the hosts), and building every host's system on each later host to see whether a commit changes upstream (too heavy for the edge).
+
+## 2026-10-21: Everything goes back to its place by itself after a failover
+
+Replaces "stay where they land" in the 2026-10-06 entry above. Moving back was dropped then as "for nothing"; the [2026-10-20 incident](../incidents/2026-10-20-thinkcentre-disk-pressure.md) showed what it costs. After the failover every Postgres primary stayed on fuji while Gitea ran on the thinkcentre, so every Gitea query crossed the WAN. CI was dead for ten hours: the runners gave up on Gitea's 5-second answers. The hourly dumps were cancelled against the far replicas. Nothing was down, so nothing alerted, and nothing would ever have put it right. A platform that ends up worse placed after every incident, until someone notices, isn't one to trust.
+
+The rule: **every database and every service with files has a declared place, and the platform keeps moving what isn't there back to it, by itself, without losing data.** A failover is the emergency move; going back is a planned move, done when it's safe.
+
+**Declared place** is data next to the thing it's about, so a new service can't skip it:
+
+| What | Declared as | Means |
+|---|---|---|
+| A CNPG cluster used by one service with files (Gitea, Matrix) | `placement.radunenu.com/follows: <service>` on the Cluster | its primary is wherever site-failover runs the service |
+| A CNPG cluster used by an app with a pod in each site (Keycloak, Vaultwarden, Joplin, Hub, yeetus-api, Grafana, MAS) | `placement.radunenu.com/home: ro` | its primary is in RO, where visitors come in; Traefik keeps each request in its own site (`trafficDistribution: PreferClose` on the app's Service), so RO's requests never cross the WAN |
+| A service with files | its `home` node in site-failover (today `initial`) | where it runs when nothing is wrong |
+
+A CI check rejects a CNPG Cluster without `follows` or `home`, and a site-failover service without a home.
+
+**Moving back** is site-failover's job, on the node that should hold the thing, so the decision is made where the cluster's state is known:
+
+- A primary that isn't where it's declared: switched over (CNPG's own switchover: a few seconds of paused writes, nothing lost) once both instances are healthy and it has stayed out of place for 2 minutes. `follows` already works this way for Matrix and, since this morning, Gitea.
+- A service with files that isn't on its home node: once the home node has been fit for 30 minutes (Ready, no pressure, cluster reachable, a whole copy there), a planned move. The service stops, a last copy goes home, the label moves, and it starts there. Nothing is lost, and visitors see 10-40 seconds of the outage page. It waits for a quiet hour (03:00-06:00 local) and for no CI job to be running on Gitea.
+- Guard rails: one move at a time across the cluster, never while any node is NotReady or under pressure, never twice for the same thing within an hour, and a move that fails is retried no sooner than the next quiet hour, with an alert.
+
+**Out of place too long alerts.** Anything away from its declared place for more than an hour pages, with what's holding it there (`site_failover_placement` per thing: where it is, where it belongs, why it hasn't moved).
+
+**Working, not only running.** Every component was "up" for those ten hours. Checks that do what users do, against a time limit, catch a slowness nobody predicted: a CI canary job every 15 minutes, a git push and pull, a Keycloak login, a Matrix message. Each one alerts on failing or on being slow.
+
+**Rehearsed.** The VM test fails something, checks the failover, then checks that everything ends up back in its declared place by itself.
+
+Steps, each its own change: (1) declare placement and check it in CI; (2) the checks of what users do; (3) the drift metric and alert; (4) primaries switch to their declared place, `home` included; (5) services with files go home in a quiet hour; (6) the rehearsal for all of it.
+
+Also on the table: placing the primary by measured traffic instead of a declared site (more moving parts, flaps with the traffic), synchronous replicas so a primary can move without a pause (rejected for Matrix on 2026-10-14 for its pauses on a site loss), and moving services home only by hand (the platform would stay worse after every incident until someone acts, which is what this entry is about).
