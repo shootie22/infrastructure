@@ -1,0 +1,178 @@
+# Checks that do what users do, through the public address, against a time
+# limit (docs/ha/decisions.md, 2026-10-21). After 2026-10-20's failover every
+# component was "up" for ten hours while CI took no job: Gitea answered the
+# runners too slowly. Only someone trying to use it noticed.
+#
+# - canary-git: push a commit to radu/canary and clone it back, every 10
+#   minutes, within a minute. CanaryGitFailing after 30 minutes without a pass.
+# - canary-ci: push a commit whose workflow has to be picked up by a runner
+#   and pass, every 15 minutes. Allowed 25 minutes, since a runner can be
+#   busy with a long build; CanaryCIFailing after 2 hours without a pass.
+#
+# Each push is a commit of its own on its own branch, force-pushed, so the
+# repository doesn't grow. The workflow comes with the commit. The token is
+# radu/canary's only (scripts/create-canary-secret.sh).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: canary
+  namespace: canary
+data:
+  check.sh: |
+    set -euo pipefail
+    export GIT_TERMINAL_PROMPT=0 HOME=/tmp
+    repo=radu/canary
+    api=https://git.radunenu.com/api/v1
+    url="https://canary:${GITEA_TOKEN}@git.radunenu.com/${repo}.git"
+    branch="canary-$MODE"
+    took() { echo $(( $(date +%s) - $1 )); }
+
+    work=$(mktemp -d) && cd "$work"
+    git init -q -b "$branch"
+    git config user.name canary
+    git config user.email canary@radunenu.com
+    mkdir -p .gitea/workflows
+    cat > .gitea/workflows/canary.yaml <<'WORKFLOW'
+    # Runs only for canary-ci (kubernetes/services/canary in infrastructure).
+    on:
+      push:
+        branches: [canary-ci]
+    jobs:
+      ok:
+        runs-on: linux-amd64
+        steps:
+          - run: echo "picked up and ran"
+    WORKFLOW
+    date -u +%FT%TZ > stamp
+    git add -A
+    git commit -qm "canary $(cat stamp)"
+    sha=$(git rev-parse HEAD)
+
+    t0=$(date +%s)
+    timeout 60 git push -qf "$url" "HEAD:refs/heads/$branch"
+    echo "pushed $sha to $branch in $(took $t0) s"
+
+    if [ "$MODE" = git ]; then
+      timeout 60 git clone -q --depth 1 -b "$branch" "$url" back
+      [ "$(cat back/stamp)" = "$(cat stamp)" ] || { echo "cloned back something else"; exit 1; }
+      total=$(took $t0)
+      echo "push and clone back took $total s"
+      [ "$total" -le 60 ] || { echo "slower than 60 s"; exit 1; }
+      exit 0
+    fi
+
+    # ci: the run for exactly this commit, picked up and passed.
+    deadline=$(( t0 + 1500 ))
+    while [ "$(date +%s)" -lt "$deadline" ]; do
+      run=$(curl -fsS -m 20 -H "Authorization: token $GITEA_TOKEN" \
+        "$api/repos/$repo/actions/runs?head_sha=$sha&limit=1" | jq -c '.workflow_runs[0] // empty') || run=
+      if [ -n "$run" ]; then
+        status=$(echo "$run" | jq -r .status) conclusion=$(echo "$run" | jq -r .conclusion)
+        if [ "$status" = completed ]; then
+          echo "run $(echo "$run" | jq -r .id): $conclusion after $(took $t0) s"
+          [ "$conclusion" = success ] && exit 0
+          exit 1
+        fi
+      fi
+      sleep 15
+    done
+    echo "no passing run for $sha within $(took $t0) s (last seen: ${run:-none})"
+    exit 1
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: canary-git
+  namespace: canary
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 240
+      template:
+        spec:
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile: {type: RuntimeDefault}
+          containers:
+            - name: check
+              image: docker.io/alpine/k8s:1.35.9@sha256:b9cb6db0091a2327c0a56ecda69d37fa830c7a96ea669e7382b3ee778aa07a24
+              command: ["bash", "/canary/check.sh"]
+              env:
+                - {name: MODE, value: git}
+                - name: GITEA_TOKEN
+                  valueFrom: {secretKeyRef: {name: canary-gitea, key: token}}
+              resources:
+                requests: {cpu: 10m, memory: 32Mi}
+                limits: {memory: 128Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+              volumeMounts:
+                - {name: script, mountPath: /canary, readOnly: true}
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - name: script
+              configMap: {name: canary}
+            - name: tmp
+              emptyDir: {sizeLimit: 32Mi}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: canary-ci
+  namespace: canary
+spec:
+  schedule: "7,22,37,52 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 1620
+      template:
+        spec:
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile: {type: RuntimeDefault}
+          containers:
+            - name: check
+              image: docker.io/alpine/k8s:1.35.9@sha256:b9cb6db0091a2327c0a56ecda69d37fa830c7a96ea669e7382b3ee778aa07a24
+              command: ["bash", "/canary/check.sh"]
+              env:
+                - {name: MODE, value: ci}
+                - name: GITEA_TOKEN
+                  valueFrom: {secretKeyRef: {name: canary-gitea, key: token}}
+              resources:
+                requests: {cpu: 10m, memory: 32Mi}
+                limits: {memory: 128Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+              volumeMounts:
+                - {name: script, mountPath: /canary, readOnly: true}
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - name: script
+              configMap: {name: canary}
+            - name: tmp
+              emptyDir: {sizeLimit: 32Mi}
