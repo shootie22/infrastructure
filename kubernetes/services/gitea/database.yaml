@@ -8,6 +8,13 @@ metadata:
 spec:
   instances: 2
   imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+  # The hourly dump reads the replica. Without this the primary vacuums away
+  # rows the dump is still reading, and the replica cancels it ("conflict
+  # with recovery"): every hour while the primaries sat across the WAN after
+  # 2026-10-20's failover. Reloads without a restart.
+  postgresql:
+    parameters:
+      hot_standby_feedback: "on"
   bootstrap:
     initdb:
       database: gitea
