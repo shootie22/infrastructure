@@ -1,8 +1,9 @@
 # What visitors see while a service has no working server: every 502-504 that
 # Traefik would send, from either site, becomes Yeetus Network's outage page
 # ("we're switching servers"), which counts the time and reloads by itself
-# once the service answers. API clients get a line of JSON. Source and build:
-# outage-page/ (page.html, build.py -> outage-page-configmap.yaml).
+# once the service answers. API clients get a line of JSON. The page is
+# Yeetus's own, in the real theme (git.yeetus.net/radu/yeetus, apps/outage);
+# outage-page/build.py turns a build of it into outage-page-configmap.yaml.
 #
 # Everything here is in kube-system and in this Argo app, next to Traefik's
 # config that uses it, and synced first (wave -1): an entry point naming a
@@ -41,7 +42,7 @@ spec:
         app: outage-page
       annotations:
         # Bump with outage-page-configmap.yaml: nginx reads it at start.
-        page-revision: "1"
+        page-revision: "2"
     spec:
       priorityClassName: platform-critical
       automountServiceAccountToken: false

@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Builds kubernetes/argocd/outage-page-configmap.yaml from page.html and fonts/.
+"""Builds kubernetes/argocd/outage-page-configmap.yaml from page.html.
 
-    python3 kubernetes/argocd/outage-page/build.py          # write it
+    python3 kubernetes/argocd/outage-page/build.py --page <yeetus>/apps/outage/dist/index.html
+    python3 kubernetes/argocd/outage-page/build.py          # again from page.html
     python3 kubernetes/argocd/outage-page/build.py --check  # CI: is it current?
 
-The page is one self-contained file (fonts inlined), since it's shown exactly
-when the rest of Yeetus Network may not answer. Its {{NAME}} placeholders
-become nginx SSI, which fills in each request's details.
+The page is Yeetus's own (git.yeetus.net/radu/yeetus, apps/outage): the scene,
+logo and colours for the time of day, season and holiday, built into one
+self-contained file, since it's shown exactly when the rest of the network may
+not answer. --page copies a new build in as page.html. Its double-brace
+placeholders become nginx SSI here, which fills in each request's details.
 """
 
-import base64
 import pathlib
 import re
 import sys
@@ -85,11 +87,9 @@ def indent(text, n=4):
 
 def build():
     page = (HERE / "page.html").read_text()
-    fonts = {
-        "FONT_JERSEY": base64.b64encode((HERE / "fonts/jersey-10.woff2").read_bytes()).decode(),
-        "FONT_SILKSCREEN": base64.b64encode((HERE / "fonts/silkscreen.woff2").read_bytes()).decode(),
-    }
-    for name, value in {**fonts, **SSI}.items():
+    for name, value in SSI.items():
+        if name == "URL":
+            continue
         token = "{{" + name + "}}"
         if token not in page:
             sys.exit(f"page.html has no {token}")
@@ -100,7 +100,7 @@ def build():
     # SSI's date format, before anything is echoed.
     page = page.replace("<html", '<!--# config timefmt="%Y-%m-%d %H:%M:%S UTC" --><html', 1)
     return (
-        "# Built by outage-page/build.py from page.html and fonts/; don't edit by hand.\n"
+        "# Built by outage-page/build.py from page.html (Yeetus's apps/outage); don't edit by hand.\n"
         "apiVersion: v1\n"
         "kind: ConfigMap\n"
         "metadata:\n"
@@ -108,6 +108,8 @@ def build():
         "  namespace: kube-system\n"
         "  annotations:\n"
         "    argocd.argoproj.io/sync-wave: \"-1\"\n"
+        # Over the 256 KiB a client-side apply can keep in its annotation.
+        "    argocd.argoproj.io/sync-options: ServerSideApply=true\n"
         "data:\n"
         "  index.html: |\n" + indent(page) +
         "  default.conf.template: |\n" + indent(NGINX)
@@ -115,6 +117,9 @@ def build():
 
 
 def main():
+    if "--page" in sys.argv:
+        src = pathlib.Path(sys.argv[sys.argv.index("--page") + 1])
+        (HERE / "page.html").write_text(src.read_text())
     text = build()
     if "--check" in sys.argv:
         if not OUT.exists() or OUT.read_text() != text:
