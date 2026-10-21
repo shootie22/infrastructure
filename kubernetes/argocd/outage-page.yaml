@@ -1,0 +1,139 @@
+# What visitors see while a service has no working server: every 502-504 that
+# Traefik would send, from either site, becomes Yeetus Network's outage page
+# ("we're switching servers"), which counts the time and reloads by itself
+# once the service answers. API clients get a line of JSON. Source and build:
+# outage-page/ (page.html, build.py -> outage-page-configmap.yaml).
+#
+# Everything here is in kube-system and in this Argo app, next to Traefik's
+# config that uses it, and synced first (wave -1): an entry point naming a
+# middleware or service that doesn't exist makes Traefik answer 404 for every
+# site (tried by hand). With the page's pods down, Traefik sends its plain 503
+# as before, never anything worse.
+#
+# One pod in each site, close to that site's Traefik, and above every service
+# in priority: it's needed exactly when a node is in trouble (2026-10-20, the
+# thinkcentre under disk pressure).
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: platform-critical
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+value: 100000
+globalDefault: false
+description: Parts of the platform that have to keep running while services are in trouble (the outage page).
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: outage-page
+  namespace: kube-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: outage-page
+  template:
+    metadata:
+      labels:
+        app: outage-page
+      annotations:
+        # Bump with outage-page-configmap.yaml: nginx reads it at start.
+        page-revision: "1"
+    spec:
+      priorityClassName: platform-critical
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile: {type: RuntimeDefault}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - {key: topology.kubernetes.io/zone, operator: In, values: [ro, dk]}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: {app: outage-page}
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      containers:
+        - name: nginx
+          image: docker.io/nginxinc/nginx-unprivileged:1.31.7-alpine@sha256:b5047b9b76845eac124358373c6852377c52e4b05834a47647e955dd91cb8f1e
+          ports:
+            - {name: http, containerPort: 8080}
+          env:
+            # Shown in the page's details ("Served by fuji (RO)").
+            - name: NODE_NAME
+              valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 5m, memory: 16Mi}
+            limits: {memory: 64Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: page, mountPath: /page/index.html, subPath: index.html, readOnly: true}
+            - {name: page, mountPath: /etc/nginx/templates/default.conf.template, subPath: default.conf.template, readOnly: true}
+            # The image's start script writes the config from the template here.
+            - {name: conf, mountPath: /etc/nginx/conf.d}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: page
+          configMap: {name: outage-page}
+        - name: conf
+          emptyDir: {sizeLimit: 1Mi}
+        - name: tmp
+          emptyDir: {sizeLimit: 16Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: outage-page
+  namespace: kube-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  selector:
+    app: outage-page
+  # Each site's Traefik asks its own site's copy while it's there.
+  trafficDistribution: PreferClose
+  ports:
+    - {name: http, port: 8080, targetPort: http}
+---
+# On both entry points, outside retry (traefik-config.yaml): what's left after
+# retry has tried the other replicas. 502 and 504 become 503 with Retry-After,
+# which is what they mean here: try again shortly.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: outage-page
+  namespace: kube-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  errors:
+    status: ["502-504"]
+    statusRewrites:
+      "502": 503
+      "504": 503
+    service:
+      name: outage-page
+      port: 8080
+    query: "/?status={status}&url={url}"

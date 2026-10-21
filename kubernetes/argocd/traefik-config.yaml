@@ -111,8 +111,11 @@ spec:
       # A pod that doesn't accept the connection within 2 s counts as gone,
       # and the retry middleware sends the request to another replica (#160).
       - --serversTransport.forwardingTimeouts.dialTimeout=2s
-      - --entryPoints.web.http.middlewares=kube-system-retry@kubernetescrd
-      - --entryPoints.websecure.http.middlewares=kube-system-retry@kubernetescrd
+      # Outermost, the outage page (outage-page.yaml): whatever 502-504
+      # is left once retry has tried the other replicas, visitors get "we're
+      # switching servers" and a page that reloads when it's back.
+      - --entryPoints.web.http.middlewares=kube-system-outage-page@kubernetescrd,kube-system-retry@kubernetescrd
+      - --entryPoints.websecure.http.middlewares=kube-system-outage-page@kubernetescrd,kube-system-retry@kubernetescrd
       - --accesslog=true
       - --accesslog.format=json
       - --accesslog.filters.statuscodes=400-599
