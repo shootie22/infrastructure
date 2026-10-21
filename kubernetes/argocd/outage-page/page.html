@@ -1,0 +1,257 @@
+<!doctype html>
+<!--
+  Yeetus Network's outage page: what a visitor sees while a service has no
+  working server and failover is moving it (Traefik's errors middleware,
+  ../outage-page.yaml). The source: build.py turns it into
+  ../outage-page-configmap.yaml, with the fonts in and nginx filling in each
+  request's details.
+  The double-brace names below are those details.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex">
+<title>Switching servers · Yeetus Network</title>
+<style>
+@font-face{font-family:"Yeetus Jersey";font-display:swap;src:url(data:font/woff2;base64,{{FONT_JERSEY}}) format("woff2")}
+@font-face{font-family:"Yeetus Micro";font-display:swap;src:url(data:font/woff2;base64,{{FONT_SILKSCREEN}}) format("woff2")}
+:root{
+  --sky:linear-gradient(180deg,#060716 0%,#0d1030 55%,#1f1942 100%);
+  --text:#f2f3ff;--dim:rgba(225,228,255,.72);--faint:rgba(225,228,255,.45);
+  --card-bg:rgba(16,17,42,.62);--card-edge:#2b2f6e;
+  --btn:#9fd8ff;--btn-hi:#d6efff;--btn-lo:#5aa0d6;--btn-edge:#12304a;--btn-ink:#0b2236;
+  --warn:#ffcf5c;--ok:#7ccf5a;
+  --font:"Yeetus Jersey",ui-monospace,monospace;--micro:"Yeetus Micro",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{margin:0;min-height:100%;background:#070814}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 16px 140px;background:var(--sky);color:var(--text);font-family:var(--font);
+  -webkit-font-smoothing:none;font-synthesis:none;overflow-x:hidden;position:relative}
+/* The sky: pixel stars, a moon, two rows of hills. */
+.sky{position:fixed;inset:0;pointer-events:none;z-index:0}
+.star{position:absolute;width:3px;height:3px;background:#fff6dc;animation:twinkle 3s steps(3) infinite}
+.star.big{width:6px;height:6px}
+@keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
+.moon{position:absolute;top:9vh;right:12vw;width:48px;height:48px;background:#fff6dc;
+  box-shadow:0 0 0 6px #ffe8b0 inset;filter:drop-shadow(0 0 28px rgba(255,240,200,.45));
+  clip-path:polygon(0 25%,25% 25%,25% 0,75% 0,75% 25%,100% 25%,100% 75%,75% 75%,75% 100%,25% 100%,25% 75%,0 75%)}
+.moon::after{content:"";position:absolute;left:12px;top:12px;width:12px;height:12px;background:#ffe8b0}
+.hills{position:fixed;left:0;right:0;bottom:0;height:130px;pointer-events:none;z-index:0}
+.hills i{position:absolute;left:0;right:0;bottom:0;display:block}
+.hills .far{height:110px;background:#1d2052;
+  clip-path:polygon(0 60%,8% 60%,8% 45%,18% 45%,18% 30%,30% 30%,30% 50%,42% 50%,42% 35%,55% 35%,55% 20%,66% 20%,66% 40%,78% 40%,78% 28%,90% 28%,90% 48%,100% 48%,100% 100%,0 100%)}
+.hills .near{height:70px;background:#0a0b22;
+  clip-path:polygon(0 40%,12% 40%,12% 25%,26% 25%,26% 50%,38% 50%,38% 30%,52% 30%,52% 45%,64% 45%,64% 20%,76% 20%,76% 40%,88% 40%,88% 30%,100% 30%,100% 100%,0 100%)}
+.firefly{position:absolute;width:4px;height:4px;background:#7cf0c9;box-shadow:0 0 8px 2px rgba(124,240,201,.55);
+  animation:float 9s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translate(0,0)}25%{transform:translate(14px,-18px)}50%{transform:translate(-8px,-30px)}75%{transform:translate(-16px,-8px)}}
+
+/* The card, as on yeetus.net (px-card). */
+.card{position:relative;z-index:1;width:100%;max-width:620px;padding:30px 30px 26px;background:var(--card-bg);
+  backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);
+  box-shadow:0 -4px 0 0 var(--card-edge),0 4px 0 0 var(--card-edge),-4px 0 0 0 var(--card-edge),4px 0 0 0 var(--card-edge),
+    inset 4px 4px #ffffff14,inset -4px -4px #00000047}
+.brand{font-family:var(--micro);font-size:12px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase;margin:0 0 18px;
+  display:flex;align-items:center;gap:10px}
+.brand b{display:inline-block;width:10px;height:10px;background:var(--btn);box-shadow:3px 3px 0 var(--btn-lo)}
+h1{font-size:40px;line-height:1.02;margin:0 0 12px;font-weight:400;letter-spacing:.01em}
+.lead{font-size:22px;line-height:1.25;color:var(--dim);margin:0 0 22px}
+.lead strong{color:var(--text);font-weight:400}
+
+/* What's happening: the pixel spinner and the state. */
+.state{display:flex;align-items:center;gap:16px;padding:14px 16px;background:#00000059;box-shadow:inset 4px 0 0 var(--btn);margin:0 0 16px}
+.state.slow{box-shadow:inset 4px 0 0 var(--warn)}
+.state.back{box-shadow:inset 4px 0 0 var(--ok)}
+.spin{flex:none;display:grid;grid-template-columns:repeat(3,8px);grid-template-rows:repeat(3,8px);gap:3px}
+.spin i{background:var(--btn);opacity:.18;animation:pix 1.2s steps(1) infinite}
+.slow .spin i{background:var(--warn)}
+.back .spin i{background:var(--ok);opacity:1;animation:none}
+.spin i:nth-child(1){animation-delay:0s}.spin i:nth-child(2){animation-delay:.15s}.spin i:nth-child(3){animation-delay:.3s}
+.spin i:nth-child(6){animation-delay:.45s}.spin i:nth-child(9){animation-delay:.6s}.spin i:nth-child(8){animation-delay:.75s}
+.spin i:nth-child(7){animation-delay:.9s}.spin i:nth-child(4){animation-delay:1.05s}.spin i:nth-child(5){opacity:.5;animation:none}
+@keyframes pix{0%{opacity:1}12%{opacity:.55}25%,100%{opacity:.18}}
+.state-text{min-width:0}
+.state-title{font-family:var(--micro);font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin:0 0 4px}
+.state-detail{font-size:19px;color:var(--dim);margin:0}
+
+/* Progress towards the usual recovery time. */
+.bar{height:16px;background:#00000066;box-shadow:inset 0 0 0 3px #ffffff12;margin:0 0 8px;position:relative;overflow:hidden}
+.bar i{position:absolute;left:3px;top:3px;bottom:3px;width:0;background:
+  repeating-linear-gradient(90deg,var(--btn) 0 10px,var(--btn-lo) 10px 12px);transition:width 1s steps(8)}
+.slow .bar i,.bar.slow i{background:repeating-linear-gradient(90deg,var(--warn) 0 10px,#c8961a 10px 12px)}
+.bar.back i{background:var(--ok)}
+.timing{display:flex;justify-content:space-between;gap:12px;font-size:18px;color:var(--dim);margin:0 0 22px}
+.timing span:last-child{text-align:right}
+
+.actions{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:0 0 4px}
+.btn{min-height:50px;padding:0 22px;border:0;background:var(--btn);color:var(--btn-ink);font-family:var(--font);font-size:22px;cursor:pointer;
+  box-shadow:0 -4px 0 0 var(--btn-edge),0 4px 0 0 var(--btn-edge),-4px 0 0 0 var(--btn-edge),4px 0 0 0 var(--btn-edge),
+    inset 4px 4px 0 var(--btn-hi),inset -4px -4px 0 var(--btn-lo)}
+.btn:hover{filter:brightness(1.06)}
+.btn:active{box-shadow:0 -4px 0 0 var(--btn-edge),0 4px 0 0 var(--btn-edge),-4px 0 0 0 var(--btn-edge),4px 0 0 0 var(--btn-edge),
+    inset 4px 4px 0 var(--btn-lo),inset -4px -4px 0 var(--btn-hi)}
+.btn:focus-visible{outline:3px solid var(--text);outline-offset:6px}
+.note{font-size:18px;color:var(--faint);margin:0}
+
+/* Details for whoever looks into it, like Cloudflare's Ray ID. */
+.debug{position:relative;z-index:1;width:100%;max-width:620px;margin:22px 0 0;font-family:var(--micro);font-size:11px;line-height:1.9;
+  letter-spacing:.04em;color:var(--faint);display:flex;flex-wrap:wrap;justify-content:center;gap:2px 16px;text-align:center}
+.debug b{font-weight:400;color:var(--dim)}
+.debug span{white-space:nowrap}
+.debug .id{user-select:all}
+
+@media (max-width:520px){
+  .card{padding:24px 20px 22px}
+  h1{font-size:32px}
+  .lead{font-size:20px}
+  .timing{flex-direction:column;gap:2px}
+  .timing span:last-child{text-align:left}
+}
+@media (prefers-reduced-motion:reduce){
+  .star,.firefly,.spin i{animation:none}
+  .spin i{opacity:.6}
+  .bar i{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="sky" aria-hidden="true" id="sky"><div class="moon"></div></div>
+<div class="hills" aria-hidden="true"><i class="far"></i><i class="near"></i></div>
+
+<main class="card" id="ctx"
+  data-request-id="{{REQUEST_ID}}" data-time="{{TIME}}" data-host="{{HOST}}" data-status="{{STATUS}}"
+  data-node="{{NODE}}" data-site="{{SITE}}" data-url="{{URL}}">
+  <p class="brand"><b></b>Yeetus Network</p>
+  <h1 id="title">Hang tight, we're switching servers</h1>
+  <p class="lead" id="lead"><strong id="svc">This service</strong> lost its server for a moment. Yeetus Network is already moving it to a working copy by itself.</p>
+
+  <div class="state" id="state" role="status" aria-live="polite">
+    <div class="spin" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="state-text">
+      <p class="state-title" id="state-title">Automatic failover in progress</p>
+      <p class="state-detail" id="state-detail">Waiting for a replica to come up. This page reloads by itself when it's back.</p>
+    </div>
+  </div>
+
+  <div class="bar" id="bar" aria-hidden="true"><i id="bar-fill"></i></div>
+  <p class="timing"><span id="elapsed">Waiting 0:00</span><span id="eta">Usually back within 3 minutes</span></p>
+
+  <div class="actions">
+    <button class="btn" id="retry" type="button">Try again now</button>
+    <p class="note" id="checked">Checking every few seconds</p>
+  </div>
+</main>
+
+<footer class="debug" aria-label="Details for troubleshooting">
+  <span>Request <b class="id" id="d-id">-</b></span>
+  <span>Error <b id="d-status">503</b></span>
+  <span><b id="d-time">-</b></span>
+  <span>Host <b id="d-host">-</b></span>
+  <span>Served by <b id="d-node">-</b></span>
+</footer>
+
+<script>
+(function () {
+  var ctx = document.getElementById("ctx").dataset;
+  // What the server filled in; a placeholder left over means it couldn't.
+  function val(v) { return v && v.indexOf("{{") !== 0 && v.indexOf("(none)") !== 0 ? v : ""; }
+  var $ = function (id) { return document.getElementById(id); };
+
+  var host = val(ctx.host) || location.host;
+  var id = val(ctx.requestId) || Math.random().toString(16).slice(2, 10) + Date.now().toString(16);
+  var status = val(ctx.status) || "503";
+  var node = val(ctx.node), site = val(ctx.site);
+  $("svc").textContent = host;
+  $("d-id").textContent = id.slice(0, 16);
+  $("d-status").textContent = status;
+  $("d-time").textContent = (val(ctx.time) || new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC");
+  $("d-host").textContent = host;
+  $("d-node").textContent = node ? node + (site ? " (" + site.toUpperCase() + ")" : "") : "-";
+
+  // Elapsed time counts across reloads of this tab, so a visitor who hits
+  // reload doesn't start from zero.
+  var key = "yeetus-outage:" + host, start = Date.now();
+  try {
+    var s = JSON.parse(sessionStorage.getItem(key) || "null");
+    if (s && Date.now() - s < 30 * 60 * 1000) start = s; else sessionStorage.setItem(key, JSON.stringify(start));
+  } catch (e) {}
+
+  var USUAL = 180, SLOW = 300; // seconds: a failover takes 1-3 minutes
+  function mmss(t) { var m = Math.floor(t / 60), s = Math.floor(t % 60); return m + ":" + (s < 10 ? "0" : "") + s; }
+  function tick() {
+    var t = (Date.now() - start) / 1000;
+    $("elapsed").textContent = "Waiting " + mmss(t);
+    // Fills towards the usual time, then creeps on without ever reaching the end.
+    var p = t < USUAL ? t / USUAL * 85 : 85 + 13 * (1 - Math.exp(-(t - USUAL) / 300));
+    $("bar-fill").style.width = "calc(" + p.toFixed(1) + "% - 6px)";
+    if (t >= SLOW && !back) {
+      $("state").className = "state slow";
+      $("bar").className = "bar slow";
+      $("state-title").textContent = "Taking longer than usual";
+      $("state-detail").textContent = "The admins have been alerted automatically and are on it. This page keeps checking and reloads by itself.";
+      $("eta").textContent = "Usually back within 3 minutes";
+    } else if (t >= USUAL * 0.6 && !back) {
+      $("eta").textContent = "Almost there, usually";
+    }
+  }
+
+  // Asks for this very page every few seconds; once it isn't a gateway error
+  // any more, the service is back.
+  var back = false, delay = 4000, timer = null;
+  function check() {
+    clearTimeout(timer);
+    var url = location.href.split("#")[0];
+    fetch(url, { method: "HEAD", cache: "no-store", credentials: "same-origin", redirect: "manual" })
+      .then(function (r) {
+        var outage = r.headers.get("X-Yeetus-Outage");
+        if (r.type === "opaqueredirect" || (!outage && [502, 503, 504].indexOf(r.status) < 0)) return recovered();
+        $("checked").textContent = "Last checked " + new Date().toLocaleTimeString();
+        schedule();
+      })
+      .catch(function () { $("checked").textContent = "Can't reach the network right now, still trying"; schedule(); });
+  }
+  function schedule() { delay = Math.min(delay * 1.25, 10000); timer = setTimeout(check, delay); }
+  function recovered() {
+    back = true;
+    try { sessionStorage.removeItem(key); } catch (e) {}
+    $("state").className = "state back";
+    $("bar").className = "bar back";
+    $("bar-fill").style.width = "calc(100% - 6px)";
+    $("title").textContent = "It's back!";
+    $("state-title").textContent = "Service restored";
+    $("state-detail").textContent = "Taking you there now.";
+    setTimeout(function () { location.reload(); }, 900);
+  }
+  $("retry").addEventListener("click", function () { delay = 4000; $("checked").textContent = "Checking..."; check(); });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && !back) { delay = 4000; check(); } });
+
+  // A sky that's never quite the same: stars and a few fireflies.
+  var sky = $("sky"), w = innerWidth, h = innerHeight;
+  for (var i = 0; i < 70; i++) {
+    var st = document.createElement("i");
+    st.className = "star" + (i % 9 === 0 ? " big" : "");
+    st.style.left = (Math.random() * 100).toFixed(2) + "%";
+    st.style.top = (Math.random() * 70).toFixed(2) + "%";
+    st.style.animationDelay = (Math.random() * 3).toFixed(2) + "s";
+    sky.appendChild(st);
+  }
+  for (var j = 0; j < 6; j++) {
+    var f = document.createElement("i");
+    f.className = "firefly";
+    f.style.left = (8 + Math.random() * 84).toFixed(2) + "%";
+    f.style.bottom = (40 + Math.random() * 110).toFixed(0) + "px";
+    f.style.top = "auto";
+    f.style.animationDelay = (-Math.random() * 9).toFixed(2) + "s";
+    sky.appendChild(f);
+  }
+
+  tick();
+  setInterval(tick, 1000);
+  timer = setTimeout(check, delay);
+})();
+</script>
+</body>
+</html>
