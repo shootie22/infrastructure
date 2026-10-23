@@ -457,7 +457,10 @@ spec:
             - --path.procfs=/host/proc
             - --path.sysfs=/host/sys
             - --path.rootfs=/host/root
-            - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($|/)
+            # /dev/shm too, which holds Kata VMs' memory (CIVMBiggerThanShm).
+            # The rest of /dev is devtmpfs, devpts, mqueue and hugetlbfs,
+            # which the default fs-types-exclude leaves out.
+            - --collector.filesystem.mount-points-exclude=^/(sys|proc|host|etc)($|/)
             # Metrics the hosts write themselves (dotfiles standby-copy, #142).
             - --collector.textfile.directory=/host/root/var/lib/node-exporter-textfile
           ports:

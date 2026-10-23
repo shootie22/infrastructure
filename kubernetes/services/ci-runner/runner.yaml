@@ -86,9 +86,12 @@ data:
   # architecture.md, "Gitea runners on the same nodes"). mixi's 3584Mi (was
   # 2560Mi): cubitrix's arm64 release build needs one rustc of about 2.7 GB
   # for cubitrix-matrix/matrix-sdk even at -j 1, and Docker and cargo take
-  # their share of the limit too. On mixi's 8 GB that leaves Ollama (1Gi
-  # requested, 4Gi at most) its room while idle; if it loads a model during
-  # a failover, the CI pod (priority -100) is what gets evicted.
+  # their share of the limit too. Its VM is then 4.5 GiB (Kata's 512Mi, this,
+  # and the runner's 512Mi), which has to fit in mixi's /dev/shm (dotfiles
+  # modules/nixos/kata.nix; CIVMBiggerThanShm). With the rest of mixi (about
+  # 3 GiB, plus Ollama's model, up to 4Gi, during a failover) that's more
+  # than its 7.5 GiB: the rest goes to swap (24 GiB), and if memory still
+  # runs out kubelet evicts the CI pod (priority -100) before any service.
   slots: |
     thinkcentre linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-thinkcentre:docker://docker.gitea.com/runner-images:ubuntu-latest 2 6Gi /home
     fuji linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-fuji:docker://docker.gitea.com/runner-images:ubuntu-latest 2 8Gi /
