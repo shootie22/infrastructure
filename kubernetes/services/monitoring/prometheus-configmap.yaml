@@ -1121,6 +1121,26 @@ data:
             annotations:
               summary: "Job {{ $labels.namespace }}/{{ $labels.job_name }} failed"
               description: A one-off Job failed. Read its pod's log, fix and rerun it, or delete the Job once it no longer matters.
+          # Kata keeps a VM's whole memory in /dev/shm. A CI VM bigger than
+          # it dies once its guest has touched that much: mixi's did on every
+          # arm64 job from 2026-10-15 to 2026-10-23, after #300 grew its slot
+          # and nothing said so. The VM is Kata's base (512Mi, dotfiles
+          # modules/nixos/kata.nix) plus the job pod's containers' limits.
+          - alert: CIVMBiggerThanShm
+            expr: |
+              (
+                sum by (node) (kube_pod_container_resource_limits{namespace="ci-jobs", resource="memory"})
+                + sum by (node) (kube_pod_init_container_resource_limits{namespace="ci-jobs", resource="memory"})
+                + 512 * 1024 * 1024
+              )
+              > on (node)
+              max by (node) (node_filesystem_size_bytes{job="node-exporter", mountpoint="/dev/shm"})
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "The CI VM on {{ $labels.node }} is bigger than its /dev/shm"
+              description: "Every CI job there will die part way (\"kvm run failed Bad address\" in the node's journal). Make /dev/shm bigger (dotfiles modules/nixos/kata.nix) or the node's slot smaller (ci-runner dispatcher slots)."
           - alert: HACheckerDown
             expr: probe_success{job="ha-checkers"} == 0
             for: 10m
