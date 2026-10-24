@@ -94,6 +94,11 @@ spec:
             # Cloudflare: the theme files keep their names, so a new look
             # would otherwise take hours to show.
             - {name: GITEA__server__STATIC_CACHE_TIME, value: 10m}
+            # Actions artifacts for a week, not Gitea's 90 days: they're what
+            # jobs hand each other within a run (cubitrix's builds to its
+            # publish job), and they had grown to 40 GiB of the thinkcentre's
+            # /home by 2026-10-24 (CISlotHeldBack). Applies to new uploads.
+            - {name: GITEA__actions__ARTIFACT_RETENTION_DAYS, value: "7"}
           ports:
             - {name: http, containerPort: 3000}
             - {name: ssh, containerPort: 22}

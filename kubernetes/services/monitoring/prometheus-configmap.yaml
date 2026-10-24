@@ -1141,6 +1141,29 @@ data:
             annotations:
               summary: "The CI VM on {{ $labels.node }} is bigger than its /dev/shm"
               description: "Every CI job there will die part way (\"kvm run failed Bad address\" in the node's journal). Make /dev/shm bigger (dotfiles modules/nixos/kata.nix) or the node's slot smaller (ci-runner dispatcher slots)."
+          # The dispatcher starts a CI job on a node only if the disk holding
+          # its container layers keeps 10% free plus 35 GiB (ci-runner
+          # dispatch.sh). On 2026-10-24 the thinkcentre's /home, filled by
+          # Gitea's release files, held its slot back for 11 hours, and the
+          # only alert was CanaryCIFailing, once fuji alone couldn't keep up.
+          # The same nodes, disks and room as the dispatcher's slots.
+          - alert: CISlotHeldBack
+            expr: |
+              (
+                node_filesystem_avail_bytes{job="node-exporter", node="thinkcentre", mountpoint="/home"}
+                - 0.10 * node_filesystem_size_bytes{job="node-exporter", node="thinkcentre", mountpoint="/home"}
+              ) < 35 * 1024 ^ 3
+              or
+              (
+                node_filesystem_avail_bytes{job="node-exporter", node=~"fuji|mixi", mountpoint="/"}
+                - 0.10 * node_filesystem_size_bytes{job="node-exporter", node=~"fuji|mixi", mountpoint="/"}
+              ) < 35 * 1024 ^ 3
+            for: 1h
+            labels:
+              severity: warning
+            annotations:
+              summary: "{{ $labels.node }} takes no CI jobs: {{ $labels.mountpoint }} is too full"
+              description: "The dispatcher holds its slot back until {{ $labels.mountpoint }} has 10% free plus 35 GiB again (now {{ $value | humanize1024 }}B beyond 10%). See what fills it; on the thinkcentre that's usually Gitea's data in /home/main/services/gitea."
           - alert: HACheckerDown
             expr: probe_success{job="ha-checkers"} == 0
             for: 10m
