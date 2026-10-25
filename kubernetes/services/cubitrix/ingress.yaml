@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cubitrix
+  namespace: cubitrix
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Websites
+    gethomepage.dev/name: Cubitrix
+    gethomepage.dev/icon: mdi-chat
+    gethomepage.dev/description: Cubitrix's product page
+    gethomepage.dev/weight: "110"
+    gethomepage.dev/siteMonitor: http://cubitrix.cubitrix.svc.cluster.local
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - cubitrix.yeetus.net
+      secretName: cubitrix-yeetus-net-tls
+  rules:
+    - host: cubitrix.yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cubitrix
+                port:
+                  number: 80

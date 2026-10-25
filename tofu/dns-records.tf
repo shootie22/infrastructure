@@ -293,6 +293,12 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
+    # Cubitrix's product page (kubernetes/services/cubitrix).
+    "yeetus.net/cubitrix/CNAME" = {
+      zone    = "yeetus.net", name = "cubitrix", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
     "yeetus.net/cal/CNAME" = {
       zone    = "yeetus.net", name = "cal", type = "CNAME"
       content = "beacon.radunenu.com"

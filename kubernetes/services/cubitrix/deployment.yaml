@@ -1,0 +1,119 @@
+# Caddy serving the page fetch.sh keeps (site.yaml). Nothing on disk, so one
+# copy per site and either can serve it alone (#89).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cubitrix
+  namespace: cubitrix
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cubitrix
+  template:
+    metadata:
+      annotations:
+        # Bump when site.yaml changes; both containers read it only at start.
+        config-revision: "1"
+      labels:
+        app.kubernetes.io/name: cubitrix
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      containers:
+        - name: caddy
+          image: caddy:2.10.0-alpine@sha256:ae4458638da8e1a91aafffb231c5f8778e964bca650c8a8cb23a7e8ac557aa3c
+          args: [caddy, run, --config, /etc/caddy/Caddyfile, --adapter, caddyfile]
+          ports:
+            - {name: http, containerPort: 8080}
+          # Ready once there's a page to serve: the first fetch has finished.
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+              # The official Caddy binary carries this file capability.
+              add: [NET_BIND_SERVICE]
+          # Traefik needs a moment to stop sending requests here (#89).
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+          volumeMounts:
+            - {name: caddyfile, mountPath: /etc/caddy, readOnly: true}
+            - {name: site, mountPath: /srv/site, readOnly: true}
+            - {name: data, mountPath: /data}
+            - {name: runtime-config, mountPath: /config}
+        - name: fetch
+          image: docker.io/library/busybox:1.37@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e
+          command: [sh, /etc/fetch/fetch.sh]
+          resources:
+            requests:
+              cpu: 1m
+              memory: 8Mi
+            limits:
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - {name: fetch, mountPath: /etc/fetch, readOnly: true}
+            - {name: site, mountPath: /srv/site}
+      volumes:
+        # Mounts of one ConfigMap, so neither file is in what's served.
+        - name: caddyfile
+          configMap:
+            name: cubitrix-site
+            items:
+              - {key: Caddyfile, path: Caddyfile}
+        - name: fetch
+          configMap:
+            name: cubitrix-site
+            items:
+              - {key: fetch.sh, path: fetch.sh}
+        - name: site
+          emptyDir:
+            sizeLimit: 64Mi
+        - name: data
+          emptyDir: {}
+        - name: runtime-config
+          emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: cubitrix
+  # No third site for a surge pod, so replace one at a time.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
