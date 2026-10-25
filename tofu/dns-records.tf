@@ -299,6 +299,12 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
+    # Cubitrix's crash reports, GlitchTip (kubernetes/services/cubitrix-reports).
+    "yeetus.net/cubitrix-reports/CNAME" = {
+      zone    = "yeetus.net", name = "cubitrix-reports", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
     "yeetus.net/cal/CNAME" = {
       zone    = "yeetus.net", name = "cal", type = "CNAME"
       content = "beacon.radunenu.com"

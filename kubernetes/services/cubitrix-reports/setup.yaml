@@ -1,0 +1,58 @@
+# What would otherwise be clicked in GlitchTip's admin, run at every start
+# (deployment.yaml, after the migrations), so it's the same after a rebuild.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: glitchtip-setup
+  namespace: cubitrix-reports
+data:
+  setup.py: |
+    import os
+    import uuid
+
+    from allauth.socialaccount.models import SocialAccount, SocialApp
+    from apps.organizations_ext.models import Organization, OrganizationUser, OrganizationUserRole
+    from apps.projects.models import Project, ProjectKey
+    from apps.users.models import User
+
+    # Sign-in with Keycloak (network-admin: only me). GlitchTip keeps it in its database, not in its
+    # settings.
+    app, _ = SocialApp.objects.update_or_create(
+        provider="openid_connect",
+        provider_id="keycloak",
+        defaults=dict(
+            name="Keycloak",
+            client_id=os.environ["OIDC_CLIENT_ID"],
+            secret=os.environ["OIDC_CLIENT_SECRET"],
+            settings={"server_url": os.environ["OIDC_SERVER_URL"], "oauth_pkce_enabled": True},
+        ),
+    )
+
+    # An account from the start: while there is none, anyone could sign up with a password (GlitchTip
+    # lets the first one in whatever ENABLE_USER_REGISTRATION says). Its password is in the secret,
+    # for when Keycloak is down.
+    admin_email = os.environ["ADMIN_EMAIL"]
+    admin = User.objects.filter(email=admin_email).first()
+    if admin is None:
+        admin = User.objects.create_superuser(email=admin_email, password=os.environ["ADMIN_PASSWORD"])
+
+    # Cubitrix's project, with the key the app is built with: its DSN doesn't change when the
+    # database is made again.
+    org, _ = Organization.objects.get_or_create(slug="cubitrix", defaults={"name": "Cubitrix"})
+    project, _ = Project.objects.get_or_create(
+        organization=org, slug="cubitrix", defaults={"name": "cubitrix", "platform": "native"}
+    )
+    key = uuid.UUID(os.environ["CUBITRIX_DSN_KEY"])
+    if not ProjectKey.objects.filter(project=project, public_key=key).exists():
+        ProjectKey.objects.create(project=project, public_key=key, name="Cubitrix app")
+
+    # Whoever signed in with Keycloak owns it all (the realm has only me).
+    owners = [admin] + [a.user for a in SocialAccount.objects.filter(provider="keycloak").select_related("user")]
+    for user in owners:
+        if not user.is_superuser:
+            user.is_superuser = user.is_staff = True
+            user.save(update_fields=["is_superuser", "is_staff"])
+        OrganizationUser.objects.update_or_create(
+            organization=org, user=user, defaults={"role": OrganizationUserRole.OWNER, "email": user.email}
+        )
+    print(f"setup: keycloak sign-in, {len(owners)} owner(s), project {org.slug}/{project.slug} (id {project.id})")

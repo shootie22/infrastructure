@@ -1,0 +1,34 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: keycloak-config-cli-cubitrix-reports
+    namespace: keycloak
+spec:
+    secretTemplates:
+        - name: ENC[AES256_GCM,data:pB9R2vKm1LtX4PpEwX8pHLWCrj4qjD+vFgMp3d+A/7GmIEj+,iv:kKL9aq9xEsg4+KFX31iWbb/TkcLqTTU2acPlDQdiI5E=,tag:wZ8WsvnYgyaPXNNsjv6Jmg==,type:str]
+          stringData:
+            CUBITRIX_REPORTS_OIDC_SECRET: ENC[AES256_GCM,data:FYOh4UmSLfwnPJqOZnkSsLiSvUUxNCL6EkP16nJrqQ3djJ0tcdffsvGMCg==,iv:UF4QgBEnsKzCFGXrbonBoSY2qsacXoT3ylSWMtBb19U=,tag:99DHJBChcdIvQE5GPkkvjA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBFenB1QmkxRXBLQ3FEUVZi
+            aWl2MFNrdFFhL0FrZFkwZGdJNEhLYzhwV0FrCnVLbzZFcWdGd2dmOFF1Z25ZY1Rw
+            aUQxekVOMzRMNkdVTVhsTkdZK3RyRTAKLS0tIHRpZ2I5NFRaYUlDODlkQzhJSEhx
+            c2xUMzQzZEV5R2hoSDYzeFhNT2E4UjgKUc6eXSGa+GNv8Ql7ajy/u3TOPVdtK0hO
+            XpIr6Duaw83/wcswsv9m9qi304dfyG3irrkBiYgG80hJd54r1/sJYA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB4NmZzenZuV09NZ3dnRno5
+            bnJDckZ1OGUvc0JFR1M3WTlycDY2Zkh3bGxJCkkva1lhaXlnblFodHNLbWNaWHBk
+            RzJtb3lUcXhzOExsOEFRaDRLRVhrblkKLS0tIDNGTExJMEp5eHR3OTgrVmNiRVVE
+            N0ViOG1SVWFHQWpmODEveUZKNkYvMEkKYo7wBruMz/qPzrCyruZhZhykRN2fTaxf
+            5wc+LsZExxRd7d1XlJD+O9HpqjXFyuvMAb1MeNcnSbfo29HV5Pmzrw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
+    encrypted_suffix: Templates
+    lastmodified: "2026-10-25T14:42:58Z"
+    mac: ENC[AES256_GCM,data:c9FIjf538Zzfg01YT7rMef7JKpsoSYeydEJqmyJGk5F32qdaukrFW6Ua7rZIC2KverQCuTADuO5MD7uzOMMDBtaf+87tQZ+1cqS9WbFK+bWSjKh813Oq8JBQ2g/XRMcID9kM0ChfH+hT/p9anoqoACTef83XnuQXDypeRkM8sWI=,iv:vd5iURz2Dyq4Qo97oUt+B3HgLHCbRd1ffxzfX4cjSPM=,tag:arcDZez05P7NAAqhwXD1sg==,type:str]
+    version: 3.13.3

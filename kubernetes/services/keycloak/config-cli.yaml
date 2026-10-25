@@ -85,6 +85,10 @@ spec:
                 # (legacy-client.sops.yaml).
                 - secretRef:
                     name: keycloak-config-cli-legacy
+                # CUBITRIX_REPORTS_OIDC_SECRET, the same way
+                # (cubitrix-reports-client.sops.yaml).
+                - secretRef:
+                    name: keycloak-config-cli-cubitrix-reports
               resources:
                 requests:
                   cpu: 100m
