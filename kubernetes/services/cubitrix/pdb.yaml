@@ -1,0 +1,11 @@
+# A drain takes one copy at a time, never both sites' at once.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cubitrix
+  namespace: cubitrix
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cubitrix

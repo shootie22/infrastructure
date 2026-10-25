@@ -1,0 +1,71 @@
+# cubitrix.yeetus.net, Cubitrix's product page. The page itself is made in
+# radu/cubitrix: its CI fills the download section from the real releases
+# (.gitea/workflows/site.yml) and publishes the result to Gitea as the generic
+# package cubitrix-site. fetch.sh keeps a copy of it here, and Caddy serves it.
+#
+# After changing this file, bump config-revision in deployment.yaml: both
+# containers read it once at start.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cubitrix-site
+  namespace: cubitrix
+data:
+  Caddyfile: |
+    {
+        auto_https off
+        admin off
+    }
+
+    :8080 {
+        respond /healthz 200
+
+        header {
+            Content-Security-Policy "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+            X-Content-Type-Options nosniff
+            Referrer-Policy strict-origin-when-cross-origin
+            # The download section changes with each release: a few minutes at most.
+            Cache-Control "public, max-age=300"
+            -Server
+        }
+
+        encode zstd gzip
+        root * /srv/site/current
+        file_server
+    }
+  # Checks for a newer page every five minutes. A new one is unpacked beside
+  # the page being served, then put in its place in one step (a rename), so a
+  # visitor never sees half of one. When Gitea can't be reached, the page
+  # already here goes on being served.
+  fetch.sh: |
+    set -u
+    url=http://gitea.gitea.svc.cluster.local/api/packages/radu/generic/cubitrix-site/latest/site.tar.gz
+    site=/srv/site
+    trap 'exit 0' TERM INT
+    prev=
+    while :; do
+      if wget -q -T 20 -O "$site/.download" "$url"; then
+        sum=$(md5sum "$site/.download" | cut -d' ' -f1)
+        if [ ! -d "$site/$sum" ]; then
+          rm -rf "$site/.unpack"
+          if mkdir "$site/.unpack" && tar -xzf "$site/.download" -C "$site/.unpack" \
+            && [ -f "$site/.unpack/index.html" ] && mv "$site/.unpack" "$site/$sum"; then
+            ln -sfn "$sum" "$site/.next" && mv -T "$site/.next" "$site/current"
+            echo "serving page $sum"
+            # Older pages go, except the one just replaced: a visitor may still
+            # be loading its pictures.
+            for dir in "$site"/*/; do
+              name=$(basename "$dir")
+              case "$name" in current | "$sum" | "$prev") ;; *) rm -rf "$site/$name" ;; esac
+            done
+            prev=$sum
+          else
+            echo "the page from Gitea didn't unpack; serving what's here"
+          fi
+        fi
+      else
+        echo "couldn't fetch the page from Gitea; serving what's here"
+      fi
+      sleep 300 &
+      wait $!
+    done

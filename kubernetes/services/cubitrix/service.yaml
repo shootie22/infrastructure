@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cubitrix
+  namespace: cubitrix
+spec:
+  selector:
+    app.kubernetes.io/name: cubitrix
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

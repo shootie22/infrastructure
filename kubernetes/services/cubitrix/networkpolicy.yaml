@@ -1,0 +1,30 @@
+# The page comes from Gitea, in the cluster (site.yaml, fetch.sh); nothing
+# else is reached from here.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cubitrix-egress
+  namespace: cubitrix
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: cubitrix
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gitea
