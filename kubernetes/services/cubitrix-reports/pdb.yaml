@@ -1,0 +1,12 @@
+# One copy: a drain moves it (a few seconds without reports; the app keeps
+# them and sends them at its next start).
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: glitchtip
+  namespace: cubitrix-reports
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: glitchtip

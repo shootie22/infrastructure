@@ -1,0 +1,159 @@
+# GlitchTip (#312 on Cubitrix's Gitea): Cubitrix's crash reports. Web and
+# worker in one process, its queue and cache in Postgres. One copy: the
+# worker's periodic jobs (deleting what's past 30 days) must run once. It
+# keeps nothing on disk, so it runs wherever there's room, in RO when it can,
+# next to its database's primary.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: glitchtip
+  namespace: cubitrix-reports
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: glitchtip
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        # Bump when setup.yaml changes; it's read only at start.
+        config-revision: "1"
+      labels:
+        app.kubernetes.io/name: glitchtip
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 5000
+        runAsGroup: 5000
+        seccompProfile:
+          type: RuntimeDefault
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - {key: topology.kubernetes.io/zone, operator: In, values: [ro]}
+      initContainers:
+        # The migrations, then setup.yaml: the Keycloak sign-in, the admin
+        # account, Cubitrix's project and its key, and whoever signed in with
+        # Keycloak made an owner.
+        - name: setup
+          image: docker.io/glitchtip/glitchtip:6.2.6@sha256:a3d8eb1b36c1e1603d55ab32711ea3dd8115874742a781a57391a62a16e0dff6
+          command: [sh, -ec]
+          args:
+            - |
+              python manage.py migrate --no-input --skip-checks
+              python manage.py maintain_partitions
+              python manage.py createcachetable
+              python manage.py shell < /setup/setup.py
+          envFrom:
+            - configMapRef:
+                name: glitchtip-env
+            - secretRef:
+                name: glitchtip
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: glitchtip-pg-app, key: uri}
+            # The probes come to the pod's address; GlitchTip allows it as a host.
+            - name: POD_IP
+              valueFrom:
+                fieldRef: {fieldPath: status.podIP}
+          resources: &resources
+            requests:
+              cpu: 50m
+              memory: 384Mi
+            limits:
+              memory: 1Gi
+          securityContext: &security
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - {name: setup, mountPath: /setup, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      containers:
+        - name: glitchtip
+          image: docker.io/glitchtip/glitchtip:6.2.6@sha256:a3d8eb1b36c1e1603d55ab32711ea3dd8115874742a781a57391a62a16e0dff6
+          command: [./bin/run-all-in-one.sh]
+          envFrom:
+            - configMapRef:
+                name: glitchtip-env
+            - secretRef:
+                name: glitchtip
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: glitchtip-pg-app, key: uri}
+            # The probes come to the pod's address; GlitchTip allows it as a host.
+            - name: POD_IP
+              valueFrom:
+                fieldRef: {fieldPath: status.podIP}
+            # Done by the init container.
+            - {name: SKIP_INIT, value: "true"}
+          ports:
+            - {name: http, containerPort: 8000}
+          startupProbe:
+            httpGet: {path: /_health/, port: http}
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet: {path: /_health/, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /_health/, port: http}
+            periodSeconds: 30
+            failureThreshold: 4
+          resources: *resources
+          securityContext: *security
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: setup
+          configMap:
+            name: glitchtip-setup
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: glitchtip-env
+  namespace: cubitrix-reports
+data:
+  GLITCHTIP_DOMAIN: https://cubitrix-reports.yeetus.net
+  ALLOWED_HOSTS: cubitrix-reports.yeetus.net,glitchtip.cubitrix-reports.svc.cluster.local
+  CSRF_TRUSTED_ORIGINS: https://cubitrix-reports.yeetus.net
+  # Behind Traefik: the client's address and https come from its headers.
+  TRUSTED_PROXIES: "*"
+  DEFAULT_FROM_EMAIL: cubitrix-reports@yeetus.net
+  # No mail: there's one user, me, and GlitchTip's alerts aren't used.
+  EMAIL_URL: consolemail://
+  # Its queue and cache in Postgres: no Valkey to run.
+  VALKEY_URL: ""
+  REDIS_URL: ""
+  # Reports, minidumps included, are deleted after 30 days (#312).
+  GLITCHTIP_RETENTION_DAYS: "30"
+  # Accounts come only from Keycloak (setup.py makes the admin one).
+  ENABLE_USER_REGISTRATION: "false"
+  ENABLE_SOCIAL_APPS_USER_REGISTRATION: "true"
+  ENABLE_ORGANIZATION_CREATION: "false"
+  OIDC_CLIENT_ID: cubitrix-reports
+  OIDC_SERVER_URL: https://auth.yeetus.net/realms/network-admin
+  ADMIN_EMAIL: admin@cubitrix-reports.yeetus.net
+  # The project key the app is built with (not a secret: it's in every copy
+  # of Cubitrix; it only lets reports be posted).
+  CUBITRIX_DSN_KEY: 900eca9de82a4f7ba9c5ada7cbbed42c

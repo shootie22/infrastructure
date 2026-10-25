@@ -94,6 +94,23 @@ data:
         standardFlowEnabled: false
         directAccessGrantsEnabled: false
         serviceAccountsEnabled: true
+      # kubernetes/services/cubitrix-reports: GlitchTip's own sign-in, for
+      # Cubitrix's crash reports. The secret is in
+      # cubitrix-reports-client.sops.yaml and, same value, in
+      # cubitrix-reports/secret.sops.yaml; scripts/create-cubitrix-reports-secret.sh
+      # makes both. Whoever signs in owns it all there, so only this realm.
+      - clientId: cubitrix-reports
+        name: Cubitrix reports
+        description: cubitrix-reports.yeetus.net, Cubitrix's crash reports (GlitchTip)
+        enabled: true
+        publicClient: false
+        secret: $(env:CUBITRIX_REPORTS_OIDC_SECRET)
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        redirectUris: ["https://cubitrix-reports.yeetus.net/accounts/oidc/keycloak/login/callback/"]
+        webOrigins: ["https://cubitrix-reports.yeetus.net"]
+        attributes:
+          pkce.code.challenge.method: S256
       # kubernetes/services/legacy: oauth2-proxy in front of legacy.yeetus.net.
       # The secret is in legacy-client.sops.yaml and, same value, in
       # legacy/secret.sops.yaml; scripts/create-legacy-oauth2-secret.sh makes

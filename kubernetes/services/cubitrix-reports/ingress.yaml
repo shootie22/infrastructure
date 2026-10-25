@@ -1,0 +1,35 @@
+# All of it public: the apps post their reports to /api/<project>/envelope/
+# and /api/<project>/minidump/ with the project's key, and everything else
+# asks for a sign-in (Keycloak, network-admin; GlitchTip's own OIDC).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: glitchtip
+  namespace: cubitrix-reports
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: Cubitrix reports
+    gethomepage.dev/icon: glitchtip.png
+    gethomepage.dev/description: Cubitrix's crash reports
+    gethomepage.dev/weight: "120"
+    gethomepage.dev/siteMonitor: http://glitchtip.cubitrix-reports.svc.cluster.local/_health/
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - cubitrix-reports.yeetus.net
+      secretName: cubitrix-reports-yeetus-net-tls
+  rules:
+    - host: cubitrix-reports.yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: glitchtip
+                port:
+                  number: 80

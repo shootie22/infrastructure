@@ -5,6 +5,7 @@ keep:
 - certificate.yaml
 - config-cli.sops.yaml
 - config-cli.yaml
+- cubitrix-reports-client.sops.yaml
 - database.yaml
 - home-catalog.yaml
 - ingress.yaml
