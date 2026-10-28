@@ -24,6 +24,6 @@ data:
       - {id: passwords, name: Passwords, description: Your own vault, icon: key, url: "https://vw.yeetus.net", group: passwords}
       - {id: calendar, name: Calendar, description: Calendars and contacts, icon: cal, url: "https://cal.yeetus.net", group: calendar}
       - {id: git, name: Git, description: "Code, issues and CI", icon: git, url: "https://git.yeetus.net", group: git}
-      - {id: cook, name: Cook, description: Recipes and shopping lists, icon: cook, url: "https://cook.yeetus.net", group: cook}
+      - {id: cook, name: Recipes, description: Our shared cookbook, icon: cook, url: "https://cook.yeetus.net", group: cook}
       - {id: pastebin, name: Pastebin, description: Encrypted pastes, icon: paste, url: "https://pbin.yeetus.net", access: everyone}
       - {id: minecraft, name: Minecraft, description: Our server, icon: mc, address: play.yeetus.net, access: members}
