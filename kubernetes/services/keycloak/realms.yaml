@@ -383,6 +383,36 @@ data:
               introspection.token.claim: "false"
         authenticationFlowBindingOverrides:
           browser: gate gitea
+      # cook.yeetus.net (kubernetes/services/mealie). Confidential, PKCE.
+      # Mealie makes the account at the first sign-in and matches it by
+      # email afterwards. The groups claim: Mealie checks cook too, and
+      # makes cook-admin a Mealie admin.
+      - clientId: mealie
+        name: Cook
+        description: cook.yeetus.net
+        enabled: true
+        publicClient: false
+        secret: $(env:MEALIE_OIDC_SECRET)
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        redirectUris: ["https://cook.yeetus.net/login*"]
+        webOrigins: ["https://cook.yeetus.net"]
+        attributes:
+          pkce.code.challenge.method: S256
+          post.logout.redirect.uris: "https://cook.yeetus.net/*"
+        protocolMappers:
+          - name: groups
+            protocol: openid-connect
+            protocolMapper: oidc-group-membership-mapper
+            config:
+              claim.name: groups
+              full.path: "false"
+              id.token.claim: "true"
+              access.token.claim: "false"
+              userinfo.token.claim: "true"
+              introspection.token.claim: "false"
+        authenticationFlowBindingOverrides:
+          browser: gate mealie
     roles:
       client:
         audiobookshelf:
@@ -400,6 +430,9 @@ data:
         gitea:
           - name: access
             description: May sign in to Gitea
+        mealie:
+          - name: access
+            description: May sign in to Cook (Mealie)
     authenticatorConfig:
       - alias: audiobookshelf no access
         config: {condUserRole: audiobookshelf.access, negate: "true"}
@@ -420,6 +453,10 @@ data:
       - alias: gitea no access
         config: {condUserRole: gitea.access, negate: "true"}
       - alias: gitea deny
+        config: {denyErrorMessage: yeetusNoAccess}
+      - alias: mealie no access
+        config: {condUserRole: mealie.access, negate: "true"}
+      - alias: mealie deny
         config: {denyErrorMessage: yeetusNoAccess}
     # Each gated app: Keycloak's browser flow, then "no access role, no entry"
     # (docs/ha/keycloak-sso.md, "Who gets into which app").
@@ -604,6 +641,42 @@ data:
         authenticationExecutions:
           - {authenticator: conditional-user-role, authenticatorConfig: gitea no access, requirement: REQUIRED, priority: 10}
           - {authenticator: deny-access-authenticator, authenticatorConfig: gitea deny, requirement: REQUIRED, priority: 20}
+      - alias: gate mealie
+        description: Sign in, then only with mealie's access role
+        providerId: basic-flow
+        topLevel: true
+        builtIn: false
+        authenticationExecutions:
+          - {flowAlias: gate mealie sign in, requirement: REQUIRED, priority: 10, autheticatorFlow: true}
+          - {flowAlias: gate mealie check, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+      - alias: gate mealie sign in
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: auth-cookie, requirement: ALTERNATIVE, priority: 10}
+          - {flowAlias: gate mealie forms, requirement: ALTERNATIVE, priority: 20, autheticatorFlow: true}
+      - alias: gate mealie forms
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: auth-username-password-form, requirement: REQUIRED, priority: 10}
+          - {flowAlias: gate mealie 2fa, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+      - alias: gate mealie 2fa
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: conditional-user-configured, requirement: REQUIRED, priority: 10}
+          - {authenticator: auth-otp-form, requirement: ALTERNATIVE, priority: 20}
+      - alias: gate mealie check
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: conditional-user-role, authenticatorConfig: mealie no access, requirement: REQUIRED, priority: 10}
+          - {authenticator: deny-access-authenticator, authenticatorConfig: mealie deny, requirement: REQUIRED, priority: 20}
     users:
       - username: service-account-yeetus-api
         serviceAccountClientId: yeetus-api
@@ -638,5 +711,12 @@ data:
       # Gitea admin (through the groups claim; not an access group).
       - name: gitea-admins
         attributes: {description: [Gitea admins]}
+      - name: cook
+        attributes: {description: [Cook (Mealie)]}
+        clientRoles:
+          mealie: [access]
+      # Mealie admin (through the groups claim; not an access group).
+      - name: cook-admin
+        attributes: {description: [Cook admins]}
       - name: calendar
         attributes: {description: [Baïkal, with app passwords]}

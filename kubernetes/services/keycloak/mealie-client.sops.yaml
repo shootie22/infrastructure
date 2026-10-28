@@ -1,0 +1,34 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: keycloak-config-cli-mealie
+    namespace: keycloak
+spec:
+    secretTemplates:
+        - name: ENC[AES256_GCM,data:wdQKimLwoLsO3+UPTdGUWlMLUJRAg9qUQaQ=,iv:QMaMbLpG8A9INMPQKDLpRW90jzHFL2zIFhP8paa4yT0=,tag:zAIKYN3cY+NWPlBQZ1gsSg==,type:str]
+          stringData:
+            MEALIE_OIDC_SECRET: ENC[AES256_GCM,data:MwN3+UOHiJGoSh9dZiHyXXTsAomInBG+MrH+SS0u8FyybG+wcCK7IHmM3w==,iv:t7GLtXFlPzm1Ji8GZQ98FPjkFCCtGJY+IP350Q8uiac=,tag:br9apwH+3jgb1a+zbJfi8A==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB6eElDWEtZSUJ0M1R6OU1D
+            RUZ5QS9oYjFUcmd1RFFGdURaU3oySEdmd1hZClpGdzdtVU1scEpsaTYvWlp2UWdG
+            VCs1Y1h3UnQ0RzF0OHZNZUI5RnpoV2MKLS0tIHVSZFVHOEY0WWhlNW4vTU5SSmg2
+            RE9LYjg1NlVCeUtxSUZjM1ZmYzV4V00KkIXk8FX7NfRp1ic5vOpGKefyBKTu601d
+            K1SV8gqJlptG0PL+e7NcbdhMLL83VdBqb+fsGurQg8x/lpFTt1i/ZQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBVZk5wYStMcmtWR2xoRDlY
+            Z1g0enhkL0tGeFhjUktqK0hmL1RVbjZCNkNBCm9OdFZzSERVZlVTc1VCM3RrY0dP
+            eHBkbUsyR1RvT0prb3cyNGZVTWdtdDAKLS0tIERHdS9yWXlsRjZ3VXR4OEVackRQ
+            Q0RlK3FmdWd0dUx1bWxQVTZmTEtaNE0KwFLeNhXI/DQuu3BO/wKVMezD2fOX0/CS
+            V0S/H50oPyd6TozW2sJnUCiB3EjPZWbTCASQy612bjzJyfZtP8CfYA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
+    encrypted_suffix: Templates
+    lastmodified: "2026-10-28T13:54:04Z"
+    mac: ENC[AES256_GCM,data:ZTMFDDyndDF/fjmCBJKQl/ShgiIzx6/pQt6dTCeVHJPx8c4ipWqk2tzdoH1nS0fWhm5Ticr2vELJb3yGH63RlPV7ZNBPW7/8ScRz/M/K6lgo9AK2zATlwQP9fc+JU9dJ1A+Zc7cCkr3RBCDx/pm2mGmVp5uX/SPK35TAtl2KHkE=,iv:wpnWwwYsGYPQ6/13ZoL7aOHo6a8KABfRWpeEQVew/Y4=,tag:irh6b+vbTewPVKDfV4AHVA==,type:str]
+    version: 3.13.3

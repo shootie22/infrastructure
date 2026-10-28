@@ -1,0 +1,96 @@
+# Mealie: the shared cookbook at cook.yeetus.net. Recipes, meal plans and
+# shopping lists in Postgres (database.yaml); recipe photos and Mealie's own
+# backups on disk in /srv/ha/mealie. One copy, on whichever of the
+# thinkcentre and fuji holds the label; the other has a copy of the folder
+# and takes over when this site is gone (dotfiles modules/nixos/site-failover).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mealie
+  namespace: mealie
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mealie
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mealie
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        ha.radunenu.com/mealie: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      containers:
+        - name: mealie
+          # Starts as root and drops to PUID/PGID after owning /app/data.
+          image: ghcr.io/mealie-recipes/mealie:v3.29.0@sha256:78eb28b8776d0bad40c5e605c72b3f4f5976793e491558c7dcbdfc04c835d4bc
+          envFrom:
+            - configMapRef:
+                name: mealie-env
+          env:
+            - name: POSTGRES_URL_OVERRIDE
+              valueFrom:
+                secretKeyRef: {name: mealie-pg-app, key: uri}
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef: {name: mealie, key: OIDC_CLIENT_SECRET}
+          ports:
+            - {name: http, containerPort: 9000}
+          startupProbe:
+            httpGet: {path: /api/app/about, port: http}
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet: {path: /api/app/about, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /api/app/about, port: http}
+            periodSeconds: 30
+            failureThreshold: 4
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - {name: data, mountPath: /app/data}
+      volumes:
+        - name: data
+          hostPath:
+            path: /srv/ha/mealie
+            type: Directory
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mealie-env
+  namespace: mealie
+data:
+  BASE_URL: https://cook.yeetus.net
+  TZ: Europe/Copenhagen
+  DB_ENGINE: postgres
+  # Accounts come only from Keycloak: no sign-up, no passwords. Anyone in
+  # the cook group gets an account at their first sign-in.
+  ALLOW_SIGNUP: "false"
+  ALLOW_PASSWORD_LOGIN: "false"
+  OIDC_AUTH_ENABLED: "true"
+  OIDC_SIGNUP_ENABLED: "true"
+  OIDC_AUTO_REDIRECT: "true"
+  OIDC_REMEMBER_ME: "true"
+  OIDC_PROVIDER_NAME: Yeetus
+  OIDC_CONFIGURATION_URL: https://auth.yeetus.net/realms/network-yeetus/.well-known/openid-configuration
+  OIDC_CLIENT_ID: mealie
+  # The Keycloak gate already keeps out everyone not in cook; this is the
+  # same check on Mealie's side. cook-admin makes a Mealie admin.
+  OIDC_GROUPS_CLAIM: groups
+  OIDC_USER_GROUP: cook
+  OIDC_ADMIN_GROUP: cook-admin
