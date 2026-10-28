@@ -123,6 +123,7 @@ authenticationFlows:
 | Headlamp | none | Retired: Hub shows the cluster |
 | Vaultwarden | SSO | Optional, the master password still does the real work |
 | Joplin | SAML | Done, password login kept for now |
+| Cook (Mealie) | OIDC | Done, network-yeetus, gated by `cook`; no password login |
 | Baïkal | none | App passwords from the account page, checked by Traefik (below) |
 | Matrix | via MAS | Separate project, planned in [../matrix/](../matrix/README.md) |
 

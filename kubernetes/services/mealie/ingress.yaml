@@ -1,0 +1,34 @@
+# All of it behind Mealie's own sign-in (Keycloak, network-yeetus, the cook
+# group), which it redirects to straight away.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mealie
+  namespace: mealie
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: Cook
+    gethomepage.dev/icon: mealie.png
+    gethomepage.dev/description: Recipes and shopping lists
+    gethomepage.dev/weight: "130"
+    gethomepage.dev/siteMonitor: http://mealie.mealie.svc.cluster.local/api/app/about
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - cook.yeetus.net
+      secretName: cook-yeetus-net-tls
+  rules:
+    - host: cook.yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mealie
+                port:
+                  number: 80

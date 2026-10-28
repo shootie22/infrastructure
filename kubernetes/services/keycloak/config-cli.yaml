@@ -89,6 +89,9 @@ spec:
                 # (cubitrix-reports-client.sops.yaml).
                 - secretRef:
                     name: keycloak-config-cli-cubitrix-reports
+                # MEALIE_OIDC_SECRET, the same way (mealie-client.sops.yaml).
+                - secretRef:
+                    name: keycloak-config-cli-mealie
               resources:
                 requests:
                   cpu: 100m

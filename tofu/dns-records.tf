@@ -305,6 +305,12 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
+    # The shared cookbook, Mealie (kubernetes/services/mealie).
+    "yeetus.net/cook/CNAME" = {
+      zone    = "yeetus.net", name = "cook", type = "CNAME"
+      content = "beacon.radunenu.com"
+      proxied = true
+    }
     "yeetus.net/cal/CNAME" = {
       zone    = "yeetus.net", name = "cal", type = "CNAME"
       content = "beacon.radunenu.com"

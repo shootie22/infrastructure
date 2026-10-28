@@ -1,0 +1,11 @@
+# One copy: a drain moves it (a few seconds without the cookbook).
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mealie
+  namespace: mealie
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mealie
