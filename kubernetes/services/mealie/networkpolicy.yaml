@@ -1,6 +1,6 @@
-# Mealie reaches its Postgres, Keycloak (auth.yeetus.net, for the sign-in)
-# and any recipe site on 80/443: importing a recipe by its link fetches the
-# page. No mail is sent.
+# Mealie reaches its Postgres, Ollama, Keycloak (auth.yeetus.net, for the
+# sign-in) and any recipe site on 80/443: importing a recipe by its link
+# fetches the page. No mail is sent.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -32,6 +32,18 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
+    # Ollama (minima, mixi when minima is gone) for its AI features: the
+    # provider is set in Mealie's group settings.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ollama
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ollama-front
+      ports:
+        - protocol: TCP
+          port: 11434
     - ports:
         - protocol: TCP
           port: 80

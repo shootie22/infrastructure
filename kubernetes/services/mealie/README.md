@@ -13,7 +13,7 @@ admin. There are no passwords and no sign-up in Mealie itself.
   the hourly dump into fuji's Borg folder.
 - `secret.sops.yaml`: the Keycloak client secret.
 - `ingress.yaml`: all of it behind Mealie's sign-in, which goes straight to Keycloak.
-- `networkpolicy.yaml`: out to its Postgres, and to 80/443 for Keycloak and for the recipe sites it
+- `networkpolicy.yaml`: out to its Postgres, to Ollama (11434) for the AI features, and to 80/443 for Keycloak and the recipe sites it
   imports from. It sends no mail.
 - The client itself is in `keycloak/realms.yaml` (network-yeetus, gated by the `cook` group), with its
   secret in `keycloak/mealie-client.sops.yaml`. Home's tile is in `keycloak/home-catalog.yaml`.
