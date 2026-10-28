@@ -17,6 +17,9 @@ spec:
     type: Recreate
   template:
     metadata:
+      annotations:
+        # Bump when mealie-env changes; it's read only at start.
+        config-revision: "2"
       labels:
         app.kubernetes.io/name: mealie
     spec:
@@ -94,3 +97,7 @@ data:
   OIDC_GROUPS_CLAIM: groups
   OIDC_USER_GROUP: cook
   OIDC_ADMIN_GROUP: cook-admin
+  # With the groups set, Mealie also asks for a `groups` scope, which
+  # network-yeetus doesn't have (invalid_scope). The claim comes from the
+  # client's own mapper (realms.yaml) whatever the scopes.
+  OIDC_SCOPES_OVERRIDE: openid email profile
