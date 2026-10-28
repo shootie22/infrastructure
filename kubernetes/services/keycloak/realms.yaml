@@ -388,7 +388,7 @@ data:
       # email afterwards. The groups claim: Mealie checks cook too, and
       # makes cook-admin a Mealie admin.
       - clientId: mealie
-        name: Cook
+        name: Recipes
         description: cook.yeetus.net
         enabled: true
         publicClient: false
@@ -432,7 +432,7 @@ data:
             description: May sign in to Gitea
         mealie:
           - name: access
-            description: May sign in to Cook (Mealie)
+            description: May sign in to Recipes (Mealie)
     authenticatorConfig:
       - alias: audiobookshelf no access
         config: {condUserRole: audiobookshelf.access, negate: "true"}
@@ -712,11 +712,11 @@ data:
       - name: gitea-admins
         attributes: {description: [Gitea admins]}
       - name: cook
-        attributes: {description: [Cook (Mealie)]}
+        attributes: {description: [Recipes (Mealie)]}
         clientRoles:
           mealie: [access]
       # Mealie admin (through the groups claim; not an access group).
       - name: cook-admin
-        attributes: {description: [Cook admins]}
+        attributes: {description: [Recipes admins]}
       - name: calendar
         attributes: {description: [Baïkal, with app passwords]}

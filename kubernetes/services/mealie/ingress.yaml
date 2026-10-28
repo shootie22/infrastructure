@@ -10,7 +10,7 @@ metadata:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/external: "true"
     gethomepage.dev/group: Apps
-    gethomepage.dev/name: Cook
+    gethomepage.dev/name: Recipes
     gethomepage.dev/icon: mealie.png
     gethomepage.dev/description: Recipes and shopping lists
     gethomepage.dev/weight: "130"
