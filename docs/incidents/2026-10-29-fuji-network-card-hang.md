@@ -43,15 +43,24 @@ In dotfiles [#27](https://github.com/shootie22/dotfiles/pull/27):
 
 - **On fuji and the thinkcentre (same driver):** turn off TSO and GSO at boot, on every switch, and whenever the card comes back after a driver reload. This doesn't reset the link (checked in the driver's `e1000_set_features`, which only sets a flag for those), so it's safe on a running host. EEE stays on: turning it off reinitialises the card (`e1000e_set_eee`), and it's inactive on fuji's link anyway. RX checksum and VLAN offloads stay on too: changing them resets the link, and nothing ties them to this fault.
 - **Watchdog:** if the kernel has logged a hardware unit hang in the last minute and the router doesn't answer, reset the port, then reload the driver if that doesn't help, at most 3 times an hour. It only acts when the host is already cut off. Tested with a dry run and a fake hang message before it's allowed to act.
-- **minima** (separate): its VM had been off the tailnet for about 8 hours before this. The VM process on the Mac mini had been running for 4 days, but Lima's host agent was gone and the guest didn't answer, so `limactl start` refused to run and the supervisor restarted every 30 seconds without getting anywhere. It's cordoned; the old VM process has to be stopped before it can start again, and why the guest died is still open.
+- **minima** (separate, see below): its guest had lost its network at 03:40, eight hours before this.
+
+## minima lost its network
+
+At 03:40 UTC minima's guest lost both its default routes: tailscaled logged `Rebind; defIf="", ips=[]`, and everything except the local LAN got `network is unreachable`. Lima's host agent on the Mac was still running at that point, so it happened inside the guest, most likely a DHCP lease that wasn't renewed. Why isn't known: dhcpcd runs `--quiet` on NixOS and logged nothing. Nothing in the guest tried to get the network back, so k3s couldn't reach the cluster and the node went NotReady. The node alert fired, but minima is the least important node, and it waited.
+
+At 12:02 `minima-vm stop` couldn't power the guest off from inside (no network, so its ssh was reset) and left the VM process (krunkit) running without Lima's host agent. In that state `limactl start` refuses ("krunkit driver is running but host agent is not"), so the supervisor restarted every 30 seconds without getting anywhere. The same happened on 9 Oct. At 13:07 krunkit was stopped by hand (it went on SIGTERM), minima started cleanly, Tailscale, Nebula and k3s came back, and it was uncordoned.
+
+- **Done:** minima restarts dhcpcd after 3 minutes without a default route, at most 3 times an hour, and logs the addresses and routes when it does (dotfiles #30).
+- **Open:** a stop that fails from inside shouldn't leave krunkit behind. Killing it automatically is a power cut for the guest (it once corrupted the ESP), so for now it's the manual fix above.
 
 ## Argo stopped syncing
 
-Found later the same day, when a radunenu.com release didn't roll out. Argo's application controller (`argocd-application-controller-0`) was running on minima. When minima died the pod got stuck in Terminating, and since it's a StatefulSet, Kubernetes won't start a replacement on another node while the old one might still be running. So for about 8 hours Argo applied nothing anywhere in the cluster, while still showing every app as Synced and Healthy from their last status. Running services weren't affected; anything merged in that time just didn't go out.
+Found later the same day, when a radunenu.com release didn't roll out. Argo's application controller (`argocd-application-controller-0`) was running on minima. When minima lost its network the pod got stuck in Terminating, and since it's a StatefulSet, Kubernetes won't start a replacement on another node while the old one might still be running. So for about 8 hours Argo applied nothing anywhere in the cluster, while still showing every app as Synced and Healthy from their last status. Running services weren't affected; anything merged in that time just didn't go out.
 
 Fixed by force-deleting the stuck pod once the old VM was confirmed off. The controller started on another node and caught up within a minute (radunenu.com v0.1.49 was live at 12:55).
 
-Nothing warned about it. The StatefulSet alert counts ready replicas, and the stuck pod still counted as ready. Keeping the controller off minima wouldn't have been enough either: any node can die like this, fuji did the same morning.
+Nothing said Argo had stopped. The node alert was about minima, and the StatefulSet alert counts ready replicas, while the stuck pod still counted as ready. Keeping the controller off minima wouldn't have been enough either: any node can die like this, fuji did the same morning.
 
 - **Done:** an alert for any pod stuck in Terminating for more than 15 minutes (`KubernetesPodStuckTerminating`), with the fix in its description.
 - **Done:** Prometheus scrapes Argo's controller, with alerts when it isn't running (`ArgoCDControllerDown`, after 10 minutes) and when an app stays out of sync for 30 minutes (`ArgoCDAppOutOfSync`).
