@@ -82,15 +82,32 @@ data:
             range: 6h
             limit: 150
 
+      # Synapse, the login service and their databases. Not the whole
+      # namespace: the canary's nginx is louder than all of them, and once
+      # passed for the cause (2026-10-29).
       - match: {alertname: "^Matrix"}
         queries:
           - title: Synapse and the login service
             promql: 'up{job=~"synapse.*|mas.*"}'
             range: 3h
-          - title: errors in the matrix namespace
-            logql: '{namespace="matrix"} |~ "(?i)(error|exception|traceback|fatal)"'
+            direct: true
+          - title: errors from Synapse, the login service and their databases
+            logql: '{namespace="matrix", pod=~"synapse-.*|mas-.*"} |~ "(?i)(error|exception|traceback|fatal)"'
             range: 2h
             limit: 120
+      # Which endpoints are slow, and how busy Synapse is.
+      - match: {alertname: "^MatrixSynapseSlow$"}
+        queries:
+          - title: p95 response time per endpoint (s)
+            promql: 'topk(8, histogram_quantile(0.95, sum by (le, servlet) (rate(synapse_http_server_response_time_seconds_bucket{job="synapse-yeetus"}[5m]))))'
+            direct: true
+          - title: requests per second per endpoint
+            promql: 'topk(8, sum by (servlet) (rate(synapse_http_server_response_time_seconds_count{job="synapse-yeetus"}[5m])))'
+            direct: true
+          - title: Synapse's CPU (cores)
+            promql: 'sum(rate(container_cpu_usage_seconds_total{namespace="matrix", pod=~"synapse-.*", container!="", pod!~".*-db-.*"}[5m]))'
+            range: 3h
+            direct: true
 
       - match: {alertname: "^(EdgeBackendDown|EdgeMetricsUnreachable)$"}
         queries:
