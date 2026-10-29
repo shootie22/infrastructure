@@ -14,6 +14,10 @@ data:
     radunenu.com's stats updater asks for two things, as it did of Pinga:
       GET /api/v1/services?compact=1          every service, its last status
       GET /api/v1/services/<id>/checks?limit=N its recent checks, newest first
+    With &full=1 the first also has each service's group and description (the
+    homepage annotations), its uptime over 24 hours and 7 days, and its uptime
+    and response time for each of the last 24 hours (hours_start says when the
+    first of them began).
     Both come from Prometheus's probes (jobs status-ingress and status-extra),
     so a service appears here as soon as it has an Ingress with a homepage name.
     A service's id is a checksum of its URL, so it stays the same.
@@ -64,9 +68,52 @@ data:
         return datetime.fromtimestamp(float(ts), timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-    def services():
+    def uptime(window):
+        # Share of successful probes, counted over every series of a target
+        # (its labels can change, which starts a new series).
+        return (f"sum by (instance) (sum_over_time(probe_success{{{JOBS}}}[{window}]))"
+                f" / sum by (instance) (count_over_time(probe_success{{{JOBS}}}[{window}]))")
+
+
+    def by_instance(result):
+        return {r["metric"]["instance"]: r for r in result}
+
+
+    def ratio(r):
+        return round(float(r["value"][1]), 5) if r else None
+
+
+    def hourly(expr, end, scale=1.0, digits=5):
+        """expr for each of the last 24 clock hours, the current one last,
+        per target. The last hour is the one still going."""
+        span = {"start": end - 23 * 3600, "end": end, "step": 3600}
+        out = {}
+        for r in query("query_range", {"query": expr, **span}):
+            values = {round(float(ts)): float(v) for ts, v in r["values"]}
+            out[r["metric"]["instance"]] = [
+                round(values[t] * scale, digits) if t in values else None
+                for t in range(round(end) - 23 * 3600, round(end) + 1, 3600)
+            ]
+        return out
+
+
+    def services(full=False):
         up = query("query", {"query": f"probe_success{{{JOBS}}}"})
         took = {r["metric"]["instance"]: r["value"] for r in query("query", {"query": f"sum by (instance) ({ANSWER})"})}
+        columns = ["id", "name", "kind", "target", "enabled", "last_status", "last_latency_ms", "last_checked_at"]
+        extra = {}
+        if full:
+            # ?full=1: what the status page shows besides the current status.
+            # The DK Prometheus keeps 3 days, so while RO's is away "7 days"
+            # is really 3.
+            columns += ["group", "description", "uptime_24h", "uptime_7d", "hourly_uptime", "hourly_latency_ms"]
+            end = (int(time.time()) // 3600 + 1) * 3600  # the end of the current hour
+            day = by_instance(query("query", {"query": uptime("24h")}))
+            week = by_instance(query("query", {"query": uptime("7d")}))
+            hours_up = hourly(uptime("1h"), end)
+            hours_took = hourly(f'sum by (instance) (max by (instance, phase) (avg_over_time({ANSWER}[1h])))',
+                                end, scale=1000, digits=0)
+            extra["hours_start"] = iso(end - 24 * 3600)
         rows, seen = [], set()
         for r in sorted(up, key=lambda r: r["metric"].get("status_name", "")):
             target = r["metric"]["instance"]
@@ -76,10 +123,15 @@ data:
             ts, value = r["value"]
             ok = value == "1"
             latency = round(float(took[target][1]) * 1000) if ok and target in took else None
-            rows.append([service_id(target), r["metric"].get("status_name", target), "http", target, True,
-                         "up" if ok else "down", latency, iso(ts)])
-        return {"columns": ["id", "name", "kind", "target", "enabled", "last_status", "last_latency_ms", "last_checked_at"],
-                "count": len(rows), "rows": rows}
+            row = [service_id(target), r["metric"].get("status_name", target), "http", target, True,
+                   "up" if ok else "down", latency, iso(ts)]
+            if full:
+                row += [r["metric"].get("status_group", ""), r["metric"].get("status_description", ""),
+                        ratio(day.get(target)), ratio(week.get(target)),
+                        hours_up.get(target, [None] * 24),
+                        [None if v is None else int(v) for v in hours_took.get(target, [None] * 24)]]
+            rows.append(row)
+        return {"columns": columns, "count": len(rows), "rows": rows, **extra}
 
 
     def checks(sid, limit):
@@ -122,7 +174,8 @@ data:
                 return self.reply(401, {"error": "unauthorized"})
             try:
                 if parts == ["api", "v1", "services"]:
-                    return self.reply(200, services())
+                    full = urllib.parse.parse_qs(url.query).get("full", ["0"])[0] == "1"
+                    return self.reply(200, services(full))
                 if len(parts) == 5 and parts[:3] == ["api", "v1", "services"] and parts[4] == "checks" and parts[3].isdigit():
                     limit = int(urllib.parse.parse_qs(url.query).get("limit", ["16"])[0])
                     result = checks(int(parts[3]), max(1, min(limit, 500)))
@@ -156,7 +209,7 @@ spec:
         app.kubernetes.io/name: status-api
       annotations:
         # Bump when status-api.py changes.
-        config-revision: "2"
+        config-revision: "3"
     spec:
       automountServiceAccountToken: false
       affinity:
