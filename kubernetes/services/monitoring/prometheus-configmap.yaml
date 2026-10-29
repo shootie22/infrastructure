@@ -263,8 +263,14 @@ data:
             target_label: __param_target
           - source_labels: [__param_target]
             target_label: instance
+          # Name, group and description as the homepage shows them: the status
+          # page lists the services by these (status-api.yaml).
           - source_labels: [__meta_kubernetes_ingress_annotation_gethomepage_dev_name]
             target_label: status_name
+          - source_labels: [__meta_kubernetes_ingress_annotation_gethomepage_dev_group]
+            target_label: status_group
+          - source_labels: [__meta_kubernetes_ingress_annotation_gethomepage_dev_description]
+            target_label: status_description
           - target_label: __address__
             replacement: blackbox-exporter.monitoring.svc:9115
 
@@ -278,31 +284,31 @@ data:
           module: [http_reachable]
         static_configs:
           - targets: [https://kronorite.com]
-            labels: {status_name: Kronorite.com}
+            labels: {status_name: Kronorite.com, status_group: Websites, status_description: "Kronorite's game website"}
           - targets: [https://news.kronorite.com/news.php]
-            labels: {status_name: "Legacy API v1 - Kronorite News"}
+            labels: {status_name: Kronorite News, status_group: "Games & APIs", status_description: "Legacy API v1, Kronorite's news feed"}
           - targets: [https://stats.kronorite.com/mazegame/leaderboard.php]
-            labels: {status_name: "Legacy API v2 - Quickmaze"}
+            labels: {status_name: Quickmaze leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
           - targets: [https://stats.kronorite.com/cowo/leaderboard.php]
-            labels: {status_name: "Legacy API v2 - Cowo Bot"}
+            labels: {status_name: Cowo Bot leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
           - targets: [https://stats.kronorite.com/cowo-igad/leaderboard.php]
-            labels: {status_name: "Legacy API v2 - Cowo IGAD Bot"}
+            labels: {status_name: Cowo IGAD Bot leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
           - targets: [https://stats.kronorite.com/polyspace/leaderboard.php]
-            labels: {status_name: "Legacy API v2 - Polyspace"}
+            labels: {status_name: Polyspace leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
           - targets: [https://stats.kronorite.com/vtol/2/leaderboard.php]
-            labels: {status_name: "Legacy API v2.5 - VTOL"}
+            labels: {status_name: VTOL leaderboard, status_group: "Games & APIs", status_description: Legacy API v2.5}
           - targets: [https://stats.kronorite.com/vtol/1/leaderboard.php]
-            labels: {status_name: "Legacy API v2.5 - VTOL (Divided Skies)"}
+            labels: {status_name: VTOL Divided Skies leaderboard, status_group: "Games & APIs", status_description: Legacy API v2.5}
           - targets: [https://api.byradu.com/dicekatana/leaderboard.php]
-            labels: {status_name: "Legacy API v3 - Dice Katana"}
+            labels: {status_name: Dice Katana leaderboard, status_group: "Games & APIs", status_description: Legacy API v3}
           - targets: [https://api.byradu.com/fsp/downloads/latest.php]
-            labels: {status_name: "Legacy API v3 - Feedback Survey Plugin"}
+            labels: {status_name: Feedback Survey downloads, status_group: "Games & APIs", status_description: Legacy API v3}
           - targets: [https://api-old.radunenu.com/health-check.html]
-            labels: {status_name: Old Legacy API}
+            labels: {status_name: Old Legacy API, status_group: "Games & APIs", status_description: The first API server}
           - targets: [https://nuke.zip]
-            labels: {status_name: "Matrix (nuke.zip)"}
+            labels: {status_name: "Matrix (nuke.zip)", status_group: Apps, status_description: Matrix homeserver}
           - targets: [https://a.nuke.zip/livekit/sfu/]
-            labels: {status_name: Element Call stack}
+            labels: {status_name: Element Call stack, status_group: Apps, status_description: Calls backend}
         relabel_configs:
           - source_labels: [__address__]
             target_label: __param_target
