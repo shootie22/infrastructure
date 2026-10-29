@@ -181,6 +181,19 @@ data:
             action: keep
             regex: kube-state-metrics
 
+      # Argo CD's application controller (argocd-metrics, port 8082 in the
+      # stock install). Without it nothing reaches the cluster from Git, and
+      # Argo keeps showing every app's last status, so it's watched from here.
+      - job_name: argocd
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names: [argocd]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: argocd-metrics
+
       - job_name: grafana
         static_configs:
           - targets: [grafana.monitoring.svc:3000]
@@ -706,6 +719,26 @@ data:
             annotations:
               summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been terminating for over 15 minutes
               description: Usually its node is down. Check the node; once it's really off (not just unreachable), `kubectl -n {{ $labels.namespace }} delete pod {{ $labels.pod }} --grace-period=0 --force` lets it start elsewhere. docs/incidents/2026-10-29-fuji-network-card-hang.md
+          # 2026-10-29: the controller was stuck on a dead node for about 8
+          # hours and nothing synced, while every app still showed Synced.
+          - alert: ArgoCDControllerDown
+            expr: absent(up{job="argocd"} == 1)
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: Argo CD's application controller isn't running
+              description: Nothing merged in the infrastructure repo reaches the cluster until it's back, and the apps keep showing their last status. `kubectl -n argocd get pods -o wide`; a controller stuck Terminating on a dead node needs a force delete (KubernetesPodStuckTerminating).
+          # Every app syncs automatically, so one that stays out of sync means
+          # its sync keeps failing.
+          - alert: ArgoCDAppOutOfSync
+            expr: argocd_app_info{job="argocd", sync_status="OutOfSync"} == 1
+            for: 30m
+            labels:
+              severity: warning
+            annotations:
+              summary: Argo CD app {{ $labels.name }} has been out of sync for 30 minutes
+              description: Its automatic sync keeps failing, so what's in Git isn't running. `kubectl -n argocd get application {{ $labels.name }} -o jsonpath='{.status.operationState.message}'`
           # / and /home: kubelet's and containerd's (the thinkcentre keeps
           # /var/lib/rancher on /home). Kubelet starts evicting at 5% free.
           - alert: NodeFilesystemCriticallyLow
