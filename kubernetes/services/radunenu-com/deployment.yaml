@@ -12,14 +12,14 @@ spec:
     metadata:
       labels:
         app: radunenu-com
-      # The images are :latest; bump this to roll out a new site release.
-      annotations:
-        release: v0.1.46
     spec:
       containers:
+        # Pinned to the release's version and digest; to roll out a release, change both
+        # images to its tag once that tag's build is green. (:latest raced: an older tag's
+        # build finishing last overwrote it.)
         - name: website
-          image: git.radunenu.com/radu/radunenu.com-minimal:latest
-          imagePullPolicy: Always
+          image: git.radunenu.com/radu/radunenu.com-minimal:v0.1.46@sha256:6b2f8ce360e1fce8397e0461854563d21c5894634f1cc1614813dd910ff17505
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 1310
               protocol: TCP
@@ -44,8 +44,8 @@ spec:
               sleep:
                 seconds: 5
         - name: stats-updater
-          image: git.radunenu.com/radu/radunenu.com-minimal-stats-updater:latest
-          imagePullPolicy: Always
+          image: git.radunenu.com/radu/radunenu.com-minimal-stats-updater:v0.1.46@sha256:bd5b2b99f0aa42196d7ad8310e23378a2ddc41cf93c28c0a14b2c7c717e45314
+          imagePullPolicy: IfNotPresent
           env:
             - name: STATUS_API_TOKEN
               valueFrom:
