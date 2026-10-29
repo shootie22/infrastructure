@@ -1,0 +1,34 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: alertmanager-oncall
+    namespace: monitoring
+spec:
+    secretTemplates:
+        - name: ENC[AES256_GCM,data:PZjXOboJJfkLOiRR8pDAhkAFIQ==,iv:p53UBM13y8WcNk1rDrzyM0suNP5zoXCPo7u7TY+07n8=,tag:KUejy9exIa3bfDnqQOBEyg==,type:str]
+          stringData:
+            token: ENC[AES256_GCM,data:kFpZjuZWCiMiClltLxL/LkNqk62gKp796MSK8fSsuPLLKc3bwVvso9RL9A==,iv:uvSpaJC4b70YCBYvu6tzGFgLqAHBMtBxn9RxNnDRiWM=,tag:L4uE7F4xkfFNpVhEf6d6Mw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBlVTB6eTVBeWVwR2ZGeGNO
+            dVQ0WFd5YTlKaUdjeTdua3lVU3lHNzB6eGk0CiszNlpBbmFZelpuMzhjM1k2VkFG
+            UnpXMzUvWmJvRVE5aGlpWk0rVVFTNmcKLS0tIFgzQkNxWVBjejZYbnZ2QmJRbUhk
+            ZVJyaVJuZmN2eld1YlZlWmdXdmVYclkKKhBCAjDMkw9IWjbDAxpHEzZZDeEbb6/L
+            u5msFIipfRLD6CYXdRzqdlRBSWgcRb1qzY/hpiB+z83usD4MhBitnQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBVeHRFUWxyaS9WT0VjYUFZ
+            TmYrRzZPT2JaSkY0NCtySFdvM0d3NHJtL0RjCjJIVUNTTENSRDRJd3hMUDUrQ25q
+            SmpFRm5oYjM4YjNCMkQzK0YvMnVyTDQKLS0tIG9weFBoYWgvWUVtREdFckZLZGto
+            ZEFBdFdJTklsMzJMcGo5VEJRNEpyYWcKIrNDWX282aZSLJquvl5Go5YVLlHLXljA
+            EbO/d79D8+BoOC9BxcDTyEKcg61ZvhFHwgEx6RqXJwYO0k9Y2//tVg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
+    encrypted_suffix: Templates
+    lastmodified: "2026-10-29T14:03:11Z"
+    mac: ENC[AES256_GCM,data:ChXTcEnrcUlMpVlh6yDc6ys7f/1LsQwaCo7gDvImFeLlCEMFRS9hQPPFq2/VFDMzTD1k/kL04gklkieePnm2KPD1ZojEYIBRYSkyWFwDFjYRu9fiq+WIAY3slpSGskJ8EkRbx/J2QZ9phSqDe3vq3jcER21xQK4dLp9mhLkHRwc=,iv:XLMruWIdOT6XmJVGi4vQC7JegNM2HIMIjkvIz5KLXDI=,tag:g7Lv5dPllNHNARF3h1Zjlw==,type:str]
+    version: 3.13.3

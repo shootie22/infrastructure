@@ -1,0 +1,22 @@
+# The agent reads the cluster exactly as Hub does and changes nothing in it:
+# it binds Hub's own read-only role (kubernetes/services/hub/rbac.yaml), so
+# no Secrets, no ConfigMaps, no pod logs (those come from Loki), no exec.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: oncall
+  namespace: oncall
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oncall-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: hub-reader
+subjects:
+  - kind: ServiceAccount
+    name: oncall
+    namespace: oncall

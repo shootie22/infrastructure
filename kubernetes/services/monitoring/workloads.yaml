@@ -507,7 +507,7 @@ spec:
     metadata:
       # Bump when its ConfigMaps change: it only reads them at start.
       annotations:
-        config-revision: "2"
+        config-revision: "3"
       labels:
         app.kubernetes.io/name: alloy
     spec:
@@ -543,6 +543,9 @@ spec:
             - name: journal
               mountPath: /run/log/journal
               readOnly: true
+            - name: persistent-journal
+              mountPath: /var/log/journal
+              readOnly: true
             - name: machine-id
               mountPath: /etc/machine-id
               readOnly: true
@@ -555,6 +558,12 @@ spec:
         - name: journal
           hostPath:
             path: /run/log/journal
+        # Directory, not DirectoryOrCreate: making it on a host would turn
+        # on a persistent journal there.
+        - name: persistent-journal
+          hostPath:
+            path: /var/log/journal
+            type: Directory
         - name: machine-id
           hostPath:
             path: /etc/machine-id
