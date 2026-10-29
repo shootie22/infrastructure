@@ -75,7 +75,7 @@ spec:
     metadata:
       labels: {app: canary}
       annotations:
-        config-revision: "1"
+        config-revision: "2"
         monitoring.radunenu.com/scrape: "true"
         monitoring.radunenu.com/port: "8080"
         monitoring.radunenu.com/path: /
@@ -166,6 +166,10 @@ data:
       server {
         listen 8080;
         root /srv;
-        default_type text/plain;
+        # The metrics are in index.html, which nginx's built-in types call
+        # text/html, and Prometheus 3 refuses to scrape that. No types:
+        # everything is Prometheus' text format.
+        types { }
+        default_type "text/plain; version=0.0.4";
       }
     }
