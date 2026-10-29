@@ -1012,6 +1012,18 @@ data:
             annotations:
               summary: Sending a message on yeetus.net doesn't work
               description: The canary couldn't send and read back a message for 5 minutes, through matrix.yeetus.net as users reach it. Check `kubectl -n matrix logs deploy/canary -c canary`, then MatrixSynapseDown, the front door (element.radunenu.com) and Traefik.
+          # MatrixCanaryFailing needs a value to compare: a canary that
+          # reports nothing (no secret, a crash, a broken scrape) would leave
+          # it quiet. It went unnoticed that the canary had never run until
+          # 2026-10-29, when its nginx's 403s misled the on-call agent.
+          - alert: MatrixCanaryNotReporting
+            expr: absent(matrix_canary_success)
+            for: 30m
+            labels:
+              severity: warning
+            annotations:
+              summary: The Matrix canary reports nothing
+              description: So nothing checks that messages on yeetus.net get through. `kubectl -n matrix logs deploy/canary -c canary`; "waiting" means its secret is missing (docs/matrix/runbooks/canary.md).
           # Calls (matrix/livekit.yaml): fuji's SFU, the edge's as the standby.
           - alert: MatrixCallsDown
             expr: absent(up{job="livekit", host=~"fuji|edge"} == 1)
