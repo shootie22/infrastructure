@@ -1,0 +1,172 @@
+# The on-call agent (infra-hub internal/oncall): Alertmanager sends it every
+# alert, it reads what's needed to explain it and posts a report in a
+# thread in #oncall on nuke.zip. Read only: Hub's reader role in the
+# cluster, GET-only clients for Prometheus, Loki and Alertmanager.
+#
+# Two containers. `hub oncall` does the work: evidence, the local model
+# (Ollama on minima), Claude when that isn't enough, Pushover when someone
+# has to act. matrix-webhook-bot holds the bot's Matrix login and
+# encryption keys and posts what the agent hands it, to that one room only.
+#
+# One copy, in DK, so it still explains an RO outage (fuji, minima and the
+# Mac gone); minima's Ollama is then gone too and Claude writes the report.
+# The alert relay (edge, mixi) stays the path alerts are sure to take; this
+# only adds the why.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oncall
+  namespace: oncall
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oncall
+  template:
+    metadata:
+      annotations:
+        # Bump when collectors-configmap.yaml or oncall-env changes: both
+        # are read only at start.
+        config-revision: "1"
+      labels:
+        app.kubernetes.io/name: oncall
+    spec:
+      serviceAccountName: oncall
+      # The token goes to the agent only (the kube-api volume), not to the
+      # bot, which talks to the internet.
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: thinkcentre
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: oncall
+          # Hub's fast lane (docs/updates.md); a restart picks up the newest.
+          image: git.radunenu.com/radu/infra-hub:main
+          imagePullPolicy: Always
+          args: [oncall]
+          envFrom:
+            - configMapRef:
+                name: oncall-env
+          env:
+            - name: HUB_NODE_NAME
+              valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
+            - {name: HUB_KUBE, value: "true"}
+            - {name: HUB_PROMETHEUS, value: "ro=http://prometheus.monitoring.svc:9090,dk=http://prometheus-dk.monitoring.svc:9090"}
+            - {name: HUB_LOKI, value: "ro=http://loki.monitoring.svc:3100,dk=http://loki-dk.monitoring.svc:3100"}
+            - {name: HUB_ALERTMANAGER, value: "http://alertmanager.monitoring.svc:9093"}
+            - {name: ONCALL_COLLECTORS, value: /etc/oncall/collectors.yaml}
+            - {name: ONCALL_STATE_FILE, value: /data/oncall-state.json}
+            - {name: ONCALL_MATRIX_URL, value: "http://127.0.0.1:8081"}
+            # Minima's own, not the front: mixi's fallback hasn't the model.
+            - {name: ONCALL_OLLAMA_URL, value: "http://ollama-minima.ollama.svc.cluster.local:11434"}
+            - {name: ONCALL_WEBHOOK_TOKEN_FILE, value: /secrets/webhook-token}
+            - {name: ONCALL_MATRIX_TOKEN_FILE, value: /secrets/bot-token}
+            # Optional: without them, no Claude and no Pushover.
+            - {name: ONCALL_ANTHROPIC_KEY_FILE, value: /secrets/anthropic-api-key}
+            - {name: ONCALL_PUSHOVER_TOKEN_FILE, value: /secrets/pushover-token}
+            - {name: ONCALL_PUSHOVER_USER_FILE, value: /secrets/pushover-user}
+          ports:
+            - {name: http, containerPort: 8080}
+          startupProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 20m, memory: 96Mi}
+            limits: {memory: 384Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: collectors, mountPath: /etc/oncall, readOnly: true}
+            - {name: secrets, mountPath: /secrets, readOnly: true}
+            - {name: kube-api, mountPath: /var/run/secrets/kubernetes.io/serviceaccount, readOnly: true}
+        - name: matrix-bot
+          # Pin by digest once CI has built it (docs/updates.md).
+          image: git.radunenu.com/radu/matrix-webhook-bot:v0.0.9@sha256:5fdb8165ee484baba01a29a285d03da5a911d574452c3e4b7ab56f81562bbb24
+          env:
+            # Only the agent next to it calls it (the network policy lets
+            # nothing else in on this port).
+            - {name: LISTEN_ADDR, value: ":8081"}
+            - {name: ROUTES_FILE, value: none}
+            - {name: MATRIX_HOMESERVER_URL, value: "https://nuke.zip"}
+            - {name: MATRIX_BOT_USER_ID, value: "@oncall:nuke.zip"}
+            - {name: MATRIX_CRYPTO_STORE_PATH, value: /data/matrix-crypto.db}
+            - name: API_ROOMS
+              valueFrom:
+                configMapKeyRef: {name: oncall-env, key: ONCALL_MATRIX_ROOM}
+            - name: WEBHOOK_BEARER_TOKEN
+              valueFrom:
+                secretKeyRef: {name: oncall, key: bot-token}
+            - name: MATRIX_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef: {name: oncall, key: matrix-access-token}
+            - name: MATRIX_CRYPTO_PICKLE_KEY
+              valueFrom:
+                secretKeyRef: {name: oncall, key: matrix-pickle-key}
+          ports:
+            - {name: bot, containerPort: 8081}
+          readinessProbe:
+            httpGet: {path: /readyz, port: bot}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /healthz, port: bot}
+            periodSeconds: 30
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            # SQLite's temporary files; the root is read only.
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: oncall-data
+        - name: collectors
+          configMap:
+            name: oncall-collectors
+        # Only the keys the agent uses: not the bot's login or keys. Optional,
+        # so a missing optional key (no Claude, no Pushover) is fine; the
+        # agent refuses to start without the two tokens it needs.
+        - name: secrets
+          secret:
+            secretName: oncall
+            optional: true
+            items:
+              - {key: webhook-token, path: webhook-token}
+              - {key: bot-token, path: bot-token}
+              - {key: anthropic-api-key, path: anthropic-api-key}
+              - {key: pushover-token, path: pushover-token}
+              - {key: pushover-user, path: pushover-user}
+        - name: kube-api
+          projected:
+            sources:
+              - serviceAccountToken: {path: token, expirationSeconds: 3600}
+              - configMap:
+                  name: kube-root-ca.crt
+                  items: [{key: ca.crt, path: ca.crt}]
+              - downwardAPI:
+                  items:
+                    - path: namespace
+                      fieldRef: {fieldPath: metadata.namespace}
+        - name: tmp
+          emptyDir: {}

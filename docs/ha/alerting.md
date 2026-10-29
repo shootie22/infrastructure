@@ -28,6 +28,10 @@ mixi runs a standby copy of the relay ([#156](https://github.com/shootie22/infra
 
 "Accepted by the service" is all that can be checked for normal messages. Whether it reached the phone isn't visible.
 
+## What it means
+
+Alertmanager also sends every alert to the on-call agent ([runbooks/oncall-agent.md](runbooks/oncall-agent.md)). The agent reads the evidence (the rule, logs, events, recent changes, past incidents) and posts a short explanation in `#oncall` on nuke.zip, one thread per incident. A local model writes the first report; Claude looks further when the alert pages or the local model isn't sure. It only reads, and it sits beside the relay, not in front of it: when it's down, alerts still arrive, only without the explanation.
+
 ## Rules
 
 - Grouped: one outage is one message, not twenty. Alertmanager groups, the relay rate-limits.

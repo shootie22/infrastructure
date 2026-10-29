@@ -32,6 +32,14 @@ data:
           # while the edge's doesn't answer (#156).
           - url: http://10.99.0.4:9190/alertmanager
             send_resolved: true
+          # The on-call agent: explains each alert in #oncall on nuke.zip
+          # (kubernetes/services/oncall). Alertmanager retries each of these
+          # on its own, so the agent being down never holds up the relays.
+          - url: http://oncall.oncall.svc.cluster.local:8080/alertmanager
+            send_resolved: true
+            http_config:
+              authorization:
+                credentials_file: /etc/alertmanager/oncall/token
       - name: healthchecks
         webhook_configs:
           - url_file: /etc/alertmanager/secret/healthchecks_url
@@ -56,7 +64,7 @@ spec:
       labels:
         app.kubernetes.io/name: alertmanager
       annotations:
-        config-revision: "3"
+        config-revision: "4"
     spec:
       automountServiceAccountToken: false
       affinity:
@@ -128,6 +136,9 @@ spec:
             - name: secret
               mountPath: /etc/alertmanager/secret
               readOnly: true
+            - name: oncall
+              mountPath: /etc/alertmanager/oncall
+              readOnly: true
             - name: data
               mountPath: /alertmanager
       volumes:
@@ -137,6 +148,13 @@ spec:
         - name: secret
           secret:
             secretName: alertmanager
+        # The on-call agent's webhook token (scripts/create-oncall-secret.sh).
+        # Optional, so Alertmanager starts without it; the agent's webhook
+        # then fails on its own and the relays carry on.
+        - name: oncall
+          secret:
+            secretName: alertmanager-oncall
+            optional: true
         # Silences and notification state only; losing them on a restart is fine.
         - name: data
           emptyDir: {}

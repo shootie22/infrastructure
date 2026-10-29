@@ -104,6 +104,72 @@ data:
       forward_to = [loki.write.default.receiver]
     }
 
+    // What explains a host in trouble, for the on-call agent
+    // (kubernetes/services/oncall) and Grafana: the kernel's log at notice
+    // and worse (the fuji NIC hang of 2026-10-29 was only there), every
+    // unit's warnings and errors, and everything the units this setup runs
+    // itself write (comin, failover, standby copies, Nebula, the relay):
+    // their stdout is priority 6, and it's what says what they did. k3s
+    // writes a lot, so of its lines only warnings and errors are kept
+    // (loki.process below). NixOS keeps the journal in /var/log/journal.
+    loki.relabel "node_journal" {
+      forward_to = []
+
+      // Auth goes on its own, above.
+      rule {
+        source_labels = ["__journal_syslog_facility"]
+        regex         = "4|10"
+        action        = "drop"
+      }
+      rule {
+        source_labels = ["__journal__systemd_unit"]
+        target_label  = "unit"
+      }
+      // systemd's own lines about a unit ("comin.service: Failed with
+      // result 'exit-code'") come from init.scope and name it in UNIT.
+      rule {
+        source_labels = ["__journal__systemd_unit", "__journal_unit"]
+        separator     = ";"
+        regex         = "init\\.scope;(.+)"
+        target_label  = "unit"
+        replacement   = "$1"
+      }
+      rule {
+        source_labels = ["__journal__transport", "unit", "__journal_priority"]
+        separator     = ";"
+        regex         = "kernel;[^;]*;[0-5]|[^;]*;(k3s|comin|comin-unstick|switch-guard|deploy-gate|site-failover|standby-copy-[^;]*|nebula@[^;]*|alert-relay|failover-checker|front-checker|ns-checker|edge-tunnel)\\.service;[0-6]|[^;]*;[^;]*;[0-4]"
+        action        = "keep"
+      }
+      rule {
+        source_labels = ["__journal_priority_keyword"]
+        target_label  = "level"
+      }
+    }
+
+    loki.source.journal "node" {
+      path          = "/var/log/journal"
+      max_age       = "12h"
+      relabel_rules = loki.relabel.node_journal.rules
+      labels        = {
+        job  = "node-journal",
+        host = sys.env("KUBE_NODE_NAME"),
+      }
+      forward_to = [loki.process.node_journal.receiver]
+    }
+
+    // k3s logs every request at info; keep its warnings and errors (logfmt,
+    // etcd's JSON, klog's W and E lines).
+    loki.process "node_journal" {
+      stage.match {
+        selector = "{unit=\"k3s.service\"}"
+
+        stage.drop {
+          expression = "level=(info|debug|trace)|\"level\":\"(info|debug)\"|^[ID][0-9]{4} "
+        }
+      }
+      forward_to = [loki.write.default.receiver]
+    }
+
     // Both Lokis, fuji's and DK's (#148).
     loki.write "default" {
       endpoint {

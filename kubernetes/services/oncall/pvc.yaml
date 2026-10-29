@@ -1,0 +1,16 @@
+# The bot's Matrix encryption keys (matrix-crypto.db) and the agent's state
+# (open incidents and their threads, what Claude cost this month). Losing it
+# means verifying the bot's device again and starting new threads; nothing
+# else. local-path on the thinkcentre.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: oncall-data
+  namespace: oncall
+spec:
+  storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

@@ -1,0 +1,15 @@
+# Alertmanager posts here (/alertmanager) and Prometheus scrapes /metrics.
+apiVersion: v1
+kind: Service
+metadata:
+  name: oncall
+  namespace: oncall
+  annotations:
+    monitoring.radunenu.com/scrape: "true"
+spec:
+  selector:
+    app.kubernetes.io/name: oncall
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

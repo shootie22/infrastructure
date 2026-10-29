@@ -4,6 +4,7 @@ Step by step procedures. Each one says whether it has been run for real yet.
 
 - [drills.md](drills.md): the failure drills (#43-#46, #160): what goes down, what should happen and how fast, how to get back. All run for real on 2026-10-07, results included.
 - [deploy-rolled-back.md](deploy-rolled-back.md): the switch guard rolled a deploy back and holds comin; what to do. Since the 2026-10-14 incident; tested in VMs, not yet for real.
+- [oncall-agent.md](oncall-agent.md): what the on-call agent does with an alert, reading its reports, turning it off, and the drills. Built 2026-10-29, not run for real yet: shadow week first.
 - [site-failover.md](site-failover.md): where the services with files run, what happens when a site goes, and moving one on purpose. Proven in the drills.
 - [restore.md](restore.md): bringing back older data from Borg, for what HA can't undo. Test plan in [#92](https://github.com/shootie22/infrastructure/issues/92), not run yet.
 - [replace-edge.md](replace-edge.md): moving the edge to a new VPS. Run up to step 6 for the first install; the full swap is planned for February 2027.

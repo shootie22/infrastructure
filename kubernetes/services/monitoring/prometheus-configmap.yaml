@@ -1191,6 +1191,30 @@ data:
             annotations:
               summary: "{{ $labels.checker }} at {{ $labels.instance }} doesn't answer"
               description: A failover checker or alert relay is down, so that switch (or that way out for alerts) won't happen when it's needed. Check its service with systemctl and journalctl on that host.
+          # The on-call agent (kubernetes/services/oncall) only explains
+          # alerts; the relay still delivers every one, so none of these pages.
+          - alert: OncallAgentDown
+            expr: absent(up{job="kubernetes-services", namespace="oncall"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+            annotations:
+              summary: The on-call agent isn't running
+              description: Alerts still reach the phone through the relay, but nothing explains them in #oncall. kubectl -n oncall get pods; docs/ha/runbooks/oncall-agent.md.
+          - alert: OncallReportsFailing
+            expr: increase(oncall_investigation_failures_total[30m]) > 0
+            labels:
+              severity: warning
+            annotations:
+              summary: The on-call agent can't post its reports to Matrix
+              description: The bot next to it doesn't answer or nuke.zip refuses it (a lost login, an unverified device). kubectl -n oncall logs deploy/oncall -c matrix-bot; docs/ha/runbooks/oncall-agent.md.
+          - alert: OncallLocalModelFailing
+            expr: increase(oncall_local_failures_total[2h]) >= 3
+            labels:
+              severity: warning
+            annotations:
+              summary: The on-call agent's local model keeps failing
+              description: Minima's Ollama doesn't answer or hasn't the model (kubectl -n ollama exec deploy/ollama -- ollama pull qwen3.5:9b). Reports still come, from Claude or with no analysis; docs/ha/runbooks/oncall-agent.md.
           - alert: PublicEndpointProbeFailed
             expr: probe_success{job="blackbox-http"} == 0
             for: 5m

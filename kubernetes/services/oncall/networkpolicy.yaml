@@ -1,0 +1,68 @@
+# In: Alertmanager's webhooks and Prometheus' scrape, on the agent's port.
+# The bot's port (8081) is for the agent next to it only, so nothing may
+# reach it.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: oncall-ingress
+  namespace: oncall
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: oncall
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: monitoring}
+          podSelector:
+            matchExpressions:
+              - {key: app.kubernetes.io/name, operator: In, values: [alertmanager, prometheus, prometheus-dk]}
+      ports:
+        - {protocol: TCP, port: 8080}
+---
+# Out: DNS, the monitoring stack (read only: the agent only sends GETs),
+# minima's Ollama, the Kubernetes API over Nebula, and HTTPS (Claude's API,
+# GitHub for the repos, Pushover, nuke.zip for the bot). Nothing else in
+# the cluster.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: oncall-egress
+  namespace: oncall
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: oncall
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+          podSelector:
+            matchLabels: {k8s-app: kube-dns}
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: monitoring}
+      ports:
+        - {protocol: TCP, port: 9090}
+        - {protocol: TCP, port: 9093}
+        - {protocol: TCP, port: 3100}
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: ollama}
+          podSelector:
+            matchLabels: {app.kubernetes.io/name: ollama}
+      ports:
+        - {protocol: TCP, port: 11434}
+    - to:
+        - ipBlock: {cidr: 10.99.0.0/24}
+      ports:
+        - {protocol: TCP, port: 6443}
+    - ports:
+        - {protocol: TCP, port: 443}

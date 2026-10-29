@@ -3,6 +3,7 @@
 # fails `hub render --check`.
 keep:
 - README.md
+- alertmanager-oncall.sops.yaml
 - alertmanager-secret.sops.yaml
 - alertmanager.yaml
 - beyla.yaml

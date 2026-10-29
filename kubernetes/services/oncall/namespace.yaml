@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: oncall
+  annotations:
+    hub.radunenu.com/description: The on-call agent, which explains each alert in #oncall on nuke.zip

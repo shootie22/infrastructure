@@ -1,0 +1,103 @@
+# What the on-call agent reads for each alert before any model sees it
+# (infra-hub internal/oncall/collect.go lists the collectors). The same
+# queries every time: the local model only has to read, and the report says
+# where each line came from. Bump config-revision in deployment.yaml after a
+# change.
+#
+# queries are Go templates over the alert's labels, each already escaped
+# for a double-quoted string: use them only inside "...". {{.machine}} is the
+# node or host the alert is about, by its journal name (ONCALL_HOST_ALIASES).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oncall-collectors
+  namespace: oncall
+data:
+  collectors.yaml: |
+    # For every alert: the rule and its value over the last hour, what else
+    # is firing, commits and Argo syncs of the last 6 hours, and the
+    # runbooks and past incidents that name the alert.
+    always: [alert_rule, related_alerts, recent_changes, runbook]
+
+    rules:
+      # A pod: its status and restarts, its logs, its namespace's events.
+      - match: {label: pod}
+        collect: [pod_status, pod_logs, namespace_events]
+      # Anything in a namespace: its workloads and Argo app.
+      - match: {label: namespace}
+        collect: [workloads, namespace_events, argo_app]
+      # A machine (node for Kubernetes and node-exporter, host for comin
+      # and Nebula): its node, metrics, kernel log and system warnings.
+      - match: {label: node}
+        collect: [node_status, node_metrics, host_log]
+      - match: {label: host}
+        collect: [node_status, node_metrics, host_log]
+      - match: {label: job_name}
+        collect: [job]
+      - match: {label: cronjob}
+        collect: [job]
+      - match: {label: cnpg_cluster}
+        collect: [postgres]
+      - match: {alertname: "^(PublicEndpointProbeFailed|ProbedCertificateExpiringSoon)$"}
+        collect: [probe]
+
+      - match: {alertname: "^Comin"}
+        queries:
+          - title: comin's state on the host
+            promql: '{__name__=~"comin_last_.*", host="{{.host}}"}'
+          - title: comin's log
+            logql: '{job="node-journal", host="{{.machine}}", unit=~"comin.*|switch-guard.service|deploy-gate.service"}'
+            range: 6h
+            limit: 100
+
+      - match: {alertname: "^Etcd"}
+        queries:
+          - title: etcd members up
+            promql: 'up{job="etcd"}'
+            range: 3h
+          - title: etcd has a leader
+            promql: 'etcd_server_has_leader'
+            range: 3h
+          - title: etcd leader changes
+            promql: 'increase(etcd_server_leader_changes_seen_total[1h])'
+          - title: etcd WAL fsync p99 (s)
+            promql: 'histogram_quantile(0.99, sum by (instance, le) (rate(etcd_disk_wal_fsync_duration_seconds_bucket[10m])))'
+            range: 3h
+          - title: k3s on the servers
+            logql: '{job="node-journal", unit="k3s.service"} |~ "(?i)etcd|leader|slow|took too long"'
+            range: 3h
+            limit: 150
+
+      # Site failover (dotfiles modules/nixos/site-failover): where each
+      # service is active, and the failover units' own words.
+      - match: {alertname: "^(SiteFailover|Placement|StandbyCopy|MatrixMediaCopy)"}
+        queries:
+          - title: where each service is active
+            promql: 'site_failover_active'
+            range: 6h
+          - title: standby copies, hours since the last success
+            promql: '(time() - standby_copy_last_success_timestamp_seconds) / 3600'
+          - title: the failover units' log
+            logql: '{job="node-journal", unit=~"site-failover.*|standby-copy.*"}'
+            range: 6h
+            limit: 150
+
+      - match: {alertname: "^Matrix"}
+        queries:
+          - title: Synapse and the login service
+            promql: 'up{job=~"synapse.*|mas.*"}'
+            range: 3h
+          - title: errors in the matrix namespace
+            logql: '{namespace="matrix"} |~ "(?i)(error|exception|traceback|fatal)"'
+            range: 2h
+            limit: 120
+
+      - match: {alertname: "^(EdgeBackendDown|EdgeMetricsUnreachable)$"}
+        queries:
+          - title: HAProxy backends on the edge
+            promql: 'haproxy_server_status{job="edge-haproxy", state="UP"}'
+            range: 3h
+          - title: the edge's log
+            logql: '{job="node-journal", host="edge"}'
+            range: 3h
+            limit: 150
