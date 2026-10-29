@@ -29,7 +29,7 @@ spec:
       annotations:
         # Bump when collectors-configmap.yaml or oncall-env changes: both
         # are read only at start.
-        config-revision: "1"
+        config-revision: "2"
       labels:
         app.kubernetes.io/name: oncall
     spec:

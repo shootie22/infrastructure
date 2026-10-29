@@ -972,8 +972,12 @@ data:
             annotations:
               summary: yeetus.net's Synapse is down
               description: Nobody can send or receive. Check `kubectl -n matrix get pods -o wide`, the `matrix` label (`kubectl get nodes -L ha.radunenu.com/matrix`) and `journalctl -u site-failover` on fuji and the thinkcentre.
+          # Without the sync endpoints: they hold the request open on purpose
+          # until there's news (long polling), so their "response time" is the
+          # wait, not slowness. Sliding sync's alone kept p95 at 10s, its
+          # histogram's top, and this firing all day on 2026-10-29.
           - alert: MatrixSynapseSlow
-            expr: histogram_quantile(0.95, sum by (le) (rate(synapse_http_server_response_time_seconds_bucket{job="synapse-yeetus"}[5m]))) > 2
+            expr: histogram_quantile(0.95, sum by (le) (rate(synapse_http_server_response_time_seconds_bucket{job="synapse-yeetus", servlet!~"SyncRestServlet|SlidingSyncRestServlet|EventStreamRestServlet"}[5m]))) > 2
             for: 10m
             labels:
               severity: warning
