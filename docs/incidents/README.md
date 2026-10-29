@@ -16,3 +16,6 @@ Every incident gets two plain sentences, here and at the top of its write-up: **
 - [2026-10-20: thinkcentre's disk full, its services down, nothing moved](2026-10-20-thinkcentre-disk-pressure.md).
   **What went wrong:** a CI job filled the thinkcentre's disk, Kubernetes stopped running nearly everything there, and failover didn't move anything because the node still looked healthy; afterwards the databases stayed on the wrong side, which made Gitea too slow for CI until the next morning.
   **Fix:** failover now moves services off a node that's up but can't run them, the disk is watched and CI waits for room, and databases follow their apps; next, a placement controller brings everything back to its right place by itself after any failover.
+- [2026-10-29: fuji's network card hung, sites down behind RO for about 4 minutes](2026-10-29-fuji-network-card-hang.md).
+  **What went wrong:** fuji's onboard Intel network card (I219-LM, e1000e) stopped sending packets, a known fault of these chips, and the driver couldn't recover it, so fuji was cut off until it was power-cycled.
+  **Fix:** fuji and the thinkcentre turn off the card's segmentation offload and power saving at boot, which avoids the known triggers, and a watchdog resets the card by itself if it hangs anyway.
