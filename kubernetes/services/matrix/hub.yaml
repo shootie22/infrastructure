@@ -3,6 +3,7 @@
 # fails `hub render --check`.
 keep:
 - admin-token.sops.yaml
+- canary.sops.yaml
 - canary.yaml
 - cluster.yaml
 - database.yaml

@@ -1,0 +1,35 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: matrix-canary
+    namespace: matrix
+spec:
+    secretTemplates:
+        - name: ENC[AES256_GCM,data:uJ0p6JLe/CR0Zi8o/g==,iv:FmqyUCV9/UMwS8kNxJSdhGa5OAboh3Njy1nq0ilxY8U=,tag:nkpvmVVggDaCLGqhMJ17+Q==,type:str]
+          stringData:
+            token: ENC[AES256_GCM,data:jhXlZsn8KSuAeVzSXDR89fgURZRZW1f7Dx7gZYB7g5oppGdBnkYNvBU=,iv:fP72oUTWkzfOiKHVvh7FfgdO3QCLxftFosmRfbbMz0g=,tag:QrnQqy4hyyeKf/fIt5gUOQ==,type:str]
+            room: ENC[AES256_GCM,data:VdlQPzECf9wuTEEJB8utQzHNQvL5U6Cnc0mTgUHJb4/iVFbHfk0NBMmveVQ=,iv:c9hsK88NppTn0dk1vBemABdMTgDBzpSXSxIRz4OPZVQ=,tag:a2l2HvXWffidRH5U/ivmGQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBlOWJMUjVlam1mTUlObTRO
+            eFZmZ3VGc2JoL1dCZlp6UFVZUGgzTDF0M3o4ClR3S3BrcnpOT25OdzJNZjkyQnVJ
+            T3hray83eXN0bXBuZlRHeVNZbmxINHcKLS0tIFMvUlBZTVJJby9HdzI1YlEzZStQ
+            OXRMbmdtSjFZdXpndzRVUG1obGhweVEKzYx22yKbF1VtSLQoJJGHV7ALUttrn6UN
+            110jQo9+pV+9tasQHms+8e8vQww3JtD6yAJWDOhXOISqzmp/5ih2Ig==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBWbzZ2ajBjY2VLK251QkUr
+            SWtHTDVJVTh2eEUvUis5ZklHQkJRbUNpeWhFCk9XLzdVaVVKQjZGNEVHZ1NwU25k
+            c3BXTFQweVhNL3Z1WEhxb1B3bzI4U2sKLS0tIEZjRTRBWWx0d0RQMnhBS1p3VEdi
+            K0N2bGdhbWJKVjFuK29pTkIzcXFJN2sK/6HbuECxgatQ3spjjJ8qaHqYWrTRNKIE
+            /nEsIYvDFqQNxti05P4p9AKPrMHvOVkTjvYW3IaM3S7rgxI3a28yCw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
+    encrypted_suffix: Templates
+    lastmodified: "2026-10-29T19:03:29Z"
+    mac: ENC[AES256_GCM,data:39+b4MhUI9GYYUXFzu68gc910Vl5GnKffJe/tXmwH5Sv/ogB8/1WDWAh9gUvWzyeoqAqP9XE4JikJtZHlwnPuv0TePMMHRNKlh3PpUS8r2zSptiZmDX013oV3j81uuAxF+QniuLjukGAMnGhrTQ2GaRhx4+RtYSc6E+XpDbmmSs=,iv:SZoJWTpLDp+s4QiI8YSercCGvA4I29mbeLsEHfDhTtY=,tag:0Ewwiv41tIUj0sZhPZuQnQ==,type:str]
+    version: 3.13.3
