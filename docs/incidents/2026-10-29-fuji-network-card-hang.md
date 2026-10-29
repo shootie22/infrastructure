@@ -2,7 +2,7 @@
 
 **What went wrong:** fuji's onboard Intel network card (I219-LM, e1000e) stopped sending packets, a known fault of these chips, and the driver couldn't recover it, so fuji was cut off until it was power-cycled.
 
-**Fix:** fuji and the thinkcentre turn off the card's segmentation offload and power saving at boot, which avoids the known triggers, and a watchdog resets the card by itself if it hangs anyway. Being done in dotfiles.
+**Fix:** fuji and the thinkcentre turn off the card's segmentation offload, the trigger named most often, and a watchdog resets the card by itself if it hangs anyway. Done in dotfiles.
 
 **Recovered.** Public services were down about 4 minutes, from the hang at 11:29:49 UTC until DNS failover sent traffic to the thinkcentre through the edge at about 11:34. fuji was power-cycled and its disk unlocked through the edge's early-boot tunnel, and traffic went back to RO at 12:00, after 10 healthy minutes as designed.
 
@@ -41,8 +41,19 @@ Not related to the day's changes: dotfiles #25 only changes `home/nixa` (fuji us
 In dotfiles [#27](https://github.com/shootie22/dotfiles/pull/27):
 
 
-- **At boot on fuji and the thinkcentre (same driver):** turn off TSO and GSO, and turn off EEE, before the network comes up. Turning TSO/GSO off doesn't reset the link (checked in the driver's `e1000_set_features`, which only sets a flag for those); turning EEE off does (`e1000e_set_eee` reinitialises the card), so it only happens at boot. RX checksum and VLAN offloads stay on: changing them resets the link, and nothing ties them to this fault.
+- **On fuji and the thinkcentre (same driver):** turn off TSO and GSO at boot, on every switch, and whenever the card comes back after a driver reload. This doesn't reset the link (checked in the driver's `e1000_set_features`, which only sets a flag for those), so it's safe on a running host. EEE stays on: turning it off reinitialises the card (`e1000e_set_eee`), and it's inactive on fuji's link anyway. RX checksum and VLAN offloads stay on too: changing them resets the link, and nothing ties them to this fault.
 - **Watchdog:** if the kernel has logged a hardware unit hang in the last minute and the router doesn't answer, reset the port, then reload the driver if that doesn't help, at most 3 times an hour. It only acts when the host is already cut off. Tested with a dry run and a fake hang message before it's allowed to act.
-- **minima** (separate): its VM had been off the tailnet for about 8 hours before this, while its kubelet still reported; it's cordoned and needs a restart and a look at why.
+- **minima** (separate): its VM had been off the tailnet for about 8 hours before this. The VM process on the Mac mini had been running for 4 days, but Lima's host agent was gone and the guest didn't answer, so `limactl start` refused to run and the supervisor restarted every 30 seconds without getting anywhere. It's cordoned; the old VM process has to be stopped before it can start again, and why the guest died is still open.
+
+## Argo stopped syncing
+
+Found later the same day, when a radunenu.com release didn't roll out. Argo's application controller (`argocd-application-controller-0`) was running on minima. When minima died the pod got stuck in Terminating, and since it's a StatefulSet, Kubernetes won't start a replacement on another node while the old one might still be running. So for about 8 hours Argo applied nothing anywhere in the cluster, while still showing every app as Synced and Healthy from their last status. Running services weren't affected; anything merged in that time just didn't go out.
+
+Fixed by force-deleting the stuck pod once the old VM was confirmed off. The controller started on another node and caught up within a minute (radunenu.com v0.1.49 was live at 12:55).
+
+To do:
+
+- Keep the application controller on fuji and the thinkcentre, not on agent nodes that can go away like minima.
+- Alert when the application controller isn't running, or when an app hasn't synced in a while.
 
 Sources: [Proxmox forum, e1000e hardware unit hang](https://forum.proxmox.com/threads/intel-nic-e1000e-hardware-unit-hang.106001/post-713319), [Arch forum](https://bbs.archlinux.org/viewtopic.php?id=280098), [an I219-LM write-up](https://gist.github.com/nfl0/189222c24b61c75f4aa23e67490ff54b), the e1000e driver source (`drivers/net/ethernet/intel/e1000e/netdev.c`, `ethtool.c`).
