@@ -51,9 +51,9 @@ Found later the same day, when a radunenu.com release didn't roll out. Argo's ap
 
 Fixed by force-deleting the stuck pod once the old VM was confirmed off. The controller started on another node and caught up within a minute (radunenu.com v0.1.49 was live at 12:55).
 
-To do:
+Nothing warned about it. The StatefulSet alert counts ready replicas, and the stuck pod still counted as ready. Keeping the controller off minima wouldn't have been enough either: any node can die like this, fuji did the same morning.
 
-- Keep the application controller on fuji and the thinkcentre, not on agent nodes that can go away like minima.
-- Alert when the application controller isn't running, or when an app hasn't synced in a while.
+- **Done:** an alert for any pod stuck in Terminating for more than 15 minutes (`KubernetesPodStuckTerminating`), with the fix in its description.
+- **Open:** an alert when an app hasn't synced in a while, which needs Prometheus to scrape Argo's own metrics first.
 
 Sources: [Proxmox forum, e1000e hardware unit hang](https://forum.proxmox.com/threads/intel-nic-e1000e-hardware-unit-hang.106001/post-713319), [Arch forum](https://bbs.archlinux.org/viewtopic.php?id=280098), [an I219-LM write-up](https://gist.github.com/nfl0/189222c24b61c75f4aa23e67490ff54b), the e1000e driver source (`drivers/net/ethernet/intel/e1000e/netdev.c`, `ethtool.c`).
