@@ -693,6 +693,19 @@ data:
             annotations:
               summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} cannot be scheduled
               description: Kubernetes has been unable to schedule this pod for fifteen minutes.
+          # A pod on a node that died stays Terminating, still counted as ready,
+          # until the node comes back. For a StatefulSet nothing replaces it
+          # meanwhile (2026-10-29: Argo's application controller was stuck on
+          # minima and nothing synced for about 8 hours, while every app still
+          # showed Synced). The replica alerts above don't see it.
+          - alert: KubernetesPodStuckTerminating
+            expr: time() - kube_pod_deletion_timestamp{job="kube-state-metrics"} > 900
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been terminating for over 15 minutes
+              description: Usually its node is down. Check the node; once it's really off (not just unreachable), `kubectl -n {{ $labels.namespace }} delete pod {{ $labels.pod }} --grace-period=0 --force` lets it start elsewhere. docs/incidents/2026-10-29-fuji-network-card-hang.md
           # / and /home: kubelet's and containerd's (the thinkcentre keeps
           # /var/lib/rancher on /home). Kubelet starts evicting at 5% free.
           - alert: NodeFilesystemCriticallyLow
