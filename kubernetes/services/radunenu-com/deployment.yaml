@@ -18,7 +18,7 @@ spec:
         # images to its tag once that tag's build is green. (:latest raced: an older tag's
         # build finishing last overwrote it.)
         - name: website
-          image: git.radunenu.com/radu/radunenu.com-minimal:v0.1.55@sha256:471807b7444b42d83352d3fa11396ccb713d34402ef43d1df7c6355fff78df16
+          image: git.radunenu.com/radu/radunenu.com-minimal:v0.1.57@sha256:a3b5e5c6c0130fa342c634bda9519dd7d657b3bb886afea1b4ef23585dfb4fcc
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 1310
@@ -44,7 +44,7 @@ spec:
               sleep:
                 seconds: 5
         - name: stats-updater
-          image: git.radunenu.com/radu/radunenu.com-minimal-stats-updater:v0.1.55@sha256:a5873c2ee3442f364dfe34e1b397ea3502854b87229e280327fb13ae7a8b4516
+          image: git.radunenu.com/radu/radunenu.com-minimal-stats-updater:v0.1.57@sha256:da7ccbe24b4f4b84e8c9772b5e001ac425934b10f5fb6f06e8b9981c4d3d0ee2
           imagePullPolicy: IfNotPresent
           env:
             - name: STATUS_API_TOKEN
