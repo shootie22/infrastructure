@@ -45,7 +45,7 @@ Decided 6 Oct ([#88](https://github.com/shootie22/infrastructure/issues/88), [de
 | Rybbit | thinkcentre (home) | Postgres + ClickHouse | Survives | CNPG; ClickHouse copied with merges paused, site-failover |
 | Minecraft HC, Skyblock, Hytale | thinkcentre | worlds, up to 8 GB | Survives | site-failover; Minecraft saves over RCON before each copy, Hytale is copied live |
 | Vintage Story | (not running) | 96 GB world | Retired 6 Oct | not played in a while; the world stays in /home/main/game_servers/vintage_story and in Borg |
-| Bopl 2D, Crosty, MegaBopl3D | thinkcentre | none | Stateless copy | can run in either site |
+| Bopl 2D, Crosty | thinkcentre | none | Stateless copy | can run in either site |
 | radunenu.com, yeetus.net, redirect domains | fuji, minima, mixi | none | Stateless copy | a replica per site |
 | Element Web, Element Call | the edge, plus one per site | none | Survives | the edge serves its own copy, the sites' copies behind it; RO's front door if the edge is down (#160) |
 | Hub | fuji and the thinkcentre (or minima, mixi) | Postgres | Survives | a copy per site, CNPG; replaced Homepage on 8 Oct |
