@@ -23,6 +23,12 @@ spec:
     initdb:
       database: gitea
       owner: gitea
+  # Requests only, no limits: a CPU share that a build on the same node
+  # can't take away, without throttling Postgres when the node is idle.
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
   storage:
     size: 20Gi
     storageClass: local-path

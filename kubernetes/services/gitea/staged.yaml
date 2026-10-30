@@ -99,6 +99,11 @@ spec:
             # publish job), and they had grown to 40 GiB of the thinkcentre's
             # /home by 2026-10-24 (CISlotHeldBack). Applies to new uploads.
             - {name: GITEA__actions__ARTIFACT_RETENTION_DAYS, value: "7"}
+          # Requests only, no limits, like the Postgres clusters: without them
+          # Gitea was BestEffort, the smallest CPU share on the node, and a CI
+          # build on the thinkcentre left it seconds per page (2026-10-30).
+          resources:
+            requests: {cpu: 500m, memory: 1Gi}
           ports:
             - {name: http, containerPort: 3000}
             - {name: ssh, containerPort: 22}
