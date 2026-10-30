@@ -11,7 +11,10 @@ metadata:
   name: github-commit-sync
   namespace: github-commit-sync
 spec:
-  replicas: 1
+  # Off until it skips pull mirrors: Gitea ignores the commits API's author
+  # filter, so it was about to mirror all of upstream Element's history from
+  # radu/element-web as my activity.
+  replicas: 0
   strategy:
     type: Recreate
   selector:
