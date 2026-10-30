@@ -19,3 +19,6 @@ Every incident gets two plain sentences, here and at the top of its write-up: **
 - [2026-10-29: fuji's network card hung, sites down behind RO for about 4 minutes](2026-10-29-fuji-network-card-hang.md).
   **What went wrong:** fuji's onboard Intel network card (I219-LM, e1000e) stopped sending packets, a known fault of these chips, and the driver couldn't recover it, so fuji was cut off until it was power-cycled.
   **Fix:** fuji and the thinkcentre turn off the card's segmentation offload and power saving at boot, which avoids the known triggers, and a watchdog resets the card by itself if it hangs anyway.
+- [2026-10-30: Gitea slow under a scraper on thousands of home IPs](2026-10-30-gitea-scraper-swarm.md).
+  **What went wrong:** a scraper spread over about 6,500 residential IP addresses walked Gitea's most expensive pages for over an hour, on a thinkcentre already at full CPU with a CI build, so every page took seconds and some requests failed.
+  **Fix:** Cloudflare challenges anonymous visitors on Gitea's expensive pages, on both names; next, Gitea itself keeps those pages for signed-in users and CI can't take all of the thinkcentre's CPU.
