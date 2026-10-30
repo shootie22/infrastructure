@@ -60,5 +60,5 @@ One central name, DNS only (game traffic can't go through the proxy):
 - `games.radunenu.com` CNAME `noc-studios.go.ro`
 - `mc.radunenu.com`, `mc.kronorite.com`, `play.radunenu.com`, `play.yeetus.net` and `bopl.yeetus.net` CNAME `games.radunenu.com`, all DNS only
 
-All of them resolve to the RO IP, and the port picks the game (Minecraft 25565 and 6767, MegaBopl3D 24545, Hytale 5520).
+All of them resolve to the RO IP, and the port picks the game (Minecraft 25565 and 6767, Hytale 5520).
 
