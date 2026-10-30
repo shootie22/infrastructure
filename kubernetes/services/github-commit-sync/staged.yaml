@@ -23,6 +23,12 @@ spec:
         app: github-commit-sync
     spec:
       automountServiceAccountToken: false
+      # The service runs as PID 1 and shells out to git, whose helpers it never
+      # reaps. Zombies piled up until the pod hit its process limit and every
+      # sync failed with "fork/exec /usr/bin/git: resource temporarily
+      # unavailable" (silently, from early October). With a shared process
+      # namespace the pause container is PID 1 and reaps them.
+      shareProcessNamespace: true
       # The image is arm64 only: mixi or minima, moving 30 s after its node
       # stops answering.
       affinity:
