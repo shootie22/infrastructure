@@ -11,10 +11,7 @@ metadata:
   name: github-commit-sync
   namespace: github-commit-sync
 spec:
-  # Off until it skips pull mirrors: Gitea ignores the commits API's author
-  # filter, so it was about to mirror all of upstream Element's history from
-  # radu/element-web as my activity.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -56,11 +53,18 @@ spec:
             value: "1"
       containers:
         - name: github-commit-sync
-          image: git.radunenu.com/radu/github-commit-sync@sha256:fb9ae2cb6d934e4e316b2f0a6ed6a0535583c530f0f055608aaa3fe9623601cf
+          image: git.radunenu.com/radu/github-commit-sync:v0.2.0@sha256:59751a30d88a9692fb0225328e299b2f4ce4db4dcb444e9cd3a11ae9ccbc1527
           imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:
                 name: github-commit-sync-env
+          # Every name and address I commit as. Gitea's commits API ignores an
+          # author filter, so v0.2.0 matches these itself (name, email or Gitea
+          # login), and skips pull mirrors and forks. Set here, not in the
+          # secret: it's not secret, and env wins over envFrom.
+          env:
+            - name: GITEA_AUTHORS
+              value: "radu,Radu N.,Radu Nenu,hello@radunenu.com,me@yeetus.net"
           ports:
             - name: http
               containerPort: 6424
