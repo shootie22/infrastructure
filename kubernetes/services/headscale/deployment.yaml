@@ -33,7 +33,7 @@ spec:
             value: "1"
       containers:
         - name: headscale
-          image: ghcr.io/juanfont/headscale:v0.29.3@sha256:0e7f1c6e4ce6c2a2a001103ecd3fa645a045adf30ac8a5234fe037b43000cd72
+          image: ghcr.io/juanfont/headscale:v0.29.7@sha256:11f81665e842809db9fe3006a38c56a66e968baa5abd4bac498e86445572b970
           args:
             - serve
           ports:
