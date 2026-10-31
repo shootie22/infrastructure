@@ -102,7 +102,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: clickhouse
-          image: clickhouse/clickhouse-server:25.4.2.31@sha256:5311f717b7a3ee1e8ed2c198fee498c636ba6c2da3e39dbe45769088ebc858d0
+          image: clickhouse/clickhouse-server:25.12.11.4@sha256:8a790dd3468db22b1d4e7b18a176f378ff5ff6053b9c48dd4ea1fa71a24c5ba6
           env:
             - name: CLICKHOUSE_DB
               valueFrom: {secretKeyRef: {name: rybbit-env, key: CLICKHOUSE_DB}}
