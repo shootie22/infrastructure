@@ -209,7 +209,7 @@ data:
         # gets an ext4 disk image there instead, which the VM's kernel
         # mounts. Ubuntu's image has mkfs; Docker's don't.
         - name: format
-          image: docker.io/library/ubuntu:24.04@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55
+          image: docker.io/library/ubuntu:26.04@sha256:6a06111c3b0a8600feadb270aec771dc239bf407b25625f93f44ab00e11f4d3c
           command: ["sh", "-c", "truncate -s 28G /disk/docker.img && mkfs.ext4 -q -F -E lazy_itable_init=1,lazy_journal_init=1 /disk/docker.img"]
           securityContext:
             allowPrivilegeEscalation: false
