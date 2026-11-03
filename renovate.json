@@ -42,13 +42,26 @@
       "description": "Database major versions need a dump/restore or pg_upgrade, never just a new image. Planned by hand.",
       "matchPackageNames": [
         "postgres",
-        "docker.io/library/postgres",
-        "clickhouse/clickhouse-server"
+        "docker.io/library/postgres"
       ],
       "matchUpdateTypes": [
         "major"
       ],
       "enabled": false
+    },
+    {
+      "description": "ClickHouse: LTS lines only (YY.3 and YY.8), the ones supported for a year. Its major is just the year, and a new LTS is an image change, not a dump/restore.",
+      "matchPackageNames": [
+        "clickhouse/clickhouse-server"
+      ],
+      "allowedVersions": "/^\\d+\\.(3|8)\\.\\d+\\.\\d+$/"
+    },
+    {
+      "description": "uptimerobot 2.0.0 was published and then withdrawn; upstream says to stay below 2 (uptimerobot/terraform-provider-uptimerobot#299)",
+      "matchDepNames": [
+        "uptimerobot"
+      ],
+      "allowedVersions": "<2.0.0"
     },
     {
       "description": "Pin images to tag@digest, so the version is readable and the build is exact",
