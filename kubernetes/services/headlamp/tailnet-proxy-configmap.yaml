@@ -48,3 +48,11 @@ data:
       tls /certs/tls.crt /certs/tls.key
       reverse_proxy searxng.searxng.svc.cluster.local:8080
     }
+    # Keycloak's admin console (KC_HOSTNAME_ADMIN), which the public names
+    # don't serve. Caddy keeps the Host and sends X-Forwarded-Proto, which
+    # Keycloak trusts (KC_PROXY_HEADERS).
+    https://kc.infra.radunenu.com {
+      bind {$TAILNET_IP}
+      tls /certs/tls.crt /certs/tls.key
+      reverse_proxy keycloak.keycloak.svc.cluster.local:8080
+    }
