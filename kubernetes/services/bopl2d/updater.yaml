@@ -67,7 +67,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: updater
-              image: docker.io/alpine/k8s:1.35.9@sha256:b9cb6db0091a2327c0a56ecda69d37fa830c7a96ea669e7382b3ee778aa07a24
+              image: docker.io/alpine/k8s:1.37.2@sha256:dcb7185e112a453aa72f426754849a97357727ef8f40168fb208c8cf59952042
               command: ["/bin/sh", "-euc"]
               args:
                 - |

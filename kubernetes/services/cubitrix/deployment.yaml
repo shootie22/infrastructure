@@ -30,7 +30,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: caddy
-          image: caddy:2.10.0-alpine@sha256:ae4458638da8e1a91aafffb231c5f8778e964bca650c8a8cb23a7e8ac557aa3c
+          image: caddy:2.11.7-alpine@sha256:e70b164da81ef698b3ad19af799ea6086ce6d9e48ed4079eb9fe26f6fbf14ee5
           args: [caddy, run, --config, /etc/caddy/Caddyfile, --adapter, caddyfile]
           ports:
             - {name: http, containerPort: 8080}
@@ -69,7 +69,7 @@ spec:
             - {name: data, mountPath: /data}
             - {name: runtime-config, mountPath: /config}
         - name: fetch
-          image: docker.io/library/busybox:1.37@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e
+          image: docker.io/library/busybox:1.38@sha256:a46257e06c82ad85242d0d38077d0a52d9896389ca60a1a59d3463db586e5fa4
           command: [sh, /etc/fetch/fetch.sh]
           resources:
             requests:

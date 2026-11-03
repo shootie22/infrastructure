@@ -166,7 +166,7 @@ spec:
       initContainers:
         # The media folder: /srv/ha/matrix is made by site-failover as root.
         - name: media-dir
-          image: ghcr.io/element-hq/synapse:v1.163.0@sha256:e98ab72138d90fa8b8876c6421fe78a9fdb181c0d7cc690ad740e5173e0c65e6
+          image: ghcr.io/element-hq/synapse:v1.164.2@sha256:f0df87cff259872637b4b5e5174b9977e5e3046dd421505407803b5e45c5f842
           command: ["/bin/sh", "-ec", "mkdir -p /data/media && chown 991:991 /data/media"]
           securityContext:
             runAsUser: 0
@@ -188,7 +188,7 @@ spec:
             capabilities: {drop: [ALL]}
       containers:
         - name: synapse
-          image: ghcr.io/element-hq/synapse:v1.163.0@sha256:e98ab72138d90fa8b8876c6421fe78a9fdb181c0d7cc690ad740e5173e0c65e6
+          image: ghcr.io/element-hq/synapse:v1.164.2@sha256:f0df87cff259872637b4b5e5174b9977e5e3046dd421505407803b5e45c5f842
           # Straight to Synapse (the image's start.py would generate a config).
           command:
             - python

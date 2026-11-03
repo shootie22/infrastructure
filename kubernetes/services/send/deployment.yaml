@@ -35,7 +35,7 @@ spec:
       initContainers:
         # Native sidecar: started, and ready, before Send connects to it.
         - name: redis
-          image: docker.io/library/redis:8.10.2-alpine@sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0
+          image: docker.io/library/redis:8.10.3-alpine@sha256:21090af93f8324db2f0f0f4f38a7c60369d47d917e000c3423d89d2ae2883537
           restartPolicy: Always
           args: ["--bind", "127.0.0.1", "--save", "", "--appendonly", "no"]
           startupProbe:
@@ -61,7 +61,7 @@ spec:
             - {name: redis-data, mountPath: /data}
       containers:
         - name: send
-          image: registry.gitlab.com/timvisee/send:v3.4.27@sha256:b950a557f0f4eb7d2114a9126aea5df984ffe868385a3fb6b327d9f770bec0ae
+          image: registry.gitlab.com/timvisee/send:v3.5.1@sha256:81916194df6842dc2b905039f5a49a852af82ff343abca084068a6707b5653df
           env:
             # Anything but production swaps Redis for an in-memory mock.
             - {name: NODE_ENV, value: production}
