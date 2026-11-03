@@ -4,6 +4,9 @@ metadata:
   name: github-commit-sync
   annotations:
     hub.radunenu.com/description: Mirrors Gitea commits to GitHub's contribution graph
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce-version: latest
 ---
 apiVersion: apps/v1
 kind: Deployment

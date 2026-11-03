@@ -4,3 +4,6 @@ metadata:
   name: legacy-redirects
   annotations:
     hub.radunenu.com/description: Old domains that redirect to radunenu.com and Steam
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce-version: latest
