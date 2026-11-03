@@ -16,7 +16,7 @@ jobs:
   manifests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: kubeconform
         run: |
           curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
@@ -34,7 +34,7 @@ jobs:
   monitoring:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - run: pip install pyyaml
       - name: validate-monitoring.py
         run: python3 kubernetes/services/monitoring/validate-monitoring.py --prometheus-files-output /tmp/prom --promql-rules-output /tmp/dashboard-queries.yaml
@@ -49,7 +49,7 @@ jobs:
   hub:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           path: infrastructure
       # A Hub deploy opens a dotfiles PR on the same branch name; render
@@ -64,7 +64,7 @@ jobs:
           else
             echo "ref=main" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           repository: shootie22/dotfiles
           ref: ${{ steps.dotfiles.outputs.ref }}
@@ -87,8 +87,8 @@ jobs:
   tofu:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: opentofu/setup-opentofu@v1
+      - uses: actions/checkout@v7
+      - uses: opentofu/setup-opentofu@v2
       - name: fmt and validate
         working-directory: tofu
         run: |
