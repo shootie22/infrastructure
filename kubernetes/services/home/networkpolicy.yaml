@@ -1,0 +1,32 @@
+# Who may connect into home (security audit, 2026-11-03): public site;
+# only Traefik needs it.
+# Taken from a week of Beyla's flow metrics (direction="request") and the
+# in-cluster addresses in this repo. Incoming only. Like
+# monitoring/networkpolicy.yaml: the nodes are allowed through their flannel
+# and cni0 addresses (health checks, host-network proxies), and a new node
+# needs its two addresses here.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allowed-sources
+  namespace: home
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+        # Scraping (Prometheus) and the status page's probes (blackbox).
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: monitoring}}
+        - ipBlock: {cidr: 10.42.0.0/32}  # fuji
+        - ipBlock: {cidr: 10.42.0.1/32}
+        - ipBlock: {cidr: 10.42.1.0/32}  # thinkcentre
+        - ipBlock: {cidr: 10.42.1.1/32}
+        - ipBlock: {cidr: 10.42.2.0/32}  # mixi
+        - ipBlock: {cidr: 10.42.2.1/32}
+        - ipBlock: {cidr: 10.42.3.0/32}  # minima-vm
+        - ipBlock: {cidr: 10.42.3.1/32}
+        - ipBlock: {cidr: 10.42.4.0/32}  # edge
+        - ipBlock: {cidr: 10.42.4.1/32}

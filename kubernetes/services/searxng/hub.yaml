@@ -5,6 +5,7 @@ keep:
 - configmap.yaml
 - deployment.yaml
 - namespace.yaml
+- networkpolicy.yaml
 - secret.sops.yaml
 - service.yaml
 kind: kept
