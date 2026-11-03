@@ -45,7 +45,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: ollama
-          image: git.radunenu.com/radu/ollama-vulkan:v0.34.4-3@sha256:cbe467d4b34be4297a1da9426937f713f5728bf75b51c63284cfab2381bf0d9e
+          image: git.radunenu.com/radu/ollama-vulkan:v0.40.14-1@sha256:869ba7b4bf286e3b36ed438a240d45e19d4ee2a1a491e9cd0339b3351d688327
           command: [/bin/sh, -c]
           args:
             - |
