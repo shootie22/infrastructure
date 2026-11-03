@@ -32,6 +32,7 @@ keep:
 - loki-dk.yaml
 - loki-tailnet-proxy.yaml
 - namespace.yaml
+- networkpolicy.yaml
 - observability-design.md
 - prometheus-configmap.yaml
 - prometheus-dk.yaml
