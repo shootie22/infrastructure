@@ -4,6 +4,8 @@ metadata:
   name: legacy-api-apache
   namespace: legacy-web
 data:
+  # After changing this, bump config-revision in deployment.yaml: Apache
+  # only reads it when it starts.
   000-default.conf: |
     # No Apache or Debian version in headers and error pages.
     ServerTokens Prod
