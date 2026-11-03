@@ -55,7 +55,7 @@ subjects:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: gitea-look-86215451
+  name: gitea-look-d5802de5
   namespace: gitea
 spec:
   backoffLimit: 2

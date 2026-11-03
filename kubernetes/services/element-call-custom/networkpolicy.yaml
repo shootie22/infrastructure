@@ -1,11 +1,11 @@
-# Who may connect into element-call-custom (security audit, 2026-11-03): a static site, so
+# Who may connect into element-call (security audit, 2026-11-03): a static site, so
 # only Traefik, the namespace itself, monitoring and the nodes. The copy on
 # the edge runs on the host network and isn't affected.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allowed-sources
-  namespace: element-call-custom
+  namespace: element-call
 spec:
   podSelector: {}
   policyTypes: [Ingress]
