@@ -3,6 +3,7 @@
 # fails `hub render --check`.
 keep:
 - database.yaml
+- networkpolicy.yaml
 - rsa-key.sops.yaml
 - secret.sops.yaml
 - staged.yaml
