@@ -4,6 +4,7 @@
 keep:
 - checks.yaml
 - namespace.yaml
+- networkpolicy.yaml
 - secret.sops.yaml
 kind: kept
 name: canary
