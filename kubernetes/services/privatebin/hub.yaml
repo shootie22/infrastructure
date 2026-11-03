@@ -6,6 +6,7 @@ keep:
 - deployment.yaml
 - ingress.yaml
 - namespace.yaml
+- networkpolicy.yaml
 - service.yaml
 kind: kept
 name: privatebin

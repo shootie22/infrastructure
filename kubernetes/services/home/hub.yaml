@@ -6,5 +6,6 @@ keep:
 - deployment.yaml
 - ingress.yaml
 - namespace.yaml
+- networkpolicy.yaml
 kind: kept
 name: home

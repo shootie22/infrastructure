@@ -3,6 +3,7 @@
 # fails `hub render --check`.
 keep:
 - namespace.yaml
+- networkpolicy.yaml
 - thinkcentre-gateway.yaml
 - thinkcentre-ingress.yaml
 kind: kept

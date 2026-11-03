@@ -5,6 +5,7 @@ keep:
 - deployment.yaml
 - ingress.yaml
 - namespace.yaml
+- networkpolicy.yaml
 - service.yaml
 - stats-secret.sops.yaml
 - stats-secret.sops.yaml.example

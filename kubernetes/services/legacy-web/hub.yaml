@@ -12,6 +12,7 @@ keep:
 - kronorite-deployment.yaml
 - kronorite-service.yaml
 - namespace.yaml
+- networkpolicy.yaml
 - pvc.yaml
 - service.yaml
 kind: kept
