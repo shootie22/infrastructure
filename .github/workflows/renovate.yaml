@@ -5,7 +5,10 @@ name: Renovate
 
 on:
   schedule:
-    - cron: "30 0 * * 6" # Saturday early morning, same day as the NixOS update PR
+    # Saturday early morning, same day as the NixOS update PR. This is the only
+    # schedule: renovate.json had its own Saturday 01:00-08:00 window, and
+    # GitHub starts scheduled runs hours late, so the grouped PR kept missing it.
+    - cron: "30 0 * * 6"
   workflow_dispatch:
 
 permissions:
