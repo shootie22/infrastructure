@@ -4,8 +4,8 @@
 #
 # It runs as the renovate-yeetus GitHub App, not with GitHub's built-in token:
 # PRs opened with that token don't start CI, and it can't change files in
-# .github/workflows. The app is installed on this repository only, and each
-# run gets a token that expires within an hour.
+# .github/workflows. The app is installed on this repository and dotfiles
+# only, and each run gets a token that expires within an hour.
 name: Renovate
 
 on:
@@ -28,15 +28,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: app
-        uses: actions/create-github-app-token@v3.3.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ secrets.RENOVATE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RENOVATE_APP_PRIVATE_KEY }}
-      - uses: renovatebot/github-action@v46.3.12
+          repositories: infrastructure,dotfiles
+      - uses: renovatebot/github-action@1c0cf989c02653fba0efe7ca5772338860ca71dc # v46.3.12
         with:
           token: ${{ steps.app.outputs.token }}
         env:
-          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          # dotfiles only for its workflows' actions (its renovate.json); its
+          # flake.lock is the weekly update's.
+          RENOVATE_REPOSITORIES: shootie22/infrastructure,shootie22/dotfiles
           RENOVATE_ONBOARDING: "false"
           RENOVATE_REQUIRE_CONFIG: required
           # Commits through the API, so they're made (and signed) as the app.
