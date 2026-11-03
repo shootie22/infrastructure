@@ -39,6 +39,12 @@ spec:
             runAsGroup: 26
             seccompProfile:
               type: RuntimeDefault
+          # A new pod is turned away for its first seconds, until the network
+          # policy knows its address (kube-router): wait for the database.
+          initContainers:
+            - name: wait-for-db
+              image: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+              command: ["sh", "-c", "for i in $(seq 1 30); do pg_isready -q -h gitea-pg-rw && exit 0; sleep 2; done; exit 1"]
           containers:
             - name: cleanup
               image: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
