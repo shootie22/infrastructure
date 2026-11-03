@@ -13,6 +13,7 @@ keep:
 - legacy-client.sops.yaml
 - mealie-client.sops.yaml
 - namespace.yaml
+- networkpolicy.yaml
 - realms.yaml
 - secret.sops.yaml
 - yeetus-api-db.yaml
