@@ -5,6 +5,10 @@ metadata:
   namespace: legacy-web
 data:
   000-default.conf: |
+    # No Apache or Debian version in headers and error pages.
+    ServerTokens Prod
+    ServerSignature Off
+
     # The restored sites (#73) sit in the same data folder, under sites/,
     # mounted on their own at /var/www/sites. The old API's web root is the
     # whole folder, so it must never hand them out.
@@ -151,3 +155,17 @@ data:
             Options -Indexes
         </Directory>
     </VirtualHost>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: legacy-api-php
+  namespace: legacy-web
+data:
+  # The image has no php.ini, so PHP showed its errors (with file paths) on
+  # the page and named its version in every response.
+  zz-legacy.ini: |
+    display_errors = Off
+    display_startup_errors = Off
+    log_errors = On
+    expose_php = Off
