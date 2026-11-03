@@ -77,8 +77,6 @@
         "docker.io/vectorim/element-web",
         "git.radunenu.com/crosty/crosty-game-server",
         "git.radunenu.com/radu/bopl-2d-server",
-        "git.radunenu.com/radu/radunenu.com-minimal",
-        "git.radunenu.com/radu/radunenu.com-minimal-stats-updater",
         "git.radunenu.com/radu/infra-hub"
       ],
       "enabled": false
@@ -245,6 +243,15 @@
         "renovate",
         "careful"
       ]
+    },
+    {
+      "description": "radunenu.com's two images are pinned and released together (v* tags), so one PR moves both",
+      "matchPackageNames": [
+        "git.radunenu.com/radu/radunenu.com-minimal",
+        "git.radunenu.com/radu/radunenu.com-minimal-stats-updater"
+      ],
+      "groupName": "radunenu.com",
+      "groupSlug": "radunenu-com"
     }
   ],
   "fetchChangeLogs": "pr",

@@ -16,8 +16,10 @@ mapfile -t images < <(grep -rhoE '^\s+image: "?[^ "]+' "$repo_root/kubernetes" \
 rows=() failed=()
 : > "$out/findings.txt"
 for img in "${images[@]}"; do
-  if ! trivy image --quiet --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed \
-      --format json --output "$out/scan.json" "$img" 2> "$out/err.txt"; then
+  scan() { trivy image --quiet --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed \
+      --format json --output "$out/scan.json" "$@" 2> "$out/err.txt"; }
+  # Some of ours are built for arm64 only (ollama-vulkan, for mixi).
+  if ! scan "$img" && ! scan --platform linux/arm64 "$img"; then
     failed+=("$img")
     continue
   fi
