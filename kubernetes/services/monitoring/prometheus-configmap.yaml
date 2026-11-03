@@ -843,8 +843,12 @@ data:
 
           # Site failover (dotfiles site-failover, #49): each service runs on
           # exactly one of fuji and the thinkcentre.
+          # One value per node and service: when node-exporter restarts, the old
+          # and new pod are both scraped for a minute or two, and a plain sum
+          # counted every service twice (2026-11-03, after the node-exporter
+          # update).
           - alert: SiteFailoverServiceNotRunning
-            expr: sum by (service) (site_failover_active) == 0
+            expr: sum by (service) (max by (service, node) (site_failover_active)) == 0
             for: 5m
             labels:
               severity: critical
@@ -852,7 +856,7 @@ data:
               summary: "{{ $labels.service }} runs on neither fuji nor the thinkcentre"
               description: No node holds its label, or the one that does can't run it (cluster lost, folder missing). docs/ha/runbooks/site-failover.md
           - alert: SiteFailoverServiceTwice
-            expr: sum by (service) (site_failover_active) > 1
+            expr: sum by (service) (max by (service, node) (site_failover_active)) > 1
             for: 1m
             labels:
               severity: critical
