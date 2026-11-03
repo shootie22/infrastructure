@@ -81,6 +81,11 @@ spec:
                   key: password
             - name: KC_HOSTNAME
               value: https://auth.yeetus.net
+            # The admin console and its sign-in (the master realm) only on the
+            # tailnet (headlamp's tailnet proxy); ingress.yaml blocks them on
+            # the public names.
+            - name: KC_HOSTNAME_ADMIN
+              value: https://kc.infra.radunenu.com
             - name: KC_HTTP_ENABLED
               value: "true"
             - name: KC_PROXY_HEADERS

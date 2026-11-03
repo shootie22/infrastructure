@@ -16,6 +16,7 @@ spec:
             - hub-new.infra.radunenu.com
             - ollama.infra.radunenu.com
             - sxng.infra.radunenu.com
+            - kc.infra.radunenu.com
         dns01:
           cloudflare:
             apiTokenSecretRef:

@@ -10,6 +10,7 @@ spec:
     - hub-new.infra.radunenu.com
     - ollama.infra.radunenu.com
     - sxng.infra.radunenu.com
+    - kc.infra.radunenu.com
   issuerRef:
     name: headlamp-dns01
     kind: Issuer

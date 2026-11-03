@@ -16,6 +16,7 @@ tailnet address, with HTTPS for:
   its pods with a sticky cookie
 - `ollama.infra.radunenu.com`
 - `sxng.infra.radunenu.com`
+- `kc.infra.radunenu.com`: Keycloak's admin console (blocked on the public names)
 
 The names resolve to the tailnet addresses through `tailnet-dns` and Headscale
 split DNS. Nothing here has a public Ingress or public A records. The host
