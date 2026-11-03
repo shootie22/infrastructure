@@ -227,6 +227,23 @@
         "patch"
       ],
       "enabled": false
+    },
+    {
+      "description": "hub-writer holds the GitHub App key, so unlike the rest of Hub (fast lane) it's pinned, and each new build is its own PR",
+      "matchPackageNames": [
+        "git.radunenu.com/radu/infra-hub"
+      ],
+      "matchFileNames": [
+        "kubernetes/services/hub/writer.yaml"
+      ],
+      "enabled": true,
+      "groupName": "hub-writer",
+      "commitMessageTopic": "hub-writer",
+      "commitMessageExtra": "(new infra-hub main build)",
+      "labels": [
+        "renovate",
+        "careful"
+      ]
     }
   ],
   "fetchChangeLogs": "pr",
