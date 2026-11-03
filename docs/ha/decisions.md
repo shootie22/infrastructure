@@ -135,7 +135,7 @@ Also on the table: a DNS name with both addresses (adds a dependency on DNS at j
 Almost everything. Bandwidth and disk are there, and the point of all this is that a site going down doesn't take what I use with it.
 
 - **Survives** (a standby in the other site takes over): Keycloak, Headscale, Vaultwarden, Baikal, Joplin, PrivateBin, Send (shared links keep working), Gitea (the hub for my projects), Audiobookshelf, legacy web, Rybbit, the Minecraft and Vintage Story servers, monitoring (a second Prometheus and Alertmanager in DK), and the admin tools (homepage, Headlamp, tailnet DNS, external-services: a second copy on the thinkcentre).
-- **Stateless copy** (runs in both sites): radunenu.com, yeetus.net, the redirect domains, Element Web and Call, and the stateless game servers (Bopl 2D, Crosty, MegaBopl3D).
+- **Stateless copy** (runs in both sites): radunenu.com, yeetus.net, the redirect domains, Element Web and Call, and the stateless game servers (Bopl 2D, Crosty).
 - **GPU services** (Ollama, SearXNG, steamhappy): the replica goes on mixi (M1, GPU available under Asahi), once tested there.
 - **Retired:** Pinga (only radunenu.com's status page uses it; replaced by a status feed from Prometheus, which knows every service already), picshare.
 
