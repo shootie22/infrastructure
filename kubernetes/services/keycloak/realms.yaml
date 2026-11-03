@@ -181,6 +181,10 @@ data:
     accountTheme: yeetus
     emailTheme: yeetus
     rememberMe: true
+    # Ticking "Remember me" keeps you signed in for 30 days without using it,
+    # 90 at most. Without it, Keycloak's defaults (30 minutes idle, 10 hours).
+    ssoSessionIdleTimeoutRememberMe: 2592000
+    ssoSessionMaxLifespanRememberMe: 7776000
     # After 10 wrong passwords the account waits a minute before the next
     # try, longer after each, up to 15 minutes, so passwords can't be
     # guessed online. It unlocks by itself.
