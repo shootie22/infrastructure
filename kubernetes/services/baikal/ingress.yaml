@@ -125,3 +125,33 @@ spec:
                 name: baikal
                 port:
                   number: 80
+---
+# Baïkal's admin pages have one password and no 2FA, so they aren't public:
+# 403 on both names. Only I use them, now and then, through a port-forward:
+#   sudo kubectl -n baikal port-forward svc/baikal 8088:80   (on fuji)
+#   ssh -L 8088:localhost:8088 fuji@fuji, then http://localhost:8088/admin/
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: deny-all
+  namespace: baikal
+spec:
+  ipAllowList:
+    sourceRange: [127.0.0.1/32]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: baikal-admin-blocked
+  namespace: baikal
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: (Host(`cal.yeetus.net`) || Host(`cal.radunenu.com`)) && PathPrefix(`/admin`)
+      priority: 1000
+      middlewares:
+        - {name: deny-all}
+      services:
+        - {name: baikal, port: 80}
+  tls:
+    secretName: cal-radunenu-com-tls
