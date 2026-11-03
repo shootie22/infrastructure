@@ -1,0 +1,68 @@
+# Daily vulnerability scan of every image in kubernetes/ (scripts/image-scan),
+# so a fixable HIGH or CRITICAL CVE shows up within a day instead of waiting
+# for someone to look. Findings go into one open issue labelled image-scan,
+# rewritten each day; a CVE that wasn't there the day before gets a comment,
+# which notifies. With nothing left to fix the issue is closed.
+name: Image scan
+
+on:
+  schedule:
+    - cron: "40 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: image-scan
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
+        with:
+          version: v0.76.1
+          cache: true
+      - run: scripts/image-scan "$RUNNER_TEMP/scan"
+      - name: Update the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DIR: ${{ runner.temp }}/scan
+        run: |
+          gh label create image-scan --color B60205 --description "Daily image vulnerability scan" --force >/dev/null
+          num=$(gh issue list --label image-scan --state all --limit 1 --json number --jq '.[0].number // empty')
+          old=$(mktemp)
+          if [ -n "$num" ]; then
+            # Last scan's findings, gzipped in a comment at the end of the body.
+            gh issue view "$num" --json body --jq .body | sed -n 's/^<!-- findings: \(.*\) -->$/\1/p' \
+              | base64 -d 2>/dev/null | gunzip 2>/dev/null | sort -u > "$old" || true
+          fi
+          new=$(comm -13 "$old" "$DIR/findings.txt")
+          { cat "$DIR/report.md"; echo; echo "<!-- findings: $(gzip -9c "$DIR/findings.txt" | base64 -w0) -->"; } > body.md
+          if [ ! -s "$DIR/findings.txt" ]; then
+            if [ -n "$num" ] && [ "$(gh issue view "$num" --json state --jq .state)" = OPEN ]; then
+              gh issue edit "$num" --body-file body.md
+              gh issue close "$num" --comment "Nothing fixable left."
+            fi
+            exit 0
+          fi
+          if [ -z "$num" ]; then
+            gh issue create --title "Images with fixable vulnerabilities" --label image-scan --body-file body.md
+            exit 0
+          fi
+          [ "$(gh issue view "$num" --json state --jq .state)" = OPEN ] || gh issue reopen "$num"
+          gh issue edit "$num" --body-file body.md
+          if [ -n "$new" ]; then
+            {
+              echo "New since the last scan:"
+              echo
+              echo "$new" | awk '{ print "- " $1 " in `" $2 "`" }' | head -50
+              n=$(echo "$new" | wc -l)
+              [ "$n" -le 50 ] || echo "- and $((n - 50)) more"
+            } > comment.md
+            gh issue comment "$num" --body-file comment.md
+          fi

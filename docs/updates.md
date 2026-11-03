@@ -7,7 +7,8 @@ How things get new versions without anyone remembering to check, while still pin
 | Lane | What | How it updates |
 |---|---|---|
 | NixOS hosts | flake.lock: kernel, k3s, system packages | fuji proposes a pull request on dotfiles every Saturday, with what changes per host ([#84](https://github.com/shootie22/infrastructure/issues/84)). Merging rolls it out through comin. |
-| Services | container images and Helm charts in this repo: Gitea, Vaultwarden, PrivateBin, Grafana, cert-manager... | Renovate proposes one weekly pull request for all minor and patch updates, plus a separate one for each major update and for anything labelled careful (databases, cert-manager, sops-secrets-operator, headscale, PHP), with versions and release notes. Versions stay pinned (tag plus digest) until merged; Argo rolls it out ([#108](https://github.com/shootie22/infrastructure/issues/108)). |
+| Services | container images and Helm charts in this repo: Gitea, Vaultwarden, PrivateBin, Grafana, cert-manager... | Renovate runs every night and keeps one pull request for all minor and patch updates, plus a separate one for each major update and for anything labelled careful (databases, cert-manager, sops-secrets-operator, headscale, PHP), with versions and release notes. Versions stay pinned (tag plus digest) until merged; Argo rolls it out ([#108](https://github.com/shootie22/infrastructure/issues/108)). |
+| Vulnerability scan | every image in kubernetes/ | Every morning Trivy checks every image for HIGH and CRITICAL CVEs that already have a fix (scripts/image-scan). They go into one issue labelled image-scan; a new one gets a comment, which notifies. Nothing changes by itself: the fix is the Renovate PR, or a rebuild of our own images. |
 | Fast lane | things meant to be on the newest build: Element Web (develop), game servers in active development | an in-cluster updater restarts them when a new image is published. Renovate leaves these alone. |
 
 ## Pinning
@@ -31,7 +32,7 @@ A game can have both: a dev server for testing and a stable one for players. Thi
 
 Building happens wherever Nix runs the build, and NixOS updates can mean compiling packages that aren't in a binary cache yet. fuji (a 4-core i3 that also runs the control plane and RO's Traefik) is the wrong place for that: the first weekly update run pushed its load to 12-13. So:
 
-- fuji runs the weekly job (fetching, comparing, writing the report, pushing), which is light.
+- fuji runs the weekly job (fetching, comparing, writing the report, pushing), which is light, and builds only the servers. The desktops are only evaluated there; the workstation builds them in the background (dotfiles modules/nixos/desktop-prebuild.nix), because their rustc, Electron apps and CachyOS kernel took fuji hours.
 - For now, fuji's nix-daemon builds at idle CPU and IO priority with at most 2 cores, so it can't starve the cluster.
 - The plan ([#111](https://github.com/shootie22/infrastructure/issues/111)): Nix remote builders over the tailnet. x86_64 builds go to the thinkcentre once it runs NixOS (and to the workstation when it's on), aarch64 builds to minima on the Mac mini, which also gives mixi and minima real build checks. fuji only builds itself when no builder is reachable.
 - Build results aren't kept: the weekly garbage collection removes them.

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Scans every container image in kubernetes/ with Trivy for HIGH and CRITICAL
+# vulnerabilities that have a fixed version, and writes a Markdown report
+# (report.md) and one line per finding (findings.txt: "CVE image") into the
+# directory given as $1. Run daily by .github/workflows/image-scan.yaml.
+# Needs trivy and jq.
+set -uo pipefail
+
+out=${1:?usage: scripts/image-scan OUTPUT_DIR}
+mkdir -p "$out"
+repo_root=$(git rev-parse --show-toplevel)
+
+mapfile -t images < <(grep -rhoE '^\s+image: "?[^ "]+' "$repo_root/kubernetes" \
+  | sed -E 's/^\s+image: "?//' | grep -v '\$' | sort -u)
+
+rows=() failed=()
+: > "$out/findings.txt"
+for img in "${images[@]}"; do
+  if ! trivy image --quiet --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed \
+      --format json --output "$out/scan.json" "$img" 2> "$out/err.txt"; then
+    failed+=("$img")
+    continue
+  fi
+  # One entry per CVE in the image, however many of its packages have it.
+  jq -c '[.Results[]?.Vulnerabilities[]?
+          | {id: .VulnerabilityID, sev: .Severity, pkg: .PkgName, fixed: .FixedVersion}]
+         | unique_by(.id)' "$out/scan.json" > "$out/vulns.json"
+  n=$(jq length "$out/vulns.json")
+  [ "$n" -gt 0 ] || continue
+  crit=$(jq '[.[] | select(.sev == "CRITICAL")] | length' "$out/vulns.json")
+  high=$((n - crit))
+  list=$(jq -r 'sort_by(.sev != "CRITICAL", .id) | .[:8]
+                | map("\(.id) (\(.pkg) → \(.fixed))") | join(", ")' "$out/vulns.json")
+  [ "$n" -gt 8 ] && list="$list, and $((n - 8)) more"
+  rows+=("| \`${img%@*}\` | $crit | $high | $list |")
+  jq -r --arg img "${img%@*}" '.[] | "\(.id) \($img)"' "$out/vulns.json" >> "$out/findings.txt"
+done
+rm -f "$out/scan.json" "$out/vulns.json" "$out/err.txt"
+sort -u -o "$out/findings.txt" "$out/findings.txt"
+
+{
+  echo "Daily scan of the ${#images[@]} images in kubernetes/: HIGH and CRITICAL vulnerabilities that already have a fixed version upstream. A newer image (Renovate) or a rebuild usually fixes them."
+  echo
+  if [ ${#rows[@]} -eq 0 ]; then
+    echo "Nothing fixable found."
+  else
+    echo "| Image | Critical | High | CVEs (package → fixed in) |"
+    echo "|---|---|---|---|"
+    printf '%s\n' "${rows[@]}" | sort -t'|' -k3,3nr -k4,4nr
+  fi
+  if [ ${#failed[@]} -gt 0 ]; then
+    echo
+    echo "Couldn't scan (private registry, or the pull failed): $(printf '`%s` ' "${failed[@]%@*}")"
+  fi
+} > "$out/report.md"
+echo "${#rows[@]} images with findings, ${#failed[@]} not scanned"
