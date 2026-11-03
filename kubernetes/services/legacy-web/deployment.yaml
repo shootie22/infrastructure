@@ -26,7 +26,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: apache-php
-          image: php:8.1.34-apache-bookworm@sha256:a935f4a5717427519337269d5d1c89968cc27ab84d1c8d5d7b5363672d800cd5
+          image: php:8.5.12-apache-trixie@sha256:4cc63b3d4e05c40da73e7af5d39364ca2678ac07208919497bda3bbab975be95
           command:
             - bash
             - -lc
@@ -50,6 +50,10 @@ spec:
               mountPath: /var/www/api-old.radunenu.com
             - name: apache-sites
               mountPath: /etc/apache2/sites-enabled
+              readOnly: true
+            - name: php-ini
+              mountPath: /usr/local/etc/php/conf.d/zz-legacy.ini
+              subPath: zz-legacy.ini
               readOnly: true
             # The restored sites (#73), read-only.
             - name: data
@@ -82,3 +86,6 @@ spec:
         - name: apache-sites
           configMap:
             name: legacy-api-apache
+        - name: php-ini
+          configMap:
+            name: legacy-api-php
