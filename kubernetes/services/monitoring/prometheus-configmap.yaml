@@ -119,6 +119,11 @@ data:
           - targets: [10.99.0.3:2381]
             labels: {member: thinkcentre}
 
+      # Straight from each kubelet (its node address, port 10250), with the
+      # nodes/metrics permission. Through the API server's node proxy it needed
+      # nodes/proxy, which also lets a token run commands in any pod. The
+      # kubelets' certificates are signed by the k3s server CA, which is the
+      # service account's ca.crt, and name the node's mesh address.
       - job_name: kubelet
         scheme: https
         kubernetes_sd_configs:
@@ -126,16 +131,10 @@ data:
         authorization:
           type: Bearer
           credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        metrics_path: /metrics
         tls_config:
-          insecure_skip_verify: true
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
         relabel_configs:
-          - action: replace
-            target_label: __address__
-            replacement: kubernetes.default.svc:443
-          - action: replace
-            source_labels: [__meta_kubernetes_node_name]
-            target_label: __metrics_path__
-            replacement: /api/v1/nodes/${1}/proxy/metrics
           - source_labels: [__meta_kubernetes_node_name]
             target_label: node
 
@@ -146,16 +145,10 @@ data:
         authorization:
           type: Bearer
           credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        metrics_path: /metrics/cadvisor
         tls_config:
-          insecure_skip_verify: true
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
         relabel_configs:
-          - action: replace
-            target_label: __address__
-            replacement: kubernetes.default.svc:443
-          - action: replace
-            source_labels: [__meta_kubernetes_node_name]
-            target_label: __metrics_path__
-            replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
           - source_labels: [__meta_kubernetes_node_name]
             target_label: node
 
