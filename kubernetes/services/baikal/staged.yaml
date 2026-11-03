@@ -59,7 +59,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: baikal
-          image: ckulka/baikal:0.10.1-nginx@sha256:045918423df00a3f9ec793a819b9acdb055d338b75387926b7d93d753ac1e93a
+          image: ckulka/baikal:0.10.1-nginx@sha256:434bdd162247cc6aa6f878c9b4dce6216e39e79526b980453b13812d5f8ebf4b
           ports:
             - name: http
               containerPort: 80
