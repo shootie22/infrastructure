@@ -81,6 +81,9 @@ spec:
               command: ["/bin/sh", "-ec"]
               args:
                 - |
+                  # A new pod is turned away for its first seconds, until the network
+                  # policy knows its address (kube-router): wait for the database first.
+                  for i in $(seq 1 30); do pg_isready -q -h yeetus-api-db-ro && break; sleep 2; done
                   host=yeetus-api-db-ro
                   pg_isready -q -h $host || host=yeetus-api-db-r
                   pg_dump -h $host -U yeetus -d yeetus -Fc -f /backup/yeetus-api.dump.tmp

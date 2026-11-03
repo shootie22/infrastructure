@@ -63,6 +63,9 @@ spec:
               command: ["/bin/sh", "-ec"]
               args:
                 - |
+                  # A new pod is turned away for its first seconds, until the network
+                  # policy knows its address (kube-router): wait for the database first.
+                  for i in $(seq 1 30); do pg_isready -q -h keycloak-db-ro && break; sleep 2; done
                   host=keycloak-db-ro
                   pg_isready -q -h $host || host=keycloak-db-r
                   pg_dump -h $host -U keycloak -d keycloak -Fc -f /backup/keycloak.dump.tmp

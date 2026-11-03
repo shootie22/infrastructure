@@ -39,6 +39,16 @@ spec:
             fsGroup: 65532
             seccompProfile:
               type: RuntimeDefault
+          # A new pod is turned away for its first seconds, until the network
+          # policy knows its address (kube-router), and the job would fail on
+          # its first request: wait until Prometheus answers.
+          initContainers:
+            - name: wait-for-prometheus
+              image: docker.io/library/busybox:1.38@sha256:a46257e06c82ad85242d0d38077d0a52d9896389ca60a1a59d3463db586e5fa4
+              command: ["sh", "-c", "for i in $(seq 1 30); do wget -q -T 3 -O /dev/null http://prometheus.monitoring.svc:9090/-/ready && exit 0; sleep 2; done; exit 1"]
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities: {drop: [ALL]}
           containers:
             - name: profile-status
               image: git.radunenu.com/radu/profile-status:v0.1.4@sha256:28d8cb9334763ba2a359630457f3d256294ee7602e8ebdaf8b6a620d2333eab9
