@@ -13,6 +13,11 @@ spec:
     # remote workers need to find their tailnet paths.
     deployment:
       replicas: 2
+    # Room for a busy day (it peaked at 302 Mi in the week before), and a ceiling
+    # so a flood of connections can't take the node's memory (security audit).
+    resources:
+      requests: {memory: 128Mi}
+      limits: {memory: 1Gi}
     affinity:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:

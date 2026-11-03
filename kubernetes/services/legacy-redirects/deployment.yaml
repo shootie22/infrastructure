@@ -48,6 +48,11 @@ spec:
             tcpSocket:
               port: 8080
             periodSeconds: 2
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              memory: 32Mi
       volumes:
         - name: config
           configMap:

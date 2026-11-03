@@ -54,6 +54,11 @@ spec:
               mountPath: /metadata
             - name: podcasts
               mountPath: /podcasts
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              memory: 128Mi
       volumes:
         - name: audiobooks
           hostPath:

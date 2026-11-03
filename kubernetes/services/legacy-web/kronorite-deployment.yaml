@@ -42,6 +42,11 @@ spec:
             - name: config
               mountPath: /etc/caddy
               readOnly: true
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              memory: 32Mi
       volumes:
         - name: config
           configMap:

@@ -111,6 +111,11 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /opt/keycloak/data
+          resources:
+            limits:
+              memory: 3Gi
+            requests:
+              memory: 1Gi
       volumes:
         - name: data
           emptyDir: {}

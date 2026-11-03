@@ -96,13 +96,44 @@ data:
       }
     }
 
+    // NixOS keeps the journal in /var/log/journal; /run/log/journal is empty,
+    // so no auth log arrived until 2026-11-03 (security audit).
     loki.source.journal "auth" {
-      path          = "/run/log/journal"
+      path          = "/var/log/journal"
       max_age       = "12h"
       relabel_rules = loki.relabel.auth_journal.rules
       labels        = {
         job  = "auth",
         host = sys.env("KUBE_NODE_NAME"),
+      }
+      forward_to = [loki.process.auth.receiver]
+    }
+
+    // Counts for Prometheus (AuthFailures, SudoFailed): SSH logins that failed
+    // or tried a user that doesn't exist, and sudo passwords that were wrong.
+    // Exposed as loki_process_custom_auth_*, with the host label.
+    loki.process "auth" {
+      stage.match {
+        selector = "{job=\"auth\"} |~ \"Invalid user|Failed (password|publickey)|authentication failure|Connection closed by (invalid|authenticating) user\" !~ \"sudo\""
+        stage.metrics {
+          metric.counter {
+            name        = "auth_ssh_failed"
+            description = "SSH logins that failed"
+            match_all   = true
+            action      = "inc"
+          }
+        }
+      }
+      stage.match {
+        selector = "{job=\"auth\"} |~ \"sudo\" |~ \"authentication failure|incorrect password\""
+        stage.metrics {
+          metric.counter {
+            name        = "auth_sudo_failed"
+            description = "sudo passwords that were wrong"
+            match_all   = true
+            action      = "inc"
+          }
+        }
       }
       forward_to = [loki.write.default.receiver]
     }
