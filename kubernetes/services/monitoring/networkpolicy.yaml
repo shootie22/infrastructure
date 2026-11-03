@@ -1,0 +1,134 @@
+# Who may connect to monitoring (security audit, 2026-11-03). Loki has no
+# login, Prometheus's lifecycle API can stop it, and Grafana's database holds
+# the sessions, so a compromised pod anywhere else mustn't reach them. Taken
+# from a week of Beyla's flow metrics (direction="request") and the repo's
+# own addresses. Only incoming connections; what monitoring connects to
+# (scraping, alerts) is unchanged.
+#
+# Everything in the namespace may reach everything else in it, and so may
+# the nodes themselves: kubelet health checks, and host-network pods like
+# loki-tailnet-proxy. From another node those arrive from its flannel address
+# (the .0 of its pod range), so each node's is listed. A new node needs its
+# two addresses here (kube_node_info's pod_cidr).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: namespace-and-nodes
+  namespace: monitoring
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {}
+        - ipBlock: {cidr: 10.42.0.0/32}  # fuji
+        - ipBlock: {cidr: 10.42.0.1/32}
+        - ipBlock: {cidr: 10.42.1.0/32}  # thinkcentre
+        - ipBlock: {cidr: 10.42.1.1/32}
+        - ipBlock: {cidr: 10.42.2.0/32}  # mixi
+        - ipBlock: {cidr: 10.42.2.1/32}
+        - ipBlock: {cidr: 10.42.3.0/32}  # minima-vm
+        - ipBlock: {cidr: 10.42.3.1/32}
+        - ipBlock: {cidr: 10.42.4.0/32}  # edge
+        - ipBlock: {cidr: 10.42.4.1/32}
+---
+# Prometheus (both): Hub, the on-call agent, the CI dispatcher (free disk),
+# yeetus-api and profile-status read it.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: prometheus-readers
+  namespace: monitoring
+spec:
+  podSelector:
+    matchExpressions:
+      - {key: app.kubernetes.io/name, operator: In, values: [prometheus, prometheus-dk]}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: hub}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: hub}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: oncall}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: oncall}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: ci-runner}}
+          podSelector: {matchLabels: {app: ci-dispatcher}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: keycloak}}
+          podSelector: {matchLabels: {app: yeetus-api}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: profile-status}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: profile-status}}
+      ports:
+        - {protocol: TCP, port: 9090}
+---
+# Loki (both) and Alertmanager: Hub and the on-call agent.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: loki-alertmanager-readers
+  namespace: monitoring
+spec:
+  podSelector:
+    matchExpressions:
+      - {key: app.kubernetes.io/name, operator: In, values: [loki, loki-dk, alertmanager]}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: hub}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: hub}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: oncall}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: oncall}}
+      ports:
+        - {protocol: TCP, port: 3100}
+        - {protocol: TCP, port: 9093}
+---
+# Grafana (both): Traefik.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: grafana-from-traefik
+  namespace: monitoring
+spec:
+  podSelector:
+    matchExpressions:
+      - {key: app.kubernetes.io/name, operator: In, values: [grafana, grafana-standby]}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+      ports:
+        - {protocol: TCP, port: 3000}
+---
+# Grafana's database: the CloudNativePG operator (instance status, port 8000,
+# and Postgres).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: grafana-db-from-operator
+  namespace: monitoring
+spec:
+  podSelector:
+    matchLabels: {cnpg.io/cluster: grafana-db}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: cnpg-system}}
+      ports:
+        - {protocol: TCP, port: 8000}
+        - {protocol: TCP, port: 5432}
+---
+# The status API: the status page on radunenu.com.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: status-api-readers
+  namespace: monitoring
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: status-api}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: radunenu-com}}
+          podSelector: {matchLabels: {app: radunenu-com}}
+      ports:
+        - {protocol: TCP, port: 8080}
