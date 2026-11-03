@@ -32,7 +32,7 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: element-call
-          image: ghcr.io/element-hq/element-call:v0.26.0@sha256:fadd44a69565b2db9320b011c2d0ab01f7305cac0a51ee196ba6ffcf8e226199
+          image: ghcr.io/element-hq/element-call:v0.28.1@sha256:a6118b789b39130ec29227e8c9e7b68d192213d9131c1cc30d9f9ab2609864a4
           imagePullPolicy: Always
           ports:
             - containerPort: 8080

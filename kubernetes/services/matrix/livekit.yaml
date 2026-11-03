@@ -94,7 +94,7 @@ spec:
         fsGroup: 65532
       containers:
         - name: livekit
-          image: docker.io/livekit/livekit-server:v1.13.10@sha256:89ca9ce0791e18d6e03bf6e2c49ceb27e1c754eae8bd50c989386c1a5963791a
+          image: docker.io/livekit/livekit-server:v1.13.11@sha256:25cd902de7cacbd5f1f779f6a6ac1eae20ba8f56b0935934ce6b0ab80d1e3d20
           args: [--config, /etc/livekit/livekit.yaml]
           ports:
             - {name: http, containerPort: 7880}
@@ -120,7 +120,7 @@ spec:
             - {name: config, mountPath: /etc/livekit/livekit.yaml, subPath: livekit.yaml, readOnly: true}
             - {name: keys, mountPath: /keys, readOnly: true}
         - name: router
-          image: docker.io/library/nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+          image: docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
           command: [/bin/sh, -c, "trap 'exit 0' TERM; while :; do sleep 3600 & wait $!; done"]
           env:
             - {name: ROLE, value: primary}
@@ -188,7 +188,7 @@ spec:
         fsGroup: 65532
       containers:
         - name: livekit
-          image: docker.io/livekit/livekit-server:v1.13.10@sha256:89ca9ce0791e18d6e03bf6e2c49ceb27e1c754eae8bd50c989386c1a5963791a
+          image: docker.io/livekit/livekit-server:v1.13.11@sha256:25cd902de7cacbd5f1f779f6a6ac1eae20ba8f56b0935934ce6b0ab80d1e3d20
           args: [--config, /etc/livekit/livekit.yaml]
           ports:
             - {name: http, containerPort: 7880}
@@ -214,7 +214,7 @@ spec:
             requests: {cpu: 50m, memory: 64Mi}
             limits: {memory: 512Mi}
         - name: router
-          image: docker.io/library/nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+          image: docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
           command: [/bin/sh, -c, "trap 'exit 0' TERM; while :; do sleep 3600 & wait $!; done"]
           readinessProbe:
             exec: {command: [/bin/sh, /etc/livekit/ready.sh]}
@@ -393,7 +393,7 @@ spec:
             runAsUser: 65534
           containers:
             - name: check
-              image: docker.io/alpine/k8s:1.35.9@sha256:b9cb6db0091a2327c0a56ecda69d37fa830c7a96ea669e7382b3ee778aa07a24
+              image: docker.io/alpine/k8s:1.37.2@sha256:dcb7185e112a453aa72f426754849a97357727ef8f40168fb208c8cf59952042
               command: [/bin/sh, -ec]
               args:
                 - |

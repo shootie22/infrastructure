@@ -100,7 +100,7 @@ spec:
         - {key: node-role.kubernetes.io/etcd, operator: Exists, effect: NoExecute}
       containers:
         - name: beyla
-          image: grafana/beyla:3.38.0@sha256:356aec0e9e35a180fe0f7adb3704f1987bd0fab6927d70195eb828d96a27938b
+          image: grafana/beyla:3.40.0@sha256:59e31947a79178f7228e3886d061e1261f792e84ea7365b8b54113232437a8b4
           args: [--config=/etc/beyla/beyla.yaml]
           env:
             - name: BEYLA_KUBE_METADATA_ENABLE

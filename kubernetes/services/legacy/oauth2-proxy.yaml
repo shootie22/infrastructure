@@ -43,7 +43,7 @@ spec:
       # only once Keycloak answers (same as send).
       initContainers:
         - name: wait-for-keycloak
-          image: docker.io/library/busybox:1.37@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e
+          image: docker.io/library/busybox:1.38@sha256:a46257e06c82ad85242d0d38077d0a52d9896389ca60a1a59d3463db586e5fa4
           command: ["sh", "-c"]
           args:
             - until wget -q -T 5 -O /dev/null "$OAUTH2_PROXY_OIDC_ISSUER_URL/.well-known/openid-configuration"; do sleep 5; done
@@ -62,7 +62,7 @@ spec:
               drop: ["ALL"]
       containers:
         - name: oauth2-proxy
-          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.4@sha256:b1b2021fe8f4004573e8d690dec6c7bb29cc44364572cf8510a05bf3a0ae2ded
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.5@sha256:8498b0d0ef0a7b29686414000a08aee467f02d0299c9ed1e006a8f33fc017916
           args:
             - --http-address=0.0.0.0:4180
             - --provider=keycloak-oidc

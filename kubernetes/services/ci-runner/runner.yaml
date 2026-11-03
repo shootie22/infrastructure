@@ -223,7 +223,7 @@ data:
         # instead, sets up the devices the VM's /dev lacks, mounts the disk,
         # then hands over to the rootless user for good.
         - name: docker
-          image: docker.io/library/docker:29.9.0-dind-rootless@sha256:54155db4950e2f9af3bb829fcfe627030576fc7ae235018be63175fca7326171
+          image: docker.io/library/docker:29.9.2-dind-rootless@sha256:ae083cc7de51e7a8e5a597f8fb774ca7914c408a95fc0f1477826a913479518a
           restartPolicy: Always
           command:
             - sh
@@ -257,7 +257,7 @@ data:
       containers:
         # One job, then it exits and the pod (and VM) ends.
         - name: runner
-          image: docker.io/gitea/runner:5.0.0@sha256:328b8dad8de80a19dab6c5c61292c1d624cd3460c25a5c0067e95c11318657ca
+          image: docker.io/gitea/runner:5.3.0@sha256:cdc5336a0b0be435b6a21379edf5cccffcc6733cacd5672fcf5769716f56a768
           # The .runner file and the config come in as variables, not
           # volumes: Kata syncs Secret and ConfigMap volumes into the VM with
           # a watcher, which doesn't work with QEMU running rootless.
@@ -350,7 +350,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: dispatcher
-          image: docker.io/gitea/runner:5.0.0@sha256:328b8dad8de80a19dab6c5c61292c1d624cd3460c25a5c0067e95c11318657ca
+          image: docker.io/gitea/runner:5.3.0@sha256:cdc5336a0b0be435b6a21379edf5cccffcc6733cacd5672fcf5769716f56a768
           command: ["bash", "/etc/dispatcher/dispatch.sh"]
           env:
             - {name: HOME, value: /work}
@@ -375,7 +375,7 @@ spec:
         # kubectl straight from its official image.
         - name: kubectl
           image:
-            reference: registry.k8s.io/kubectl:v1.36.3@sha256:6e4fce3c83651edb91b74bc67701c5cd263dd8aa3cd4254b1798d6425a5ab789
+            reference: registry.k8s.io/kubectl:v1.37.2@sha256:fe049faa65ae483ac200009a949a68fa4c9985daea12c9cb1195c9c7965301fc
         - name: work
           emptyDir: {sizeLimit: 16Mi}
         - name: tmp
