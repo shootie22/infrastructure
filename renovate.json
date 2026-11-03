@@ -192,6 +192,14 @@
       "groupSlug": "service-updates"
     },
     {
+      "description": "Updates to the workflows themselves get their own PR: GitHub's built-in token can't push changes to .github/workflows, and one such file kept the whole service updates group from being created",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "workflow actions",
+      "groupSlug": "workflow-actions"
+    },
+    {
       "description": "Need care: they hold or decrypt state, or everything depends on them. Always their own PR.",
       "matchPackageNames": [
         "sops-secrets-operator",
