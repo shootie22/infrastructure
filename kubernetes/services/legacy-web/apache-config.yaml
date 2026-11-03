@@ -16,6 +16,31 @@ data:
         Require all denied
     </Directory>
 
+    # The old API's folder came with .htaccess files that were never read
+    # (AllowOverride None), so their rules are here, for every name it's
+    # served under (the folder has symlinks like fsp -> v3/api/fsp).
+    <Directory /var/www/api-old.radunenu.com>
+        Options -Indexes +FollowSymLinks
+        <FilesMatch "^\.|\.(env|log|ini|bak|sql|conf|sh|swp|old|txt)$">
+            Require all denied
+        </FilesMatch>
+        # The stats endpoints write a file named after ?playername=, so no
+        # ../ anywhere in the request, encoded or not.
+        <If "%{THE_REQUEST} =~ m#(\.|%2e){2}(/|\\\\|%2f|%5c)#i">
+            Require all denied
+        </If>
+    </Directory>
+    # Never meant to be public: a .git folder, fsp's logs (webhook URLs
+    # people sent it) and report screenshots, and fsp's upload panel.
+    <DirectoryMatch "/(\.git|logs|screenshots)(/|$)">
+        Require all denied
+    </DirectoryMatch>
+    <DirectoryMatch "/fsp(/|$)">
+        <Files ~ "^(a|panel)\.php$">
+            Require all denied
+        </Files>
+    </DirectoryMatch>
+
     <VirtualHost *:80>
         ServerName api-old.radunenu.com
         DocumentRoot /var/www/api-old.radunenu.com
