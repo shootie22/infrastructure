@@ -19,10 +19,7 @@ spec:
   # load dashboards or datasources itself (grafana-provisioning-none), it
   # shows what the main one (workloads.yaml) keeps in the database. If the
   # main one is down, everything stays; only changes to dashboards wait.
-  # Off while the main one moves to Grafana 13 and migrates the database
-  # (dashboards and folders into unified storage, once): two versions must
-  # not migrate at the same time. Back on 13 right after.
-  replicas: 0
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -76,7 +73,7 @@ spec:
         fsGroup: 472
       containers:
         - name: grafana
-          image: grafana/grafana:12.4.14@sha256:ae509d9ae8c1021ca32ec370a9ca975d40165eda9fccd1e1102d317ff8787cd7
+          image: grafana/grafana:13.3.0@sha256:488984b716c0862639f91a698adbe2862677a5a07bad42da5f03f3030883b205
           ports:
             - name: http
               containerPort: 3000
