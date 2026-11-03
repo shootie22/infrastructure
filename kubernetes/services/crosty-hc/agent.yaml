@@ -132,6 +132,40 @@ spec:
     - ports:
         - {protocol: TCP, port: 443}
 ---
+# Who may connect to the game itself (infrastructure security audit,
+# 2026-11-03): its ports from every address, since players come through the
+# game relays; everything else, RCON included, only from this namespace,
+# monitoring and the nodes (their flannel and cni0 addresses, for health
+# checks; as in infrastructure kubernetes/services/monitoring/networkpolicy.yaml).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: crosty-hc-game
+  namespace: crosty-hc
+spec:
+  podSelector:
+    matchLabels:
+      app: crosty-hc
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - {protocol: TCP, port: 25567}
+    - from:
+        - podSelector: {}
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: monitoring}
+        - ipBlock: {cidr: 10.42.0.0/32}  # fuji
+        - ipBlock: {cidr: 10.42.0.1/32}
+        - ipBlock: {cidr: 10.42.1.0/32}  # thinkcentre
+        - ipBlock: {cidr: 10.42.1.1/32}
+        - ipBlock: {cidr: 10.42.2.0/32}  # mixi
+        - ipBlock: {cidr: 10.42.2.1/32}
+        - ipBlock: {cidr: 10.42.3.0/32}  # minima-vm
+        - ipBlock: {cidr: 10.42.3.1/32}
+        - ipBlock: {cidr: 10.42.4.0/32}  # edge
+        - ipBlock: {cidr: 10.42.4.1/32}
+---
 # hub-updater (in hub) restarts this agent when Hub's image moves, and can
 # do nothing else here.
 apiVersion: rbac.authorization.k8s.io/v1
