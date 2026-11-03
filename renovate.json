@@ -186,7 +186,8 @@
         "!postgres",
         "!docker.io/library/postgres",
         "!clickhouse/clickhouse-server",
-        "!ghcr.io/juanfont/headscale"
+        "!ghcr.io/juanfont/headscale",
+        "!joplin/server"
       ],
       "groupName": "service updates",
       "groupSlug": "service-updates"
@@ -207,7 +208,8 @@
         "php",
         "postgres",
         "clickhouse/clickhouse-server",
-        "ghcr.io/juanfont/headscale"
+        "ghcr.io/juanfont/headscale",
+        "joplin/server"
       ],
       "labels": [
         "renovate",
