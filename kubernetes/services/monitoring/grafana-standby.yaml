@@ -19,7 +19,10 @@ spec:
   # load dashboards or datasources itself (grafana-provisioning-none), it
   # shows what the main one (workloads.yaml) keeps in the database. If the
   # main one is down, everything stays; only changes to dashboards wait.
-  replicas: 1
+  # Off while the main one moves to Grafana 13 and migrates the database
+  # (dashboards and folders into unified storage, once): two versions must
+  # not migrate at the same time. Back on 13 right after.
+  replicas: 0
   strategy:
     type: RollingUpdate
     rollingUpdate:
