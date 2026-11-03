@@ -10,10 +10,11 @@ name: Renovate
 
 on:
   schedule:
-    # Saturday early morning, same day as the NixOS update PR. This is the only
-    # schedule: renovate.json had its own Saturday 01:00-08:00 window, and
-    # GitHub starts scheduled runs hours late, so the grouped PR kept missing it.
-    - cron: "30 0 * * 6"
+    # Every night, so a fixed CVE is proposed within a day (security audit,
+    # 2026-11-03; it was Saturdays only). This is the only schedule:
+    # renovate.json had its own Saturday 01:00-08:00 window, and GitHub starts
+    # scheduled runs hours late, so the grouped PR kept missing it.
+    - cron: "30 0 * * *"
   workflow_dispatch:
 
 # The built-in token isn't used for anything.
