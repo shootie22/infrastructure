@@ -236,6 +236,22 @@ spec:
             runAsGroup: 991
             fsGroup: 991
             seccompProfile: {type: RuntimeDefault}
+          # A new pod is turned away for its first seconds, until the network
+          # policy knows its address (kube-router): wait for Synapse first.
+          initContainers:
+            - name: wait-for-synapse
+              image: ghcr.io/element-hq/synapse:v1.164.2@sha256:f0df87cff259872637b4b5e5174b9977e5e3046dd421505407803b5e45c5f842
+              command:
+                - python
+                - -c
+                - |
+                  import time, urllib.request
+                  for _ in range(30):
+                      try:
+                          urllib.request.urlopen("http://synapse.matrix.svc.cluster.local:8008/health", timeout=3)
+                          break
+                      except Exception:
+                          time.sleep(2)
           containers:
             - name: updates
               image: ghcr.io/element-hq/synapse:v1.164.2@sha256:f0df87cff259872637b4b5e5174b9977e5e3046dd421505407803b5e45c5f842

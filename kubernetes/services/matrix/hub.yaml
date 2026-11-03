@@ -10,6 +10,7 @@ keep:
 - ingress.yaml
 - livekit.yaml
 - mas.yaml
+- networkpolicy.yaml
 - secrets.sops.yaml
 - synapse.yaml
 - updates.yaml
