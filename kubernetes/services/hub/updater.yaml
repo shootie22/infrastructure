@@ -2,6 +2,7 @@
 # infra-hub:main digest with what the pods run, and restart both copies
 # together when it moved, so they never run two different builds for long.
 # CI only publishes :main after the tests and a smoke test passed.
+# Not hub-writer: it holds the GitHub App key and is pinned (writer.yaml).
 # Run by hand: kubectl -n hub create job --from=cronjob/hub-updater manual-1
 apiVersion: v1
 kind: ServiceAccount
@@ -20,7 +21,7 @@ rules:
     verbs: ["get", "list"]
   - apiGroups: ["apps"]
     resources: ["deployments"]
-    resourceNames: ["hub", "hub-public", "hub-writer"]
+    resourceNames: ["hub", "hub-public"]
     verbs: ["get", "patch"]
   - apiGroups: ["apps"]
     resources: ["replicasets"]
@@ -104,7 +105,7 @@ spec:
                     "https://git.radunenu.com/v2/$repo/manifests/main" \
                     | tr -d '\r' | awk -F': ' 'tolower($1) == "docker-content-digest" { print $2 }')
                   [ -n "$latest" ] || { echo "no digest from the registry"; exit 1; }
-                  running=$(kubectl get pods -l "app.kubernetes.io/name in (hub,hub-public,hub-writer)" \
+                  running=$(kubectl get pods -l "app.kubernetes.io/name in (hub,hub-public)" \
                     -o jsonpath='{range .items[*]}{.status.containerStatuses[0].imageID}{"\n"}{end}' \
                     | sed -n 's/.*@//p' | sort -u)
                   echo "registry main: $latest"
@@ -113,10 +114,9 @@ spec:
                     echo "Hub up to date"
                   else
                     echo "new build, restarting Hub"
-                    kubectl rollout restart deployment/hub deployment/hub-public deployment/hub-writer
+                    kubectl rollout restart deployment/hub deployment/hub-public
                     kubectl rollout status deployment/hub --timeout=8m
                     kubectl rollout status deployment/hub-public --timeout=8m
-                    kubectl rollout status deployment/hub-writer --timeout=8m
                   fi
                   # The game agents (infra-hub #3) run the same image, one in each
                   # namespace labelled for games; each is restarted when it runs
