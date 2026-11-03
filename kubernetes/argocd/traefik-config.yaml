@@ -121,8 +121,10 @@ spec:
       # Outermost, the outage page (outage-page.yaml): whatever 502-504
       # is left once retry has tried the other replicas, visitors get "we're
       # switching servers" and a page that reloads when it's back.
+      # On HTTPS, the HSTS header (traefik-https.yaml) on every answer, the
+      # outage page included.
       - --entryPoints.web.http.middlewares=kube-system-outage-page@kubernetescrd,kube-system-retry@kubernetescrd
-      - --entryPoints.websecure.http.middlewares=kube-system-outage-page@kubernetescrd,kube-system-retry@kubernetescrd
+      - --entryPoints.websecure.http.middlewares=kube-system-hsts@kubernetescrd,kube-system-outage-page@kubernetescrd,kube-system-retry@kubernetescrd
       - --accesslog=true
       - --accesslog.format=json
       - --accesslog.filters.statuscodes=400-599

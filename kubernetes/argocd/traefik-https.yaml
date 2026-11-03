@@ -1,0 +1,57 @@
+# HTTPS for everything (security audit, 2026-11-03). Plain HTTP used to serve
+# every site as is, and nothing told browsers to stay on HTTPS, so on a
+# hostile network someone could keep a visitor on HTTP (Vaultwarden's web
+# vault included) and change the pages.
+#
+# hsts: every HTTPS answer tells browsers to use only HTTPS for that name for
+# a year (traefik-config.yaml puts it on the websecure entry point). Not for
+# subdomains, and not preloaded, so a name can still go back to HTTP.
+#
+# Synced before Traefik's config, which refers to it (wave -1).
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: hsts
+  namespace: kube-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  headers:
+    stsSeconds: 31536000
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: to-https
+  namespace: kube-system
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+# Plain HTTP gets a redirect to HTTPS, before any site's own route (priority).
+# Except what needs HTTP:
+# - Let's Encrypt's HTTP-01 challenges (it would follow the redirect, but
+#   there's no need)
+# - hs: Tailscale clients fall back to /ts2021 over port 80
+# - derp: Tailscale's captive portal check is http://.../generate_204
+# - traefik-ready.invalid: the front doors' readiness check
+# - the old game APIs, which old builds may still call over HTTP
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: to-https
+  namespace: kube-system
+spec:
+  entryPoints: [web]
+  routes:
+    - match: >-
+        HostRegexp(`.+`)
+        && !PathPrefix(`/.well-known/acme-challenge/`)
+        && !(Host(`hs.radunenu.com`) || Host(`derp.radunenu.com`) || Host(`traefik-ready.invalid`)
+        || Host(`api.byradu.com`) || Host(`api-old.radunenu.com`) || Host(`news.kronorite.com`) || Host(`stats.kronorite.com`))
+      priority: 10000
+      middlewares:
+        - {name: to-https}
+      services:
+        - {name: noop@internal, kind: TraefikService}
