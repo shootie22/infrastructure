@@ -6,9 +6,6 @@
     ":semanticCommitsDisabled"
   ],
   "timezone": "Europe/Bucharest",
-  "schedule": [
-    "* 1-7 * * 6"
-  ],
   "labels": [
     "renovate"
   ],
@@ -39,7 +36,7 @@
         "terraform-provider"
       ],
       "commitMessageTopic": "{{depName}}",
-      "commitMessageExtra": "{{#if isDigest}}(rebuilt image, same version {{currentValue}}){{else}}{{currentValue}} \u2192 {{newValue}}{{/if}}"
+      "commitMessageExtra": "{{currentValue}} \u2192 {{newValue}}"
     },
     {
       "description": "Database major versions need a dump/restore or pg_upgrade, never just a new image. Planned by hand.",
