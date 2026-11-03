@@ -507,7 +507,7 @@ spec:
     metadata:
       # Bump when its ConfigMaps change: it only reads them at start.
       annotations:
-        config-revision: "3"
+        config-revision: "4"
       labels:
         app.kubernetes.io/name: alloy
     spec:
