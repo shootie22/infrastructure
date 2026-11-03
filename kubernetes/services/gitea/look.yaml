@@ -77,7 +77,7 @@ spec:
         # Copies the files (the image's install.sh) and leaves
         # /done/restart when Gitea has to restart.
         - name: copy
-          image: git.radunenu.com/radu/yeetus-gitea:main@sha256:8621545197190c33ccba530e4d7b453c14ddade10de78871ac9c62f47bfcc646
+          image: git.radunenu.com/radu/yeetus-gitea:main@sha256:00b7e5b082dae8b35b018d4ef1514288f2fbb0bc2999aa3337976ea19c2fe892
           volumeMounts:
             - {name: custom, mountPath: /custom}
             - {name: done, mountPath: /done}
