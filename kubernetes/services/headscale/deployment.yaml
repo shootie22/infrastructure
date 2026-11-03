@@ -58,13 +58,14 @@ spec:
             requests:
               cpu: 50m
               memory: 64Mi
+            limits:
+              memory: 256Mi
           volumeMounts:
             - name: config
               mountPath: /etc/headscale
               readOnly: true
             - name: data
               mountPath: /var/lib/headscale
-
       volumes:
         - name: config
           configMap:

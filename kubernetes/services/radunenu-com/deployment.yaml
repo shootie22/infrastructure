@@ -43,6 +43,11 @@ spec:
             preStop:
               sleep:
                 seconds: 5
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              memory: 64Mi
         - name: stats-updater
           image: git.radunenu.com/radu/radunenu.com-minimal-stats-updater:v0.1.61@sha256:ee8c70c62d556f25125b5eeb08784c6aa56fe0d16d8c9186241481628b96d268
           imagePullPolicy: IfNotPresent
@@ -70,6 +75,11 @@ spec:
           volumeMounts:
             - name: live
               mountPath: /data
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              memory: 32Mi
       volumes:
         - name: live
           emptyDir: {}

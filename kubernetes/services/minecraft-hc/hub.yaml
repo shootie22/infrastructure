@@ -3,6 +3,7 @@
 # fails `hub render --check`.
 keep:
 - agent.yaml
+- networkpolicy.yaml
 - rcon.sops.yaml
 - secret.sops.yaml
 - staged.yaml

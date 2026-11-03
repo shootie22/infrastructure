@@ -78,6 +78,10 @@ spec:
             # the init container; the client secret is in gitea-env.
             - {name: GITEA__service__ENABLE_PASSWORD_SIGNIN_FORM, value: "false"}
             - {name: GITEA__service__ENABLE_BASIC_AUTHENTICATION, value: "false"}
+            # Repository imports and mirrors from github.com only (app.ini's
+            # ALLOWED_DOMAINS), not from the local network: an import from an
+            # internal address would let any user read internal services (SSRF).
+            - {name: GITEA__migrations__ALLOW_LOCALNETWORKS, value: "false"}
             - {name: GITEA__oauth2_client__ENABLE_AUTO_REGISTRATION, value: "true"}
             - {name: GITEA__oauth2_client__ACCOUNT_LINKING, value: auto}
             - {name: GITEA__oauth2_client__USERNAME, value: preferred_username}
@@ -106,6 +110,8 @@ spec:
           # build on the thinkcentre left it seconds per page (2026-10-30).
           resources:
             requests: {cpu: 500m, memory: 1Gi}
+            limits:
+              memory: 10Gi
           ports:
             - {name: http, containerPort: 3000}
             - {name: ssh, containerPort: 22}

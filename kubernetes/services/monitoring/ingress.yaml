@@ -74,3 +74,31 @@ spec:
                 name: grafana
                 port:
                   number: 3000
+---
+# Grafana's /metrics isn't public (it named the exact version and internals);
+# Prometheus reads it inside the cluster.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: deny-all
+  namespace: monitoring
+spec:
+  ipAllowList:
+    sourceRange: [127.0.0.1/32]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana-metrics-blocked
+  namespace: monitoring
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`mon.yeetus.net`) && PathPrefix(`/metrics`)
+      priority: 1000
+      middlewares:
+        - {name: deny-all}
+      services:
+        - {name: grafana, port: 3000}
+  tls:
+    secretName: grafana-tls

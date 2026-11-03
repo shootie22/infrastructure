@@ -59,6 +59,11 @@ spec:
               mountPath: /run
             - name: tmp
               mountPath: /tmp
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              memory: 48Mi
       volumes:
         - name: data
           hostPath:

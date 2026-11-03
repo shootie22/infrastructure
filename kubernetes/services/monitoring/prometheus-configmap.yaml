@@ -801,6 +801,24 @@ data:
             annotations:
               summary: "comin on {{ $labels.host }} hasn't fetched in over an hour"
               description: Restart it (`systemctl restart comin`); comin-unstick should do that by itself.
+          # Logins that failed on a node, from its auth journal (Alloy counts them,
+          # loki-alloy-configmap.yaml). sshd only listens on the LAN and the
+          # tailnet, so a burst means someone is trying from inside; a wrong sudo
+          # password means someone at a shell who doesn't know it.
+          - alert: AuthFailures
+            expr: sum by (host) (increase(loki_process_custom_auth_ssh_failed[10m])) > 5
+            labels:
+              severity: warning
+            annotations:
+              summary: "{{ $value | humanize }} failed SSH logins on {{ $labels.host }} in 10 minutes"
+              description: 'Who and from where: {job="auth", host="{{ $labels.host }}"} in Grafana Explore.'
+          - alert: SudoFailed
+            expr: sum by (host) (increase(loki_process_custom_auth_sudo_failed[10m])) > 0
+            labels:
+              severity: warning
+            annotations:
+              summary: "Wrong sudo password on {{ $labels.host }}"
+              description: 'If it wasn''t you: {job="auth", host="{{ $labels.host }}"} in Grafana Explore.'
           # etcd across the three sites (#49, #25).
           - alert: EtcdMemberDown
             expr: up{job="etcd"} == 0

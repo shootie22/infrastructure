@@ -73,6 +73,11 @@ spec:
             - name: analytics-archive
               mountPath: /var/www/analytics-archive
               readOnly: true
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              memory: 64Mi
       volumes:
         - name: cats-landing
           configMap:

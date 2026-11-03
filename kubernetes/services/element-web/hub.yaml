@@ -8,6 +8,7 @@ keep:
 - edge.yaml
 - ingress.yaml
 - namespace.yaml
+- networkpolicy.yaml
 - service.yaml
 - updater.yaml
 kind: kept

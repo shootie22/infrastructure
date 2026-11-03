@@ -74,6 +74,11 @@ spec:
                 secretKeyRef:
                   name: joplin-pg-app
                   key: password
+          resources:
+            limits:
+              memory: 1Gi
+            requests:
+              memory: 320Mi
       # Fuji or the thinkcentre, moving 30 s after its node stops answering.
       # Everything is in Postgres; the env above overrides the old database
       # settings in joplin-env.

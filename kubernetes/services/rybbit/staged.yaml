@@ -137,6 +137,11 @@ spec:
               mountPath: /etc/clickhouse-server/users.d/user_settings.xml
               subPath: user_settings.xml
               readOnly: true
+          resources:
+            limits:
+              memory: 3Gi
+            requests:
+              memory: 512Mi
       volumes:
         - name: data
           hostPath:
@@ -228,6 +233,11 @@ spec:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 5
+          resources:
+            limits:
+              memory: 768Mi
+            requests:
+              memory: 192Mi
 ---
 apiVersion: v1
 kind: Service
@@ -286,6 +296,11 @@ spec:
           ports:
             - name: http
               containerPort: 3002
+          resources:
+            limits:
+              memory: 768Mi
+            requests:
+              memory: 288Mi
 ---
 apiVersion: v1
 kind: Service
@@ -356,6 +371,11 @@ spec:
               mountPath: /etc/caddy/Caddyfile
               subPath: Caddyfile
               readOnly: true
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              memory: 64Mi
       volumes:
         - name: config
           configMap:

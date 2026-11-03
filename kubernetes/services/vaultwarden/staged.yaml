@@ -62,6 +62,11 @@ spec:
           volumeMounts:
             - {name: data, mountPath: /data}
             - {name: rsa-key, mountPath: /data/rsa_key.pem, subPath: rsa_key.pem, readOnly: true}
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              memory: 96Mi
       volumes:
         # Only the icon cache ends up here.
         - name: data
