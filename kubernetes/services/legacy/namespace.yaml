@@ -4,3 +4,6 @@ metadata:
   name: legacy
   annotations:
     hub.radunenu.com/description: legacy.yeetus.net, a page about the old pages and APIs (admin only)
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce-version: latest
