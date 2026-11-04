@@ -19,7 +19,7 @@ All zones are on Cloudflare's nameservers today. Porkbun and Namecheap both let 
 ## What this means for the plan
 
 - **Most web records are proxied (orange cloud).** That stays: Cloudflare in front of web traffic is fine. No tunnels, though. A nice extra for later: if the Cloudflare proxy is down but its API works, unproxy the records automatically.
-- **Proxying makes failover easier.** Visitors only ever see Cloudflare's IPs, so changing the origin behind a proxied record takes effect in seconds, with no TTL to wait out. Only the DNS-only names (game servers, `hs`, `share`, Matrix) depend on TTL.
+- **Proxying makes failover easier.** Visitors only ever see Cloudflare's IPs, so changing the origin behind a proxied record takes effect in seconds, with no TTL to wait out. Only the DNS-only names (game servers, `hs`, `share`, `games`, Matrix) depend on TTL.
 - **Everything hangs off `noc-studios.go.ro`**, the router's dynamic DNS name at Digi. It works, but it's another outside dependency. Our own updater writing the RO IP straight into Cloudflare would remove it, and the failover checker needs the same API access anyway.
 - **A second DNS provider can't mirror proxied records.** Hetzner can only be a standby copy of the zone, not an active second nameserver.
 

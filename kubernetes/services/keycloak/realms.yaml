@@ -435,6 +435,26 @@ data:
               introspection.token.claim: "false"
         authenticationFlowBindingOverrides:
           browser: gate mealie
+      # games.yeetus.net (kubernetes/services/gamevault). Confidential, no
+      # PKCE: GameVault (passport-oauth2) sends no code challenge, so the
+      # attribute would refuse every sign-in. The redirect is the one exact
+      # callback; the desktop app signs in through the same page. GameVault
+      # makes the account at the first sign-in from preferred_username and
+      # email, and finds it by them afterwards.
+      - clientId: gamevault
+        name: Games
+        description: games.yeetus.net
+        enabled: true
+        publicClient: false
+        secret: $(env:GAMEVAULT_OIDC_SECRET)
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        redirectUris: ["https://games.yeetus.net/api/auth/oauth2/login"]
+        webOrigins: ["https://games.yeetus.net"]
+        attributes:
+          post.logout.redirect.uris: "https://games.yeetus.net/*"
+        authenticationFlowBindingOverrides:
+          browser: gate gamevault
     roles:
       client:
         audiobookshelf:
@@ -455,6 +475,9 @@ data:
         mealie:
           - name: access
             description: May sign in to Recipes (Mealie)
+        gamevault:
+          - name: access
+            description: May sign in to Games (GameVault)
     authenticatorConfig:
       - alias: audiobookshelf no access
         config: {condUserRole: audiobookshelf.access, negate: "true"}
@@ -479,6 +502,10 @@ data:
       - alias: mealie no access
         config: {condUserRole: mealie.access, negate: "true"}
       - alias: mealie deny
+        config: {denyErrorMessage: yeetusNoAccess}
+      - alias: gamevault no access
+        config: {condUserRole: gamevault.access, negate: "true"}
+      - alias: gamevault deny
         config: {denyErrorMessage: yeetusNoAccess}
     # Each gated app: Keycloak's browser flow, then "no access role, no entry"
     # (docs/ha/keycloak-sso.md, "Who gets into which app").
@@ -699,6 +726,42 @@ data:
         authenticationExecutions:
           - {authenticator: conditional-user-role, authenticatorConfig: mealie no access, requirement: REQUIRED, priority: 10}
           - {authenticator: deny-access-authenticator, authenticatorConfig: mealie deny, requirement: REQUIRED, priority: 20}
+      - alias: gate gamevault
+        description: Sign in, then only with gamevault's access role
+        providerId: basic-flow
+        topLevel: true
+        builtIn: false
+        authenticationExecutions:
+          - {flowAlias: gate gamevault sign in, requirement: REQUIRED, priority: 10, autheticatorFlow: true}
+          - {flowAlias: gate gamevault check, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+      - alias: gate gamevault sign in
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: auth-cookie, requirement: ALTERNATIVE, priority: 10}
+          - {flowAlias: gate gamevault forms, requirement: ALTERNATIVE, priority: 20, autheticatorFlow: true}
+      - alias: gate gamevault forms
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: auth-username-password-form, requirement: REQUIRED, priority: 10}
+          - {flowAlias: gate gamevault 2fa, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+      - alias: gate gamevault 2fa
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: conditional-user-configured, requirement: REQUIRED, priority: 10}
+          - {authenticator: auth-otp-form, requirement: ALTERNATIVE, priority: 20}
+      - alias: gate gamevault check
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: conditional-user-role, authenticatorConfig: gamevault no access, requirement: REQUIRED, priority: 10}
+          - {authenticator: deny-access-authenticator, authenticatorConfig: gamevault deny, requirement: REQUIRED, priority: 20}
     users:
       - username: service-account-yeetus-api
         serviceAccountClientId: yeetus-api
@@ -740,5 +803,9 @@ data:
       # Mealie admin (through the groups claim; not an access group).
       - name: cook-admin
         attributes: {description: [Recipes admins]}
+      - name: games
+        attributes: {description: [Games (GameVault)]}
+        clientRoles:
+          gamevault: [access]
       - name: calendar
         attributes: {description: [Baïkal, with app passwords]}

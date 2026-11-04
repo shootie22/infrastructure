@@ -311,6 +311,12 @@ locals {
       content = "beacon.radunenu.com"
       proxied = true
     }
+    # The game library, GameVault (kubernetes/services/gamevault). DNS only,
+    # like share: whole games through Cloudflare's proxy break its terms.
+    "yeetus.net/games/CNAME" = {
+      zone    = "yeetus.net", name = "games", type = "CNAME"
+      content = "beacon.radunenu.com"
+    }
     "yeetus.net/cal/CNAME" = {
       zone    = "yeetus.net", name = "cal", type = "CNAME"
       content = "beacon.radunenu.com"
