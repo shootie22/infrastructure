@@ -19,7 +19,7 @@ spec:
     metadata:
       annotations:
         # Bump when gamevault-env changes; it's read only at start.
-        config-revision: "1"
+        config-revision: "2"
       labels:
         app.kubernetes.io/name: gamevault
     spec:

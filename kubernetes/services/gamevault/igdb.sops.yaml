@@ -1,0 +1,35 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: gamevault-igdb
+    namespace: gamevault
+spec:
+    secretTemplates:
+        - name: ENC[AES256_GCM,data:atrwlLnzv2lrFGOZ8Iw=,iv:HgT04WdXzwLomniy1swT/kcfvafVpA0K1q0DwNA4cOk=,tag:P7v0roHOIK3yLzrmQodr3Q==,type:str]
+          stringData:
+            CLIENT_ID: ENC[AES256_GCM,data:LbtVOacSaFFtzFlHwjf10IAeNOSwF5H+DAd7Mk3F,iv:8tDCqPB3YcfEdyDsJMMrImTMBUvRqICv3p8AVErRkeU=,tag:8rs6FKGpMj+hbQGaWt+fDw==,type:str]
+            CLIENT_SECRET: ENC[AES256_GCM,data:ME+gy0CN4I4aJEiVPi1EaeyN+xf/mqb0bOkPQOjU,iv:SLRxbFL9J8akGj1CVumRyID+uGHHmS/9Rta6l2gaBeI=,tag:t+yfQtdUcb+LBtm0VQ0qwQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA3L041Qi9Jd015Tkk1QjZO
+            dzdmTnpyZmVnNFY0MjJkZzg4THJFUUxvT1JBCko3K2VuQWJJVk11RUNZdDI4WkVD
+            VGI4SlJUZVZwYnl3SUUwdHJOZGdWTTQKLS0tIDFrRVRhcjVya2RCbDVhdWhlMlhY
+            SGNlSTNBcHhwQ0ZwSXlYbFRTMlNtb2cKVdBV54PpNrlOX5LxUWSaIpcdxUorVocm
+            4Tonqaxw75kInzkdT3MxqxcozcB6taCpgJs64+2Bpxj53agyMYGRGg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBtVHRSY2o3SUZaOTBJSkJV
+            bmhGWFA0VlVHLzVhQ1JkQ25WYmllRW01RHprCk9Ia3FtVTZmcW50ei9RaDNIck9u
+            N285dGR5R0d2MzZWUXNPaTlVaE5WZVkKLS0tIEpJRU9uZ3JnaFRGZ29xK3VuZkJS
+            d001Yy90b0RxM2ZFTmpOUHBpUndEL2cKmZNClyA3XqR+E6aWm7IF0RL0mo3wIbCJ
+            9TOMXKtbw4yxk9DD1GeyKoLF8iIlcupKaa2ktO8gE6ZknOxEmOl2Mw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
+    encrypted_suffix: Templates
+    lastmodified: "2026-11-04T22:56:25Z"
+    mac: ENC[AES256_GCM,data:Bxz/G0ex6pZ/iPrHK5uL8GcDqiz0XPmurIU8J9w7aLra9ttqTzL2ksJbCHXdW0rF4lpPAKjgXcTJmi1Nj0vzRfLcAyGI03SRzDu6/q8T6euBxypBqlv++q1yEbYciLVcckqy0wn+XaCAH0xBVHzoZUnybAQapwl9275qpKLVIqQ=,iv:Hj/fv9CkmzCKcmgSujfj3hGW8N2I1mDzOnZw02Wde1w=,tag:GXBO0ZsCD36ri87A4hMVpA==,type:str]
+    version: 3.13.3
