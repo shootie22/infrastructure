@@ -1,0 +1,75 @@
+# What a pod may take from its node (security audit, 2026-11-03). Pod
+# Security's baseline level (on the namespaces that need none of this, #413)
+# forbids host folders altogether, but most services here keep their data in
+# a host folder that site-failover copies (/srv/ha/<service>), and the
+# database dumps write to /var/lib/pg-dumps. This allows exactly that and no
+# more, so that a pod that can change a Deployment (Hub's updater, the
+# fast-lane updaters) can't turn it into one that mounts the node's root:
+#
+# - host folders only under /srv/ha/<namespace> (and the two named
+#   otherwise: rybbit-clickhouse, send-uploads), /var/lib/pg-dumps, and
+#   /etc/localtime; never with ..
+# - the host network only in element-call, element-web, matrix and hytale
+# - no privileged containers, no host PID or IPC namespace
+#
+# Not checked: the system namespaces, monitoring (node-exporter, Beyla, Alloy
+# read the node by design), ollama (the GPU device plugin), the CI namespaces
+# (their own policy, ci-runner/cluster.yaml), headlamp and tailnet-dns (host
+# network proxies).
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: pod-host-access
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values: [kube-system, kube-public, kube-node-lease, default, argocd, cert-manager, cnpg-system, sops,
+                   monitoring, ollama, ci-runner, ci-jobs, headlamp, tailnet-dns]
+  variables:
+    - name: containers
+      expression: >-
+        object.spec.containers
+        + (has(object.spec.initContainers) ? object.spec.initContainers : [])
+        + (has(object.spec.ephemeralContainers) ? object.spec.ephemeralContainers : [])
+    - name: ha
+      expression: "'/srv/ha/' + request.namespace"
+  validations:
+    - expression: >-
+        !has(object.spec.volumes) || object.spec.volumes.all(v, !has(v.hostPath) ||
+        (!v.hostPath.path.contains('..') && (
+          v.hostPath.path == variables.ha ||
+          v.hostPath.path.startsWith(variables.ha + '/') ||
+          (request.namespace == 'rybbit' && v.hostPath.path == '/srv/ha/rybbit-clickhouse') ||
+          (request.namespace == 'send' && v.hostPath.path == '/srv/ha/send-uploads') ||
+          v.hostPath.path == '/var/lib/pg-dumps' ||
+          v.hostPath.path == '/etc/localtime')))
+      message: Host folders only under /srv/ha/<namespace>, /var/lib/pg-dumps or /etc/localtime.
+    - expression: >-
+        !(has(object.spec.hostNetwork) && object.spec.hostNetwork) ||
+        request.namespace in ['element-call', 'element-web', 'matrix', 'hytale']
+      message: The host network only for element-call, element-web, matrix and hytale.
+    - expression: >-
+        !(has(object.spec.hostPID) && object.spec.hostPID) &&
+        !(has(object.spec.hostIPC) && object.spec.hostIPC)
+      message: No host PID or IPC namespace.
+    - expression: >-
+        variables.containers.all(c,
+        !has(c.securityContext) || !has(c.securityContext.privileged) || !c.securityContext.privileged)
+      message: No privileged containers.
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: pod-host-access
+spec:
+  policyName: pod-host-access
+  validationActions: [Deny]
