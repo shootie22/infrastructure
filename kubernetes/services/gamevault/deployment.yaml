@@ -1,0 +1,163 @@
+# GameVault: the game library at games.yeetus.net. The library, users and
+# progress in Postgres (database.yaml); the games, covers and save files on
+# the thinkcentre's 4 TB disk in /srv/ha/gamevault. One copy, on whichever of
+# the thinkcentre and fuji holds the label; the other has a copy of the folder
+# and takes over when this site is gone (dotfiles modules/nixos/site-failover).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gamevault
+  namespace: gamevault
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gamevault
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        # Bump when gamevault-env changes; it's read only at start.
+        config-revision: "1"
+      labels:
+        app.kubernetes.io/name: gamevault
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        ha.radunenu.com/gamevault: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      # The image's entrypoint drops from root to 1000 itself; start as 1000.
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # GameVault doesn't make its folders itself (the image has them in
+        # its own /, not here).
+        - name: folders
+          image: docker.io/phalcode/gamevault-backend:17.1.0@sha256:87999b98d686b3297ddd7abde51f42dd2fa30b987f0cf050a42403a398711199
+          command: [mkdir, -p, /data/config, /data/files, /data/media, /data/savefiles, /data/plugins, /data/logs, /data/tmp]
+          securityContext: &locked
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - {name: data, mountPath: /data}
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {memory: 64Mi}
+      containers:
+        - name: gamevault
+          image: docker.io/phalcode/gamevault-backend:17.1.0@sha256:87999b98d686b3297ddd7abde51f42dd2fa30b987f0cf050a42403a398711199
+          envFrom:
+            - configMapRef:
+                name: gamevault-env
+          env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef: {name: gamevault-pg-app, key: host}
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef: {name: gamevault-pg-app, key: port}
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef: {name: gamevault-pg-app, key: dbname}
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef: {name: gamevault-pg-app, key: username}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: gamevault-pg-app, key: password}
+            # Every token and session secret is derived from it.
+            - name: AUTH_SEED
+              valueFrom:
+                secretKeyRef: {name: gamevault, key: AUTH_SEED}
+            - name: AUTH_OAUTH2_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef: {name: gamevault, key: OIDC_CLIENT_SECRET}
+            # IGDB (covers, descriptions) through a Twitch app. Optional:
+            # without it GameVault turns the provider off and runs anyway.
+            # Made by scripts/create-gamevault-igdb-secret.sh.
+            - name: METADATA_IGDB_CLIENT_ID
+              valueFrom:
+                secretKeyRef: {name: gamevault-igdb, key: CLIENT_ID, optional: true}
+            - name: METADATA_IGDB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef: {name: gamevault-igdb, key: CLIENT_SECRET, optional: true}
+          ports:
+            - {name: http, containerPort: 8080}
+          # The image's own health check gives it 5 minutes (migrations).
+          startupProbe:
+            httpGet: {path: /api/status, port: http}
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: {path: /api/status, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /api/status, port: http}
+            periodSeconds: 30
+            failureThreshold: 4
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          securityContext: *locked
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            # A game that isn't an archive is packed into /tmp/<id>.tar to
+            # be downloaded, so /tmp is on the big disk too (left out of
+            # the copy to the other site).
+            - {name: data, mountPath: /tmp, subPath: tmp}
+      volumes:
+        - name: data
+          hostPath:
+            path: /srv/ha/gamevault
+            type: Directory
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gamevault-env
+  namespace: gamevault
+data:
+  TZ: Europe/Copenhagen
+  DB_SYSTEM: POSTGRESQL
+  # Everything in one folder, the one site-failover copies.
+  VOLUMES_CONFIG: /data/config
+  VOLUMES_FILES: /data/files
+  VOLUMES_MEDIA: /data/media
+  VOLUMES_SAVEFILES: /data/savefiles
+  VOLUMES_PLUGINS: /data/plugins
+  VOLUMES_LOGS: /data/logs
+  # Logs go to stdout (Loki), not into the folder.
+  SERVER_LOG_FILES_ENABLED: "false"
+  # The web UI is downloaded from GitHub at start (into /data/config). Left
+  # alone it picks the newest compatible release, or "unstable"; pinned to
+  # the server's version instead. Renovate moves both together.
+  # renovate: datasource=github-releases depName=Phalcode/gamevault-frontend
+  WEB_UI_VERSION: "17.1.0"
+  # Accounts come only from Keycloak: no passwords, no sign-up form, no API
+  # keys. The client's gate flow keeps out everyone not in the games group,
+  # so accounts don't wait to be activated.
+  AUTH_BASIC_AUTH_ENABLED: "false"
+  AUTH_API_KEY_ENABLED: "false"
+  SERVER_REGISTRATION_DISABLED: "true"
+  SERVER_ACCOUNT_ACTIVATION_DISABLED: "true"
+  # Otherwise whoever signs in first becomes the admin.
+  SERVER_ADMIN_USERNAME: radu
+  AUTH_OAUTH2_ENABLED: "true"
+  AUTH_OAUTH2_CLIENT_ID: gamevault
+  AUTH_OAUTH2_AUTH_URL: https://auth.yeetus.net/realms/network-yeetus/protocol/openid-connect/auth
+  AUTH_OAUTH2_TOKEN_URL: https://auth.yeetus.net/realms/network-yeetus/protocol/openid-connect/token
+  AUTH_OAUTH2_USERINFO_URL: https://auth.yeetus.net/realms/network-yeetus/protocol/openid-connect/userinfo
+  AUTH_OAUTH2_CALLBACK_URL: https://games.yeetus.net/api/auth/oauth2/login
+  SAVEFILES_ENABLED: "true"

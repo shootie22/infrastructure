@@ -252,6 +252,14 @@
       ],
       "groupName": "radunenu.com",
       "groupSlug": "radunenu-com"
+    },
+    {
+      "description": "GameVault's server and the web UI it downloads at start (gamevault/deployment.yaml, WEB_UI_VERSION) go out together, as upstream releases them",
+      "matchPackageNames": [
+        "docker.io/phalcode/gamevault-backend",
+        "Phalcode/gamevault-frontend"
+      ],
+      "groupName": "GameVault"
     }
   ],
   "fetchChangeLogs": "pr",
@@ -266,6 +274,16 @@
         "(^|\\n)image: (?<depName>[^:@\\s]+):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
       ],
       "datasourceTemplate": "docker"
+    },
+    {
+      "description": "A plain setting with a '# renovate: datasource=... depName=...' comment on the line above it, like GameVault's WEB_UI_VERSION",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^kubernetes/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n\\s*[A-Z_]+: \"?(?<currentValue>[^\"\\s]+)\"?"
+      ]
     }
   ]
 }

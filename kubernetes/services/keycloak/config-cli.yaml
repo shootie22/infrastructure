@@ -92,6 +92,9 @@ spec:
                 # MEALIE_OIDC_SECRET, the same way (mealie-client.sops.yaml).
                 - secretRef:
                     name: keycloak-config-cli-mealie
+                # GAMEVAULT_OIDC_SECRET, the same way (gamevault-client.sops.yaml).
+                - secretRef:
+                    name: keycloak-config-cli-gamevault
               resources:
                 requests:
                   cpu: 100m

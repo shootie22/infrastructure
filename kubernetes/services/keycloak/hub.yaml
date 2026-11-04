@@ -7,6 +7,7 @@ keep:
 - config-cli.yaml
 - cubitrix-reports-client.sops.yaml
 - database.yaml
+- gamevault-client.sops.yaml
 - home-catalog.yaml
 - ingress.yaml
 - keycloak.yaml

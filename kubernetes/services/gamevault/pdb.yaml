@@ -1,0 +1,11 @@
+# One copy: a drain moves it (a few seconds without the library).
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gamevault
+  namespace: gamevault
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gamevault
