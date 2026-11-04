@@ -1,0 +1,158 @@
+# copyparty: the games inbox at games-inbox.yeetus.net. Everyone in the
+# games group uploads into their own inbox/<username>; radu sees every inbox
+# and moves what's good into GameVault's library. Uploads go in resumable
+# chunks, so a big game survives a slow or dropped connection.
+#
+# It runs next to GameVault, on whichever node holds its label, and sees only
+# two folders of GameVault's: inbox/ and files/ (the library). Who someone is
+# comes from oauth2-proxy (oauth2-proxy.yaml), through Traefik; nothing else
+# can reach it (networkpolicy.yaml).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copyparty
+  namespace: games-inbox
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: copyparty
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        # Bump when copyparty-config changes; it's read only at start.
+        config-revision: "1"
+      labels:
+        app.kubernetes.io/name: copyparty
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      # Wherever GameVault runs, since it writes into GameVault's folder.
+      nodeSelector:
+        ha.radunenu.com/gamevault: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      # GameVault's user, so what lands in the library is readable there.
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # Its two folders, which it then gets on their own (subPath).
+        - name: folders
+          image: docker.io/library/busybox:1.38@sha256:a46257e06c82ad85242d0d38077d0a52d9896389ca60a1a59d3463db586e5fa4
+          command: [mkdir, -p, /gamevault/inbox, /gamevault/.inbox-state]
+          securityContext: &locked
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - {name: gamevault, mountPath: /gamevault}
+          resources:
+            requests: {cpu: 5m, memory: 8Mi}
+            limits: {memory: 32Mi}
+      containers:
+        - name: copyparty
+          image: docker.io/copyparty/min:1.20.26@sha256:1411895121989318a2a14c8b7b8a2016b917874a508a73bf14e316c64e8ef9e5
+          # Not the image's entrypoint, which shares /w with its own
+          # defaults: only the settings below.
+          command: [python3, -m, copyparty, -c, /etc/copyparty/copyparty.conf]
+          env:
+            # Its own small state (sessions, the IdP user list).
+            - {name: XDG_CONFIG_HOME, value: /state/cfg}
+          ports:
+            - {name: http, containerPort: 3923}
+          readinessProbe:
+            tcpSocket: {port: http}
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: {port: http}
+            periodSeconds: 30
+            failureThreshold: 4
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+          securityContext: *locked
+          volumeMounts:
+            - {name: config, mountPath: /etc/copyparty, readOnly: true}
+            - {name: gamevault, mountPath: /data/inbox, subPath: inbox}
+            - {name: gamevault, mountPath: /data/files, subPath: files}
+            # The upload database (resuming, duplicates) and its state.
+            - {name: gamevault, mountPath: /state, subPath: .inbox-state}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: config
+          configMap:
+            name: copyparty-config
+        - name: gamevault
+          hostPath:
+            path: /srv/ha/gamevault
+            type: Directory
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: copyparty-config
+  namespace: games-inbox
+data:
+  copyparty.conf: |
+    [global]
+      # Who someone is: their Keycloak username, which oauth2-proxy puts in
+      # this header (Traefik copies it over whatever the browser sent, see
+      # ingress.yaml). Only believed from the pod network, where only
+      # Traefik can reach this (networkpolicy.yaml).
+      idp-h-usr: x-auth-request-preferred-username
+      xff-src: 10.42.0.0/16
+      rproxy: -1
+      # Plain HTTP behind Traefik; no certificate of its own.
+      http-only
+      no-crt
+      # Uploads only: no thumbnails, no media scanning, no hostname shown.
+      no-thumb
+      nih
+      # The upload database, so an interrupted upload resumes; not in the
+      # folders it serves.
+      e2d
+      hist: /state/hist
+      idp-db: /state/idp.db
+      # Stop taking uploads before the 4 TB disk gets near its 250 GiB
+      # alert (monitoring, ThinkcentreStorageDiskLow).
+      df: 300
+      chmod-f: 644
+      chmod-d: 755
+
+    # Every inbox, for radu only. Also what someone's own inbox falls back
+    # to after a restart until they come back (copyparty forgets IdP users),
+    # so it must stay closed.
+    [/inbox]
+      /data/inbox
+      accs:
+        rwmd: radu
+
+    # Each person's own inbox: upload, see, rename and delete their own,
+    # nobody else's. At most 200 GiB waiting per person.
+    [/inbox/${u}]
+      /data/inbox/${u}
+      accs:
+        rwmd: ${u}, radu
+      flags:
+        vmaxb: 200g
+
+    # GameVault's library, for radu: move what's good in here (and upload
+    # straight in). No delete; that's GameVault's.
+    [/library]
+      /data/files
+      accs:
+        rwm: radu

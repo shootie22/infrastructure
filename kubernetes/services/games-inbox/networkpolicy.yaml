@@ -1,0 +1,77 @@
+# copyparty believes the username header from anything in the pod network
+# (deployment.yaml, xff-src), so only Traefik may reach it, and the nodes
+# for its probes (through their flannel and cni0 addresses, like
+# joplin/networkpolicy.yaml; a new node needs its two addresses here). Not
+# even oauth2-proxy, monitoring or GameVault. It needs no network out.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: copyparty
+  namespace: games-inbox
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: copyparty
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+        - ipBlock: {cidr: 10.42.0.0/32}  # fuji
+        - ipBlock: {cidr: 10.42.0.1/32}
+        - ipBlock: {cidr: 10.42.1.0/32}  # thinkcentre
+        - ipBlock: {cidr: 10.42.1.1/32}
+        - ipBlock: {cidr: 10.42.2.0/32}  # mixi
+        - ipBlock: {cidr: 10.42.2.1/32}
+        - ipBlock: {cidr: 10.42.3.0/32}  # minima-vm
+        - ipBlock: {cidr: 10.42.3.1/32}
+        - ipBlock: {cidr: 10.42.4.0/32}  # edge
+        - ipBlock: {cidr: 10.42.4.1/32}
+      ports:
+        - {protocol: TCP, port: 3923}
+  egress: []
+---
+# oauth2-proxy: asked by Traefik (forwardAuth and /oauth2), and the nodes
+# for its probes. Out: DNS and HTTPS to Keycloak at auth.yeetus.net.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: oauth2-proxy
+  namespace: games-inbox
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: oauth2-proxy
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+        - ipBlock: {cidr: 10.42.0.0/32}  # fuji
+        - ipBlock: {cidr: 10.42.0.1/32}
+        - ipBlock: {cidr: 10.42.1.0/32}  # thinkcentre
+        - ipBlock: {cidr: 10.42.1.1/32}
+        - ipBlock: {cidr: 10.42.2.0/32}  # mixi
+        - ipBlock: {cidr: 10.42.2.1/32}
+        - ipBlock: {cidr: 10.42.3.0/32}  # minima-vm
+        - ipBlock: {cidr: 10.42.3.1/32}
+        - ipBlock: {cidr: 10.42.4.0/32}  # edge
+        - ipBlock: {cidr: 10.42.4.1/32}
+      ports:
+        - {protocol: TCP, port: 4180}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - ports:
+        - protocol: TCP
+          port: 443

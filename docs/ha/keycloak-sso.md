@@ -127,6 +127,7 @@ How each app moved without anyone losing data, and the way back: [sso-migration.
 | Joplin | SAML | Done, Keycloak only |
 | Recipes (Mealie) | OIDC | Done, network-yeetus, gated by `cook`; no password login |
 | Games (GameVault) | OAuth2 | Done, network-yeetus, gated by `games`; no password login |
+| Games inbox (copyparty) | none | Done, oauth2-proxy, network-yeetus, gated by `games` like GameVault |
 | Baïkal | none | Done, app passwords from the account page, checked by Traefik (below) |
 | Matrix | via MAS | Separate project, planned in [../matrix/](../matrix/README.md) |
 
