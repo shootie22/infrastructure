@@ -81,6 +81,21 @@ data:
     done
     echo "no passing run for $sha within $(took $t0) s (last seen: ${run:-none})"
 
+    # Given up on, so cancelled: otherwise it stays queued and takes a
+    # runner later, after the builds it waited behind, for a check nobody
+    # waits on any more. On a busy day that's one every 15 minutes. Only
+    # logged if Gitea refuses; the check's result doesn't depend on it.
+    status=$(echo "${run:-}" | jq -r '.status // empty' 2>/dev/null) || status=
+    if [ -n "$status" ]; then
+      id=$(echo "$run" | jq -r .id)
+      if code=$(curl -sS -m 20 -o /dev/null -w '%{http_code}' -X POST \
+          -H "Authorization: token $GITEA_TOKEN" "$api/repos/$repo/actions/runs/$id/cancel"); [ "${code:0:1}" = 2 ]; then
+        echo "cancelled run $id"
+      else
+        echo "couldn't cancel run $id: ${code:-no answer}"
+      fi
+    fi
+
     # Still queued: every runner may just be busy with other builds, which
     # is normal. That passes if each of the cluster's linux-amd64 slots (the
     # dispatcher's, ci-runner) has a runner up and on a task it started less
@@ -106,7 +121,6 @@ data:
         echo "$pod: on a task for $(( (now - started) / 60 )) min"
       done
     }
-    status=$(echo "${run:-}" | jq -r '.status // empty' 2>/dev/null) || status=
     if [ "$status" = queued ] || [ "$status" = waiting ]; then
       for try in 1 2 3; do
         if out=$(busy 2>&1); then
