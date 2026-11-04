@@ -18,6 +18,14 @@ data:
   master.yaml: |
     realm: master
     displayName: Keycloak Admin
+    # The admin console signs in and calls the API through the master realm's
+    # frontend URL, which is KC_HOSTNAME (auth.yeetus.net) unless set here.
+    # The public names give 403 for /realms/master, so without this the
+    # console stops at "Timeout when waiting for 3rd party check iframe
+    # message". config-cli is unaffected: it talks to keycloak:8080, and the
+    # issuer is this URL whichever name a token is fetched through.
+    attributes:
+      frontendUrl: https://kc.infra.radunenu.com
     # The admin console's sign-in in the red admin look, like network-admin.
     # If it ever breaks, config-cli (client credentials, no login page) can
     # still set it back.
