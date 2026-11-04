@@ -23,7 +23,7 @@ spec:
     metadata:
       annotations:
         # Bump when copyparty-config changes; it's read only at start.
-        config-revision: "1"
+        config-revision: "2"
       labels:
         app.kubernetes.io/name: copyparty
     spec:
@@ -150,9 +150,13 @@ data:
       flags:
         vmaxb: 200g
 
-    # GameVault's library, for radu: move what's good in here (and upload
-    # straight in). No delete; that's GameVault's.
+    # GameVault's library. Everyone signed in (only the games group gets
+    # this far) may see it and upload new games straight in; radu may also
+    # move inboxes' files in. Nobody deletes, renames or overwrites here: an
+    # upload with a name that's taken is saved under a new name. Deleting is
+    # GameVault's.
     [/library]
       /data/files
       accs:
         rwm: radu
+        rw: @acct

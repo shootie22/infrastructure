@@ -2,9 +2,11 @@
 
 https://games-inbox.yeetus.net is where games for [GameVault](../gamevault/README.md) are uploaded:
 [copyparty](https://github.com/9001/copyparty), behind Keycloak. Anyone in the network-yeetus `games` group
-can sign in (the same check as GameVault) and drops files into their own `inbox/<username>`, which only
-they and radu can see. radu sees every inbox and moves what's good into `library`, which is GameVault's
-`files/`; GameVault picks it up by itself. Uploads go in resumable chunks: a big game survives a slow
+can sign in (the same check as GameVault). Everyone can upload straight into `library`, which is GameVault's
+`files/` (GameVault picks it up by itself), and has their own `inbox/<username>`, which only they and radu
+can see. radu sees every inbox and moves what's good into the library. In the library nobody can delete,
+rename or overwrite what's there: a second upload under a taken name is saved under a new name, and deleting
+is GameVault's. Uploads go in resumable chunks: a big game survives a slow
 line, a closed laptop or a restart, and continues where it stopped when the same file is dropped again.
 
 - `deployment.yaml`: copyparty, one copy, on whichever node holds GameVault's `ha.radunenu.com/gamevault`
@@ -30,8 +32,8 @@ the rest.
 
 ## Using it
 
-- Upload: sign in, open your folder under `inbox`, drop files on the page. Archives (`.zip`, `.7z`) named
-  `Title (Year).zip` work best in GameVault.
+- Upload: sign in, open `library` (or your folder under `inbox`, to leave it for radu to look at), drop files
+  on the page. Archives (`.zip`, `.7z`) named `Title (Year).zip` work best in GameVault.
 - radu: open `inbox/<someone>`, select the files, cut (`ctrl-x`), open `library`, paste (`ctrl-v`). It's a
   move on the same disk, so it's instant whatever the size. To turn something down, delete it from the
   inbox.
