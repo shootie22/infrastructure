@@ -42,7 +42,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: yeetus-api
-          image: git.radunenu.com/radu/yeetus-api:main@sha256:768d7735066d8cb6d0c48827fbe6227a55ce32d897f315673b95d0154996dcec
+          image: git.radunenu.com/radu/yeetus-api:main@sha256:6757f1a98487042f33286030c30deff77309efc866f84c8dffa0013d348729ee
           env:
             - name: DATABASE_URL
               valueFrom:
