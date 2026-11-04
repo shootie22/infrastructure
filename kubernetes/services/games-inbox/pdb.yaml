@@ -1,0 +1,22 @@
+# copyparty: one copy, a drain moves it (an upload in flight resumes).
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: copyparty
+  namespace: games-inbox
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: copyparty
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: oauth2-proxy
+  namespace: games-inbox
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oauth2-proxy

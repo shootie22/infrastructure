@@ -1,0 +1,129 @@
+# The login in front of the inbox, used by Traefik forwardAuth (ingress.yaml).
+# Its root has a static 202 upstream: a valid session answers 202 with the
+# X-Auth-Request-* headers, and Traefik passes the request on to copyparty
+# with the username; no session answers a redirect to Keycloak.
+#
+# Realm network-yeetus, client games-inbox. Two checks keep out everyone not
+# in the games group: Keycloak's gate flow on the client (the same as
+# GameVault's) and --allowed-role here. The session is re-checked against
+# Keycloak every hour, so taking someone out of games ends their access
+# within the hour. Secrets come from games-inbox-oauth2 in secret.sops.yaml,
+# made by scripts/create-games-inbox-secret.sh. Sessions live in the cookie,
+# so the two copies need nothing shared but its secret.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+  namespace: games-inbox
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oauth2-proxy
+    spec:
+      automountServiceAccountToken: false
+      # One per site (fuji, the thinkcentre).
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: In, values: [fuji, thinkcentre]}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: oauth2-proxy
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      # oauth2-proxy reads Keycloak's settings once at startup and exits if
+      # Keycloak doesn't answer, then sits out the restart backoff. Start it
+      # only once Keycloak answers (same as send).
+      initContainers:
+        - name: wait-for-keycloak
+          image: docker.io/library/busybox:1.38@sha256:a46257e06c82ad85242d0d38077d0a52d9896389ca60a1a59d3463db586e5fa4
+          command: ["sh", "-c"]
+          args:
+            - until wget -q -T 5 -O /dev/null "$OAUTH2_PROXY_OIDC_ISSUER_URL/.well-known/openid-configuration"; do sleep 5; done
+          env:
+            - name: OAUTH2_PROXY_OIDC_ISSUER_URL
+              value: https://auth.yeetus.net/realms/network-yeetus
+          resources:
+            requests: {cpu: 5m, memory: 8Mi}
+            limits: {memory: 32Mi}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      containers:
+        - name: oauth2-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.5@sha256:8498b0d0ef0a7b29686414000a08aee467f02d0299c9ed1e006a8f33fc017916
+          args:
+            - --http-address=0.0.0.0:4180
+            - --provider=keycloak-oidc
+            - --client-id=games-inbox
+            - --code-challenge-method=S256
+            - --allowed-role=gamevault:access
+            - --email-domain=*
+            # network-yeetus doesn't verify emails, and nothing here goes by the
+            # email: who gets in is the role, who they are is the username.
+            - --insecure-oidc-allow-unverified-email=true
+            - --redirect-url=https://games-inbox.yeetus.net/oauth2/callback
+            - --reverse-proxy=true
+            - --upstream=static://202
+            - --skip-provider-button=true
+            - --cookie-name=_games_inbox_session
+            - --cookie-secure=true
+            - --cookie-samesite=lax
+            - --silence-ping-logging=true
+            # The username for copyparty, as a response header Traefik copies.
+            - --set-xauthrequest=true
+            # Re-checked with Keycloak every hour, gone after 12 hours.
+            - --cookie-refresh=1h
+            - --cookie-expire=12h
+          env:
+            # Keycloak realm network-yeetus (docs/ha/keycloak-sso.md).
+            - name: OAUTH2_PROXY_OIDC_ISSUER_URL
+              value: https://auth.yeetus.net/realms/network-yeetus
+          envFrom:
+            # OAUTH2_PROXY_CLIENT_SECRET, OAUTH2_PROXY_COOKIE_SECRET
+            - secretRef: {name: games-inbox-oauth2}
+          ports:
+            - {name: http, containerPort: 4180}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+  # No third site for a surge pod, so replace one at a time.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1

@@ -318,6 +318,12 @@ locals {
       zone    = "yeetus.net", name = "games", type = "CNAME"
       content = "ro.radunenu.com"
     }
+    # The games inbox, copyparty (kubernetes/services/games-inbox). DNS only
+    # like games, for the same reason.
+    "yeetus.net/games-inbox/CNAME" = {
+      zone    = "yeetus.net", name = "games-inbox", type = "CNAME"
+      content = "ro.radunenu.com"
+    }
     "yeetus.net/cal/CNAME" = {
       zone    = "yeetus.net", name = "cal", type = "CNAME"
       content = "beacon.radunenu.com"

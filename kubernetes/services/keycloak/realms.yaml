@@ -463,6 +463,35 @@ data:
           post.logout.redirect.uris: "https://games.yeetus.net/*"
         authenticationFlowBindingOverrides:
           browser: gate gamevault
+      # games-inbox.yeetus.net (kubernetes/services/games-inbox): oauth2-proxy
+      # in front of the games inbox. Confidential, PKCE. GameVault's gate, so
+      # the games group is what lets someone in, and oauth2-proxy checks
+      # gamevault's access role in the token too. The secret is in
+      # games-inbox-client.sops.yaml and, same value, games-inbox/secret.sops.yaml
+      # (scripts/create-games-inbox-secret.sh).
+      - clientId: games-inbox
+        name: Games inbox
+        description: games-inbox.yeetus.net
+        enabled: true
+        publicClient: false
+        secret: $(env:GAMES_INBOX_OAUTH2_SECRET)
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        redirectUris: ["https://games-inbox.yeetus.net/oauth2/callback"]
+        webOrigins: ["https://games-inbox.yeetus.net"]
+        attributes:
+          pkce.code.challenge.method: S256
+        protocolMappers:
+          # oauth2-proxy rejects tokens without its own client in aud.
+          - name: audience
+            protocol: openid-connect
+            protocolMapper: oidc-audience-mapper
+            config:
+              included.client.audience: games-inbox
+              id.token.claim: "false"
+              access.token.claim: "true"
+        authenticationFlowBindingOverrides:
+          browser: gate gamevault
     roles:
       client:
         audiobookshelf:

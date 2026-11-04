@@ -95,6 +95,10 @@ spec:
                 # GAMEVAULT_OIDC_SECRET, the same way (gamevault-client.sops.yaml).
                 - secretRef:
                     name: keycloak-config-cli-gamevault
+                # GAMES_INBOX_OAUTH2_SECRET, the same way
+                # (games-inbox-client.sops.yaml).
+                - secretRef:
+                    name: keycloak-config-cli-games-inbox
               resources:
                 requests:
                   cpu: 100m

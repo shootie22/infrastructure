@@ -53,8 +53,10 @@ Covers and save files are kept.
 
 ## Adding games
 
-Put them in `/home/main/storage/gamevault/files` on the thinkcentre, owned by 1000, as archives (`.zip`,
-`.7z`, ...) where possible; GameVault finds new files by itself. The file name says what it is, e.g.
+Through the games inbox (https://games-inbox.yeetus.net, [../games-inbox](../games-inbox/README.md)): anyone
+in `games` uploads into their own inbox, and radu moves what's good into the library from there. Or put them
+in `/home/main/storage/gamevault/files` on the thinkcentre directly, owned by 1000 (`rsync -avP --partial`
+as `main` resumes too). Archives (`.zip`, `.7z`, ...) where possible; GameVault finds new files by itself. The file name says what it is, e.g.
 `Celeste (2018).zip` (the naming rules: https://gamevau.lt/docs/server-docs/structure). A folder works too,
 but every download of it is packed into `tmp/` first. Uploads from the web UI work up to Traefik's 30-minute
 limit per request.
