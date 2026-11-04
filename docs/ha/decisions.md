@@ -281,3 +281,9 @@ A CI check rejects a CNPG Cluster without `follows` or `home`, and a site-failov
 Steps, each its own change: (1) declare placement and check it in CI; (2) the checks of what users do; (3) the drift metric and alert; (4) primaries switch to their declared place, `home` included; (5) services with files go home in a quiet hour; (6) the rehearsal for all of it.
 
 Also on the table: placing the primary by measured traffic instead of a declared site (more moving parts, flaps with the traffic), synchronous replicas so a primary can move without a pause (rejected for Matrix on 2026-10-14 for its pauses on a site loss), and moving services home only by hand (the platform would stay worse after every incident until someone acts, which is what this entry is about).
+
+## 2026-11-04: A full CI is not a broken CI
+
+The CI canary used to page whenever its job wasn't picked up and passed within 25 minutes. On 2026-11-01 it paged for two hours while nothing was wrong: cubitrix's builds held every `linux-amd64` runner, which is normal on a day of many builds. Now a canary job that's still queued at the deadline passes if every cluster `linux-amd64` slot has its runner up and on a job started less than the runner's 3-hour timeout ago. It still fails if a slot is idle, missing or stuck while the job waits, which is what 2026-10-20 looked like, and if the job was picked up and failed or took too long. The canary reads the dispatcher's slot list and the job pods' runner logs to tell (read-only, in `ci-runner` and `ci-jobs`).
+
+Also on the table: a slot that takes only the canary's job (always reserves about 350m CPU and 1.25 GiB, and fuji is at 90% of its CPU requests), asking Gitea's API which runners are busy (needs an admin or owner token in the canary), and a longer limit (would still page on a long build day and page later on a real outage). The workstation's and the Mac's runners aren't looked at; the cluster slots alone show whether Gitea hands out jobs.

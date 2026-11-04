@@ -79,7 +79,8 @@ metadata:
   name: dispatcher
   namespace: ci-runner
 data:
-  # One line per node: node, its runs-on labels, the Docker sidecar's CPU and
+  # One line per node (canary-ci reads it too, kubernetes/services/canary):
+  # node, its runs-on labels, the Docker sidecar's CPU and
   # memory limit (the job runs there), and the filesystem holding the node's
   # container layers (/var/lib/rancher), which a job fills (dispatch.sh).
   # fuji gets 2 of its 4 cores, not 3: it's Matrix's home and Synapse runs on one thread (docs/matrix/
