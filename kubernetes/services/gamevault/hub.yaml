@@ -5,6 +5,7 @@ keep:
 - README.md
 - database.yaml
 - deployment.yaml
+- igdb.sops.yaml
 - ingress.yaml
 - namespace.yaml
 - networkpolicy.yaml
