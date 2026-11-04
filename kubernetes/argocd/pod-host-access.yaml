@@ -6,8 +6,9 @@
 # more, so that a pod that can change a Deployment (Hub's updater, the
 # fast-lane updaters) can't turn it into one that mounts the node's root:
 #
-# - host folders only under /srv/ha/<namespace> (and the two named
-#   otherwise: rybbit-clickhouse, send-uploads), /var/lib/pg-dumps, and
+# - host folders only under /srv/ha/<namespace> (and the three named
+#   otherwise: rybbit-clickhouse, send-uploads, and gamevault for the games
+#   inbox, which writes into GameVault's folder), /var/lib/pg-dumps, and
 #   /etc/localtime; never with ..
 # - the host network only in element-call, element-web, matrix and hytale
 # - no privileged containers, no host PID or IPC namespace
@@ -50,6 +51,7 @@ spec:
           v.hostPath.path.startsWith(variables.ha + '/') ||
           (request.namespace == 'rybbit' && v.hostPath.path == '/srv/ha/rybbit-clickhouse') ||
           (request.namespace == 'send' && v.hostPath.path == '/srv/ha/send-uploads') ||
+          (request.namespace == 'games-inbox' && v.hostPath.path == '/srv/ha/gamevault') ||
           v.hostPath.path == '/var/lib/pg-dumps' ||
           v.hostPath.path == '/etc/localtime')))
       message: Host folders only under /srv/ha/<namespace>, /var/lib/pg-dumps or /etc/localtime.
