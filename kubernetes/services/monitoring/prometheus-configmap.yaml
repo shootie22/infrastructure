@@ -1168,7 +1168,7 @@ data:
               page: "true"
             annotations:
               summary: No CI run has been picked up and passed for 2 hours
-              description: "A pushed commit's workflow should be taken by a runner and pass within 25 minutes. `kubectl -n canary logs job/<last canary-ci job>`, and the dispatcher's log (`kubectl -n ci-runner logs deploy/dispatcher`): runners giving up on Gitea (\"fetching a task timed out\") mean Gitea is slow."
+              description: "A pushed commit's workflow should be taken by a runner and pass within 25 minutes, or still be queued with every cluster linux-amd64 slot busy (CI full, not broken). The last canary-ci job's log says which slot was idle, missing or stuck: `kubectl -n canary logs job/<last canary-ci job>`, and the dispatcher's log (`kubectl -n ci-runner logs deploy/dispatcher`): runners giving up on Gitea (\"fetching a task timed out\") mean Gitea is slow."
           - alert: ElementWebBroken
             expr: time() - kube_cronjob_status_last_successful_time{namespace="element-web", cronjob="element-web-check"} > 1800
             for: 1m

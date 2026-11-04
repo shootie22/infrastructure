@@ -8,6 +8,9 @@
 # - canary-ci: push a commit whose workflow has to be picked up by a runner
 #   and pass, every 15 minutes. Allowed 25 minutes, since a runner can be
 #   busy with a long build; CanaryCIFailing after 2 hours without a pass.
+#   Still queued then, with every cluster linux-amd64 slot busy on a job,
+#   counts as a pass: CI is full, which is normal on a day of many builds
+#   (on 2026-11-01 cubitrix's builds held every runner for over two hours).
 #
 # Each push is a commit of its own on its own branch, force-pushed, so the
 # repository doesn't grow. The workflow comes with the commit. The token is
@@ -77,6 +80,44 @@ data:
       sleep 15
     done
     echo "no passing run for $sha within $(took $t0) s (last seen: ${run:-none})"
+
+    # Still queued: every runner may just be busy with other builds, which
+    # is normal. That passes if each of the cluster's linux-amd64 slots (the
+    # dispatcher's, ci-runner) has a runner up and on a task it started less
+    # than the runner's 3h timeout ago. An idle, missing or stuck slot while
+    # this job waits means jobs aren't handed out (2026-10-20). A slot is
+    # gone for a few seconds between two jobs, so it's looked at three times.
+    busy() {
+      local slots pod running started now
+      slots=$(kubectl -n ci-runner get configmap dispatcher -o jsonpath='{.data.slots}' |
+        awk '$2 ~ /(^|,)linux-amd64:/ { print "ci-" $1 }') || return 1
+      [ -n "$slots" ] || { echo "no linux-amd64 slots in the dispatcher's ConfigMap"; return 1; }
+      now=$(date +%s)
+      for pod in $slots; do
+        running=$(kubectl -n ci-jobs get pod "$pod" --ignore-not-found \
+          -o jsonpath='{.status.containerStatuses[?(@.name=="runner")].state.running.startedAt}') || return 1
+        [ -n "$running" ] || { echo "$pod: no runner running"; return 1; }
+        started=$(kubectl -n ci-jobs logs "$pod" -c runner |
+          sed -n 's/.*time="\([^"]*\)".*msg="task started".*/\1/p' | tail -n 1) || return 1
+        [ -n "$started" ] || { echo "$pod: idle"; return 1; }
+        started=$(jq -rn --arg t "$started" '$t | fromdateiso8601') || return 1
+        [ $(( now - started )) -lt $(( 3 * 3600 + 600 )) ] ||
+          { echo "$pod: still on a task it started $(( (now - started) / 60 )) min ago, past the runner's timeout"; return 1; }
+        echo "$pod: on a task for $(( (now - started) / 60 )) min"
+      done
+    }
+    status=$(echo "${run:-}" | jq -r '.status // empty' 2>/dev/null) || status=
+    if [ "$status" = queued ] || [ "$status" = waiting ]; then
+      for try in 1 2 3; do
+        if out=$(busy 2>&1); then
+          echo "$out"
+          echo "every linux-amd64 slot is busy: CI is full, not broken"
+          exit 0
+        fi
+        [ "$try" = 3 ] || sleep 15
+      done
+      echo "$out"
+    fi
     exit 1
 ---
 apiVersion: batch/v1
@@ -142,10 +183,11 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 0
-      activeDeadlineSeconds: 1620
+      # 25 minutes for the run, then a minute or so looking at the slots.
+      activeDeadlineSeconds: 1700
       template:
         spec:
-          automountServiceAccountToken: false
+          serviceAccountName: canary-ci
           enableServiceLinks: false
           restartPolicy: Never
           securityContext:
@@ -176,3 +218,64 @@ spec:
               configMap: {name: canary}
             - name: tmp
               emptyDir: {sizeLimit: 32Mi}
+---
+# canary-ci looks at the CI slots when its run is still queued: the
+# dispatcher's slot list, and each job pod's runner state and log. Nothing
+# else, and nothing it can change.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: canary-ci
+  namespace: canary
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: canary-ci
+  namespace: ci-runner
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["dispatcher"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: canary-ci
+  namespace: ci-runner
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: canary-ci
+subjects:
+  - kind: ServiceAccount
+    name: canary-ci
+    namespace: canary
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: canary-ci
+  namespace: ci-jobs
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: canary-ci
+  namespace: ci-jobs
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: canary-ci
+subjects:
+  - kind: ServiceAccount
+    name: canary-ci
+    namespace: canary
