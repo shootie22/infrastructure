@@ -40,7 +40,7 @@ spec:
         # GameVault doesn't make its folders itself (the image has them in
         # its own /, not here).
         - name: folders
-          image: docker.io/phalcode/gamevault-backend:17.1.0@sha256:87999b98d686b3297ddd7abde51f42dd2fa30b987f0cf050a42403a398711199
+          image: docker.io/phalcode/gamevault-backend:17.2.0@sha256:a2d4fe2cb4bc6cc0cd6badb57162692b108a25a4dd7ac839ddeadfd3454ecf48
           command: [mkdir, -p, /data/config, /data/files, /data/media, /data/savefiles, /data/plugins, /data/logs, /data/tmp]
           securityContext: &locked
             allowPrivilegeEscalation: false
@@ -54,7 +54,7 @@ spec:
             limits: {memory: 64Mi}
       containers:
         - name: gamevault
-          image: docker.io/phalcode/gamevault-backend:17.1.0@sha256:87999b98d686b3297ddd7abde51f42dd2fa30b987f0cf050a42403a398711199
+          image: docker.io/phalcode/gamevault-backend:17.2.0@sha256:a2d4fe2cb4bc6cc0cd6badb57162692b108a25a4dd7ac839ddeadfd3454ecf48
           envFrom:
             - configMapRef:
                 name: gamevault-env
@@ -144,7 +144,7 @@ data:
   # alone it picks the newest compatible release, or "unstable"; pinned to
   # the server's version instead. Renovate moves both together.
   # renovate: datasource=github-releases depName=Phalcode/gamevault-frontend
-  WEB_UI_VERSION: "17.1.0"
+  WEB_UI_VERSION: "17.2.0"
   # Accounts come only from Keycloak: no passwords, no sign-up form, no API
   # keys. The client's gate flow keeps out everyone not in the games group,
   # so accounts don't wait to be activated.
