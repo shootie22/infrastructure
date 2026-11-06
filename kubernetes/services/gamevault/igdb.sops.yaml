@@ -8,7 +8,7 @@ spec:
         - name: ENC[AES256_GCM,data:atrwlLnzv2lrFGOZ8Iw=,iv:HgT04WdXzwLomniy1swT/kcfvafVpA0K1q0DwNA4cOk=,tag:P7v0roHOIK3yLzrmQodr3Q==,type:str]
           stringData:
             CLIENT_ID: ENC[AES256_GCM,data:LbtVOacSaFFtzFlHwjf10IAeNOSwF5H+DAd7Mk3F,iv:8tDCqPB3YcfEdyDsJMMrImTMBUvRqICv3p8AVErRkeU=,tag:8rs6FKGpMj+hbQGaWt+fDw==,type:str]
-            CLIENT_SECRET: ENC[AES256_GCM,data:ME+gy0CN4I4aJEiVPi1EaeyN+xf/mqb0bOkPQOjU,iv:SLRxbFL9J8akGj1CVumRyID+uGHHmS/9Rta6l2gaBeI=,tag:t+yfQtdUcb+LBtm0VQ0qwQ==,type:str]
+            CLIENT_SECRET: ENC[AES256_GCM,data:VcQ8LWK8qqokcKSQtMuisIozc+oe+W2txeYCfGTs,iv:n2RwV5qu0+G1DzD9M+1EFVkX7ouLwoLYK2Pt9SigrOw=,tag:IUHGZ2EF07gnuYdqniO9cQ==,type:str]
 sops:
     age:
         - enc: |
@@ -30,6 +30,6 @@ sops:
             -----END AGE ENCRYPTED FILE-----
           recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
     encrypted_suffix: Templates
-    lastmodified: "2026-11-04T22:56:25Z"
-    mac: ENC[AES256_GCM,data:Bxz/G0ex6pZ/iPrHK5uL8GcDqiz0XPmurIU8J9w7aLra9ttqTzL2ksJbCHXdW0rF4lpPAKjgXcTJmi1Nj0vzRfLcAyGI03SRzDu6/q8T6euBxypBqlv++q1yEbYciLVcckqy0wn+XaCAH0xBVHzoZUnybAQapwl9275qpKLVIqQ=,iv:Hj/fv9CkmzCKcmgSujfj3hGW8N2I1mDzOnZw02Wde1w=,tag:GXBO0ZsCD36ri87A4hMVpA==,type:str]
+    lastmodified: "2026-11-06T12:43:16Z"
+    mac: ENC[AES256_GCM,data:bPjbMsaSvh2Vp8cXnf5LfTaXb9+7q//r5e8TGIWXi5+mngsLxAZDFdp/B3WOgxou1hd5PuT3BYVv8mTdImsMFPWv0nTyI23GYS322tpWI7AmgV+ddznEepQYmeCd4m6khjhV38hrXfHJBkAcctW9OZ7vmCeusY3nDS0eZBYaF4A=,iv:efQEaht5u70+G35ZMSZfHPUUsoYVdxdP+/1+PX66860=,tag:3cUDu7Y7ME1MYAlnaiJC/g==,type:str]
     version: 3.13.3
