@@ -1,0 +1,89 @@
+# The new GameVault's server (radu/gamevault, crates/gamevault-server). It
+# stores what the desktop app sends, encrypted, and can't read any of it: the
+# games, saves and screenshots as blobs in /srv/ha/games, everything else as
+# records in Postgres (database.yaml). One copy, on whichever of the
+# thinkcentre and fuji holds the label; the other has a copy of the folder and
+# takes over when this site is gone (dotfiles modules/nixos/site-failover).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: games
+  namespace: games
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: games
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: games
+    spec:
+      automountServiceAccountToken: false
+      nodeSelector:
+        ha.radunenu.com/games: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      # 1000, the owner of the folder on the disk (README.md).
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: server
+          # Fast lane (docs/updates.md) until the first release: CI publishes
+          # :main only after the tests and a smoke test pass, and updater.yaml
+          # restarts this when it changes.
+          image: git.radunenu.com/radu/gamevault-server:main
+          imagePullPolicy: Always
+          env:
+            - {name: GV_LISTEN, value: "0.0.0.0:8080"}
+            - {name: GV_DATA_DIR, value: /data}
+            - {name: GV_OIDC_ISSUER, value: "https://auth.yeetus.net/realms/network-yeetus"}
+            # The audience and the role a person needs, from the `games`
+            # client in keycloak/realms.yaml.
+            - {name: GV_OIDC_AUDIENCE, value: games}
+            - {name: GV_OIDC_ROLE, value: "games:access"}
+            - {name: GV_ADMIN_USERNAME, value: radu}
+            # What DPoP proofs name; the same address the old GameVault has,
+            # which only this server's paths go to (ingress.yaml).
+            - {name: GV_PUBLIC_URL, value: "https://games.yeetus.net"}
+            - name: GV_DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: games-pg-app, key: uri}
+            - {name: RUST_LOG, value: info}
+          ports:
+            - {name: http, containerPort: 8080}
+          # Up to 2.5 minutes to start: it waits for the database, which may
+          # be switching primaries, and fetches Keycloak's keys.
+          startupProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 30
+            failureThreshold: 4
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - {name: data, mountPath: /data}
+      volumes:
+        - name: data
+          hostPath:
+            path: /srv/ha/games
+            type: Directory
