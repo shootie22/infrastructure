@@ -1,5 +1,5 @@
 # Only the new server's own paths on games.yeetus.net: /v1 (the API and the
-# websocket at /v1/events) and /healthz. Everything else still goes to the old
+# websocket at /v1/events), /healthz and /download (the app's download page). Everything else still goes to the old
 # GameVault (../gamevault/ingress.yaml) until the cutover, so the desktop app
 # can be tried at the real address without a new DNS name. Traefik picks the
 # longest matching path, so these win over the old one's /.
@@ -27,4 +27,12 @@ spec:
             backend: {service: {name: games, port: {number: 80}}}
           - path: /healthz
             pathType: Exact
+            backend: {service: {name: games, port: {number: 80}}}
+          # Exact, plus the page's fonts under /download/: a Prefix /download would also
+          # take /downloads, which is the old GameVault's downloads page.
+          - path: /download
+            pathType: Exact
+            backend: {service: {name: games, port: {number: 80}}}
+          - path: /download/
+            pathType: Prefix
             backend: {service: {name: games, port: {number: 80}}}
