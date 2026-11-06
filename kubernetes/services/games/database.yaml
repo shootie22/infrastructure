@@ -1,0 +1,84 @@
+# The new GameVault's Postgres: the membership log, the records (all encrypted
+# by the clients) and the upload bookkeeping. The games, saves and screenshots
+# are blobs on disk (deployment.yaml). One instance in each site.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: games-pg
+  namespace: games
+  annotations:
+    # The primary belongs where the server runs (docs/ha/decisions.md,
+    # 2026-10-21); site-failover switches it back there by itself.
+    placement.radunenu.com/follows: games
+spec:
+  instances: 2
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+  # The hourly dump reads the replica; without this the primary vacuums away
+  # rows it's still reading (see joplin/database.yaml).
+  postgresql:
+    parameters:
+      hot_standby_feedback: "on"
+  bootstrap:
+    initdb:
+      database: games
+      owner: games
+  storage:
+    size: 5Gi
+    storageClass: local-path
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: required
+    topologyKey: topology.kubernetes.io/zone
+    nodeSelector:
+      db: "true"
+  probes:
+    liveness:
+      isolationCheck:
+        enabled: true
+---
+# Hourly dump into fuji's Borg folder (#32), as for the others.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: games-pg-dump
+  namespace: games
+spec:
+  schedule: "40 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          nodeSelector:
+            kubernetes.io/hostname: fuji
+          containers:
+            - name: dump
+              image: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+              command: ["/bin/sh", "-ec"]
+              args:
+                - |
+                  # A new pod is turned away for its first seconds, until the network
+                  # policy knows its address (kube-router): wait for the database first.
+                  for i in $(seq 1 30); do pg_isready -q -h games-pg-ro && break; sleep 2; done
+                  host=games-pg-ro
+                  pg_isready -q -h $host || host=games-pg-r
+                  pg_dump -h $host -U games -d games -Fc -f /backup/games.dump.tmp
+                  mv /backup/games.dump.tmp /backup/games.dump
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef: {name: games-pg-app, key: password}
+              securityContext:
+                allowPrivilegeEscalation: false
+              volumeMounts:
+                - {name: backup, mountPath: /backup}
+          volumes:
+            - name: backup
+              hostPath:
+                path: /var/lib/pg-dumps
+                type: Directory
