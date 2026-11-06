@@ -1,0 +1,112 @@
+# Fast lane: every 5 minutes, compare the registry's :main digest with what the
+# server runs and restart it only if it moved. The app reconnects by itself.
+# Run by hand: kubectl -n games create job --from=cronjob/games-updater manual-1
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: games-updater
+  namespace: games
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: games-updater
+  namespace: games
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["games"]
+    verbs: ["get", "patch"]
+  # rollout status watches the ReplicaSets.
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  # It lists and watches the Deployment too; a list can't be limited to one
+  # name. Without it the job fails after every successful restart.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: games-updater
+  namespace: games
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: games-updater
+subjects:
+  - kind: ServiceAccount
+    name: games-updater
+    namespace: games
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: games-updater
+  namespace: games
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 240
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 600
+      template:
+        spec:
+          serviceAccountName: games-updater
+          restartPolicy: Never
+          containers:
+            - name: updater
+              # Keep the digest pinned; Renovate updates it.
+              image: docker.io/alpine/k8s:1.35.9@sha256:b9cb6db0091a2327c0a56ecda69d37fa830c7a96ea669e7382b3ee778aa07a24
+              command: ["/bin/sh", "-euc"]
+              args:
+                - |
+                  repo=radu/gamevault-server
+                  tag=main
+                  token=$(curl -fsS "https://git.radunenu.com/v2/token?service=container_registry&scope=repository:$repo:pull" | jq -r .token)
+                  latest=$(curl -fsSI \
+                    -H "Authorization: Bearer $token" \
+                    -H "Accept: application/vnd.oci.image.index.v1+json" \
+                    -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json" \
+                    -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+                    -H "Accept: application/vnd.oci.image.manifest.v1+json" \
+                    "https://git.radunenu.com/v2/$repo/manifests/$tag" \
+                    | tr -d '\r' | awk -F': ' 'tolower($1) == "docker-content-digest" { print $2 }')
+                  [ -n "$latest" ] || { echo "no digest from registry"; exit 1; }
+
+                  running=$(kubectl get pods -l app.kubernetes.io/name=games \
+                    -o jsonpath='{range .items[*]}{.status.containerStatuses[0].imageID}{"\n"}{end}' \
+                    | sed -n 's/.*@//p' | sort -u)
+                  echo "registry $tag: $latest"
+                  echo "running: $(echo $running)"
+
+                  if [ -z "$running" ]; then
+                    echo "no running pod, nothing to compare"
+                    exit 0
+                  fi
+                  if [ "$running" = "$latest" ]; then
+                    echo "up to date"
+                    exit 0
+                  fi
+                  echo "new build, restarting"
+                  kubectl rollout restart deployment/games
+                  kubectl rollout status deployment/games --timeout=5m
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
