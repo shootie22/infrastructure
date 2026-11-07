@@ -31,7 +31,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: caddy
-          image: caddy:2.11-alpine@sha256:70b3180738b46cd88e49b300d790ae448a0aca3f58edef0f000bb57d619a9ab3
+          image: caddy:2.11-alpine@sha256:78bd35025c7ba85961dd149ae670315129954e77abe2383ac47c89106b35ade9
           imagePullPolicy: IfNotPresent
           command: [/bin/sh, -ec]
           args:
