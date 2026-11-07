@@ -39,7 +39,7 @@ spec:
           # Fast lane (docs/updates.md) until the first release: CI publishes
           # :main only after the tests and a smoke test pass, and updater.yaml
           # restarts this when it changes.
-          image: git.radunenu.com/radu/gamevault-server:main
+          image: git.radunenu.com/radu/gamevault-server:main@sha256:1cf34aae7291c4a95cb8b22efb72eb71b85cc1b48a997c643332f314d71dde74
           imagePullPolicy: Always
           env:
             - {name: GV_LISTEN, value: "0.0.0.0:8080"}
