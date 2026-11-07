@@ -500,16 +500,21 @@ data:
       # gate as GameVault, so the games group is what lets someone in.
       - clientId: games
         name: Games
-        description: GameVault desktop app
+        description: GameVault desktop app and web view
         enabled: true
         publicClient: true
         standardFlowEnabled: true
         directAccessGrantsEnabled: false
-        redirectUris: ["http://127.0.0.1/*"]
+        # The app signs in through a loopback address; the web view at
+        # games.yeetus.net comes back to its own page, and calls the token
+        # endpoint from it (so the origin needs CORS).
+        redirectUris: ["http://127.0.0.1/*", "https://games.yeetus.net/*"]
+        webOrigins: ["https://games.yeetus.net"]
         attributes:
           pkce.code.challenge.method: S256
           oauth2.device.authorization.grant.enabled: "true"
           dpop.bound.access.tokens: "true"
+          post.logout.redirect.uris: "https://games.yeetus.net/*"
         protocolMappers:
           - name: audience
             protocol: openid-connect
