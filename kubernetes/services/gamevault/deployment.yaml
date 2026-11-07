@@ -9,7 +9,9 @@ metadata:
   name: gamevault
   namespace: gamevault
 spec:
-  replicas: 1
+  # Off since the cutover to the new GameVault (kubernetes/services/games): its
+  # folder and database stay for a few weeks, in case anything is missing.
+  replicas: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: gamevault
