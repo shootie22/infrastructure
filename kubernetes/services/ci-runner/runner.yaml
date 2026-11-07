@@ -224,7 +224,7 @@ data:
         # instead, sets up the devices the VM's /dev lacks, mounts the disk,
         # then hands over to the rootless user for good.
         - name: docker
-          image: docker.io/library/docker:29.9.3-dind-rootless@sha256:87e10120f2f9dd99ff78f30ff1e27a86b96ed1371e9bb50be7e96bfb00fd69b4
+          image: docker.io/library/docker:29.9.3-dind-rootless@sha256:e3d0fa70055956693134873845b743bbe35b5199c68a52347032ae3e5dbac9a0
           restartPolicy: Always
           command:
             - sh

@@ -120,7 +120,7 @@ spec:
             - {name: config, mountPath: /etc/livekit/livekit.yaml, subPath: livekit.yaml, readOnly: true}
             - {name: keys, mountPath: /keys, readOnly: true}
         - name: router
-          image: docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
+          image: docker.io/library/nginx:1.31-alpine@sha256:713fc2ebfd92e8217db451477182ee91944b123d2b1ee9fd5a8c6e91ca6c3a11
           command: [/bin/sh, -c, "trap 'exit 0' TERM; while :; do sleep 3600 & wait $!; done"]
           env:
             - {name: ROLE, value: primary}
@@ -214,7 +214,7 @@ spec:
             requests: {cpu: 50m, memory: 64Mi}
             limits: {memory: 512Mi}
         - name: router
-          image: docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
+          image: docker.io/library/nginx:1.31-alpine@sha256:713fc2ebfd92e8217db451477182ee91944b123d2b1ee9fd5a8c6e91ca6c3a11
           command: [/bin/sh, -c, "trap 'exit 0' TERM; while :; do sleep 3600 & wait $!; done"]
           readinessProbe:
             exec: {command: [/bin/sh, /etc/livekit/ready.sh]}
