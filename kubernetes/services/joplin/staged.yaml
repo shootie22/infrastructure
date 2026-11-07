@@ -40,7 +40,7 @@ spec:
             - {name: saml-sp, mountPath: /sp, readOnly: true}
       containers:
         - name: joplin
-          image: joplin/server:3.7.3@sha256:d951ce50b6d3d542393ebc4d08bd62d9a4fb0a6f6827abb861726c83560ecf97
+          image: joplin/server:3.7.4@sha256:d5e57f8c999743a9fd4a2145503b9d43afe4862a5fcf0c0809170198ad58cbb5
           envFrom:
             - secretRef: {name: joplin-env}
           ports:
