@@ -40,7 +40,7 @@ spec:
         # RCON on, for the copies' save step (dotfiles site-failover). Set at
         # every start, so it holds whatever happens to server.properties.
         - name: rcon
-          image: alpine:3.24.3@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a
+          image: alpine:3.24.4@sha256:93b41ef40b1677fce8fcc64ff4af09daddfacf5040afde618bc46c1e2d1cc7d4
           command: [/bin/sh, -ec]
           args:
             - |
@@ -132,7 +132,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: fix-permissions
-          image: alpine:3.24.3@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a
+          image: alpine:3.24.4@sha256:93b41ef40b1677fce8fcc64ff4af09daddfacf5040afde618bc46c1e2d1cc7d4
           command:
             - sh
             - -c
