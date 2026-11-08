@@ -12,6 +12,7 @@ metadata:
     # site-failover switches it back there by itself.
     placement.radunenu.com/home: ro
 spec:
+  priorityClassName: platform-critical
   instances: 2
   imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
   # The hourly dump reads the replica. Without this the primary vacuums away
@@ -25,6 +26,8 @@ spec:
     initdb:
       database: grafana
       owner: grafana
+  resources:
+    requests: {cpu: 25m, memory: 192Mi}
   storage:
     size: 1Gi
     storageClass: local-path
