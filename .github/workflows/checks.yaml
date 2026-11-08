@@ -42,6 +42,8 @@ jobs:
         run: python3 scripts/check-config-hash
       - name: Every Job is an Argo hook Argo can make again
         run: python3 scripts/check-jobs
+      - name: Every workload has a priority class and memory requests
+        run: python3 scripts/check-resources
       - name: The outage page's ConfigMap matches page.html
         run: python3 kubernetes/argocd/outage-page/build.py --check
 

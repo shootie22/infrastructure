@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+"""Every workload says how important it is and how much memory it needs.
+
+A node under memory pressure evicts the pods that use more than they asked
+for first, lowest priority first (dotfiles modules/nixos/node-budget.nix),
+and a full node makes room for a pending pod by evicting ones of lower
+priority. Both only protect the services that matter if every pod carries
+a PriorityClass and a memory request close to what it really uses
+(kubernetes/argocd/priority-classes.yaml has the tiers).
+
+So every pod this repo makes (Deployments, StatefulSets, DaemonSets, Jobs,
+CronJobs, CNPG Clusters, and the Helm charts Argo CD installs) needs
+  - priorityClassName, one of the classes defined here or a system- one
+  - resources.requests.memory on each container and each sidecar (an init
+    container with restartPolicy: Always), since those run the whole time,
+    and no more than its memory limit; plain init containers run before the
+    others and are left alone
+For a Helm chart the values are free-form, so it only checks that they set a
+priority class and some memory request; a new component in a chart needs a
+look by hand. A chart with no setting for a priority class says so with the
+annotation radunenu.com/priority-class naming the default class, which is
+what its pods get. Argo CD's own Kustomization (kubernetes/bootstrap/argocd)
+needs both in each patch for a named Deployment or StatefulSet.
+
+--list prints every pod template with its class and memory requests.
+"""
+
+import pathlib
+import sys
+
+import yaml
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent / "kubernetes"
+SYSTEM = {"system-node-critical", "system-cluster-critical"}
+POD_KINDS = {"Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Job", "CronJob", "Pod"}
+
+
+def pod_spec(doc):
+    kind, spec = doc["kind"], doc.get("spec") or {}
+    if kind == "Pod":
+        return spec
+    if kind == "CronJob":
+        spec = (spec.get("jobTemplate") or {}).get("spec") or {}
+    return ((spec.get("template") or {}).get("spec")) or {}
+
+
+def find_keys(node, key):
+    """Every value stored under `key`, anywhere in a nested structure."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if k == key:
+                yield v
+            yield from find_keys(v, key)
+    elif isinstance(node, list):
+        for v in node:
+            yield from find_keys(v, key)
+
+
+def memory_request(resources):
+    return ((resources or {}).get("requests") or {}).get("memory")
+
+
+UNITS = {"Ki": 2**10, "Mi": 2**20, "Gi": 2**30, "Ti": 2**40, "k": 10**3, "M": 10**6, "G": 10**9, "": 1}
+
+
+def size(q):
+    num = str(q).rstrip("KiMGTk")
+    return float(num) * UNITS[str(q)[len(num):]]
+
+
+def over_limit(where, name, resources):
+    """A request above its limit, which the API server turns away."""
+    req, lim = memory_request(resources), ((resources or {}).get("limits") or {}).get("memory")
+    if req and lim and size(req) > size(lim):
+        errors.append(f"{where}: {name} requests {req} of memory, more than its limit {lim}")
+
+
+docs = []
+for f in sorted(ROOT.rglob("*.yaml")):
+    if f.name == "hub.yaml" or f.name.endswith(".sops.yaml"):
+        continue
+    for doc in yaml.safe_load_all(f.read_text()):
+        if isinstance(doc, dict) and doc.get("kind"):
+            docs.append((f.relative_to(ROOT.parent), doc))
+
+classes, default = set(SYSTEM), None
+for _, doc in docs:
+    if doc["kind"] == "PriorityClass":
+        classes.add(doc["metadata"]["name"])
+        if doc.get("globalDefault"):
+            default = doc["metadata"]["name"]
+
+errors, rows = [], []
+
+
+def check_class(where, name):
+    if not name:
+        errors.append(f"{where}: no priorityClassName")
+    elif name not in classes:
+        errors.append(f"{where}: priorityClassName {name!r} isn't defined (one of {sorted(classes)})")
+
+
+for f, doc in docs:
+    kind, meta = doc["kind"], doc.get("metadata") or {}
+    where = f"{f}: {kind} {meta.get('namespace', '-')}/{meta.get('name')}"
+
+    if kind in POD_KINDS:
+        spec = pod_spec(doc)
+        check_class(where, spec.get("priorityClassName"))
+        running = list(spec.get("containers") or []) + [
+            c for c in spec.get("initContainers") or [] if c.get("restartPolicy") == "Always"
+        ]
+        mem = []
+        for c in running:
+            m = memory_request(c.get("resources"))
+            mem.append(f"{c['name']}={m or '-'}")
+            if not m:
+                errors.append(f"{where}: container {c['name']} has no memory request")
+            over_limit(where, f"container {c['name']}", c.get("resources"))
+        rows.append((str(f), kind, meta.get("namespace", "-"), meta.get("name"), spec.get("priorityClassName") or "-", " ".join(mem)))
+
+    elif kind == "Cluster" and "postgresql.cnpg.io" in doc.get("apiVersion", ""):
+        spec = doc.get("spec") or {}
+        check_class(where, spec.get("priorityClassName"))
+        m = memory_request(spec.get("resources"))
+        if not m:
+            errors.append(f"{where}: no spec.resources.requests.memory")
+        over_limit(where, "postgres", spec.get("resources"))
+        rows.append((str(f), kind, meta.get("namespace", "-"), meta.get("name"), spec.get("priorityClassName") or "-", f"postgres={m or '-'}"))
+
+    elif kind in ("Application", "HelmChartConfig"):
+        if kind == "Application":
+            values = (((doc.get("spec") or {}).get("source") or {}).get("helm") or {}).get("valuesObject")
+            if values is None:
+                continue  # not a Helm chart (the root app)
+        else:
+            values = yaml.safe_load((doc.get("spec") or {}).get("valuesContent") or "") or {}
+        names = set(find_keys(values, "priorityClassName"))
+        for n in names:
+            check_class(where, n)
+        said = (meta.get("annotations") or {}).get("radunenu.com/priority-class")
+        if not names and not said:
+            errors.append(f"{where}: the chart's values set no priorityClassName")
+        elif not names and said != default:
+            errors.append(f"{where}: radunenu.com/priority-class is {said!r}, but a chart without a class gets {default!r}")
+        names = names or {f"{said} (default)"}
+        mem = [memory_request(r) for r in find_keys(values, "resources") if isinstance(r, dict)]
+        if not any(mem):
+            errors.append(f"{where}: the chart's values set no memory request")
+        rows.append((str(f), kind, meta.get("namespace", "-"), meta.get("name"), ",".join(sorted(names)) or "-", " ".join(m for m in mem if m)))
+
+    elif kind == "Kustomization":
+        for p in doc.get("patches") or []:
+            target = p.get("target") or {}
+            # Patches by label (Argo CD's node affinity) aren't one workload's.
+            if target.get("kind") not in POD_KINDS or not target.get("name"):
+                continue
+            text = p.get("patch") or ""
+            w = f"{f}: patch for {target['kind']} {target.get('name')}"
+            if "/priorityClassName" not in text:
+                errors.append(f"{w}: sets no priorityClassName")
+            if "memory" not in text:
+                errors.append(f"{w}: sets no memory request")
+            for n in yaml.safe_load(text) or []:
+                if isinstance(n, dict) and n.get("path", "").endswith("/priorityClassName"):
+                    check_class(w, n.get("value"))
+            rows.append((str(f), "patch", target["kind"], target.get("name"), "see patch", ""))
+
+if "--list" in sys.argv:
+    for r in rows:
+        print("\t".join(r))
+
+if errors:
+    print("\n".join(errors))
+    print(f"\nresources: {len(errors)} problems in {len(rows)} workloads")
+    sys.exit(1)
+print(f"resources: {len(rows)} workloads, each with a priority class and memory requests")
