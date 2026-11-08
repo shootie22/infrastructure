@@ -253,6 +253,7 @@ spec:
         # Both Prometheuses, for prometheus-local (services.yaml).
         monitoring.radunenu.com/prometheus: "true"
     spec:
+      priorityClassName: platform-critical
       serviceAccountName: prometheus
       nodeSelector:
         kubernetes.io/hostname: fuji
@@ -273,9 +274,9 @@ spec:
           resources:
             requests:
               cpu: 300m
-              memory: 1Gi
+              memory: 2560Mi
             limits:
-              memory: 2Gi
+              memory: 4Gi
           readinessProbe:
             httpGet:
               path: /-/ready
@@ -302,7 +303,7 @@ spec:
           resources:
             requests:
               cpu: 10m
-              memory: 32Mi
+              memory: 48Mi
             limits:
               memory: 64Mi
           volumeMounts:
@@ -396,6 +397,7 @@ spec:
       labels:
         app.kubernetes.io/name: kube-state-metrics
     spec:
+      priorityClassName: platform-critical
       serviceAccountName: kube-state-metrics
       # Any node; moves 30 s after its node stops answering.
       tolerations:
@@ -416,9 +418,9 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 64Mi
+              memory: 96Mi
             limits:
-              memory: 128Mi
+              memory: 192Mi
           readinessProbe:
             httpGet:
               path: /healthz
@@ -653,6 +655,7 @@ spec:
       labels:
         app.kubernetes.io/name: blackbox-exporter
     spec:
+      priorityClassName: platform-critical
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -679,9 +682,9 @@ spec:
           resources:
             requests:
               cpu: 10m
-              memory: 32Mi
-            limits:
               memory: 64Mi
+            limits:
+              memory: 128Mi
           readinessProbe:
             httpGet:
               path: /-/ready
