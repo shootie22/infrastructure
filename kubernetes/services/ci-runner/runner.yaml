@@ -81,8 +81,9 @@ metadata:
 data:
   # One line per node (canary-ci reads it too, kubernetes/services/canary):
   # node, its runs-on labels, the Docker sidecar's CPU and
-  # memory limit (the job runs there), and the filesystem holding the node's
-  # container layers (/var/lib/rancher), which a job fills (dispatch.sh).
+  # memory limit (the job runs there), the filesystem holding the node's
+  # container layers (/var/lib/rancher), which a job fills (dispatch.sh), and
+  # the sidecar's memory request if not 1Gi.
   # fuji gets 2 of its 4 cores, not 3: it's Matrix's home and Synapse runs on one thread (docs/matrix/
   # architecture.md, "Gitea runners on the same nodes"). mixi's 3584Mi (was
   # 2560Mi): cubitrix's arm64 release build needs one rustc of about 2.7 GB
@@ -93,10 +94,14 @@ data:
   # 3 GiB, plus Ollama's model, up to 4Gi, during a failover) that's more
   # than its 7.5 GiB: the rest goes to swap (24 GiB), and if memory still
   # runs out kubelet evicts the CI pod (priority -100) before any service.
+  # mixi's sidecar asks for 512Mi, so the pod asks for 1.5 GiB with Kata's
+  # overhead: 2 GiB didn't fit next to mixi's services once its pods got
+  # 4.6 GiB (dotfiles modules/nixos/node-budget.nix). A job that uses more
+  # is the first thing evicted there anyway.
   slots: |
     thinkcentre linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-thinkcentre:docker://docker.gitea.com/runner-images:ubuntu-latest 2 6Gi /home
     fuji linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-fuji:docker://docker.gitea.com/runner-images:ubuntu-latest 2 8Gi /
-    mixi linux-arm64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-arm64-mixi:docker://docker.gitea.com/runner-images:ubuntu-latest 3 3584Mi /
+    mixi linux-arm64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-arm64-mixi:docker://docker.gitea.com/runner-images:ubuntu-latest 3 3584Mi / 512Mi
 
   register.yaml: |
     runner:
@@ -129,7 +134,7 @@ data:
         sed -n 's/.*"value":\[[^,]*,"\([^"]*\)"\].*/\1/p'
     }
     while true; do
-      while read -r node labels cpu mem fs; do
+      while read -r node labels cpu mem fs memreq; do
         [ -n "$node" ] || continue
         name="ci-$node"
         # Empty only when the pod is really gone; an API error skips the node
@@ -174,7 +179,7 @@ data:
           rm -f /work/.runner; continue
         fi
         rm -f /work/.runner
-        sed -e "s/__NAME__/$name/g" -e "s/__NODE__/$node/g" -e "s/__CPU__/$cpu/g" -e "s/__MEM__/$mem/g" \
+        sed -e "s/__NAME__/$name/g" -e "s/__NODE__/$node/g" -e "s/__CPU__/$cpu/g" -e "s/__MEM__/$mem/g" -e "s/__MEMREQ__/${memreq:-1Gi}/g" \
           /etc/dispatcher/job-pod.yaml | $K -n $ns create -f - >/dev/null && echo "$name waiting for a job"
       done < /etc/dispatcher/slots
       sleep 10
@@ -250,7 +255,7 @@ data:
             periodSeconds: 2
             failureThreshold: 60
           resources:
-            requests: {cpu: 250m, memory: 1Gi}
+            requests: {cpu: 250m, memory: __MEMREQ__}
             limits: {cpu: "__CPU__", memory: __MEM__}
           volumeMounts:
             - {name: docker-run, mountPath: /run/user/1000}
@@ -339,8 +344,9 @@ spec:
       # The hash of the ConfigMaps it reads (scripts/check-config-hash), so
       # a change to the dispatcher's restarts it.
       annotations:
-        config-hash: "cb919890197d"
+        config-hash: "1f50acc5e60d"
     spec:
+      priorityClassName: background
       serviceAccountName: dispatcher
       enableServiceLinks: false
       hostAliases:
