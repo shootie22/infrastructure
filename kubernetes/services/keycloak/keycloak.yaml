@@ -21,6 +21,7 @@ spec:
       labels:
         app: keycloak
     spec:
+      priorityClassName: platform-critical
       automountServiceAccountToken: false
       # Keycloak exits when its database doesn't answer at startup, and each
       # exit doubles Kubernetes' restart backoff. After a failover the pod is
@@ -112,10 +113,11 @@ spec:
             - name: data
               mountPath: /opt/keycloak/data
           resources:
+            requests:
+              cpu: 200m
+              memory: 1792Mi
             limits:
               memory: 3Gi
-            requests:
-              memory: 1Gi
       volumes:
         - name: data
           emptyDir: {}
