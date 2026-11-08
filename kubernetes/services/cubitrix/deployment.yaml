@@ -18,6 +18,7 @@ spec:
       labels:
         app.kubernetes.io/name: cubitrix
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
@@ -48,9 +49,9 @@ spec:
           resources:
             requests:
               cpu: 5m
-              memory: 16Mi
+              memory: 48Mi
             limits:
-              memory: 64Mi
+              memory: 128Mi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -74,7 +75,7 @@ spec:
           resources:
             requests:
               cpu: 1m
-              memory: 8Mi
+              memory: 16Mi
             limits:
               memory: 32Mi
           securityContext:

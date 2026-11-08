@@ -23,6 +23,7 @@ spec:
       labels:
         app.kubernetes.io/name: glitchtip
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true

@@ -25,6 +25,7 @@ spec:
       labels:
         app.kubernetes.io/name: oauth2-proxy
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       # One per site (fuji, the thinkcentre).
       affinity:
@@ -112,7 +113,7 @@ spec:
           resources:
             requests:
               cpu: 5m
-              memory: 16Mi
+              memory: 32Mi
             limits:
               memory: 64Mi
           securityContext:

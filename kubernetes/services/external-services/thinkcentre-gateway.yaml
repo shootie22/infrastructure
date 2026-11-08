@@ -33,6 +33,7 @@ spec:
       annotations:
         config-hash: "801afc673151"
     spec:
+      priorityClassName: service
       # Any node; moves 30 s after its node stops answering.
       tolerations:
         - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
@@ -59,6 +60,9 @@ spec:
               mountPath: /data
             - name: runtime-config
               mountPath: /config
+          resources:
+            requests: {cpu: 5m, memory: 64Mi}
+            limits: {memory: 256Mi}
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
