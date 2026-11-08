@@ -12,6 +12,7 @@ spec:
       labels:
         app: headlamp-tailnet-proxy
     spec:
+      priorityClassName: service
       # Both API servers, one copy each (#149).
       affinity:
         nodeAffinity:
