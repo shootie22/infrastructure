@@ -150,6 +150,14 @@ data:
         { "action": "accept", "src": ["edge", "edge6"], "dst": ["mixi:9180", "mixi6:9180"] },
         { "action": "accept", "src": ["mixi", "mixi6"], "dst": ["edge:9180", "edge6:9180"] },
 
+        // The dotfiles build cache (Attic on the thinkcentre, dotfiles
+        // modules/nixos/build-cache.nix): GitHub Actions runners join as user
+        // "ci" (ephemeral) and may reach that port and nothing else; the edge
+        // downloads its system from it. The cluster nodes reach it through
+        // the rule at the top.
+        { "action": "accept", "src": ["ci@"], "dst": ["thinkcentre:8199", "thinkcentre6:8199"] },
+        { "action": "accept", "src": ["edge", "edge6"], "dst": ["thinkcentre:8199", "thinkcentre6:8199"] },
+
         // Tailnet DNS (split DNS for infra.radunenu.com, served on fuji and the
         // thinkcentre).
         { "action": "accept", "src": ["*"], "dst": ["fuji:53", "thinkcentre:53"] },
