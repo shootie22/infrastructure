@@ -19,6 +19,7 @@ spec:
       annotations:
         config-hash: "08f11660badd"
     spec:
+      priorityClassName: platform-critical
       # Runs on whichever of fuji and the thinkcentre holds the label; the
       # other has a copy of its database and keys and takes over when this
       # site is gone (dotfiles modules/nixos/site-failover).
