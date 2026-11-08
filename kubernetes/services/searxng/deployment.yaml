@@ -17,7 +17,7 @@ spec:
       labels:
         app.kubernetes.io/name: searxng
       annotations:
-        config-revision: "1"
+        config-hash: "2b6134b2578b"
     spec:
       # Searches leave from the home connection (Minima), next to steamhappy.
       # One copy per site, so either site can serve it alone (#150). Nothing

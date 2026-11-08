@@ -30,9 +30,9 @@ spec:
       app.kubernetes.io/name: grafana-standby
   template:
     metadata:
-      # Bump when its ConfigMaps change: it only reads them at start.
+      # The hash of what it reads (scripts/check-config-hash): a change to its ConfigMaps restarts it: it only reads them at start.
       annotations:
-        config-revision: "2"
+        config-hash: "4d496d642006"
       labels:
         app.kubernetes.io/name: grafana-standby
         monitoring.radunenu.com/grafana: "true"

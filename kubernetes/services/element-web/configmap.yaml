@@ -1,7 +1,7 @@
 # Element Web config: config.json for c.nuke.zip, config.chat.yeetus.net.json for
-# chat.yeetus.net (Element loads config.<hostname>.json first, #139). Bump
-# config-revision in deployment.yaml and edge.yaml
-# after editing so the pods pick it up (the image copies it at startup).
+# chat.yeetus.net (Element loads config.<hostname>.json first, #139). Run
+# scripts/check-config-hash --fix after editing so the pods pick it up (the image
+# copies it at startup).
 # "features" locks a labs flag for everyone (users cannot toggle it);
 # "setting_defaults" only changes the default, users can still toggle it.
 apiVersion: v1

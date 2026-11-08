@@ -23,7 +23,7 @@ spec:
       labels:
         app.kubernetes.io/name: element-web
       annotations:
-        config-revision: "4"
+        config-hash: "3d36fdbe10fc"
     spec:
       automountServiceAccountToken: false
       containers:

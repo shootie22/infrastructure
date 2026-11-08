@@ -1,8 +1,8 @@
 # What the on-call agent reads for each alert before any model sees it
 # (infra-hub internal/oncall/collect.go lists the collectors). The same
 # queries every time: the local model only has to read, and the report says
-# where each line came from. Bump config-revision in deployment.yaml after a
-# change.
+# where each line came from. Run scripts/check-config-hash --fix after a
+# change, so the agent restarts with it.
 #
 # queries are Go templates over the alert's labels, each already escaped
 # for a double-quoted string: use them only inside "...". {{.machine}} is the

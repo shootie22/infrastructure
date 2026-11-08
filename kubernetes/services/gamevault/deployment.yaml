@@ -20,8 +20,8 @@ spec:
   template:
     metadata:
       annotations:
-        # Bump when gamevault-env changes; it's read only at start.
-        config-revision: "3"
+        # The hash of what it reads (scripts/check-config-hash): a change to gamevault-env restarts it; it's read only at start.
+        config-hash: "8c5ca1c0c404"
       labels:
         app.kubernetes.io/name: gamevault
     spec:

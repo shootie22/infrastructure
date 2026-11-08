@@ -7,8 +7,8 @@
 # type Confidential), "Manage", "New Secret".
 #
 # The Deployment reads it as optional, so GameVault runs without it. After
-# merging, bump config-revision in gamevault/deployment.yaml in the same
-# change (or restart the Deployment), since it's read only at start.
+# writing it, run scripts/check-config-hash --fix in the same change, so GameVault
+# restarts with it (it's read only at start).
 set -euo pipefail
 
 repo_root=$(git rev-parse --show-toplevel)

@@ -17,8 +17,8 @@ The things it describes run elsewhere, in `legacy-web` and
 
 ## Changing the page
 
-Edit `index.html` in `site.yaml`, then bump `config-revision` in
-`deployment.yaml` so the pods restart and read it. The sample responses are
+Edit `index.html` in `site.yaml`, then run
+`scripts/check-config-hash --fix` so the pods restart and read it. The sample responses are
 real ones, cut down; the footer says when they were taken.
 
 ## First-time setup

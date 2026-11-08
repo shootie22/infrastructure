@@ -17,7 +17,7 @@ spec:
       labels:
         app: headscale
       annotations:
-        config-revision: "derp-1"
+        config-hash: "0168f380bced"
     spec:
       # Runs on whichever of fuji and the thinkcentre holds the label; the
       # other has a copy of its database and keys and takes over when this

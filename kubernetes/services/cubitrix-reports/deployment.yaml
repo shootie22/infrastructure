@@ -18,8 +18,8 @@ spec:
   template:
     metadata:
       annotations:
-        # Bump when setup.yaml changes; it's read only at start.
-        config-revision: "1"
+        # The hash of what it reads (scripts/check-config-hash): a change to setup.yaml restarts it; it's read only at start.
+        config-hash: "79e268d5a546"
       labels:
         app.kubernetes.io/name: glitchtip
     spec:

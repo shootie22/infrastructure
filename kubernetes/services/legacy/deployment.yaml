@@ -13,8 +13,8 @@ spec:
   template:
     metadata:
       annotations:
-        # Bump when site.yaml changes; Caddy only reads it at start.
-        config-revision: "1"
+        # The hash of what it reads (scripts/check-config-hash): a change to site.yaml restarts it; Caddy only reads it at start.
+        config-hash: "cd122cd92cef"
       labels:
         app.kubernetes.io/name: legacy
     spec:

@@ -208,8 +208,8 @@ spec:
       labels:
         app.kubernetes.io/name: status-api
       annotations:
-        # Bump when status-api.py changes.
-        config-revision: "3"
+        # The hash of what it reads (scripts/check-config-hash): a change to status-api.py restarts it.
+        config-hash: "15b09ef8d267"
     spec:
       automountServiceAccountToken: false
       affinity:
