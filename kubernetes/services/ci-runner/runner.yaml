@@ -336,8 +336,10 @@ spec:
   template:
     metadata:
       labels: {app: ci-dispatcher}
-      # Bump when the dispatcher ConfigMap changes.
-      annotations: {config: "8"}
+      # The hash of the ConfigMaps it reads (scripts/check-config-hash), so
+      # a change to the dispatcher's restarts it.
+      annotations:
+        config-hash: "cb919890197d"
     spec:
       serviceAccountName: dispatcher
       enableServiceLinks: false

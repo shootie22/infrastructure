@@ -31,7 +31,7 @@ spec:
         app: thinkcentre-http-relay
       # Caddy reads its config at start; bump this when the Caddyfile changes.
       annotations:
-        config-revision: "2"
+        config-hash: "801afc673151"
     spec:
       # Any node; moves 30 s after its node stops answering.
       tolerations:

@@ -15,7 +15,7 @@ spec:
       annotations:
         # Apache reads apache-config.yaml only when it starts: bump this
         # whenever that file changes.
-        config-revision: "2"
+        config-hash: "ef958409ad96"
     spec:
       # Runs on whichever of fuji and the thinkcentre holds the label; the
       # other has a copy and takes over when this site is gone (dotfiles

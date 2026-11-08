@@ -22,8 +22,8 @@ spec:
   template:
     metadata:
       annotations:
-        # Bump when copyparty-config changes; it's read only at start.
-        config-revision: "2"
+        # The hash of what it reads (scripts/check-config-hash): a change to copyparty-config restarts it; it's read only at start.
+        config-hash: "6148295e73d9"
       labels:
         app.kubernetes.io/name: copyparty
     spec:

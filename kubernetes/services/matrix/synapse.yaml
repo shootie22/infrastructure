@@ -145,7 +145,7 @@ spec:
       labels: {app: synapse}
       annotations:
         # Bump after changing the ConfigMap, so the pod picks it up.
-        config-revision: "6"
+        config-hash: "33b8d89b294a"
         # Prometheus scrapes it with its own job, synapse-yeetus
         # (monitoring/prometheus-configmap.yaml).
     spec:

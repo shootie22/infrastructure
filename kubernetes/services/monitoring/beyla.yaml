@@ -90,7 +90,7 @@ spec:
       annotations:
         monitoring.radunenu.com/scrape: "true"
         monitoring.radunenu.com/port: "9400"
-        config-revision: "1"
+        config-hash: "9e4efac32e47"
     spec:
       serviceAccountName: beyla
       # The node's own interfaces, where the packets are.

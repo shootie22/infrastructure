@@ -27,9 +27,9 @@ spec:
   template:
     metadata:
       annotations:
-        # Bump when collectors-configmap.yaml or oncall-env changes: both
+        # The hash of what it reads (scripts/check-config-hash): a change to collectors-configmap.yaml or oncall-env restarts it: both
         # are read only at start.
-        config-revision: "2"
+        config-hash: "11a15b33acb1"
       labels:
         app.kubernetes.io/name: oncall
     spec:

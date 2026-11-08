@@ -49,8 +49,8 @@ spec:
       labels:
         app.kubernetes.io/name: ollama-front
       annotations:
-        # Bump when default.conf changes.
-        config-revision: "1"
+        # The hash of what it reads (scripts/check-config-hash): a change to default.conf restarts it.
+        config-hash: "abf4222e5f0f"
     spec:
       automountServiceAccountToken: false
       # One per site.

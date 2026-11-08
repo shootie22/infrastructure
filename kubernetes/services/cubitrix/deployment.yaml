@@ -13,8 +13,8 @@ spec:
   template:
     metadata:
       annotations:
-        # Bump when site.yaml changes; both containers read it only at start.
-        config-revision: "1"
+        # The hash of what it reads (scripts/check-config-hash): a change to site.yaml restarts it; both containers read it only at start.
+        config-hash: "7aac2bb7c00f"
       labels:
         app.kubernetes.io/name: cubitrix
     spec:

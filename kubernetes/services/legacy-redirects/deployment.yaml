@@ -11,7 +11,7 @@ spec:
   template:
     metadata:
       annotations:
-        config-revision: "3"
+        config-hash: "7c044863508b"
       labels:
         app: legacy-redirects
     spec:

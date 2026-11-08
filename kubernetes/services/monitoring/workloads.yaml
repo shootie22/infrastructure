@@ -20,9 +20,9 @@ spec:
       app.kubernetes.io/name: grafana
   template:
     metadata:
-      # Bump when its ConfigMaps change: it only reads them at start.
+      # The hash of what it reads (scripts/check-config-hash): a change to its ConfigMaps restarts it: it only reads them at start.
       annotations:
-        config-revision: "2"
+        config-hash: "10243e41a1e8"
       labels:
         app.kubernetes.io/name: grafana
         monitoring.radunenu.com/grafana: "true"
@@ -505,9 +505,9 @@ spec:
       app.kubernetes.io/name: alloy
   template:
     metadata:
-      # Bump when its ConfigMaps change: it only reads them at start.
+      # The hash of what it reads (scripts/check-config-hash): a change to its ConfigMaps restarts it: it only reads them at start.
       annotations:
-        config-revision: "4"
+        config-hash: "4ba5a3f758bc"
       labels:
         app.kubernetes.io/name: alloy
     spec:
@@ -585,9 +585,9 @@ spec:
       app.kubernetes.io/name: alloy-events
   template:
     metadata:
-      # Bump when its ConfigMaps change: it only reads them at start.
+      # The hash of what it reads (scripts/check-config-hash): a change to its ConfigMaps restarts it: it only reads them at start.
       annotations:
-        config-revision: "2"
+        config-hash: "a495b27e4c8d"
       labels:
         app.kubernetes.io/name: alloy-events
     spec:

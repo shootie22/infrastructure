@@ -3,8 +3,8 @@
 # (.gitea/workflows/site.yml) and publishes the result to Gitea as the generic
 # package cubitrix-site. fetch.sh keeps a copy of it here, and Caddy serves it.
 #
-# After changing this file, bump config-revision in deployment.yaml: both
-# containers read it once at start.
+# After changing this file, run scripts/check-config-hash --fix: both containers
+# read it once at start.
 apiVersion: v1
 kind: ConfigMap
 metadata:
