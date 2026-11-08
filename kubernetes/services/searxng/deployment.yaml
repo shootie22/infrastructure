@@ -19,6 +19,7 @@ spec:
       annotations:
         config-hash: "2b6134b2578b"
     spec:
+      priorityClassName: service
       # Searches leave from the home connection (Minima), next to steamhappy.
       # One copy per site, so either site can serve it alone (#150). Nothing
       # on disk: the config is a ConfigMap and the limiter is off.
@@ -56,7 +57,7 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 128Mi
+              memory: 192Mi
             limits:
               memory: 512Mi
           securityContext:

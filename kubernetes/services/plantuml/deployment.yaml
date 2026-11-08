@@ -19,6 +19,7 @@ spec:
       labels:
         app: plantuml
     spec:
+      priorityClassName: service
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -51,7 +52,8 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
           resources:
+            requests:
+              cpu: 10m
+              memory: 768Mi
             limits:
               memory: 1536Mi
-            requests:
-              memory: 640Mi
