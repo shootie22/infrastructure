@@ -157,6 +157,14 @@ data:
         // the rule at the top.
         { "action": "accept", "src": ["ci@"], "dst": ["thinkcentre:8199", "thinkcentre6:8199"] },
         { "action": "accept", "src": ["edge", "edge6"], "dst": ["thinkcentre:8199", "thinkcentre6:8199"] },
+        // The edge's relay (derper --verify-clients) only relays for devices
+        // its own tailscaled knows, and that's only devices the ACL relates
+        // to the edge. The runners and the thinkcentre are both behind NAT
+        // and the thinkcentre's home relay is the edge, so without this the
+        // runners had no way to it at all (2026-11-08). The edge may open
+        // nothing on the runners but the discard port; they get nothing on
+        // the edge.
+        { "action": "accept", "src": ["edge", "edge6"], "dst": ["ci@:9"] },
 
         // Tailnet DNS (split DNS for infra.radunenu.com, served on fuji and the
         // thinkcentre).
