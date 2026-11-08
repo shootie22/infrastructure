@@ -27,6 +27,7 @@ spec:
         app.kubernetes.io/name: grafana
         monitoring.radunenu.com/grafana: "true"
     spec:
+      priorityClassName: service
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -122,10 +123,10 @@ spec:
                 name: grafana-auth
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
-            limits:
+              cpu: 50m
               memory: 512Mi
+            limits:
+              memory: 1Gi
           # Up to 10 minutes to start: after an upgrade Grafana migrates its
           # database first, and from the site without the primary every
           # statement crosses the WAN. The liveness probe killed it halfway.
@@ -343,6 +344,7 @@ spec:
         # Both Lokis, for loki-local (services.yaml).
         monitoring.radunenu.com/loki: "true"
     spec:
+      priorityClassName: service
       nodeSelector:
         kubernetes.io/hostname: fuji
       securityContext:
@@ -356,7 +358,7 @@ spec:
               containerPort: 3100
           resources:
             requests:
-              cpu: 200m
+              cpu: 50m
               memory: 512Mi
             limits:
               memory: 1Gi
