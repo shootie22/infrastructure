@@ -10,9 +10,13 @@
 # changed; Gitea reads CSS, fonts and images from disk as they are. Before the
 # files are there, Gitea still works, just without theme colours.
 #
-# A Job can't be edited, so its name ends in the start of the image's digest:
-# a new look is a new Job, and Argo prunes the old one. To run the same one
-# again after it failed, delete it and Argo makes it again.
+# An Argo hook, run after every sync of gitea once Gitea is healthy: Argo
+# deletes the last run first (BeforeHookCreation) and makes the Job again, so
+# a new image never meets the old Job. A Job can't be edited, and naming it
+# after the image's digest instead broke every gitea sync twice, when
+# Renovate moved the image and not the name (2026-11-03, 2026-11-05).
+# scripts/check-jobs keeps every Job in this repo a hook. To run it again by
+# hand, sync gitea in Argo.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -55,8 +59,11 @@ subjects:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: gitea-look-d5802de5
+  name: gitea-look
   namespace: gitea
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   backoffLimit: 2
   activeDeadlineSeconds: 900

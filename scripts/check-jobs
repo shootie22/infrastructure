@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+"""Every Job Argo deploys is an Argo hook that's made again on each sync.
+
+A Job can't be edited: when anything in it changes (Renovate moving its
+image, say), Argo can't apply it and the whole app stops syncing. gitea-look
+did that twice (2026-11-03, 2026-11-05) while its name was meant to change
+with its image. As a hook with hook-delete-policy BeforeHookCreation, Argo
+deletes the last run and makes it again, so there's nothing to keep in step.
+CronJobs are fine: their job template can be edited.
+"""
+
+import pathlib
+import sys
+
+import yaml
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent / "kubernetes"
+
+bad = []
+for f in sorted(ROOT.rglob("*.yaml")):
+    if f.name == "hub.yaml" or f.name.endswith(".sops.yaml"):
+        continue
+    for doc in yaml.safe_load_all(f.read_text()):
+        if not isinstance(doc, dict) or doc.get("kind") != "Job":
+            continue
+        ann = (doc.get("metadata") or {}).get("annotations") or {}
+        name = (doc.get("metadata") or {}).get("name", "?")
+        if "argocd.argoproj.io/hook" not in ann:
+            bad.append(f"{f.relative_to(ROOT.parent)}: Job {name} isn't an Argo hook (argocd.argoproj.io/hook)")
+        elif "BeforeHookCreation" not in ann.get("argocd.argoproj.io/hook-delete-policy", ""):
+            bad.append(f"{f.relative_to(ROOT.parent)}: Job {name} needs argocd.argoproj.io/hook-delete-policy: BeforeHookCreation")
+
+for b in bad:
+    print(b)
+print(f"{len(bad)} Job(s) Argo couldn't update" if bad else "every Job is an Argo hook")
+sys.exit(1 if bad else 0)
