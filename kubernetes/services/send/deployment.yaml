@@ -23,6 +23,7 @@ spec:
       labels:
         app.kubernetes.io/name: send
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       # Runs on whichever of fuji and the thinkcentre holds the label; the
       # other has a copy and takes over when this site is gone (dotfiles
@@ -95,7 +96,7 @@ spec:
           resources:
             requests:
               cpu: 20m
-              memory: 96Mi
+              memory: 160Mi
             limits:
               memory: 512Mi
           securityContext:

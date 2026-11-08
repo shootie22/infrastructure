@@ -23,6 +23,7 @@ spec:
       labels:
         app.kubernetes.io/name: mealie
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       nodeSelector:
         ha.radunenu.com/mealie: active
@@ -59,7 +60,7 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 256Mi
+              memory: 448Mi
             limits:
               memory: 1Gi
           securityContext:
