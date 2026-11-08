@@ -20,7 +20,7 @@ priority class and some memory request; a new component in a chart needs a
 look by hand. A chart with no setting for a priority class says so with the
 annotation radunenu.com/priority-class naming the default class, which is
 what its pods get. Argo CD's own Kustomization (kubernetes/bootstrap/argocd)
-needs both in each patch for a Deployment or StatefulSet.
+needs both in each patch for a named Deployment or StatefulSet.
 
 --list prints every pod template with its class and memory requests.
 """
@@ -152,7 +152,8 @@ for f, doc in docs:
     elif kind == "Kustomization":
         for p in doc.get("patches") or []:
             target = p.get("target") or {}
-            if target.get("kind") not in POD_KINDS:
+            # Patches by label (Argo CD's node affinity) aren't one workload's.
+            if target.get("kind") not in POD_KINDS or not target.get("name"):
                 continue
             text = p.get("patch") or ""
             w = f"{f}: patch for {target['kind']} {target.get('name')}"

@@ -14,6 +14,36 @@ namespace: argocd
 resources:
   - https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.2/manifests/install.yaml
 patches:
+  # Nowhere near mixi, whose 4.6 GiB for pods is full (and not the edge,
+  # which has 1.3 GiB): it ran six of these, 0.7 GiB.
+  - target: {kind: Deployment, labelSelector: app.kubernetes.io/part-of=argocd}
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: {name: any}
+      spec:
+        template:
+          spec:
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - {key: kubernetes.io/hostname, operator: NotIn, values: [mixi, edge]}
+  - target: {kind: StatefulSet, labelSelector: app.kubernetes.io/part-of=argocd}
+    patch: |-
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata: {name: any}
+      spec:
+        template:
+          spec:
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - {key: kubernetes.io/hostname, operator: NotIn, values: [mixi, edge]}
   # kubernetes/argocd/argocd-server-service.yaml has Argo CD's own copy, which
   # Argo CD keeps.
   - patch: |-
