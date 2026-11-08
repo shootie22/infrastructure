@@ -36,7 +36,7 @@ ports:
   protocol: TCP
 resources:
   cpu: 500m
-  memory: 5120Mi
+  memory: 5632Mi
   memoryLimit: 6144Mi
 secrets:
 - generate: true
