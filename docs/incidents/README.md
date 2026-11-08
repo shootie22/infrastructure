@@ -22,3 +22,6 @@ Every incident gets two plain sentences, here and at the top of its write-up: **
 - [2026-10-30: Gitea slow under a scraper on thousands of home IPs](2026-10-30-gitea-scraper-swarm.md).
   **What went wrong:** a scraper spread over about 6,500 residential IP addresses walked Gitea's most expensive pages for over an hour, on a thinkcentre already at full CPU with a CI build, so every page took seconds and some requests failed.
   **Fix:** Cloudflare challenges anonymous visitors on Gitea's expensive pages, on both names; next, Gitea itself keeps those pages for signed-in users and CI can't take all of the thinkcentre's CPU.
+- [2026-11-08: Headscale down twice, then its database broken](2026-11-08-headscale-down.md).
+  **What went wrong:** a change that restarted about 30 workloads at once made fuji's API server too slow for site-failover, which moved Headscale to the thinkcentre where it couldn't get any CPU, and on the way back it started on a database snapshot next to an old WAL file, which broke the database at both sites.
+  **Fix:** standby-copy now removes old WAL files before a snapshot lands and never copies a damaged database, and core services get a priority that lets them push out game servers and CI; next, site-failover tells a slow API from a lost one and big changes restart workloads in steps.
