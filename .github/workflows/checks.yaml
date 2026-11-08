@@ -6,6 +6,8 @@ name: Checks
 on:
   pull_request:
     branches: [main]
+    # labeled/unlabeled too: the many-restarts label changes the restart check.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches: [main]
 
@@ -28,6 +30,14 @@ jobs:
               -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
       - name: Every database declares where it belongs
         run: pip install pyyaml && python3 scripts/check-placement
+      # At most a few workloads restart per merge (#457).
+      - name: Workloads restarted by this change
+        if: github.event_name == 'pull_request'
+        env:
+          MANY_RESTARTS: ${{ contains(github.event.pull_request.labels.*.name, 'many-restarts') && '1' || '0' }}
+        run: |
+          git fetch -q --depth=50 origin "${{ github.base_ref }}"
+          python3 scripts/check-restarts "origin/${{ github.base_ref }}"
       - name: Pods carry the hash of the config they read
         run: python3 scripts/check-config-hash
       - name: Every Job is an Argo hook Argo can make again
