@@ -52,6 +52,7 @@ spec:
         # The hash of what it reads (scripts/check-config-hash): a change to default.conf restarts it.
         config-hash: "abf4222e5f0f"
     spec:
+      priorityClassName: background
       automountServiceAccountToken: false
       # One per site.
       affinity:
@@ -71,7 +72,7 @@ spec:
             tcpSocket: {port: http}
             periodSeconds: 5
           resources:
-            requests: {cpu: 10m, memory: 16Mi}
+            requests: {cpu: 10m, memory: 24Mi}
             limits: {memory: 64Mi}
           volumeMounts:
             - {name: config, mountPath: /etc/nginx/conf.d, readOnly: true}
