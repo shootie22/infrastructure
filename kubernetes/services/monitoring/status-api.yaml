@@ -211,6 +211,7 @@ spec:
         # The hash of what it reads (scripts/check-config-hash): a change to status-api.py restarts it.
         config-hash: "15b09ef8d267"
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       affinity:
         podAntiAffinity:
@@ -236,7 +237,7 @@ spec:
           readinessProbe:
             httpGet: {path: /healthz, port: http}
           resources:
-            requests: {cpu: 10m, memory: 24Mi}
+            requests: {cpu: 10m, memory: 48Mi}
             limits: {memory: 96Mi}
           securityContext:
             allowPrivilegeEscalation: false

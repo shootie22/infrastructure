@@ -476,7 +476,7 @@ spec:
             runAsUser: 65534
           resources:
             requests:
-              cpu: 50m
+              cpu: 20m
               memory: 64Mi
             limits:
               memory: 128Mi
@@ -536,10 +536,10 @@ spec:
                   fieldPath: spec.nodeName
           resources:
             requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
+              cpu: 50m
               memory: 256Mi
+            limits:
+              memory: 512Mi
           volumeMounts:
             - name: config
               mountPath: /etc/alloy
@@ -595,6 +595,7 @@ spec:
       labels:
         app.kubernetes.io/name: alloy-events
     spec:
+      priorityClassName: service
       serviceAccountName: alloy
       # Either server; moves 30 s after its node stops answering.
       affinity:
@@ -620,9 +621,9 @@ spec:
           resources:
             requests:
               cpu: 25m
-              memory: 64Mi
-            limits:
               memory: 128Mi
+            limits:
+              memory: 256Mi
           volumeMounts:
             - name: config
               mountPath: /etc/alloy
