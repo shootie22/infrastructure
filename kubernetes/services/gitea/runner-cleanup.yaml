@@ -31,6 +31,7 @@ spec:
       activeDeadlineSeconds: 120
       template:
         spec:
+          priorityClassName: background
           restartPolicy: Never
           automountServiceAccountToken: false
           securityContext:

@@ -23,6 +23,7 @@ spec:
       ttlSecondsAfterFinished: 86400
       template:
         spec:
+          priorityClassName: background
           restartPolicy: Never
           automountServiceAccountToken: false
           securityContext:

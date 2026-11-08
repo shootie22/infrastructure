@@ -25,6 +25,7 @@ spec:
       labels:
         app: minecraft-skyblock
     spec:
+      priorityClassName: background
       automountServiceAccountToken: false
       # Runs on whichever of fuji and the thinkcentre holds the label; the
       # other has a copy of the world and takes over when this site is gone
@@ -95,6 +96,12 @@ spec:
               containerPort: 19132
               hostPort: 19132
               protocol: UDP
+          # 8 GiB of heap from the start (JVM_MIN_RAM), of which it touched
+          # 5.6 GiB in the week to 2026-11-08; the limit leaves the JVM room
+          # past the heap.
+          resources:
+            requests: {cpu: 100m, memory: 6Gi}
+            limits: {memory: 10Gi}
           volumeMounts:
             - name: server
               mountPath: /server

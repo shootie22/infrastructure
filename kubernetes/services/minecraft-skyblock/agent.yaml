@@ -21,6 +21,7 @@ spec:
         app: minecraft-skyblock-agent
         app.kubernetes.io/name: game-agent
     spec:
+      priorityClassName: background
       automountServiceAccountToken: false
       nodeSelector:
         ha.radunenu.com/minecraft-skyblock: active

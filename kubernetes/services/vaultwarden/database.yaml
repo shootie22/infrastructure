@@ -60,6 +60,7 @@ spec:
       backoffLimit: 1
       template:
         spec:
+          priorityClassName: background
           restartPolicy: Never
           automountServiceAccountToken: false
           nodeSelector:
@@ -81,6 +82,9 @@ spec:
                 - name: PGPASSWORD
                   valueFrom:
                     secretKeyRef: {name: vaultwarden-db-app, key: password}
+              resources:
+                requests: {cpu: 10m, memory: 32Mi}
+                limits: {memory: 256Mi}
               securityContext:
                 allowPrivilegeEscalation: false
               volumeMounts:

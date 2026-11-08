@@ -219,6 +219,7 @@ spec:
       activeDeadlineSeconds: 240
       template:
         spec:
+          priorityClassName: background
           serviceAccountName: network-updates
           restartPolicy: Never
           # Synapse's image, for its Python; fuji and the thinkcentre have it

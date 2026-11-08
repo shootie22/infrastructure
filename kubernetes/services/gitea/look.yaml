@@ -69,6 +69,7 @@ spec:
   activeDeadlineSeconds: 900
   template:
     spec:
+      priorityClassName: background
       serviceAccountName: gitea-look
       restartPolicy: Never
       nodeSelector:
