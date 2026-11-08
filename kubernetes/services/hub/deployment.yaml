@@ -20,6 +20,7 @@ spec:
       labels:
         app.kubernetes.io/name: hub
     spec:
+      priorityClassName: service
       serviceAccountName: hub
       # The account has automounting off; only this pod needs the token.
       automountServiceAccountToken: true
@@ -89,7 +90,7 @@ spec:
             preStop:
               sleep: {seconds: 3}
           resources:
-            requests: {cpu: 20m, memory: 96Mi}
+            requests: {cpu: 20m, memory: 160Mi}
             limits: {memory: 384Mi}
           securityContext:
             allowPrivilegeEscalation: false

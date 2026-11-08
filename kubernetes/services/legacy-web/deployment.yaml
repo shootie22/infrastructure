@@ -17,6 +17,7 @@ spec:
         # whenever that file changes.
         config-hash: "ef958409ad96"
     spec:
+      priorityClassName: service
       # Runs on whichever of fuji and the thinkcentre holds the label; the
       # other has a copy and takes over when this site is gone (dotfiles
       # modules/nixos/site-failover).
@@ -74,10 +75,11 @@ spec:
               mountPath: /var/www/analytics-archive
               readOnly: true
           resources:
-            limits:
-              memory: 256Mi
             requests:
-              memory: 64Mi
+              cpu: 10m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
       volumes:
         - name: cats-landing
           configMap:
