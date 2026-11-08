@@ -23,6 +23,7 @@ spec:
       labels:
         app: yeetus-api
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
@@ -99,7 +100,7 @@ spec:
             httpGet: {path: /yeetus/healthz, port: http}
             periodSeconds: 20
           resources:
-            requests: {cpu: 10m, memory: 64Mi}
+            requests: {cpu: 10m, memory: 96Mi}
             limits: {memory: 384Mi}
           securityContext:
             allowPrivilegeEscalation: false

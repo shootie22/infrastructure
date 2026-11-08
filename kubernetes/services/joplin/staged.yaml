@@ -17,6 +17,7 @@ spec:
     metadata:
       labels: {app: joplin}
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       initContainers:
         # Keycloak's SAML metadata for the realm (its signing certificate),
@@ -75,10 +76,11 @@ spec:
                   name: joplin-pg-app
                   key: password
           resources:
+            requests:
+              cpu: 10m
+              memory: 384Mi
             limits:
               memory: 1Gi
-            requests:
-              memory: 320Mi
       # Fuji or the thinkcentre, moving 30 s after its node stops answering.
       # Everything is in Postgres; the env above overrides the old database
       # settings in joplin-env.

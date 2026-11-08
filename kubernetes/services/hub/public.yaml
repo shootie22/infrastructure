@@ -23,6 +23,7 @@ spec:
       labels:
         app.kubernetes.io/name: hub-public
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       affinity:
         podAntiAffinity:

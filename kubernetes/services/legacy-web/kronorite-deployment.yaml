@@ -13,6 +13,7 @@ spec:
       labels:
         app: kronorite
     spec:
+      priorityClassName: service
       containers:
         - name: caddy
           image: caddy:2.11.8-alpine@sha256:3db3a09e418f86a8fce8de4bc0026fccd2b4cd925aef00cc7d843d9fdc75e442

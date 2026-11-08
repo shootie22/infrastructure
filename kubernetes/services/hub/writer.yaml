@@ -27,6 +27,7 @@ spec:
       labels:
         app.kubernetes.io/name: hub-writer
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       affinity:
         podAntiAffinity:
@@ -72,7 +73,7 @@ spec:
             preStop:
               sleep: {seconds: 3}
           resources:
-            requests: {cpu: 5m, memory: 24Mi}
+            requests: {cpu: 5m, memory: 32Mi}
             limits: {memory: 128Mi}
           securityContext:
             allowPrivilegeEscalation: false
