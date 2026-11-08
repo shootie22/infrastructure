@@ -1,0 +1,56 @@
+# Who goes first when a node runs short. Every pod in this repo names one of
+# these (scripts/check-resources); a pod that doesn't gets `service`.
+#
+#   system-node-critical  built in: node-exporter, Alloy, the GPU device plugin
+#   system-cluster-critical  built in: CoreDNS, Traefik, metrics-server (k3s)
+#   platform-critical  100000  what everything else needs to run, be reached,
+#                      log in or be fixed: the outage page, Argo CD,
+#                      cert-manager, the CNPG operator and every Postgres,
+#                      sops-secrets-operator, Headscale, tailnet-dns,
+#                      Keycloak, Gitea (code and every image), and what
+#                      alerting rests on (Prometheus, Alertmanager,
+#                      kube-state-metrics, blackbox-exporter)
+#   matrix-critical    1000    Matrix and its clients (matrix/cluster.yaml)
+#   service            0       everything people use that isn't above
+#   background         -10     game servers and batch work: dumps, updaters,
+#                              checks, cleanups, local LLMs
+#   ci-job             -100    CI job pods, which never push anything out
+#                              (ci-runner/cluster.yaml)
+#
+# The node side (dotfiles modules/nixos/node-budget.nix): kubelet evicts pods
+# that use more than they requested first, lowest priority first, so a pod
+# that stays within its requests isn't evicted for someone else's spike. A
+# pod that can't be placed pushes out pods of lower priority. So requests are
+# what a pod really uses at its peak plus a little (from Prometheus, 7 days),
+# and the order above decides the rest.
+#
+# Synced before the services (wave -1), which name them.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: platform-critical
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+value: 100000
+globalDefault: false
+description: The platform everything else needs (outage page, Argo CD, Postgres, Keycloak, Gitea, Headscale, alerting).
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: service
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+value: 0
+globalDefault: true
+description: Services people use. The default for a pod that names no class.
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: background
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+value: -10
+globalDefault: false
+description: Game servers and batch work, which wait or get evicted before any service.

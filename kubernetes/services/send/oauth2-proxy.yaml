@@ -21,6 +21,7 @@ spec:
       labels:
         app.kubernetes.io/name: oauth2-proxy
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       # Nothing on disk: fuji or the thinkcentre, moving 30 s after its node
       # stops answering.
@@ -96,7 +97,7 @@ spec:
           resources:
             requests:
               cpu: 5m
-              memory: 16Mi
+              memory: 32Mi
             limits:
               memory: 64Mi
           securityContext:

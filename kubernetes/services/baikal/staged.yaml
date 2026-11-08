@@ -20,6 +20,7 @@ spec:
       labels:
         app: baikal
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       # Calendar app passwords (#233): Traefik checks every DAV request with
       # yeetus-api and passes the Keycloak username on (ingress.yaml), so
@@ -70,6 +71,9 @@ spec:
             initialDelaySeconds: 3
             periodSeconds: 5
             failureThreshold: 12
+          resources:
+            requests: {cpu: 10m, memory: 192Mi}
+            limits: {memory: 512Mi}
           volumeMounts:
             - name: specific
               mountPath: /var/www/baikal/Specific

@@ -14,6 +14,7 @@ spec:
       annotations:
         config-hash: "8b6a47807013"
     spec:
+      priorityClassName: platform-critical
       # Both API servers, one copy each (#149); Headscale's split DNS lists
       # both tailnet addresses.
       affinity:
@@ -77,9 +78,8 @@ spec:
           resources:
             requests:
               cpu: 20m
-              memory: 32Mi
+              memory: 48Mi
             limits:
-              cpu: 200m
               memory: 128Mi
           securityContext:
             allowPrivilegeEscalation: false

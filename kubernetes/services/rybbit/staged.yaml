@@ -91,6 +91,7 @@ spec:
       labels:
         app: rybbit-clickhouse
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       # Runs on whichever of fuji and the thinkcentre holds the label; the
       # other has a copy (merges stopped while it's taken, so the parts on
@@ -138,10 +139,11 @@ spec:
               subPath: user_settings.xml
               readOnly: true
           resources:
+            requests:
+              cpu: 100m
+              memory: 640Mi
             limits:
               memory: 3Gi
-            requests:
-              memory: 512Mi
       volumes:
         - name: data
           hostPath:
@@ -184,6 +186,7 @@ spec:
       labels:
         app: rybbit-backend
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       # Nothing on disk, but every request goes to ClickHouse: it runs where
       # ClickHouse does, and moves with it (site-failover reschedules it when
@@ -234,10 +237,11 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
           resources:
+            requests:
+              cpu: 10m
+              memory: 256Mi
             limits:
               memory: 768Mi
-            requests:
-              memory: 192Mi
 ---
 apiVersion: v1
 kind: Service
@@ -269,6 +273,7 @@ spec:
       labels:
         app: rybbit-client
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       # Nothing on disk: fuji or the thinkcentre, moving 30 s after its node
       # stops answering.
@@ -297,10 +302,11 @@ spec:
             - name: http
               containerPort: 3002
           resources:
+            requests:
+              cpu: 50m
+              memory: 320Mi
             limits:
               memory: 768Mi
-            requests:
-              memory: 288Mi
 ---
 apiVersion: v1
 kind: Service
@@ -332,6 +338,7 @@ spec:
       labels:
         app: rybbit-caddy
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       # Nothing on disk: fuji or the thinkcentre, moving 30 s after its node
       # stops answering.

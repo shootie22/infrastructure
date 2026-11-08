@@ -18,6 +18,9 @@ spec:
       labels:
         app: crosty-hc
     spec:
+      # Who goes first when a node runs short (infrastructure
+      # kubernetes/argocd/priority-classes.yaml).
+      priorityClassName: background
       automountServiceAccountToken: false
       nodeSelector:
         ha.radunenu.com/crosty-hc: active
@@ -105,7 +108,7 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
           resources:
-            requests: {cpu: 500m, memory: 5120Mi}
+            requests: {cpu: 500m, memory: 5632Mi}
             limits: {memory: 6144Mi}
           securityContext:
             allowPrivilegeEscalation: false

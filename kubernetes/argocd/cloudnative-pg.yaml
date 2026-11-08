@@ -34,6 +34,13 @@ spec:
         # rolls them out again.
         podAnnotations:
           radunenu.com/rolled: "2026-10-06"
+        # Every database's failover runs through it: platform tier
+        # (priority-classes.yaml). It used 99 MiB at most in the week to
+        # 2026-11-08.
+        priorityClassName: platform-critical
+        resources:
+          requests: {cpu: 20m, memory: 128Mi}
+          limits: {memory: 512Mi}
 
   destination:
     server: https://kubernetes.default.svc

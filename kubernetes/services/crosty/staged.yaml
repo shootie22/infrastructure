@@ -27,6 +27,7 @@ spec:
       labels:
         app: crosty
     spec:
+      priorityClassName: background
       automountServiceAccountToken: false
       # On whichever of fuji and the thinkcentre holds the label; the other
       # takes over when this site is gone, and the game relay follows
@@ -54,8 +55,8 @@ spec:
               protocol: UDP
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: 50m
+              memory: 128Mi
             limits:
               memory: 1Gi
           securityContext:

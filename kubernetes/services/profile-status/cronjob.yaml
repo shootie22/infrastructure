@@ -27,6 +27,7 @@ spec:
           labels:
             app.kubernetes.io/name: profile-status
         spec:
+          priorityClassName: background
           automountServiceAccountToken: false
           restartPolicy: Never
           tolerations:

@@ -15,6 +15,7 @@ spec:
       labels:
         app: audiobookshelf
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       # Runs on whichever of fuji and the thinkcentre holds the label; the
       # other has a copy and takes over when this site is gone (dotfiles
@@ -55,10 +56,11 @@ spec:
             - name: podcasts
               mountPath: /podcasts
           resources:
+            requests:
+              cpu: 10m
+              memory: 160Mi
             limits:
               memory: 512Mi
-            requests:
-              memory: 128Mi
       volumes:
         - name: audiobooks
           hostPath:

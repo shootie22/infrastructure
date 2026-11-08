@@ -67,6 +67,7 @@ spec:
       activeDeadlineSeconds: 1200
       template:
         spec:
+          priorityClassName: background
           serviceAccountName: element-web-updater
           restartPolicy: Never
           containers:

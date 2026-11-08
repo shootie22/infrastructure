@@ -25,6 +25,7 @@ spec:
       labels:
         app: minecraft-hc
     spec:
+      priorityClassName: background
       automountServiceAccountToken: false
       # Runs on whichever of fuji and the thinkcentre holds the label; the
       # other has a copy of the world and takes over when this site is gone
@@ -80,6 +81,11 @@ spec:
               containerPort: 25565
               hostPort: 6767
               protocol: TCP
+          # The JVM runs with -Xms2G -Xmx6G (minecraft-hc-env); it used 2 GiB
+          # at most in the week to 2026-11-08.
+          resources:
+            requests: {cpu: 100m, memory: 2560Mi}
+            limits: {memory: 8Gi}
           volumeMounts:
             - name: server
               mountPath: /server
@@ -120,6 +126,7 @@ spec:
       labels:
         app: minecraft-hc-fix-permissions
     spec:
+      priorityClassName: background
       automountServiceAccountToken: false
       # Runs on whichever of fuji and the thinkcentre holds the label; the
       # other has a copy of the world and takes over when this site is gone
@@ -137,6 +144,9 @@ spec:
             - sh
             - -c
             - while true; do chmod -R a+rwX /server; sleep 30; done
+          resources:
+            requests: {cpu: 5m, memory: 16Mi}
+            limits: {memory: 32Mi}
           volumeMounts:
             - name: server
               mountPath: /server
@@ -163,6 +173,7 @@ spec:
       labels:
         app: minecraft-hc-sftp
     spec:
+      priorityClassName: background
       automountServiceAccountToken: false
       # Runs on whichever of fuji and the thinkcentre holds the label; the
       # other has a copy of the world and takes over when this site is gone
@@ -181,6 +192,9 @@ spec:
           envFrom:
             - secretRef:
                 name: minecraft-hc-env
+          resources:
+            requests: {cpu: 5m, memory: 16Mi}
+            limits: {memory: 64Mi}
           securityContext:
             allowPrivilegeEscalation: false
           ports:

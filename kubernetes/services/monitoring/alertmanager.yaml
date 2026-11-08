@@ -66,6 +66,7 @@ spec:
       annotations:
         config-hash: "5aac49715170"
     spec:
+      priorityClassName: platform-critical
       automountServiceAccountToken: false
       affinity:
         nodeAffinity:
@@ -112,7 +113,7 @@ spec:
           resources:
             requests:
               cpu: 10m
-              memory: 32Mi
+              memory: 64Mi
             limits:
               memory: 128Mi
           readinessProbe:

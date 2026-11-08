@@ -19,6 +19,9 @@ spec:
       labels:
         app: hub-test
     spec:
+      # Who goes first when a node runs short (infrastructure
+      # kubernetes/argocd/priority-classes.yaml).
+      priorityClassName: background
       automountServiceAccountToken: false
       nodeSelector:
         ha.radunenu.com/hub-test: active

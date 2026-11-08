@@ -24,6 +24,7 @@ spec:
       activeDeadlineSeconds: 300
       template:
         spec:
+          priorityClassName: background
           automountServiceAccountToken: false
           restartPolicy: Never
           containers:

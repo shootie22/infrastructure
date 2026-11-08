@@ -19,6 +19,7 @@ spec:
       # Bump to restart Gitea (e.g. after its folder's mounts change).
       annotations: {restart: "1"}
     spec:
+      priorityClassName: platform-critical
       automountServiceAccountToken: false
       # Runs on whichever of fuji and the thinkcentre holds the label; the
       # other has a copy of the repos and packages and takes over when this

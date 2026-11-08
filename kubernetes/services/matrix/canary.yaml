@@ -80,6 +80,7 @@ spec:
         monitoring.radunenu.com/port: "8080"
         monitoring.radunenu.com/path: /
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       # Not on fuji or the thinkcentre if it can help it: it should see
       # Matrix the way users do while those two fail over.

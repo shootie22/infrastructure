@@ -18,6 +18,7 @@ spec:
       labels:
         app: home
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true

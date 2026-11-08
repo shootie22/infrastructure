@@ -25,6 +25,7 @@ spec:
       annotations:
         config-hash: "3d36fdbe10fc"
     spec:
+      priorityClassName: matrix-critical
       automountServiceAccountToken: false
       containers:
         - name: element-web

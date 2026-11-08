@@ -13,6 +13,7 @@ spec:
       labels:
         app: radunenu-com
     spec:
+      priorityClassName: service
       containers:
         # Pinned to the release's version and digest; to roll out a release, change both
         # images to its tag once that tag's build is green. (:latest raced: an older tag's

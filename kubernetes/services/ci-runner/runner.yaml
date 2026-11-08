@@ -341,6 +341,7 @@ spec:
       annotations:
         config-hash: "cb919890197d"
     spec:
+      priorityClassName: background
       serviceAccountName: dispatcher
       enableServiceLinks: false
       hostAliases:

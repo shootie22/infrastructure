@@ -211,7 +211,7 @@ spec:
           # The edge is small (2 cores, 2-4 GB): it only carries calls while
           # fuji's SFU is down.
           resources:
-            requests: {cpu: 50m, memory: 64Mi}
+            requests: {cpu: 50m, memory: 128Mi}
             limits: {memory: 512Mi}
         - name: router
           image: docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
@@ -386,6 +386,7 @@ spec:
       activeDeadlineSeconds: 90
       template:
         spec:
+          priorityClassName: background
           restartPolicy: Never
           serviceAccountName: livekit-ro-address
           securityContext:

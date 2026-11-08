@@ -33,6 +33,7 @@ spec:
       labels:
         app.kubernetes.io/name: oncall
     spec:
+      priorityClassName: service
       serviceAccountName: oncall
       # The token goes to the agent only (the kube-api volume), not to the
       # bot, which talks to the internet.
@@ -82,7 +83,7 @@ spec:
             httpGet: {path: /healthz, port: http}
             periodSeconds: 20
           resources:
-            requests: {cpu: 20m, memory: 96Mi}
+            requests: {cpu: 20m, memory: 128Mi}
             limits: {memory: 384Mi}
           securityContext:
             allowPrivilegeEscalation: false

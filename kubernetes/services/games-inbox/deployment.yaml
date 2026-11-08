@@ -27,6 +27,7 @@ spec:
       labels:
         app.kubernetes.io/name: copyparty
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       enableServiceLinks: false
       # Wherever GameVault runs, since it writes into GameVault's folder.
@@ -77,8 +78,8 @@ spec:
             failureThreshold: 4
           resources:
             requests:
-              cpu: 20m
-              memory: 64Mi
+              cpu: 50m
+              memory: 160Mi
             limits:
               memory: 512Mi
           securityContext: *locked
