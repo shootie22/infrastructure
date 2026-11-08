@@ -595,6 +595,76 @@ data:
                   namespace_workload_pod:kube_pod_owner:relabel
               )
 
+      # Each node's disks once, for the disk alerts. node-exporter lists a
+      # disk under every bind mount of it (the thinkcentre's /home is also
+      # /var/lib/rancher and most of /srv/ha, fuji's / is also /home and
+      # /nix), and its series start over each time its pod moves to a new
+      # IP, which would leave predict_linear only a few minutes to go on.
+      - name: node-disks
+        interval: 1m
+        rules:
+          # Real filesystems over 1 GiB that can be written to, with the
+          # instance dropped so the series carries on across node-exporter
+          # restarts. Hetzner isn't a Kubernetes node; its host label is its
+          # node.
+          - record: node_mountpoint:filesystem_avail_bytes
+            expr: |
+              max without (instance) (
+                label_replace(
+                  (
+                    node_filesystem_avail_bytes{job="node-exporter", fstype=~"ext4|btrfs|xfs|zfs|f2fs"}
+                    unless on (instance, mountpoint) node_filesystem_readonly == 1
+                  )
+                  and on (instance, mountpoint) node_filesystem_size_bytes > 1024 ^ 3,
+                  "node", "$1", "host", "(.+)"
+                )
+              )
+          - record: node_mountpoint:filesystem_size_bytes
+            expr: |
+              max without (instance) (
+                label_replace(
+                  (
+                    node_filesystem_size_bytes{job="node-exporter", fstype=~"ext4|btrfs|xfs|zfs|f2fs"}
+                    unless on (instance, mountpoint) node_filesystem_readonly == 1
+                  )
+                  and on (instance, mountpoint) node_filesystem_size_bytes > 1024 ^ 3,
+                  "node", "$1", "host", "(.+)"
+                )
+              )
+          # One series per disk: / first, then each other disk under its own
+          # mountpoint (bind mounts and the standby copies' mounts left out).
+          # The thinkcentre's 4 TB disk is mounted under /home/main, which
+          # node-exporter (nobody) can't look into, so it's only seen through
+          # the site-failover bind mounts of the services on it, as /srv/ha/*.
+          - record: node_disk:filesystem_avail_bytes
+            expr: |
+              node_mountpoint:filesystem_avail_bytes{mountpoint="/"}
+              or
+              (
+                node_mountpoint:filesystem_avail_bytes{mountpoint!="/", mountpoint!~"/(nix|var/lib/rancher|var/lib/kubelet|run|srv/ha|home/standby)(/.*)?|/srv/standby/.+"}
+                unless on (node, device) node_mountpoint:filesystem_avail_bytes{mountpoint="/"}
+              )
+              or
+              label_replace(
+                max by (job, node, device, fstype) (node_mountpoint:filesystem_avail_bytes{mountpoint=~"/srv/ha/.+"})
+                unless on (node, device) node_mountpoint:filesystem_avail_bytes{mountpoint!~"/(nix|var/lib/rancher|var/lib/kubelet|run|srv/ha|home/standby)(/.*)?|/srv/standby/.+"},
+                "mountpoint", "/srv/ha/*", "", ""
+              )
+          - record: node_disk:filesystem_size_bytes
+            expr: |
+              node_mountpoint:filesystem_size_bytes{mountpoint="/"}
+              or
+              (
+                node_mountpoint:filesystem_size_bytes{mountpoint!="/", mountpoint!~"/(nix|var/lib/rancher|var/lib/kubelet|run|srv/ha|home/standby)(/.*)?|/srv/standby/.+"}
+                unless on (node, device) node_mountpoint:filesystem_size_bytes{mountpoint="/"}
+              )
+              or
+              label_replace(
+                max by (job, node, device, fstype) (node_mountpoint:filesystem_size_bytes{mountpoint=~"/srv/ha/.+"})
+                unless on (node, device) node_mountpoint:filesystem_size_bytes{mountpoint!~"/(nix|var/lib/rancher|var/lib/kubelet|run|srv/ha|home/standby)(/.*)?|/srv/standby/.+"},
+                "mountpoint", "/srv/ha/*", "", ""
+              )
+
       - name: homelab-actionable-alerts
         rules:
           # Always firing. Alertmanager sends it to healthchecks.io every minute;
@@ -732,21 +802,37 @@ data:
             annotations:
               summary: Argo CD app {{ $labels.name }} has been out of sync for 30 minutes
               description: Its automatic sync keeps failing, so what's in Git isn't running. `kubectl -n argocd get application {{ $labels.name }} -o jsonpath='{.status.operationState.message}'`
-          # / and /home: kubelet's and containerd's (the thinkcentre keeps
-          # /var/lib/rancher on /home). Kubelet starts evicting at 5% free.
+          # Every disk (node-disks above). Kubelet starts evicting at 5% free
+          # on the disk holding /var/lib/rancher and /var/lib/kubelet.
           - alert: NodeFilesystemCriticallyLow
-            expr: |
-              node_filesystem_avail_bytes{job="node-exporter", mountpoint=~"/|/home", fstype!~"tmpfs|overlay|squashfs"}
-              / node_filesystem_size_bytes{job="node-exporter", mountpoint=~"/|/home", fstype!~"tmpfs|overlay|squashfs"} < 0.10
-              and on (node, device, mountpoint)
-              node_filesystem_readonly{job="node-exporter", mountpoint=~"/|/home", fstype!~"tmpfs|overlay|squashfs"} == 0
+            expr: node_disk:filesystem_avail_bytes / node_disk:filesystem_size_bytes < 0.10
             for: 5m
             labels:
               severity: critical
               page: "true"
             annotations:
-              summary: "{{ $labels.mountpoint }} on {{ $labels.node }} is critically low"
-              description: Less than 10% free for five minutes. Kubelet evicts pods at 5%.
+              summary: "{{ $labels.mountpoint }} on {{ $labels.node }} is {{ $value | humanizePercentage }} free"
+              description: "Less than 10% of {{ $labels.device }} has been free for five minutes. Kubelet evicts pods at 5%. `df -h {{ $labels.mountpoint }}` and `du -xsh` on the node; containerd's images are pruned with `k3s crictl rmi --prune`."
+          # Will be full within a day at the rate of the last 12 hours. Only
+          # once it's under 25% free, since a CI job or an image pull can
+          # write tens of GiB in an hour and free them again (the
+          # thinkcentre's /home moved by up to 90 GiB within a day in
+          # late October). Under 10% the one above has already paged, and
+          # a disk watched for less than 6 hours has no rate to go on yet.
+          - alert: NodeFilesystemFullSoon
+            expr: |
+              node_disk:filesystem_avail_bytes
+              and predict_linear(node_disk:filesystem_avail_bytes[12h], 86400) < 0
+              and node_disk:filesystem_avail_bytes / node_disk:filesystem_size_bytes < 0.25
+              unless node_disk:filesystem_avail_bytes / node_disk:filesystem_size_bytes < 0.10
+              and node_disk:filesystem_avail_bytes offset 6h
+            for: 1h
+            labels:
+              severity: critical
+              page: "true"
+            annotations:
+              summary: "{{ $labels.mountpoint }} on {{ $labels.node }} will be full within a day ({{ $value | humanize1024 }}B left)"
+              description: "At the rate {{ $labels.device }} has filled over the last 12 hours, it runs out within 24, and it's under 25% free. See what's writing with `du -xsh` on the node; containerd's unused images go with `k3s crictl rmi --prune`."
           # The edge passes traffic to Traefik in RO (fuji) and DK (thinkcentre).
           # If a site's path is down, failover to it would go nowhere.
           - alert: EdgeBackendDown
@@ -1115,23 +1201,28 @@ data:
           # Early warning, so a filling disk gets noticed days before it becomes
           # critical (thinkcentre's 31 GB root reached 92% unnoticed, 2026-10-02;
           # its /home sat at 11% free for days before 2026-10-20, unwatched).
+          # By the rate, not a fixed share: "over 80%" kept firing for disks
+          # that were full-ish but steady (mixi's and minima's / at 88% in
+          # November). The rate of the last two days, so a CI job's layers
+          # that come and go within hours don't count, and only once the disk
+          # has been watched for a day.
           - alert: NodeFilesystemFillingUp
             expr: |
-              node_filesystem_avail_bytes{job="node-exporter", mountpoint=~"/|/home|/boot|/boot/efi|/srv/standby", fstype!~"tmpfs|overlay|squashfs"}
-              / node_filesystem_size_bytes{job="node-exporter", mountpoint=~"/|/home|/boot|/boot/efi|/srv/standby", fstype!~"tmpfs|overlay|squashfs"} < 0.20
-              and on (node, device, mountpoint)
-              node_filesystem_readonly{job="node-exporter", mountpoint=~"/|/home|/boot|/boot/efi|/srv/standby", fstype!~"tmpfs|overlay|squashfs"} == 0
-            for: 30m
+              node_disk:filesystem_avail_bytes
+              and predict_linear(node_disk:filesystem_avail_bytes[2d], 7 * 86400) < 0
+              and node_disk:filesystem_avail_bytes offset 1d
+            for: 1h
             labels:
               severity: warning
             annotations:
-              summary: "{{ $labels.mountpoint }} on {{ $labels.node }} is over 80% full"
-              description: Less than 20% has been free for thirty minutes.
+              summary: "{{ $labels.mountpoint }} on {{ $labels.node }} will be full within a week ({{ $value | humanize1024 }}B left)"
+              description: "At the rate {{ $labels.device }} has filled over the last two days, it runs out within seven. If that was a one-off (a big upload, a restore), it clears by itself within two days; otherwise see what's growing with `du -xsh` on the node."
           # Send uploads (up to 50 GiB each, kept up to 14 days) share this disk
           # with Gitea repositories, GameVault's games and /home/main/storage.
+          # By its device: node-exporter only sees it through /srv/ha (node-disks).
           - alert: ThinkcentreStorageDiskLow
             expr: |
-              node_filesystem_avail_bytes{job="node-exporter", node="thinkcentre", mountpoint="/home/main/storage"} < 250 * 1024 ^ 3
+              node_disk:filesystem_avail_bytes{node="thinkcentre", device="/dev/mapper/tc-storage4tb"} < 250 * 1024 ^ 3
             for: 15m
             labels:
               severity: warning

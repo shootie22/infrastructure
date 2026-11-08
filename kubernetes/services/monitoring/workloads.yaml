@@ -487,9 +487,15 @@ spec:
             - name: sys
               mountPath: /host/sys
               readOnly: true
+            # HostToContainer, so it sees what the node mounts after it
+            # started. Without it, /srv/ha/gamevault and /srv/ha/games
+            # (mounted on the 4th and 6th of November, after node-exporter's
+            # last restart) read as the thinkcentre's 54 GB root instead of
+            # the 4 TB disk under them.
             - name: root
               mountPath: /host/root
               readOnly: true
+              mountPropagation: HostToContainer
       volumes:
         - name: proc
           hostPath: {path: /proc}
