@@ -97,9 +97,12 @@ data:
   # mixi's sidecar asks for 512Mi, so the pod asks for 1.5 GiB with Kata's
   # overhead: 2 GiB didn't fit next to mixi's services once its pods got
   # 4.6 GiB (dotfiles modules/nixos/node-budget.nix). A job that uses more
-  # is the first thing evicted there anyway.
+  # is the first thing evicted there anyway. The thinkcentre's 8Gi like fuji's
+  # (was 6Gi): GameVault's release build of its app crate was killed for memory
+  # there on 8 Nov and passed on fuji. Its VM is then about 9 GiB, within the
+  # thinkcentre's /dev/shm (half of its 31 GiB); the pod still asks for 1Gi.
   slots: |
-    thinkcentre linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-thinkcentre:docker://docker.gitea.com/runner-images:ubuntu-latest 2 6Gi /home
+    thinkcentre linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-thinkcentre:docker://docker.gitea.com/runner-images:ubuntu-latest 2 8Gi /home
     fuji linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-fuji:docker://docker.gitea.com/runner-images:ubuntu-latest 2 8Gi /
     mixi linux-arm64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-arm64-mixi:docker://docker.gitea.com/runner-images:ubuntu-latest 3 3584Mi / 512Mi
 
