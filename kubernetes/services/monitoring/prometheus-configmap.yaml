@@ -273,6 +273,10 @@ data:
           # page lists the services by these (status-api.yaml).
           - source_labels: [__meta_kubernetes_ingress_annotation_gethomepage_dev_name]
             target_label: status_name
+          # The service the check belongs to: the profile card counts these
+          # (git.radunenu.com/radu/profile-status).
+          - source_labels: [__meta_kubernetes_ingress_annotation_gethomepage_dev_name]
+            target_label: status_service
           - source_labels: [__meta_kubernetes_ingress_annotation_gethomepage_dev_group]
             target_label: status_group
           - source_labels: [__meta_kubernetes_ingress_annotation_gethomepage_dev_description]
@@ -281,7 +285,12 @@ data:
             replacement: blackbox-exporter.monitoring.svc:9115
 
       # The rest of the status page: what has no Ingress with a homepage name
-      # (the old APIs' endpoints, the Matrix front ends on hetzy).
+      # (the old APIs' endpoints, the Matrix front ends on hetzy, yeetus.net's
+      # Matrix behind an IngressRoute, and what's only on the tailnet, probed
+      # inside the cluster). Each check's service is its name, unless it sets
+      # status_service: the old APIs count as one. Steamhappy and the Gitea
+      # runners have nothing to probe; their checks are recorded rules
+      # (status-extra in platform.rules).
       - job_name: status-extra
         metrics_path: /probe
         scrape_interval: 60s
@@ -292,34 +301,44 @@ data:
           - targets: [https://kronorite.com]
             labels: {status_name: Kronorite.com, status_group: Websites, status_description: "Kronorite's game website"}
           - targets: [https://news.kronorite.com/news.php]
-            labels: {status_name: Kronorite News, status_group: "Games & APIs", status_description: "Legacy API v1, Kronorite's news feed"}
+            labels: {status_service: Legacy APIs, status_name: Kronorite News, status_group: "Games & APIs", status_description: "Legacy API v1, Kronorite's news feed"}
           - targets: [https://stats.kronorite.com/mazegame/leaderboard.php]
-            labels: {status_name: Quickmaze leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
+            labels: {status_service: Legacy APIs, status_name: Quickmaze leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
           - targets: [https://stats.kronorite.com/cowo/leaderboard.php]
-            labels: {status_name: Cowo Bot leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
+            labels: {status_service: Legacy APIs, status_name: Cowo Bot leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
           - targets: [https://stats.kronorite.com/cowo-igad/leaderboard.php]
-            labels: {status_name: Cowo IGAD Bot leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
+            labels: {status_service: Legacy APIs, status_name: Cowo IGAD Bot leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
           - targets: [https://stats.kronorite.com/polyspace/leaderboard.php]
-            labels: {status_name: Polyspace leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
+            labels: {status_service: Legacy APIs, status_name: Polyspace leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
           - targets: [https://stats.kronorite.com/vtol/2/leaderboard.php]
-            labels: {status_name: VTOL leaderboard, status_group: "Games & APIs", status_description: Legacy API v2.5}
+            labels: {status_service: Legacy APIs, status_name: VTOL leaderboard, status_group: "Games & APIs", status_description: Legacy API v2.5}
           - targets: [https://stats.kronorite.com/vtol/1/leaderboard.php]
-            labels: {status_name: VTOL Divided Skies leaderboard, status_group: "Games & APIs", status_description: Legacy API v2.5}
+            labels: {status_service: Legacy APIs, status_name: VTOL Divided Skies leaderboard, status_group: "Games & APIs", status_description: Legacy API v2.5}
           - targets: [https://api.byradu.com/dicekatana/leaderboard.php]
-            labels: {status_name: Dice Katana leaderboard, status_group: "Games & APIs", status_description: Legacy API v3}
+            labels: {status_service: Legacy APIs, status_name: Dice Katana leaderboard, status_group: "Games & APIs", status_description: Legacy API v3}
           - targets: [https://api.byradu.com/fsp/downloads/latest.php]
-            labels: {status_name: Feedback Survey downloads, status_group: "Games & APIs", status_description: Legacy API v3}
+            labels: {status_service: Legacy APIs, status_name: Feedback Survey downloads, status_group: "Games & APIs", status_description: Legacy API v3}
           - targets: [https://api-old.radunenu.com/health-check.html]
-            labels: {status_name: Old Legacy API, status_group: "Games & APIs", status_description: The first API server}
+            labels: {status_service: Legacy APIs, status_name: Old Legacy API, status_group: "Games & APIs", status_description: The first API server}
           - targets: [https://nuke.zip]
             labels: {status_name: "Matrix (nuke.zip)", status_group: Apps, status_description: Matrix homeserver}
           - targets: [https://a.nuke.zip/livekit/sfu/]
             labels: {status_name: Element Call stack, status_group: Apps, status_description: Calls backend}
+          - targets: [https://matrix.yeetus.net/_matrix/client/versions]
+            labels: {status_name: "Matrix (yeetus.net)", status_group: Apps, status_description: Matrix homeserver}
+          # Tailnet only: no public address, so the status page doesn't link them.
+          - targets: [http://searxng.searxng.svc.cluster.local:8080/healthz]
+            labels: {status_name: SearXNG, status_group: Apps, status_description: Private web search}
+          - targets: [http://ollama.ollama.svc.cluster.local:11434/api/version]
+            labels: {status_name: Ollama, status_group: Development, status_description: Local language models}
         relabel_configs:
           - source_labels: [__address__]
             target_label: __param_target
           - source_labels: [__param_target]
             target_label: instance
+          - source_labels: [status_service, status_name]
+            regex: ";(.+)"
+            target_label: status_service
           - target_label: __address__
             replacement: blackbox-exporter.monitoring.svc:9115
 
@@ -664,6 +683,38 @@ data:
                 unless on (node, device) node_mountpoint:filesystem_size_bytes{mountpoint!~"/(nix|var/lib/rancher|var/lib/kubelet|run|srv/ha|home/standby)(/.*)?|/srv/standby/.+"},
                 "mountpoint", "/srv/ha/*", "", ""
               )
+
+      # Status page checks for services with nothing to probe over HTTP,
+      # recorded as status-extra probes so status-api and the profile card
+      # read them like the rest. The instance is the check's target on the
+      # page, never linked since it isn't a web address.
+      - name: status-extra
+        interval: 60s
+        rules:
+          - record: probe_success
+            expr: max(kube_deployment_status_replicas_available{namespace="steamhappy", deployment="steamhappy"}) >= bool 1
+            labels:
+              job: status-extra
+              instance: k8s://steamhappy/steamhappy
+              status_service: Steamhappy
+              status_name: Steamhappy
+              status_group: Apps
+              status_description: Matrix bot that posts Steam deals
+          # Up while a CI run has been picked up and passed within the last 2
+          # hours: the canary-ci check, the same test as CanaryCIFailing.
+          - record: probe_success
+            expr: |
+              time() - max(
+                kube_cronjob_status_last_successful_time{namespace="canary", cronjob="canary-ci"}
+                or kube_cronjob_created{namespace="canary", cronjob="canary-ci"}
+              ) <= bool 7200
+            labels:
+              job: status-extra
+              instance: k8s://canary/canary-ci
+              status_service: Gitea runners
+              status_name: Gitea runners
+              status_group: Development
+              status_description: CI jobs, each in its own VM
 
       - name: homelab-actionable-alerts
         rules:
