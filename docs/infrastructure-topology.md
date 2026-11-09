@@ -1,5 +1,7 @@
 # Infrastructure Topology
 
+> This document is outdated: it describes the setup from before the move to Kubernetes. It will be updated soon.
+
 This document explains the mental model behind the repository so future changes can be made without reverse-engineering deployment patterns from individual compose files.
 
 ## Overview
