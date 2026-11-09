@@ -30,9 +30,9 @@ Some configuration and deployment work is done with the help of AI where it make
 | mixi | DK | worker, a Mac mini M1 running NixOS on Asahi |
 | edge | DE | the third etcd member, the way in when RO is down, the tailnet's DERP relay, the alert relay |
 
-Both sites run the same services where it's worth it, so losing one of them, or the edge, shouldn't take anything down. That's the [HA project](docs/ha/README.md), which is still being worked through phase by phase.
-
 A new node is joining the cluster soon, a nice little Dell PowerEdge server.
+
+Both home sites run the same services where it's worth it, so losing one of them, or the edge, shouldn't take anything down. That's the [HA project](docs/ha/README.md), which is still being worked through phase by phase.
 
 ## Repo layout
 
