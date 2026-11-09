@@ -59,7 +59,7 @@ Alerts go out through a relay on the edge that tries Pushover, then email, then 
 
 ## Backup & disaster recovery
 
-fuji, the thinkcentre and the minima VM are backed up with Borg to an external drive on minima (the Mac mini M4) on a regular schedule. That drive is then backed up off-site to Backblaze. TODO(radu): mixi and the edge, are they backed up, or is there nothing on them worth keeping?
+fuji, the thinkcentre and the minima VM are backed up with Borg to an external drive on minima (the Mac mini M4) on a regular schedule. That drive is then backed up off-site to Backblaze.
 
 This provides a local copy for normal restores and an off-site copy for recovery if the backup host or site itself is lost.
 
