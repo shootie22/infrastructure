@@ -46,7 +46,7 @@ spec:
         # account, Cubitrix's project and its key, and whoever signed in with
         # Keycloak made an owner.
         - name: setup
-          image: docker.io/glitchtip/glitchtip:6.2.6@sha256:a3d8eb1b36c1e1603d55ab32711ea3dd8115874742a781a57391a62a16e0dff6
+          image: docker.io/glitchtip/glitchtip:7.0.0@sha256:c245745b4179667da3aebd73fb8d4f1fd918f7d68ba07d1fd73ea688933b6e01
           command: [sh, -ec]
           args:
             - |
@@ -83,7 +83,7 @@ spec:
             - {name: tmp, mountPath: /tmp}
       containers:
         - name: glitchtip
-          image: docker.io/glitchtip/glitchtip:6.2.6@sha256:a3d8eb1b36c1e1603d55ab32711ea3dd8115874742a781a57391a62a16e0dff6
+          image: docker.io/glitchtip/glitchtip:7.0.0@sha256:c245745b4179667da3aebd73fb8d4f1fd918f7d68ba07d1fd73ea688933b6e01
           command: [./bin/run-all-in-one.sh]
           envFrom:
             - configMapRef:
