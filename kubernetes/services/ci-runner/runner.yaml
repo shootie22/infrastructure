@@ -266,7 +266,7 @@ data:
       containers:
         # One job, then it exits and the pod (and VM) ends.
         - name: runner
-          image: docker.io/gitea/runner:5.4.0@sha256:b3f222d3290f8a48f34ce53fbb9a726d98a70dfa2e202e47c1ee09e7e7ece2dc
+          image: docker.io/gitea/runner:6.0.0@sha256:f9a1f17484398b861c25a763b81febfb394b17b72e0522c25d8067d7b484f347
           # The .runner file and the config come in as variables, not
           # volumes: Kata syncs Secret and ConfigMap volumes into the VM with
           # a watcher, which doesn't work with QEMU running rootless.
@@ -362,7 +362,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: dispatcher
-          image: docker.io/gitea/runner:5.4.0@sha256:b3f222d3290f8a48f34ce53fbb9a726d98a70dfa2e202e47c1ee09e7e7ece2dc
+          image: docker.io/gitea/runner:6.0.0@sha256:f9a1f17484398b861c25a763b81febfb394b17b72e0522c25d8067d7b484f347
           command: ["bash", "/etc/dispatcher/dispatch.sh"]
           env:
             - {name: HOME, value: /work}
