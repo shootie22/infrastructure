@@ -118,7 +118,7 @@ spec:
             capabilities: {drop: [ALL]}
       containers:
         - name: mas
-          image: ghcr.io/element-hq/matrix-authentication-service:1.28.0@sha256:494c67f08ee8344368f4ed336611dea02b26c4e058bf37a212d090d50b612659
+          image: ghcr.io/element-hq/matrix-authentication-service:1.29.0@sha256:9247315c9e86096aaaa393c7b4b685dc506010e09ff4b89331ef2ed4854167af
           # `server` migrates the database and syncs the Keycloak provider
           # from the config before it starts serving.
           args: [server, --config, /config/config.yaml, --config, /secrets/secrets.yaml]

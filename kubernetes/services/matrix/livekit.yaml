@@ -292,7 +292,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: lk-jwt-service
-          image: ghcr.io/element-hq/lk-jwt-service:0.9.0@sha256:d210fd778ba38b7e42e6fc64e8a24a7d66ccc3b938fb20d73bd713224af2dfea
+          image: ghcr.io/element-hq/lk-jwt-service:0.10.0@sha256:b821befeb148929825f1a9059253d9faa0764991f45c07a91db5ad21a81c2dde
           env:
             - {name: LIVEKIT_URL, value: "wss://sfu.yeetus.net"}
             - {name: LIVEKIT_JWT_BIND, value: ":8080"}
