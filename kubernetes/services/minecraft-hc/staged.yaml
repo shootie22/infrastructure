@@ -62,7 +62,7 @@ spec:
               mountPath: /server
       containers:
         - name: minecraft
-          image: git.radunenu.com/radu/spigotmc-docker:server-v0.0.9@sha256:a6c81e27cc2c17c97ecca246e05ac113a0c22fb6aa12d1b0046828675767e711
+          image: git.radunenu.com/radu/spigotmc-docker:server-v0.0.9@sha256:0019660d46c764d0f9cfc8497abbf13a6660d9979c1e6cc9856d1750bf267107
           stdin: true
           tty: true
           envFrom:
@@ -175,7 +175,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: sftp
-          image: atmoz/sftp:alpine@sha256:5eb757b2fac4d15e458ecec96f7edd9101b5efeefb16138b93e9f975075d8825
+          image: atmoz/sftp:alpine@sha256:c5fb9e4beb8b7054a4c0b65c5e11df47cc20da95ad6002e88aecff62bab06372
           args:
             - "$(SFTP_USERNAME):$(SFTP_PASSWORD):1000"
           envFrom:
