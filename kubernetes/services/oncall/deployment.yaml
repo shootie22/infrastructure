@@ -97,7 +97,7 @@ spec:
             - {name: kube-api, mountPath: /var/run/secrets/kubernetes.io/serviceaccount, readOnly: true}
         - name: matrix-bot
           # Pin by digest once CI has built it (docs/updates.md).
-          image: git.radunenu.com/radu/matrix-webhook-bot:v0.0.10@sha256:6ba02be1127b0d78cba51e0518afa79e8fa03bbf71222871f4e049b481a63b83
+          image: git.radunenu.com/radu/matrix-webhook-bot:v0.0.10@sha256:d6387eafbffd598676f39d95948475dc2521fe749ea009729daad85e543cacbc
           env:
             # Only the agent next to it calls it (the network policy lets
             # nothing else in on this port).

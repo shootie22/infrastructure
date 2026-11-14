@@ -102,7 +102,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: canary
-          image: docker.io/alpine/k8s:1.37.2@sha256:dcb7185e112a453aa72f426754849a97357727ef8f40168fb208c8cf59952042
+          image: docker.io/alpine/k8s:1.37.2@sha256:7a82aeefea3d554a43a8676b137f2b88bae6c1fe11c13862b191b3a086cc28c0
           command: [/bin/sh, /etc/canary/canary.sh]
           resources:
             requests: {cpu: 5m, memory: 16Mi}
@@ -116,7 +116,7 @@ spec:
             - {name: secret, mountPath: /secret, readOnly: true}
             - {name: metrics, mountPath: /metrics}
         - name: web
-          image: docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
+          image: docker.io/library/nginx:1.31-alpine@sha256:fed7e14be83cbd2661a75cdc5b872d936cf155d46c327084d30b8df19ae88d72
           command: [nginx, -c, /etc/canary/nginx.conf, -g, "daemon off;"]
           ports:
             - {name: metrics, containerPort: 8080}
