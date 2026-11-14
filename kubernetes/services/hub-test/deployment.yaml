@@ -30,7 +30,7 @@ spec:
       terminationGracePeriodSeconds: 90
       containers:
         - name: hub-test
-          image: docker.io/itzg/minecraft-server:java25@sha256:29d72be20e5287f84bc9927b03b3b80d813ba5a9e4e686b0e1817930c723d2dc
+          image: docker.io/itzg/minecraft-server:java25@sha256:7d4a888284c2f8d468f620f2534de648cb8eacba48df8d4d20b6ad1ef201f3a3
           # Once this setup (HUB_SETUP) has started here, start it from what's
           # in /data without the download sites: no content or list syncing,
           # and the server jar the last install left (infra-hub #53). A new
