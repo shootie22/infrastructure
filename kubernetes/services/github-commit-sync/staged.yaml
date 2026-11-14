@@ -57,7 +57,7 @@ spec:
             value: "1"
       containers:
         - name: github-commit-sync
-          image: git.radunenu.com/radu/github-commit-sync:v0.2.1@sha256:6d6fdb21f3ac7a8a302f5d45960b8b0cd6469daf1a70915c7f7ff2fa9a5ce61d
+          image: git.radunenu.com/radu/github-commit-sync:v0.2.1@sha256:c43bcd0484f7d2f73b5cc4a98da46679638a7fb0a496a29769c1e0d6c613bda3
           imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:

@@ -218,7 +218,7 @@ data:
         # gets an ext4 disk image there instead, which the VM's kernel
         # mounts. Ubuntu's image has mkfs; Docker's don't.
         - name: format
-          image: docker.io/library/ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852
+          image: docker.io/library/ubuntu:24.04@sha256:2198e4c65076e9cb0b3d695219df667c0e3b0072da64ca3c2648aca17dcecaf5
           command: ["sh", "-c", "truncate -s 28G /disk/docker.img && mkfs.ext4 -q -F -E lazy_itable_init=1,lazy_journal_init=1 /disk/docker.img"]
           securityContext:
             allowPrivilegeEscalation: false
@@ -232,7 +232,7 @@ data:
         # instead, sets up the devices the VM's /dev lacks, mounts the disk,
         # then hands over to the rootless user for good.
         - name: docker
-          image: docker.io/library/docker:29.9.3-dind-rootless@sha256:87e10120f2f9dd99ff78f30ff1e27a86b96ed1371e9bb50be7e96bfb00fd69b4
+          image: docker.io/library/docker:29.9.3-dind-rootless@sha256:707a099b8ddd86306eb28c8b1775264a3ee0135b16dc505b7b48ffb328edf8d0
           restartPolicy: Always
           command:
             - sh
