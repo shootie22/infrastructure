@@ -22,6 +22,7 @@ spec:
       labels:
         app: hytale
     spec:
+      priorityClassName: background
       automountServiceAccountToken: false
       # Runs on whichever of fuji and the thinkcentre holds the label; the
       # other has a copy of the world and takes over when this site is gone
@@ -65,6 +66,11 @@ spec:
             - name: hytale
               containerPort: 5520
               protocol: UDP
+          # Stopped, so nothing measured: MIN_MEMORY's 4 GiB of heap and a
+          # little more, and room past MAX_MEMORY's 8 GiB.
+          resources:
+            requests: {cpu: 250m, memory: 4608Mi}
+            limits: {memory: 10Gi}
           volumeMounts:
             - name: server-files
               mountPath: /home/hytale/server-files

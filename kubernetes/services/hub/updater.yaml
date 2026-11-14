@@ -88,6 +88,7 @@ spec:
       activeDeadlineSeconds: 600
       template:
         spec:
+          priorityClassName: background
           serviceAccountName: hub-updater
           restartPolicy: Never
           containers:

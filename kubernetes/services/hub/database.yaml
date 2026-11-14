@@ -68,6 +68,7 @@ spec:
       backoffLimit: 1
       template:
         spec:
+          priorityClassName: background
           restartPolicy: Never
           automountServiceAccountToken: false
           nodeSelector:
@@ -86,6 +87,9 @@ spec:
                 - name: PGPASSWORD
                   valueFrom:
                     secretKeyRef: {name: hub-db-app, key: password}
+              resources:
+                requests: {cpu: 10m, memory: 64Mi}
+                limits: {memory: 256Mi}
               securityContext:
                 allowPrivilegeEscalation: false
               volumeMounts:

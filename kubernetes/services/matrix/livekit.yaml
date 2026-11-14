@@ -386,6 +386,7 @@ spec:
       activeDeadlineSeconds: 90
       template:
         spec:
+          priorityClassName: background
           restartPolicy: Never
           serviceAccountName: livekit-ro-address
           securityContext:

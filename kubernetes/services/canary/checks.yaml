@@ -151,6 +151,7 @@ spec:
       activeDeadlineSeconds: 240
       template:
         spec:
+          priorityClassName: background
           automountServiceAccountToken: false
           enableServiceLinks: false
           restartPolicy: Never
@@ -201,6 +202,7 @@ spec:
       activeDeadlineSeconds: 1700
       template:
         spec:
+          priorityClassName: background
           serviceAccountName: canary-ci
           enableServiceLinks: false
           restartPolicy: Never

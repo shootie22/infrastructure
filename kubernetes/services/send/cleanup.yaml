@@ -20,6 +20,7 @@ spec:
           labels:
             app.kubernetes.io/name: send-cleanup
         spec:
+          priorityClassName: background
           automountServiceAccountToken: false
           restartPolicy: Never
           # Wherever Send runs (site-failover).
