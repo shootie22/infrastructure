@@ -347,7 +347,7 @@ spec:
       # The hash of the ConfigMaps it reads (scripts/check-config-hash), so
       # a change to the dispatcher's restarts it.
       annotations:
-        config-hash: "1f50acc5e60d"
+        config-hash: "510ad8f25f91"
     spec:
       priorityClassName: background
       serviceAccountName: dispatcher
