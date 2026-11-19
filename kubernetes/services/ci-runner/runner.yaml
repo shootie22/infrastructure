@@ -101,10 +101,17 @@ data:
   # (was 6Gi): GameVault's release build of its app crate was killed for memory
   # there on 8 Nov and passed on fuji. Its VM is then about 9 GiB, within the
   # thinkcentre's /dev/shm (half of its 31 GiB); the pod still asks for 1Gi.
+  # dell (from 2026-11-19) is there mostly for x86 CI and has 31 GiB and
+  # nothing heavy next to it, so a job gets 16Gi for big compiles: its VM is
+  # then about 17 GiB, within its /dev/shm (31 GiB, dotfiles kata.nix), and
+  # still leaves room for the pods there; it's evicted first if not. 3 of its
+  # 4 cores, so the node's own pods always keep one. Its disk is capped for
+  # CI VMs (dotfiles hosts/dell, kata ciIo): the SSD stalls others otherwise.
   slots: |
     thinkcentre linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-thinkcentre:docker://docker.gitea.com/runner-images:ubuntu-latest 2 8Gi /home
     fuji linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-fuji:docker://docker.gitea.com/runner-images:ubuntu-latest 2 8Gi /
     mixi linux-arm64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-arm64-mixi:docker://docker.gitea.com/runner-images:ubuntu-latest 3 3584Mi / 512Mi
+    dell linux-amd64:docker://docker.gitea.com/runner-images:ubuntu-latest,linux-amd64-dell:docker://docker.gitea.com/runner-images:ubuntu-latest 3 16Gi /var/lib/rancher
 
   register.yaml: |
     runner:
@@ -347,7 +354,7 @@ spec:
       # The hash of the ConfigMaps it reads (scripts/check-config-hash), so
       # a change to the dispatcher's restarts it.
       annotations:
-        config-hash: "1f50acc5e60d"
+        config-hash: "378243e653b3"
     spec:
       priorityClassName: background
       serviceAccountName: dispatcher
