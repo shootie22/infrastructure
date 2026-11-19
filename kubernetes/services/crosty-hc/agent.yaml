@@ -165,8 +165,6 @@ spec:
         - ipBlock: {cidr: 10.42.3.1/32}
         - ipBlock: {cidr: 10.42.4.0/32}  # edge
         - ipBlock: {cidr: 10.42.4.1/32}
-        - ipBlock: {cidr: 10.42.5.0/32}  # dell
-        - ipBlock: {cidr: 10.42.5.1/32}
 ---
 # hub-updater (in hub) restarts this agent when Hub's image moves, and can
 # do nothing else here.
