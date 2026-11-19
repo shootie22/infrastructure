@@ -64,7 +64,7 @@ spec:
                   app.kubernetes.io/name: ollama-front
       containers:
         - name: nginx
-          image: docker.io/library/nginx:1.31-alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed0606
+          image: docker.io/library/nginx:1.31-alpine@sha256:0563c36f94a6d3ec3584161b77859f740f7e20b4853f52c796a864ce6908e8ea
           ports:
             - name: http
               containerPort: 11434
