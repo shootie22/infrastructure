@@ -168,3 +168,35 @@ spec:
     frameDeny: true
     referrerPolicy: strict-origin-when-cross-origin
     permissionsPolicy: "camera=(), microphone=(), geolocation=()"
+---
+# The FeedbackSurvey pages from 2022 (v3/api/fsp, also reachable as /fsp
+# through a symlink in the webroot): a.php takes screenshot uploads into the
+# webroot and, like panel.php, writes what it's sent straight into SQL; the
+# only check is a key that ships inside the game. Nothing but the downloads
+# has been used lately (one request in two weeks, 2026-11-19), so the rest is
+# 403 on every name this Apache answers to. downloads/ stays public.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: deny-all
+  namespace: legacy-web
+spec:
+  ipAllowList:
+    sourceRange: [127.0.0.1/32]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: legacy-fsp-blocked
+  namespace: legacy-web
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: (Host(`api-old.radunenu.com`) || Host(`api.byradu.com`) || Host(`news.kronorite.com`) || Host(`stats.kronorite.com`)) && (PathPrefix(`/v3/api/fsp`) || PathPrefix(`/fsp`)) && !PathPrefix(`/v3/api/fsp/downloads`) && !PathPrefix(`/fsp/downloads`)
+      priority: 1000
+      middlewares:
+        - {name: deny-all}
+      services:
+        - {name: legacy-api, port: 80}
+  tls:
+    secretName: legacy-api-tls
