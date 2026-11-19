@@ -44,6 +44,7 @@ map $node $site {
     minima ro;
     thinkcentre dk;
     mixi dk;
+    dell dk;
     default "";
 }
 server {
