@@ -147,7 +147,12 @@ metadata:
 spec:
   entryPoints: [websecure]
   routes:
-    - match: (Host(`cal.yeetus.net`) || Host(`cal.radunenu.com`)) && PathPrefix(`/admin`)
+    # Since 2026-11-19 not just /admin: everything an anonymous visitor
+    # could reach that runs PHP. The image's PHP 8.1 is past its end of life
+    # and got no fix for PHP2Shell (CVE-2026-109618/109619, exploited since
+    # 21 Oct), so only signed-in DAV requests (dav-auth) get to PHP, and
+    # /.well-known, which nginx redirects without PHP. The start page goes.
+    - match: (Host(`cal.yeetus.net`) || Host(`cal.radunenu.com`)) && !PathPrefix(`/dav.php`) && !PathPrefix(`/cal.php`) && !PathPrefix(`/card.php`) && !PathPrefix(`/.well-known/`)
       priority: 1000
       middlewares:
         - {name: deny-all}
