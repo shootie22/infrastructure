@@ -166,6 +166,10 @@ data:
         // nothing on the runners but the discard port; they get nothing on
         // the edge.
         { "action": "accept", "src": ["edge", "edge6"], "dst": ["ci@:9"] },
+        // dell too: its home relay is the edge, and with nothing else relating
+        // it to the edge, the relay turned it away, so fuji only reached it
+        // once dell had opened a direct path itself (2026-11-19).
+        { "action": "accept", "src": ["edge", "edge6"], "dst": ["dell:9", "dell6:9"] },
 
         // Tailnet DNS (split DNS for infra.radunenu.com, served on fuji and the
         // thinkcentre).
