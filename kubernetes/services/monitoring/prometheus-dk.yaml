@@ -29,7 +29,7 @@ spec:
         fsGroup: 65534
       containers:
         - name: prometheus
-          image: quay.io/prometheus/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2
+          image: quay.io/prometheus/prometheus:v3.16.0@sha256:9332054523223e2ddc18d8101799d54a4a8d823b030c53216f063a6c117773cd
           args:
             - --config.file=/etc/prometheus/prometheus.yml
             - --storage.tsdb.path=/prometheus
@@ -60,7 +60,7 @@ spec:
             - name: data
               mountPath: /prometheus
         - name: config-reloader
-          image: quay.io/prometheus-operator/prometheus-config-reloader:v0.94.2@sha256:a1897c67478bc23434534e91ad3855280771196b1daf17144db9dbcb655bef71
+          image: quay.io/prometheus-operator/prometheus-config-reloader:v0.95.2@sha256:cc74ddedad4ab1c49446971f6d51302ad4303d8660a2018af925c7f62c114304
           args:
             - --watched-dir=/etc/prometheus
             - --reload-url=http://127.0.0.1:9090/-/reload
