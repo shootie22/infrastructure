@@ -17,7 +17,7 @@ spec:
       labels:
         app: headscale
       annotations:
-        config-hash: "08f11660badd"
+        config-hash: "e039e4c27654"
     spec:
       priorityClassName: platform-critical
       # Runs on whichever of fuji and the thinkcentre holds the label; the
