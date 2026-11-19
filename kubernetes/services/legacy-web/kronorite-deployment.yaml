@@ -16,7 +16,7 @@ spec:
       priorityClassName: service
       containers:
         - name: caddy
-          image: caddy:2.11.8-alpine@sha256:3db3a09e418f86a8fce8de4bc0026fccd2b4cd925aef00cc7d843d9fdc75e442
+          image: caddy:2.11.9-alpine@sha256:003a97808e781aa9f7e75cc2f43d34d461099031faf5e20faefb9f61126836f0
           args:
             - caddy
             - run
