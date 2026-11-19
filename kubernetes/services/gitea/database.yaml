@@ -12,6 +12,13 @@ metadata:
 spec:
   priorityClassName: platform-critical
   instances: 2
+  # A primary that stops answering is only replaced after 5 minutes:
+  # the replicas are asynchronous, so a promotion can lose the last
+  # writes, and on 2026-11-19 a 2.5-minute mesh outage on the
+  # thinkcentre failed eight databases over (docs/incidents/
+  # 2026-11-19-mesh-restart-failovers.md). A site that's really gone
+  # still fails over, 5 minutes later.
+  failoverDelay: 300
   imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
   # The hourly dump reads the replica. Without this the primary vacuums away
   # rows the dump is still reading, and the replica cancels it ("conflict
