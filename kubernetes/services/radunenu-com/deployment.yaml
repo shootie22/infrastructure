@@ -13,12 +13,13 @@ spec:
       labels:
         app: radunenu-com
     spec:
+      priorityClassName: service
       containers:
         # Pinned to the release's version and digest; to roll out a release, change both
         # images to its tag once that tag's build is green. (:latest raced: an older tag's
         # build finishing last overwrote it.)
         - name: website
-          image: git.radunenu.com/radu/radunenu.com-minimal:v0.1.61@sha256:493df930eed6d3a04001d18950b5b1ac1f2336b442670906d08b5d9e8ecdaaed
+          image: git.radunenu.com/radu/radunenu.com-minimal:v0.1.62@sha256:921f7e703b0e784f63538b7b959cdce30072b0102988e4979e00a596a1378c32
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 1310
@@ -49,7 +50,7 @@ spec:
             requests:
               memory: 64Mi
         - name: stats-updater
-          image: git.radunenu.com/radu/radunenu.com-minimal-stats-updater:v0.1.61@sha256:ee8c70c62d556f25125b5eeb08784c6aa56fe0d16d8c9186241481628b96d268
+          image: git.radunenu.com/radu/radunenu.com-minimal-stats-updater:v0.1.62@sha256:88c1a7f780383d5f27de62715aa954a041ea74d3e4622f33015e0dfecb8c01d2
           imagePullPolicy: IfNotPresent
           env:
             - name: STATUS_API_TOKEN

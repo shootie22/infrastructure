@@ -1,0 +1,138 @@
+#!/usr/bin/env python3
+"""Pods restart when the config they read changes, without anyone remembering to.
+
+Many programs read their ConfigMap or Secret only when they start (Headscale's
+ACL, Caddy's and Apache's config, Element's config.json, env from a Secret).
+Argo updates the ConfigMap, but the pod keeps running the old one until it
+restarts. That used to be a `config-revision` annotation bumped by hand, and
+it was forgotten: Headscale's ACL change of 2026-11-08 synced but never
+loaded, so GitHub's build runners couldn't reach the build cache.
+
+Now a workload's pod template carries
+
+    annotations:
+      config-hash: "<12 hex digits>"
+
+the hash of every ConfigMap and Secret defined in this repo that the pod
+mounts or reads env from (in the same namespace). Change one and the hash in
+the repo is stale: this check fails, `scripts/check-config-hash --fix`
+writes the new value, and the changed annotation makes Kubernetes roll the
+pod. Workloads without the annotation are left alone; ConfigMaps and Secrets
+made elsewhere (Hub, operators) aren't part of the hash.
+
+    scripts/check-config-hash          # exit 1 when a hash is stale
+    scripts/check-config-hash --fix    # write the right hashes
+"""
+
+import hashlib
+import pathlib
+import re
+import sys
+
+import yaml
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent / "kubernetes"
+WORKLOADS = {"Deployment", "StatefulSet", "DaemonSet"}
+ANNOTATION = "config-hash"
+
+# name -> text of each ConfigMap/Secret document, per namespace.
+defs = {}
+workloads = []
+
+
+def split_docs(text):
+    """The file as alternating documents and "---" lines, so it can be put
+    back together exactly; documents come with their parsed object."""
+    parts = re.split(r"(?m)(^---[ \t]*$)", text)
+    out = []
+    for i, part in enumerate(parts):
+        if i % 2:
+            out.append((part, None, True))
+            continue
+        try:
+            obj = yaml.safe_load(part)
+        except yaml.YAMLError:
+            obj = None
+        out.append((part, obj, False))
+    return out
+
+
+for f in sorted(ROOT.rglob("*.yaml")):
+    if f.name == "hub.yaml":
+        continue
+    text = f.read_text()
+    for chunk, obj, sep in split_docs(text):
+        if sep or not isinstance(obj, dict):
+            continue
+        kind = obj.get("kind")
+        meta = obj.get("metadata") or {}
+        ns = meta.get("namespace", "default")
+        if kind in ("ConfigMap", "Secret") and meta.get("name"):
+            defs.setdefault(ns, {})[meta["name"]] = defs.get(ns, {}).get(meta["name"], "") + chunk
+        elif kind in WORKLOADS:
+            workloads.append((f, ns, meta.get("name"), obj))
+
+
+def referenced(spec):
+    names = set()
+    for v in spec.get("volumes") or []:
+        if "configMap" in v:
+            names.add(v["configMap"].get("name"))
+        if "secret" in v:
+            names.add(v["secret"].get("secretName"))
+        for src in (v.get("projected") or {}).get("sources") or []:
+            for k in ("configMap", "secret"):
+                if k in src:
+                    names.add(src[k].get("name"))
+    for c in (spec.get("containers") or []) + (spec.get("initContainers") or []):
+        for ef in c.get("envFrom") or []:
+            for k in ("configMapRef", "secretRef"):
+                if k in ef:
+                    names.add(ef[k].get("name"))
+        for e in c.get("env") or []:
+            vf = e.get("valueFrom") or {}
+            for k in ("configMapKeyRef", "secretKeyRef"):
+                if k in vf:
+                    names.add(vf[k].get("name"))
+    return {n for n in names if n}
+
+
+fix = "--fix" in sys.argv[1:]
+stale, files_to_fix = [], {}
+for f, ns, name, obj in workloads:
+    tmpl = (obj.get("spec") or {}).get("template") or {}
+    ann = ((tmpl.get("metadata") or {}).get("annotations")) or {}
+    if ANNOTATION not in ann:
+        continue
+    refs = sorted(n for n in referenced(tmpl.get("spec") or {}) if n in defs.get(ns, {}))
+    if not refs:
+        stale.append(f"{f.relative_to(ROOT.parent)}: {name} has {ANNOTATION} but reads no ConfigMap or Secret defined here")
+        continue
+    h = hashlib.sha256()
+    for n in refs:
+        h.update(n.encode() + b"\0" + defs[ns][n].encode() + b"\0")
+    want = h.hexdigest()[:12]
+    have = str(ann[ANNOTATION])
+    if have != want:
+        stale.append(f"{f.relative_to(ROOT.parent)}: {name} {ANNOTATION} is {have}, should be {want} ({', '.join(refs)})")
+        files_to_fix.setdefault(f, []).append((name, have, want))
+
+if fix:
+    for f, changes in files_to_fix.items():
+        out = []
+        for chunk, obj, sep in split_docs(f.read_text()):
+            if not sep and isinstance(obj, dict) and obj.get("kind") in WORKLOADS:
+                for name, have, want in changes:
+                    if (obj.get("metadata") or {}).get("name") == name:
+                        chunk = re.sub(
+                            rf'(?m)^(\s+{ANNOTATION}:\s*)"?{re.escape(have)}"?[ \t]*$',
+                            rf'\g<1>"{want}"', chunk, count=1)
+            out.append(chunk)
+        f.write_text("".join(out))
+    print(f"wrote {sum(len(c) for c in files_to_fix.values())} config hash(es)")
+    sys.exit(0)
+
+for s in stale:
+    print(s)
+print(f"{len(stale)} stale config hash(es); run scripts/check-config-hash --fix" if stale else "every config hash is current")
+sys.exit(1 if stale else 0)

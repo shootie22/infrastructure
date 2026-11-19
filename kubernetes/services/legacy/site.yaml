@@ -3,8 +3,8 @@
 # the network-admin login (ingress.yaml), so it's only for me.
 #
 # Jersey 10 and Monocraft (subset to ASCII) are inlined, both OFL, so the
-# page needs nothing from elsewhere. After changing the page, bump
-# config-revision in deployment.yaml: Caddy reads the files once at start.
+# page needs nothing from elsewhere. After changing the page, run
+# scripts/check-config-hash --fix: Caddy reads the files once at start.
 apiVersion: v1
 kind: ConfigMap
 metadata:

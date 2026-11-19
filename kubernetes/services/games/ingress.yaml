@@ -1,0 +1,32 @@
+# All of games.yeetus.net: the API (/v1, the websocket at /v1/events),
+# /healthz, the app's download page (/download) and the web view at every other
+# path (the library, game pages and downloads in the browser). DNS only (grey
+# cloud) in Cloudflare, like the old GameVault: downloads are whole games, which
+# the proxy's terms don't allow, and it cuts uploads at 100 MB.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: games
+  namespace: games
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: Games
+    gethomepage.dev/icon: gamevault.png
+    gethomepage.dev/description: Our game library
+    gethomepage.dev/weight: "140"
+    gethomepage.dev/siteMonitor: http://games.games.svc.cluster.local/healthz
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [games.yeetus.net]
+      secretName: games-yeetus-net-tls
+  rules:
+    - host: games.yeetus.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: games, port: {number: 80}}}

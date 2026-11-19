@@ -93,6 +93,7 @@ data:
         "minima": "100.64.0.8",       "minima6": "fd7a:115c:a1e0::8/128",
         "edge": "100.64.0.9",         "edge6": "fd7a:115c:a1e0::9/128",
         "workstation": "100.64.0.10", "workstation6": "fd7a:115c:a1e0::a/128",
+        "dell": "100.64.0.23",        "dell6": "fd7a:115c:a1e0::17/128",
 
         // Fuji's LAN API address (the kubernetes Service endpoint), routed via
         // Fuji for remote K3s nodes. Approved on the node:
@@ -107,12 +108,12 @@ data:
         {
           "action": "accept",
           "src": [
-            "fuji", "mixi", "macminim4", "thinkcentre", "minima",
-            "fuji6", "mixi6", "macminim46", "thinkcentre6", "minima6",
+            "fuji", "mixi", "macminim4", "thinkcentre", "minima", "dell",
+            "fuji6", "mixi6", "macminim46", "thinkcentre6", "minima6", "dell6",
           ],
           "dst": [
-            "fuji:*", "mixi:*", "macminim4:*", "thinkcentre:*", "minima:*",
-            "fuji6:*", "mixi6:*", "macminim46:*", "thinkcentre6:*", "minima6:*",
+            "fuji:*", "mixi:*", "macminim4:*", "thinkcentre:*", "minima:*", "dell:*",
+            "fuji6:*", "mixi6:*", "macminim46:*", "thinkcentre6:*", "minima6:*", "dell6:*",
             "fuji-lan:*",
           ],
         },
@@ -149,6 +150,26 @@ data:
         // Failover checkers read each other's votes (docs/ha/failover.md).
         { "action": "accept", "src": ["edge", "edge6"], "dst": ["mixi:9180", "mixi6:9180"] },
         { "action": "accept", "src": ["mixi", "mixi6"], "dst": ["edge:9180", "edge6:9180"] },
+
+        // The dotfiles build cache (Attic on the thinkcentre, dotfiles
+        // modules/nixos/build-cache.nix): GitHub Actions runners join as user
+        // "ci" (ephemeral) and may reach that port and nothing else; the edge
+        // downloads its system from it. The cluster nodes reach it through
+        // the rule at the top.
+        { "action": "accept", "src": ["ci@"], "dst": ["thinkcentre:8199", "thinkcentre6:8199"] },
+        { "action": "accept", "src": ["edge", "edge6"], "dst": ["thinkcentre:8199", "thinkcentre6:8199"] },
+        // The edge's relay (derper --verify-clients) only relays for devices
+        // its own tailscaled knows, and that's only devices the ACL relates
+        // to the edge. The runners and the thinkcentre are both behind NAT
+        // and the thinkcentre's home relay is the edge, so without this the
+        // runners had no way to it at all (2026-11-08). The edge may open
+        // nothing on the runners but the discard port; they get nothing on
+        // the edge.
+        { "action": "accept", "src": ["edge", "edge6"], "dst": ["ci@:9"] },
+        // dell too: its home relay is the edge, and with nothing else relating
+        // it to the edge, the relay turned it away, so fuji only reached it
+        // once dell had opened a direct path itself (2026-11-19).
+        { "action": "accept", "src": ["edge", "edge6"], "dst": ["dell:9", "dell6:9"] },
 
         // Tailnet DNS (split DNS for infra.radunenu.com, served on fuji and the
         // thinkcentre).

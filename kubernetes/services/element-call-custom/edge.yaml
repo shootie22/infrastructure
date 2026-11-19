@@ -19,6 +19,7 @@ spec:
       labels:
         app: element-call-edge
     spec:
+      priorityClassName: matrix-critical
       automountServiceAccountToken: false
       nodeSelector:
         kubernetes.io/hostname: edge

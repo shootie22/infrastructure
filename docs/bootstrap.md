@@ -53,11 +53,11 @@ Order: Nebula first (it needs nothing), then one server restored from an etcd sn
    - run k3s once by hand with its usual flags plus `--cluster-reset --cluster-reset-restore-path=<newest snapshot>`. It restores and exits; start the service again.
 
    With the snapshot restored, Argo CD, the SOPS key and every app are back as they were; skip to step 5.
-3. **Only if there is no snapshot**, a fresh cluster: Argo CD (v3.5.2):
+3. **Only if there is no snapshot**, a fresh cluster: Argo CD (v3.5.2, upstream's manifests with priorities and requests added), after the priority classes it names:
    ```sh
    kubectl create namespace argocd
-   kubectl apply -n argocd --server-side \
-     -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.2/manifests/install.yaml
+   kubectl apply -f kubernetes/argocd/priority-classes.yaml
+   kubectl apply -n argocd --server-side -k kubernetes/bootstrap/argocd
    ```
    SOPS key for the operator:
    ```sh

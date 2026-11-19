@@ -1,0 +1,95 @@
+# Argo CD itself, which isn't reconciled by Argo CD (docs/bootstrap.md):
+# upstream's install.yaml plus a priority class and requests for each part,
+# which the upstream manifests leave out (so every part ran BestEffort, the
+# first thing a node evicts). Apply by hand, and again with each upgrade:
+#
+#   kubectl apply -n argocd --server-side -k kubernetes/bootstrap/argocd
+#
+# Requests from what each part used in the week to 2026-11-08 (Prometheus):
+# the application controller up to 1.1 GiB while it refreshes everything
+# (510 MiB p99), the repo server 150 MiB, the rest under 90 MiB.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: argocd
+resources:
+  - https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.2/manifests/install.yaml
+patches:
+  # Nowhere near mixi, whose 4.6 GiB for pods is full (and not the edge,
+  # which has 1.3 GiB): it ran six of these, 0.7 GiB.
+  - target: {kind: Deployment, labelSelector: app.kubernetes.io/part-of=argocd}
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: {name: any}
+      spec:
+        template:
+          spec:
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - {key: kubernetes.io/hostname, operator: NotIn, values: [mixi, edge]}
+  - target: {kind: StatefulSet, labelSelector: app.kubernetes.io/part-of=argocd}
+    patch: |-
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata: {name: any}
+      spec:
+        template:
+          spec:
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - {key: kubernetes.io/hostname, operator: NotIn, values: [mixi, edge]}
+  # kubernetes/argocd/argocd-server-service.yaml has Argo CD's own copy, which
+  # Argo CD keeps.
+  - patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Service
+      metadata: {name: argocd-server}
+  - target: {kind: StatefulSet, name: argocd-application-controller}
+    patch: |-
+      - {op: add, path: /spec/template/spec/priorityClassName, value: platform-critical}
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value: {requests: {cpu: 100m, memory: 1Gi}, limits: {memory: 2Gi}}
+  - target: {kind: Deployment, name: argocd-repo-server}
+    patch: |-
+      - {op: add, path: /spec/template/spec/priorityClassName, value: platform-critical}
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value: {requests: {cpu: 20m, memory: 256Mi}, limits: {memory: 1Gi}}
+  - target: {kind: Deployment, name: argocd-server}
+    patch: |-
+      - {op: add, path: /spec/template/spec/priorityClassName, value: platform-critical}
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value: {requests: {cpu: 10m, memory: 96Mi}, limits: {memory: 256Mi}}
+  - target: {kind: Deployment, name: argocd-applicationset-controller}
+    patch: |-
+      - {op: add, path: /spec/template/spec/priorityClassName, value: platform-critical}
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value: {requests: {cpu: 10m, memory: 96Mi}, limits: {memory: 256Mi}}
+  - target: {kind: Deployment, name: argocd-redis}
+    patch: |-
+      - {op: add, path: /spec/template/spec/priorityClassName, value: platform-critical}
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value: {requests: {cpu: 25m, memory: 128Mi}, limits: {memory: 256Mi}}
+  - target: {kind: Deployment, name: argocd-dex-server}
+    patch: |-
+      - {op: add, path: /spec/template/spec/priorityClassName, value: platform-critical}
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value: {requests: {cpu: 5m, memory: 64Mi}, limits: {memory: 256Mi}}
+  - target: {kind: Deployment, name: argocd-notifications-controller}
+    patch: |-
+      - {op: add, path: /spec/template/spec/priorityClassName, value: platform-critical}
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value: {requests: {cpu: 5m, memory: 64Mi}, limits: {memory: 256Mi}}

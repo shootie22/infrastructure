@@ -13,11 +13,14 @@ spec:
     # remote workers need to find their tailnet paths.
     deployment:
       replicas: 2
-    # Room for a busy day (it peaked at 302 Mi in the week before), and a ceiling
-    # so a flood of connections can't take the node's memory (security audit).
+    # Room for a busy day (it peaked at 303 Mi in the week to 2026-11-08), and
+    # a ceiling so a flood of connections can't take the node's memory
+    # (security audit). No CPU limit: it's in front of every request.
     resources:
-      requests: {memory: 128Mi}
+      requests: {cpu: 150m, memory: 320Mi}
       limits: {memory: 1Gi}
+    # k3s's own default, written out so scripts/check-resources sees it.
+    priorityClassName: system-cluster-critical
     affinity:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:

@@ -16,6 +16,7 @@ spec:
       labels:
         app.kubernetes.io/name: ollama
     spec:
+      priorityClassName: background
       nodeSelector:
         kubernetes.io/hostname: minima
       securityContext:
@@ -42,7 +43,7 @@ spec:
           resources:
             requests:
               cpu: 500m
-              memory: 2Gi
+              memory: 1Gi
             limits:
               memory: 10Gi
               devic.es/gpu: 1

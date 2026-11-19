@@ -23,8 +23,8 @@ package `cubitrix-site`, version `latest`, file `site.tar.gz`.
 Change `site/` in the Cubitrix repository and push: CI publishes it, and both
 copies serve it within five minutes. Nothing here changes.
 
-After changing `site.yaml`, bump `config-revision` in `deployment.yaml` so the
-pods restart and read it.
+After changing `site.yaml`, run `scripts/check-config-hash --fix` so the pods restart
+and read it.
 
 ## By hand
 

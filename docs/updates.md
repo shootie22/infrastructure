@@ -7,7 +7,7 @@ How things get new versions without anyone remembering to check, while still pin
 | Lane | What | How it updates |
 |---|---|---|
 | NixOS hosts | flake.lock: kernel, k3s, system packages | fuji proposes a pull request on dotfiles every Saturday, with what changes per host ([#84](https://github.com/shootie22/infrastructure/issues/84)). Merging rolls it out through comin. |
-| Services | container images and Helm charts in this repo: Gitea, Vaultwarden, PrivateBin, Grafana, cert-manager... | Renovate runs every night and keeps one pull request for all minor and patch updates, plus a separate one for each major update and for anything labelled careful (databases, cert-manager, sops-secrets-operator, headscale, PHP), with versions and release notes. Versions stay pinned (tag plus digest) until merged; Argo rolls it out ([#108](https://github.com/shootie22/infrastructure/issues/108)). |
+| Services | container images and Helm charts in this repo: Gitea, Vaultwarden, PrivateBin, Grafana, cert-manager... | Renovate runs every night and keeps one pull request for image patches, one for rebuilds of the same version, one for the other minor and patch updates, plus a separate one for each major update and for anything labelled careful (databases, cert-manager, sops-secrets-operator, headscale, PHP), with versions and release notes. Versions stay pinned (tag plus digest) until merged; Argo rolls it out ([#108](https://github.com/shootie22/infrastructure/issues/108)). The safe ones merge themselves, see below. |
 | Vulnerability scan | every image in kubernetes/ | Every morning Trivy checks every image for HIGH and CRITICAL CVEs that already have a fix (scripts/image-scan). They go into one issue labelled image-scan; a new one gets a comment, which notifies. Nothing changes by itself: the fix is the Renovate PR, or a rebuild of our own images. |
 | Fast lane | things meant to be on the newest build: Element Web (develop), game servers in active development | an in-cluster updater restarts them when a new image is published. Renovate leaves these alone. |
 
@@ -18,6 +18,17 @@ A service image is written as `name:tag@sha256:digest`. The tag says which versi
 Digest-only is worse than unreadable. Renovate treats an image with no tag as `latest`, so its "rebuilt image" PR (#116) would actually have moved Joplin's and Gitea's Postgres from 15 and 14 to 18, and Postgres won't start on an older major's data. The same PR would have taken ClickHouse from 25.4 to 26.9, switched Baikal from nginx to apache, and put the sftp sidecar on a 2024 Debian build. Closed it and gave every image its real tag.
 
 Exception: atmoz/sftp publishes no version tags, only `alpine` and `debian`, so it stays on `alpine@sha256:...` and its updates show up as rebuilds of that tag.
+
+## What merges itself
+
+Renovate merges a pull request by itself, on its nightly run, once every check on it has passed and nobody else has pushed to its branch (`automerge` in renovate.json):
+
+- patch updates of images (the `service patches` PR), rebuilds of the same version (`rebuilt images (same versions)`) and pinning a digest, as long as the tag names a version
+- patch updates and new digests of the workflows' actions (`workflow actions`)
+
+Everything else waits for me: minor and major updates, new builds of a moving tag (`main`, `latest`, `java25`, `alpine`, which go into `rebuilt images (careful)`), Helm charts and tofu providers, and anything that holds data or that everything else depends on. That's the databases (CloudNativePG and its Postgres images, ClickHouse, Redis), Gitea and its runners, Keycloak, k3s, Argo CD, cert-manager, sops-secrets-operator, whatever is labelled careful, and the game servers, since a restart kicks the players. The NixOS side (kernel, k3s, flake.lock) is the dotfiles repo's and doesn't change.
+
+Renovate does the merge itself instead of turning on GitHub's auto-merge (`platformAutomerge: false`). main needs an approving review, which the Renovate app can only skip as a bypass actor of the ruleset, and with a bypass GitHub's auto-merge wouldn't wait for the required checks. Renovate only merges when all of them are green.
 
 ## Game servers: dev and stable
 

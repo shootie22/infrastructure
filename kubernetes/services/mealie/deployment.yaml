@@ -18,11 +18,12 @@ spec:
   template:
     metadata:
       annotations:
-        # Bump when mealie-env changes; it's read only at start.
-        config-revision: "2"
+        # The hash of what it reads (scripts/check-config-hash): a change to mealie-env restarts it; it's read only at start.
+        config-hash: "8688de8000e5"
       labels:
         app.kubernetes.io/name: mealie
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       nodeSelector:
         ha.radunenu.com/mealie: active
@@ -59,7 +60,7 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 256Mi
+              memory: 448Mi
             limits:
               memory: 1Gi
           securityContext:

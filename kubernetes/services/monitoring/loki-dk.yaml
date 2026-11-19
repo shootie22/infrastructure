@@ -20,6 +20,7 @@ spec:
         # Both Lokis, for loki-local (services.yaml).
         monitoring.radunenu.com/loki: "true"
     spec:
+      priorityClassName: service
       nodeSelector:
         kubernetes.io/hostname: thinkcentre
       securityContext:
@@ -33,7 +34,7 @@ spec:
               containerPort: 3100
           resources:
             requests:
-              cpu: 200m
+              cpu: 50m
               memory: 512Mi
             limits:
               memory: 1Gi

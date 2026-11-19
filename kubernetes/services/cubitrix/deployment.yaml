@@ -13,11 +13,12 @@ spec:
   template:
     metadata:
       annotations:
-        # Bump when site.yaml changes; both containers read it only at start.
-        config-revision: "1"
+        # The hash of what it reads (scripts/check-config-hash): a change to site.yaml restarts it; both containers read it only at start.
+        config-hash: "7aac2bb7c00f"
       labels:
         app.kubernetes.io/name: cubitrix
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
@@ -30,7 +31,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: caddy
-          image: caddy:2.11.7-alpine@sha256:e70b164da81ef698b3ad19af799ea6086ce6d9e48ed4079eb9fe26f6fbf14ee5
+          image: caddy:2.11.8-alpine@sha256:3db3a09e418f86a8fce8de4bc0026fccd2b4cd925aef00cc7d843d9fdc75e442
           args: [caddy, run, --config, /etc/caddy/Caddyfile, --adapter, caddyfile]
           ports:
             - {name: http, containerPort: 8080}
@@ -48,9 +49,9 @@ spec:
           resources:
             requests:
               cpu: 5m
-              memory: 16Mi
+              memory: 48Mi
             limits:
-              memory: 64Mi
+              memory: 128Mi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -74,7 +75,7 @@ spec:
           resources:
             requests:
               cpu: 1m
-              memory: 8Mi
+              memory: 16Mi
             limits:
               memory: 32Mi
           securityContext:

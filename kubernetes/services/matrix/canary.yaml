@@ -75,11 +75,12 @@ spec:
     metadata:
       labels: {app: canary}
       annotations:
-        config-revision: "2"
+        config-hash: "df36119a9b7a"
         monitoring.radunenu.com/scrape: "true"
         monitoring.radunenu.com/port: "8080"
         monitoring.radunenu.com/path: /
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       # Not on fuji or the thinkcentre if it can help it: it should see
       # Matrix the way users do while those two fail over.

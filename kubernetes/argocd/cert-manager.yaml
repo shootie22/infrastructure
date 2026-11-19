@@ -14,6 +14,26 @@ spec:
       valuesObject:
         crds:
           enabled: true
+        # Platform tier (priority-classes.yaml), and requests from what each
+        # part used over a week (Prometheus, 7 days to 2026-11-08: 81, 53 and
+        # 35 MiB at most).
+        global:
+          priorityClassName: platform-critical
+        resources:
+          requests: {cpu: 10m, memory: 128Mi}
+          limits: {memory: 256Mi}
+        cainjector:
+          resources:
+            requests: {cpu: 10m, memory: 96Mi}
+            limits: {memory: 256Mi}
+        webhook:
+          resources:
+            requests: {cpu: 10m, memory: 64Mi}
+            limits: {memory: 128Mi}
+        startupapicheck:
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {memory: 128Mi}
         # Lets Prometheus scrape the controller (certificate expiry alerts).
         serviceAnnotations:
           monitoring.radunenu.com/scrape: "true"

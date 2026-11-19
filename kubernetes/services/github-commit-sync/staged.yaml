@@ -25,6 +25,7 @@ spec:
       labels:
         app: github-commit-sync
     spec:
+      priorityClassName: background
       automountServiceAccountToken: false
       # The service runs as PID 1 and shells out to git, whose helpers it never
       # reaps. Zombies piled up until the pod hit its process limit and every
@@ -77,6 +78,9 @@ spec:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
+          resources:
+            requests: {cpu: 5m, memory: 64Mi}
+            limits: {memory: 128Mi}
 ---
 apiVersion: v1
 kind: Service

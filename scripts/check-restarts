@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+"""A pull request may restart at most a few workloads at once.
+
+Changing a workload's pod template restarts its pods. On 2026-11-08 one
+merge (#453) changed about 30 at once; Argo restarted them all within a
+minute, the load on fuji's control plane set off a failover, and Headscale
+was down twice (docs/incidents/2026-11-08-headscale-down.md, #457).
+
+This compares every Deployment, StatefulSet and DaemonSet in kubernetes/
+with the pull request's base and fails when more than LIMIT of them would
+restart. Split the change, or, when it really has to go in at once, give the
+pull request the label "many-restarts" and merge it at a quiet time.
+
+    scripts/check-restarts <base ref>     # e.g. origin/main
+"""
+
+import os
+import subprocess
+import sys
+
+import yaml
+
+LIMIT = 10
+WORKLOADS = {"Deployment", "StatefulSet", "DaemonSet"}
+
+
+def workloads(texts):
+    out = {}
+    for text in texts:
+        try:
+            docs = list(yaml.safe_load_all(text))
+        except yaml.YAMLError:
+            continue
+        for d in docs:
+            if isinstance(d, dict) and d.get("kind") in WORKLOADS:
+                m = d.get("metadata") or {}
+                key = (d["kind"], m.get("namespace", "default"), m.get("name"))
+                out[key] = ((d.get("spec") or {}).get("template"))
+    return out
+
+
+def git(*args):
+    return subprocess.run(["git", *args], capture_output=True, text=True)
+
+
+base = sys.argv[1]
+changed = git("diff", "--name-only", base, "HEAD", "--", "kubernetes").stdout.split()
+changed = [f for f in changed if f.endswith(".yaml") and not f.endswith(".sops.yaml")]
+before = workloads(git("show", f"{base}:{f}").stdout for f in changed)
+after = workloads(open(f).read() for f in changed if os.path.exists(f))
+restarts = sorted(k for k in after if k in before and after[k] != before[k])
+
+for kind, ns, name in restarts:
+    print(f"restarts: {kind} {ns}/{name}")
+n = len(restarts)
+if n > LIMIT and os.environ.get("MANY_RESTARTS") != "1":
+    print(f"{n} workloads restart at once, more than {LIMIT}: split the change, or label the pull request many-restarts and merge it at a quiet time")
+    sys.exit(1)
+print(f"{n} workload(s) restart" + (" (many-restarts label)" if n > LIMIT else ""))

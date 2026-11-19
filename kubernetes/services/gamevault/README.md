@@ -48,8 +48,8 @@ Covers and save files are kept.
 4. DNS: `yeetus.net/games/CNAME` in `tofu/dns-records.tf`, DNS only.
 5. In Keycloak (network-yeetus), add yourself and the others to `games`.
 6. Sign in at https://games.yeetus.net as `radu` first, then the others.
-7. IGDB, when wanted: `nix shell nixpkgs#sops -c bash scripts/create-gamevault-igdb-secret.sh`, and bump
-   `config-revision` in `deployment.yaml` in the same change.
+7. IGDB, when wanted: `nix shell nixpkgs#sops -c bash scripts/create-gamevault-igdb-secret.sh`, then
+   `scripts/check-config-hash --fix` in the same change, so GameVault restarts and reads it.
 
 ## Adding games
 

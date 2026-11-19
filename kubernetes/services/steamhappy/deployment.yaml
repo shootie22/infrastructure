@@ -18,6 +18,7 @@ spec:
       labels:
         app.kubernetes.io/name: steamhappy
     spec:
+      priorityClassName: service
       # On whichever of fuji and the thinkcentre holds the label (home: fuji,
       # in RO like the big Ollama); the other has a copy of its session and
       # keys and takes over when this site is gone (dotfiles site-failover,

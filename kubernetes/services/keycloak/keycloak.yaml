@@ -21,6 +21,7 @@ spec:
       labels:
         app: keycloak
     spec:
+      priorityClassName: platform-critical
       automountServiceAccountToken: false
       # Keycloak exits when its database doesn't answer at startup, and each
       # exit doubles Kubernetes' restart backoff. After a failover the pod is
@@ -45,7 +46,7 @@ spec:
         - name: keycloak
           # Keycloak 26.5.5 with the Yeetus login and account pages added (git.yeetus.net/radu/yeetus).
           # Realms use them through loginTheme/accountTheme: yeetus in realms.yaml.
-          image: git.radunenu.com/radu/yeetus-keycloak:main@sha256:c31c955c414768bc133ee5f03983ce40f790ffb7ec977b847eda5d6e45012b45
+          image: git.radunenu.com/radu/yeetus-keycloak:main@sha256:0003bd62787aa84febd800fa924e0ac168aeca52f39bdc7b7853a845caa14c94
           imagePullPolicy: IfNotPresent
           args:
             - start
@@ -112,10 +113,11 @@ spec:
             - name: data
               mountPath: /opt/keycloak/data
           resources:
+            requests:
+              cpu: 200m
+              memory: 1792Mi
             limits:
               memory: 3Gi
-            requests:
-              memory: 1Gi
       volumes:
         - name: data
           emptyDir: {}

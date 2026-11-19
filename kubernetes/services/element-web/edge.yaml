@@ -20,8 +20,9 @@ spec:
       labels:
         app.kubernetes.io/name: element-web-edge
       annotations:
-        config-revision: "4"
+        config-hash: "3d36fdbe10fc"
     spec:
+      priorityClassName: matrix-critical
       automountServiceAccountToken: false
       nodeSelector:
         kubernetes.io/hostname: edge

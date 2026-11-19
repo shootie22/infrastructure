@@ -44,6 +44,6 @@ plain text.
 
 Add a site block to `tailnet-proxy-configmap.yaml`, the name to
 `certificate.yaml`, and the name to the `hosts` line in
-`../tailnet-dns/configmap.yaml` (and bump `config-revision` in
-`../tailnet-dns/deployment.yaml`, since that Corefile is only read at start).
+`../tailnet-dns/configmap.yaml` (then `scripts/check-config-hash --fix`, since that Corefile is only read at start and the
+new hash restarts tailnet-dns).
 Hub's deploy tool makes these edits itself for services it deploys.

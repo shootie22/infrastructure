@@ -21,6 +21,7 @@ spec:
         # Both Prometheuses, for prometheus-local (services.yaml).
         monitoring.radunenu.com/prometheus: "true"
     spec:
+      priorityClassName: platform-critical
       serviceAccountName: prometheus
       nodeSelector:
         kubernetes.io/hostname: thinkcentre
@@ -41,9 +42,9 @@ spec:
           resources:
             requests:
               cpu: 200m
-              memory: 512Mi
+              memory: 1792Mi
             limits:
-              memory: 1536Mi
+              memory: 3Gi
           readinessProbe:
             httpGet:
               path: /-/ready

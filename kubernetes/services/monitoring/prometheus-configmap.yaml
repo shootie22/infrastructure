@@ -273,6 +273,10 @@ data:
           # page lists the services by these (status-api.yaml).
           - source_labels: [__meta_kubernetes_ingress_annotation_gethomepage_dev_name]
             target_label: status_name
+          # The service the check belongs to: the profile card counts these
+          # (git.radunenu.com/radu/profile-status).
+          - source_labels: [__meta_kubernetes_ingress_annotation_gethomepage_dev_name]
+            target_label: status_service
           - source_labels: [__meta_kubernetes_ingress_annotation_gethomepage_dev_group]
             target_label: status_group
           - source_labels: [__meta_kubernetes_ingress_annotation_gethomepage_dev_description]
@@ -281,7 +285,12 @@ data:
             replacement: blackbox-exporter.monitoring.svc:9115
 
       # The rest of the status page: what has no Ingress with a homepage name
-      # (the old APIs' endpoints, the Matrix front ends on hetzy).
+      # (the old APIs' endpoints, the Matrix front ends on hetzy, yeetus.net's
+      # Matrix behind an IngressRoute, and what's only on the tailnet, probed
+      # inside the cluster). Each check's service is its name, unless it sets
+      # status_service: the old APIs count as one. Steamhappy and the Gitea
+      # runners have nothing to probe; their checks are recorded rules
+      # (status-extra in platform.rules).
       - job_name: status-extra
         metrics_path: /probe
         scrape_interval: 60s
@@ -292,34 +301,44 @@ data:
           - targets: [https://kronorite.com]
             labels: {status_name: Kronorite.com, status_group: Websites, status_description: "Kronorite's game website"}
           - targets: [https://news.kronorite.com/news.php]
-            labels: {status_name: Kronorite News, status_group: "Games & APIs", status_description: "Legacy API v1, Kronorite's news feed"}
+            labels: {status_service: Legacy APIs, status_name: Kronorite News, status_group: "Games & APIs", status_description: "Legacy API v1, Kronorite's news feed"}
           - targets: [https://stats.kronorite.com/mazegame/leaderboard.php]
-            labels: {status_name: Quickmaze leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
+            labels: {status_service: Legacy APIs, status_name: Quickmaze leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
           - targets: [https://stats.kronorite.com/cowo/leaderboard.php]
-            labels: {status_name: Cowo Bot leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
+            labels: {status_service: Legacy APIs, status_name: Cowo Bot leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
           - targets: [https://stats.kronorite.com/cowo-igad/leaderboard.php]
-            labels: {status_name: Cowo IGAD Bot leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
+            labels: {status_service: Legacy APIs, status_name: Cowo IGAD Bot leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
           - targets: [https://stats.kronorite.com/polyspace/leaderboard.php]
-            labels: {status_name: Polyspace leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
+            labels: {status_service: Legacy APIs, status_name: Polyspace leaderboard, status_group: "Games & APIs", status_description: Legacy API v2}
           - targets: [https://stats.kronorite.com/vtol/2/leaderboard.php]
-            labels: {status_name: VTOL leaderboard, status_group: "Games & APIs", status_description: Legacy API v2.5}
+            labels: {status_service: Legacy APIs, status_name: VTOL leaderboard, status_group: "Games & APIs", status_description: Legacy API v2.5}
           - targets: [https://stats.kronorite.com/vtol/1/leaderboard.php]
-            labels: {status_name: VTOL Divided Skies leaderboard, status_group: "Games & APIs", status_description: Legacy API v2.5}
+            labels: {status_service: Legacy APIs, status_name: VTOL Divided Skies leaderboard, status_group: "Games & APIs", status_description: Legacy API v2.5}
           - targets: [https://api.byradu.com/dicekatana/leaderboard.php]
-            labels: {status_name: Dice Katana leaderboard, status_group: "Games & APIs", status_description: Legacy API v3}
+            labels: {status_service: Legacy APIs, status_name: Dice Katana leaderboard, status_group: "Games & APIs", status_description: Legacy API v3}
           - targets: [https://api.byradu.com/fsp/downloads/latest.php]
-            labels: {status_name: Feedback Survey downloads, status_group: "Games & APIs", status_description: Legacy API v3}
+            labels: {status_service: Legacy APIs, status_name: Feedback Survey downloads, status_group: "Games & APIs", status_description: Legacy API v3}
           - targets: [https://api-old.radunenu.com/health-check.html]
-            labels: {status_name: Old Legacy API, status_group: "Games & APIs", status_description: The first API server}
+            labels: {status_service: Legacy APIs, status_name: Old Legacy API, status_group: "Games & APIs", status_description: The first API server}
           - targets: [https://nuke.zip]
             labels: {status_name: "Matrix (nuke.zip)", status_group: Apps, status_description: Matrix homeserver}
           - targets: [https://a.nuke.zip/livekit/sfu/]
             labels: {status_name: Element Call stack, status_group: Apps, status_description: Calls backend}
+          - targets: [https://matrix.yeetus.net/_matrix/client/versions]
+            labels: {status_name: "Matrix (yeetus.net)", status_group: Apps, status_description: Matrix homeserver}
+          # Tailnet only: no public address, so the status page doesn't link them.
+          - targets: [http://searxng.searxng.svc.cluster.local:8080/healthz]
+            labels: {status_name: SearXNG, status_group: Apps, status_description: Private web search}
+          - targets: [http://ollama.ollama.svc.cluster.local:11434/api/version]
+            labels: {status_name: Ollama, status_group: Development, status_description: Local language models}
         relabel_configs:
           - source_labels: [__address__]
             target_label: __param_target
           - source_labels: [__param_target]
             target_label: instance
+          - source_labels: [status_service, status_name]
+            regex: ";(.+)"
+            target_label: status_service
           - target_label: __address__
             replacement: blackbox-exporter.monitoring.svc:9115
 
@@ -344,6 +363,8 @@ data:
             labels: { host: minima-vm }
           - targets: [100.64.0.9:4243]
             labels: { host: edge }
+          - targets: [100.64.0.23:4243]
+            labels: { host: dell }
 
       # Nebula on each server (dotfiles modules/nixos/nebula-mesh.nix), scraped
       # over the mesh itself: a host that can't be reached there is down here.
@@ -359,6 +380,8 @@ data:
             labels: { host: mixi }
           - targets: [10.99.0.5:8101]
             labels: { host: minima }
+          - targets: [10.99.0.6:8101]
+            labels: { host: dell }
 
       - job_name: cadvisor
         static_configs:
@@ -595,6 +618,108 @@ data:
                   namespace_workload_pod:kube_pod_owner:relabel
               )
 
+      # Each node's disks once, for the disk alerts. node-exporter lists a
+      # disk under every bind mount of it (the thinkcentre's /home is also
+      # /var/lib/rancher and most of /srv/ha, fuji's / is also /home and
+      # /nix), and its series start over each time its pod moves to a new
+      # IP, which would leave predict_linear only a few minutes to go on.
+      - name: node-disks
+        interval: 1m
+        rules:
+          # Real filesystems over 1 GiB that can be written to, with the
+          # instance dropped so the series carries on across node-exporter
+          # restarts. Hetzner isn't a Kubernetes node; its host label is its
+          # node.
+          - record: node_mountpoint:filesystem_avail_bytes
+            expr: |
+              max without (instance) (
+                label_replace(
+                  (
+                    node_filesystem_avail_bytes{job="node-exporter", fstype=~"ext4|btrfs|xfs|zfs|f2fs"}
+                    unless on (instance, mountpoint) node_filesystem_readonly == 1
+                  )
+                  and on (instance, mountpoint) node_filesystem_size_bytes > 1024 ^ 3,
+                  "node", "$1", "host", "(.+)"
+                )
+              )
+          - record: node_mountpoint:filesystem_size_bytes
+            expr: |
+              max without (instance) (
+                label_replace(
+                  (
+                    node_filesystem_size_bytes{job="node-exporter", fstype=~"ext4|btrfs|xfs|zfs|f2fs"}
+                    unless on (instance, mountpoint) node_filesystem_readonly == 1
+                  )
+                  and on (instance, mountpoint) node_filesystem_size_bytes > 1024 ^ 3,
+                  "node", "$1", "host", "(.+)"
+                )
+              )
+          # One series per disk: / first, then each other disk under its own
+          # mountpoint (bind mounts and the standby copies' mounts left out).
+          # The thinkcentre's 4 TB disk is mounted under /home/main, which
+          # node-exporter (nobody) can't look into, so it's only seen through
+          # the site-failover bind mounts of the services on it, as /srv/ha/*.
+          - record: node_disk:filesystem_avail_bytes
+            expr: |
+              node_mountpoint:filesystem_avail_bytes{mountpoint="/"}
+              or
+              (
+                node_mountpoint:filesystem_avail_bytes{mountpoint!="/", mountpoint!~"/(nix|var/lib/rancher|var/lib/kubelet|run|srv/ha|home/standby)(/.*)?|/srv/standby/.+"}
+                unless on (node, device) node_mountpoint:filesystem_avail_bytes{mountpoint="/"}
+              )
+              or
+              label_replace(
+                max by (job, node, device, fstype) (node_mountpoint:filesystem_avail_bytes{mountpoint=~"/srv/ha/.+"})
+                unless on (node, device) node_mountpoint:filesystem_avail_bytes{mountpoint!~"/(nix|var/lib/rancher|var/lib/kubelet|run|srv/ha|home/standby)(/.*)?|/srv/standby/.+"},
+                "mountpoint", "/srv/ha/*", "", ""
+              )
+          - record: node_disk:filesystem_size_bytes
+            expr: |
+              node_mountpoint:filesystem_size_bytes{mountpoint="/"}
+              or
+              (
+                node_mountpoint:filesystem_size_bytes{mountpoint!="/", mountpoint!~"/(nix|var/lib/rancher|var/lib/kubelet|run|srv/ha|home/standby)(/.*)?|/srv/standby/.+"}
+                unless on (node, device) node_mountpoint:filesystem_size_bytes{mountpoint="/"}
+              )
+              or
+              label_replace(
+                max by (job, node, device, fstype) (node_mountpoint:filesystem_size_bytes{mountpoint=~"/srv/ha/.+"})
+                unless on (node, device) node_mountpoint:filesystem_size_bytes{mountpoint!~"/(nix|var/lib/rancher|var/lib/kubelet|run|srv/ha|home/standby)(/.*)?|/srv/standby/.+"},
+                "mountpoint", "/srv/ha/*", "", ""
+              )
+
+      # Status page checks for services with nothing to probe over HTTP,
+      # recorded as status-extra probes so status-api and the profile card
+      # read them like the rest. The instance is the check's target on the
+      # page, never linked since it isn't a web address.
+      - name: status-extra
+        interval: 60s
+        rules:
+          - record: probe_success
+            expr: max(kube_deployment_status_replicas_available{namespace="steamhappy", deployment="steamhappy"}) >= bool 1
+            labels:
+              job: status-extra
+              instance: k8s://steamhappy/steamhappy
+              status_service: Steamhappy
+              status_name: Steamhappy
+              status_group: Apps
+              status_description: Matrix bot that posts Steam deals
+          # Up while a CI run has been picked up and passed within the last 2
+          # hours: the canary-ci check, the same test as CanaryCIFailing.
+          - record: probe_success
+            expr: |
+              time() - max(
+                kube_cronjob_status_last_successful_time{namespace="canary", cronjob="canary-ci"}
+                or kube_cronjob_created{namespace="canary", cronjob="canary-ci"}
+              ) <= bool 7200
+            labels:
+              job: status-extra
+              instance: k8s://canary/canary-ci
+              status_service: Gitea runners
+              status_name: Gitea runners
+              status_group: Development
+              status_description: CI jobs, each in its own VM
+
       - name: homelab-actionable-alerts
         rules:
           # Always firing. Alertmanager sends it to healthchecks.io every minute;
@@ -732,21 +857,37 @@ data:
             annotations:
               summary: Argo CD app {{ $labels.name }} has been out of sync for 30 minutes
               description: Its automatic sync keeps failing, so what's in Git isn't running. `kubectl -n argocd get application {{ $labels.name }} -o jsonpath='{.status.operationState.message}'`
-          # / and /home: kubelet's and containerd's (the thinkcentre keeps
-          # /var/lib/rancher on /home). Kubelet starts evicting at 5% free.
+          # Every disk (node-disks above). Kubelet starts evicting at 5% free
+          # on the disk holding /var/lib/rancher and /var/lib/kubelet.
           - alert: NodeFilesystemCriticallyLow
-            expr: |
-              node_filesystem_avail_bytes{job="node-exporter", mountpoint=~"/|/home", fstype!~"tmpfs|overlay|squashfs"}
-              / node_filesystem_size_bytes{job="node-exporter", mountpoint=~"/|/home", fstype!~"tmpfs|overlay|squashfs"} < 0.10
-              and on (node, device, mountpoint)
-              node_filesystem_readonly{job="node-exporter", mountpoint=~"/|/home", fstype!~"tmpfs|overlay|squashfs"} == 0
+            expr: node_disk:filesystem_avail_bytes / node_disk:filesystem_size_bytes < 0.10
             for: 5m
             labels:
               severity: critical
               page: "true"
             annotations:
-              summary: "{{ $labels.mountpoint }} on {{ $labels.node }} is critically low"
-              description: Less than 10% free for five minutes. Kubelet evicts pods at 5%.
+              summary: "{{ $labels.mountpoint }} on {{ $labels.node }} is {{ $value | humanizePercentage }} free"
+              description: "Less than 10% of {{ $labels.device }} has been free for five minutes. Kubelet evicts pods at 5%. `df -h {{ $labels.mountpoint }}` and `du -xsh` on the node; containerd's images are pruned with `k3s crictl rmi --prune`."
+          # Will be full within a day at the rate of the last 12 hours. Only
+          # once it's under 25% free, since a CI job or an image pull can
+          # write tens of GiB in an hour and free them again (the
+          # thinkcentre's /home moved by up to 90 GiB within a day in
+          # late October). Under 10% the one above has already paged, and
+          # a disk watched for less than 6 hours has no rate to go on yet.
+          - alert: NodeFilesystemFullSoon
+            expr: |
+              node_disk:filesystem_avail_bytes
+              and predict_linear(node_disk:filesystem_avail_bytes[12h], 86400) < 0
+              and node_disk:filesystem_avail_bytes / node_disk:filesystem_size_bytes < 0.25
+              unless node_disk:filesystem_avail_bytes / node_disk:filesystem_size_bytes < 0.10
+              and node_disk:filesystem_avail_bytes offset 6h
+            for: 1h
+            labels:
+              severity: critical
+              page: "true"
+            annotations:
+              summary: "{{ $labels.mountpoint }} on {{ $labels.node }} will be full within a day ({{ $value | humanize1024 }}B left)"
+              description: "At the rate {{ $labels.device }} has filled over the last 12 hours, it runs out within 24, and it's under 25% free. See what's writing with `du -xsh` on the node; containerd's unused images go with `k3s crictl rmi --prune`."
           # The edge passes traffic to Traefik in RO (fuji) and DK (thinkcentre).
           # If a site's path is down, failover to it would go nowhere.
           - alert: EdgeBackendDown
@@ -1115,23 +1256,28 @@ data:
           # Early warning, so a filling disk gets noticed days before it becomes
           # critical (thinkcentre's 31 GB root reached 92% unnoticed, 2026-10-02;
           # its /home sat at 11% free for days before 2026-10-20, unwatched).
+          # By the rate, not a fixed share: "over 80%" kept firing for disks
+          # that were full-ish but steady (mixi's and minima's / at 88% in
+          # November). The rate of the last two days, so a CI job's layers
+          # that come and go within hours don't count, and only once the disk
+          # has been watched for a day.
           - alert: NodeFilesystemFillingUp
             expr: |
-              node_filesystem_avail_bytes{job="node-exporter", mountpoint=~"/|/home|/boot|/boot/efi|/srv/standby", fstype!~"tmpfs|overlay|squashfs"}
-              / node_filesystem_size_bytes{job="node-exporter", mountpoint=~"/|/home|/boot|/boot/efi|/srv/standby", fstype!~"tmpfs|overlay|squashfs"} < 0.20
-              and on (node, device, mountpoint)
-              node_filesystem_readonly{job="node-exporter", mountpoint=~"/|/home|/boot|/boot/efi|/srv/standby", fstype!~"tmpfs|overlay|squashfs"} == 0
-            for: 30m
+              node_disk:filesystem_avail_bytes
+              and predict_linear(node_disk:filesystem_avail_bytes[2d], 7 * 86400) < 0
+              and node_disk:filesystem_avail_bytes offset 1d
+            for: 1h
             labels:
               severity: warning
             annotations:
-              summary: "{{ $labels.mountpoint }} on {{ $labels.node }} is over 80% full"
-              description: Less than 20% has been free for thirty minutes.
+              summary: "{{ $labels.mountpoint }} on {{ $labels.node }} will be full within a week ({{ $value | humanize1024 }}B left)"
+              description: "At the rate {{ $labels.device }} has filled over the last two days, it runs out within seven. If that was a one-off (a big upload, a restore), it clears by itself within two days; otherwise see what's growing with `du -xsh` on the node."
           # Send uploads (up to 50 GiB each, kept up to 14 days) share this disk
           # with Gitea repositories, GameVault's games and /home/main/storage.
+          # By its device: node-exporter only sees it through /srv/ha (node-disks).
           - alert: ThinkcentreStorageDiskLow
             expr: |
-              node_filesystem_avail_bytes{job="node-exporter", node="thinkcentre", mountpoint="/home/main/storage"} < 250 * 1024 ^ 3
+              node_disk:filesystem_avail_bytes{node="thinkcentre", device="/dev/mapper/tc-storage4tb"} < 250 * 1024 ^ 3
             for: 15m
             labels:
               severity: warning

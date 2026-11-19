@@ -57,7 +57,7 @@ spec:
     metadata:
       labels: {app: wellknown}
       annotations:
-        config-revision: "2"
+        config-hash: "3576a9bf274f"
     spec:
       automountServiceAccountToken: false
       priorityClassName: matrix-critical

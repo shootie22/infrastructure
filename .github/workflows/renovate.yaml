@@ -1,6 +1,7 @@
 # Renovate (docs/updates.md): proposes update PRs when a new
-# image or chart version is out, with release notes. It opens PRs and never
-# merges them.
+# image or chart version is out, with release notes. It merges the safe ones
+# itself once their checks pass (image and action patches, rebuilds of the
+# same version); the rest wait for a review.
 #
 # It runs as the renovate-yeetus GitHub App, not with GitHub's built-in token:
 # PRs opened with that token don't start CI, and it can't change files in

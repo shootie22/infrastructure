@@ -1,0 +1,12 @@
+# One copy: a drain moves it (a few seconds without the library; the app
+# retries).
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: games
+  namespace: games
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: games

@@ -12,6 +12,8 @@
   ],
   "prConcurrentLimit": 15,
   "prHourlyLimit": 0,
+  "platformAutomerge": false,
+  "automergeStrategy": "merge-commit",
   "kubernetes": {
     "managerFilePatterns": [
       "/^kubernetes/.+\\.ya?ml$/"
@@ -77,6 +79,7 @@
         "docker.io/vectorim/element-web",
         "git.radunenu.com/crosty/crosty-game-server",
         "git.radunenu.com/radu/bopl-2d-server",
+        "git.radunenu.com/radu/gamevault-server",
         "git.radunenu.com/radu/infra-hub"
       ],
       "enabled": false
@@ -200,6 +203,28 @@
       "groupSlug": "workflow-actions"
     },
     {
+      "description": "Action patches and new digests of the same tag merge themselves once the checks pass; minor updates wait for me in their own PR",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "digest",
+        "pinDigest"
+      ],
+      "automerge": true
+    },
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "groupName": "workflow actions (minor)",
+      "groupSlug": "workflow-actions-minor"
+    },
+    {
       "description": "Need care: they hold or decrypt state, or everything depends on them. Always their own PR.",
       "matchPackageNames": [
         "sops-secrets-operator",
@@ -210,6 +235,147 @@
         "ghcr.io/juanfont/headscale",
         "joplin/server"
       ],
+      "labels": [
+        "renovate",
+        "careful"
+      ]
+    },
+    {
+      "description": "Merge themselves once every check on the PR has passed, as long as the tag names a version: patch updates, rebuilds of the same version and pinning a digest (docs/updates.md). Minor and major updates, moving tags (main, latest, java25) and the packages below still wait for me.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "digest",
+        "pinDigest"
+      ],
+      "matchCurrentValue": "/^v?\\d+(\\.\\d+)+/",
+      "matchPackageNames": [
+        "!/postgres/",
+        "!/cloudnative-pg/",
+        "!/clickhouse/",
+        "!/redis/",
+        "!/gitea/",
+        "!/keycloak/",
+        "!/k3s/",
+        "!/argoproj/",
+        "!/argo-cd/",
+        "!cert-manager",
+        "!sops-secrets-operator",
+        "!php",
+        "!ghcr.io/juanfont/headscale",
+        "!joplin/server",
+        "!git.radunenu.com/radu/infra-hub",
+        "!docker.io/itzg/minecraft-server",
+        "!git.radunenu.com/radu/spigotmc-docker",
+        "!git.radunenu.com/radu/steamhappy",
+        "!indifferentbroccoli/hytale-server-docker",
+        "!docker.io/phalcode/gamevault-backend"
+      ],
+      "automerge": true
+    },
+    {
+      "description": "Image patches get their own PR, so a minor update in service updates doesn't hold them back",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "matchPackageNames": [
+        "!/postgres/",
+        "!/cloudnative-pg/",
+        "!/clickhouse/",
+        "!/redis/",
+        "!/gitea/",
+        "!/keycloak/",
+        "!/k3s/",
+        "!/argoproj/",
+        "!/argo-cd/",
+        "!cert-manager",
+        "!sops-secrets-operator",
+        "!php",
+        "!ghcr.io/juanfont/headscale",
+        "!joplin/server",
+        "!git.radunenu.com/radu/infra-hub",
+        "!docker.io/itzg/minecraft-server",
+        "!git.radunenu.com/radu/spigotmc-docker",
+        "!git.radunenu.com/radu/steamhappy",
+        "!indifferentbroccoli/hytale-server-docker",
+        "!docker.io/phalcode/gamevault-backend"
+      ],
+      "groupName": "service patches",
+      "groupSlug": "service-patches"
+    },
+    {
+      "description": "New builds of a moving tag aren't the same version rebuilt, so they wait for me in their own PR",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchUpdateTypes": [
+        "digest"
+      ],
+      "matchCurrentValue": "!/^v?\\d+(\\.\\d+)+/",
+      "groupName": "rebuilt images (careful)",
+      "labels": [
+        "renovate",
+        "careful"
+      ]
+    },
+    {
+      "description": "Never merge themselves: databases, Gitea and its runners, Keycloak, k3s, Argo CD, cert-manager, sops-secrets-operator, the ones labelled careful above, and the game servers (a restart kicks the players). Their rebuilds go together in one PR.",
+      "matchPackageNames": [
+        "/postgres/",
+        "/cloudnative-pg/",
+        "/clickhouse/",
+        "/redis/",
+        "/gitea/",
+        "/keycloak/",
+        "/k3s/",
+        "/argoproj/",
+        "/argo-cd/",
+        "cert-manager",
+        "sops-secrets-operator",
+        "php",
+        "ghcr.io/juanfont/headscale",
+        "joplin/server",
+        "git.radunenu.com/radu/infra-hub",
+        "docker.io/itzg/minecraft-server",
+        "git.radunenu.com/radu/spigotmc-docker",
+        "git.radunenu.com/radu/steamhappy",
+        "indifferentbroccoli/hytale-server-docker",
+        "docker.io/phalcode/gamevault-backend"
+      ],
+      "automerge": false
+    },
+    {
+      "matchPackageNames": [
+        "/postgres/",
+        "/cloudnative-pg/",
+        "/clickhouse/",
+        "/redis/",
+        "/gitea/",
+        "/keycloak/",
+        "/k3s/",
+        "/argoproj/",
+        "/argo-cd/",
+        "cert-manager",
+        "sops-secrets-operator",
+        "php",
+        "ghcr.io/juanfont/headscale",
+        "joplin/server",
+        "git.radunenu.com/radu/infra-hub",
+        "docker.io/itzg/minecraft-server",
+        "git.radunenu.com/radu/spigotmc-docker",
+        "git.radunenu.com/radu/steamhappy",
+        "indifferentbroccoli/hytale-server-docker",
+        "docker.io/phalcode/gamevault-backend"
+      ],
+      "matchUpdateTypes": [
+        "digest"
+      ],
+      "groupName": "rebuilt images (careful)",
       "labels": [
         "renovate",
         "careful"

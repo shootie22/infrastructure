@@ -492,6 +492,39 @@ data:
               access.token.claim: "true"
         authenticationFlowBindingOverrides:
           browser: gate gamevault
+      # The new GameVault (radu/gamevault): its desktop app signs in as a native
+      # app (RFC 8252). Public, PKCE, a loopback redirect on any port (Keycloak
+      # ignores the port for 127.0.0.1), and the device grant for the Steam Deck.
+      # Access tokens are DPoP-bound to the device's key and carry the games
+      # audience, which the server checks along with the games access role. Same
+      # gate as GameVault, so the games group is what lets someone in.
+      - clientId: games
+        name: Games
+        description: GameVault desktop app and web view
+        enabled: true
+        publicClient: true
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        # The app signs in through a loopback address; the web view at
+        # games.yeetus.net comes back to its own page, and calls the token
+        # endpoint from it (so the origin needs CORS).
+        redirectUris: ["http://127.0.0.1/*", "https://games.yeetus.net/*"]
+        webOrigins: ["https://games.yeetus.net"]
+        attributes:
+          pkce.code.challenge.method: S256
+          oauth2.device.authorization.grant.enabled: "true"
+          dpop.bound.access.tokens: "true"
+          post.logout.redirect.uris: "https://games.yeetus.net/*"
+        protocolMappers:
+          - name: audience
+            protocol: openid-connect
+            protocolMapper: oidc-audience-mapper
+            config:
+              included.client.audience: games
+              id.token.claim: "false"
+              access.token.claim: "true"
+        authenticationFlowBindingOverrides:
+          browser: gate gamevault
     roles:
       client:
         audiobookshelf:
@@ -515,6 +548,9 @@ data:
         gamevault:
           - name: access
             description: May sign in to Games (GameVault)
+        games:
+          - name: access
+            description: May use Games (the new GameVault)
     authenticatorConfig:
       - alias: audiobookshelf no access
         config: {condUserRole: audiobookshelf.access, negate: "true"}
@@ -844,5 +880,6 @@ data:
         attributes: {description: [Games (GameVault)]}
         clientRoles:
           gamevault: [access]
+          games: [access]
       - name: calendar
         attributes: {description: [Baïkal, with app passwords]}

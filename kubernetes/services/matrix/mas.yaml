@@ -84,7 +84,7 @@ spec:
     metadata:
       labels: {app: mas}
       annotations:
-        config-revision: "2"
+        config-hash: "d90f78784d3b"
         monitoring.radunenu.com/scrape: "true"
         monitoring.radunenu.com/port: "8081"
         monitoring.radunenu.com/path: /metrics

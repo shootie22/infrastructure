@@ -31,15 +31,16 @@ spec:
         app: thinkcentre-http-relay
       # Caddy reads its config at start; bump this when the Caddyfile changes.
       annotations:
-        config-revision: "2"
+        config-hash: "801afc673151"
     spec:
+      priorityClassName: service
       # Any node; moves 30 s after its node stops answering.
       tolerations:
         - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: caddy
-          image: caddy:2.11.7-alpine@sha256:e70b164da81ef698b3ad19af799ea6086ce6d9e48ed4079eb9fe26f6fbf14ee5
+          image: caddy:2.11.8-alpine@sha256:3db3a09e418f86a8fce8de4bc0026fccd2b4cd925aef00cc7d843d9fdc75e442
           args:
             - caddy
             - run
@@ -59,6 +60,9 @@ spec:
               mountPath: /data
             - name: runtime-config
               mountPath: /config
+          resources:
+            requests: {cpu: 5m, memory: 64Mi}
+            limits: {memory: 256Mi}
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

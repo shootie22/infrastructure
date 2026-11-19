@@ -17,6 +17,7 @@ spec:
     metadata:
       labels: {app: vaultwarden}
     spec:
+      priorityClassName: service
       automountServiceAccountToken: false
       # Runs in either site (#88). Nothing on disk matters any more: the
       # database is in Postgres and the key that signs logins comes from a

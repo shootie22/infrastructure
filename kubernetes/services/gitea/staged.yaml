@@ -19,6 +19,7 @@ spec:
       # Bump to restart Gitea (e.g. after its folder's mounts change).
       annotations: {restart: "1"}
     spec:
+      priorityClassName: platform-critical
       automountServiceAccountToken: false
       # Runs on whichever of fuji and the thinkcentre holds the label; the
       # other has a copy of the repos and packages and takes over when this
@@ -30,7 +31,7 @@ spec:
         - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
       containers:
         - name: gitea
-          image: docker.gitea.com/gitea:28.3.0@sha256:8967bf9deaf3c5c4adae13519436dc1b20c646ac83fe37ae810c933a1045227d
+          image: docker.gitea.com/gitea:28.4.0@sha256:aa90e8f00b755b0d665214ab9c14447ea44d3190dbe6b6d0cb46cd9c4f55d309
           envFrom:
             - secretRef: {name: gitea-env}
           # Postgres on CNPG since Oct 2026 (#31); overrides the database settings
@@ -123,7 +124,7 @@ spec:
         # or brings it in line with oidc-source.sh, before Gitea starts. Same
         # image, data and settings as Gitea itself.
         - name: oidc-source
-          image: docker.gitea.com/gitea:28.3.0@sha256:8967bf9deaf3c5c4adae13519436dc1b20c646ac83fe37ae810c933a1045227d
+          image: docker.gitea.com/gitea:28.4.0@sha256:aa90e8f00b755b0d665214ab9c14447ea44d3190dbe6b6d0cb46cd9c4f55d309
           command: ["/bin/sh", "/scripts/oidc-source.sh"]
           envFrom:
             - secretRef: {name: gitea-env}
