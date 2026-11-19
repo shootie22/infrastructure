@@ -93,6 +93,7 @@ data:
         "minima": "100.64.0.8",       "minima6": "fd7a:115c:a1e0::8/128",
         "edge": "100.64.0.9",         "edge6": "fd7a:115c:a1e0::9/128",
         "workstation": "100.64.0.10", "workstation6": "fd7a:115c:a1e0::a/128",
+        "dell": "100.64.0.23",        "dell6": "fd7a:115c:a1e0::17/128",
 
         // Fuji's LAN API address (the kubernetes Service endpoint), routed via
         // Fuji for remote K3s nodes. Approved on the node:
@@ -107,12 +108,12 @@ data:
         {
           "action": "accept",
           "src": [
-            "fuji", "mixi", "macminim4", "thinkcentre", "minima",
-            "fuji6", "mixi6", "macminim46", "thinkcentre6", "minima6",
+            "fuji", "mixi", "macminim4", "thinkcentre", "minima", "dell",
+            "fuji6", "mixi6", "macminim46", "thinkcentre6", "minima6", "dell6",
           ],
           "dst": [
-            "fuji:*", "mixi:*", "macminim4:*", "thinkcentre:*", "minima:*",
-            "fuji6:*", "mixi6:*", "macminim46:*", "thinkcentre6:*", "minima6:*",
+            "fuji:*", "mixi:*", "macminim4:*", "thinkcentre:*", "minima:*", "dell:*",
+            "fuji6:*", "mixi6:*", "macminim46:*", "thinkcentre6:*", "minima6:*", "dell6:*",
             "fuji-lan:*",
           ],
         },
@@ -165,6 +166,10 @@ data:
         // nothing on the runners but the discard port; they get nothing on
         // the edge.
         { "action": "accept", "src": ["edge", "edge6"], "dst": ["ci@:9"] },
+        // dell too: its home relay is the edge, and with nothing else relating
+        // it to the edge, the relay turned it away, so fuji only reached it
+        // once dell had opened a direct path itself (2026-11-19).
+        { "action": "accept", "src": ["edge", "edge6"], "dst": ["dell:9", "dell6:9"] },
 
         // Tailnet DNS (split DNS for infra.radunenu.com, served on fuji and the
         // thinkcentre).

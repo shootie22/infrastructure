@@ -363,6 +363,8 @@ data:
             labels: { host: minima-vm }
           - targets: [100.64.0.9:4243]
             labels: { host: edge }
+          - targets: [100.64.0.23:4243]
+            labels: { host: dell }
 
       # Nebula on each server (dotfiles modules/nixos/nebula-mesh.nix), scraped
       # over the mesh itself: a host that can't be reached there is down here.
@@ -378,6 +380,8 @@ data:
             labels: { host: mixi }
           - targets: [10.99.0.5:8101]
             labels: { host: minima }
+          - targets: [10.99.0.6:8101]
+            labels: { host: dell }
 
       - job_name: cadvisor
         static_configs:
