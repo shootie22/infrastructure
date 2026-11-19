@@ -17,6 +17,10 @@ metadata:
     # Where the primary belongs (docs/ha/decisions.md, 2026-10-21): Synapse runs where the matrix label is.
     # site-failover switches it back there by itself.
     placement.radunenu.com/follows: matrix
+    # Restarted by site-failover after each promotion: it keeps its
+    # writes in memory and breaks when a promotion lost them
+    # (docs/incidents/2026-11-19-mesh-restart-failovers.md).
+    placement.radunenu.com/restart-on-switch: deployment/synapse
 spec:
   instances: 2
   # A primary that stops answering is only replaced after 5 minutes:
@@ -90,6 +94,10 @@ metadata:
     # Where the primary belongs (docs/ha/decisions.md, 2026-10-21): with Synapse's, so Matrix moves as one.
     # site-failover switches it back there by itself.
     placement.radunenu.com/follows: matrix
+    # Restarted by site-failover after each promotion: it keeps its
+    # writes in memory and breaks when a promotion lost them
+    # (docs/incidents/2026-11-19-mesh-restart-failovers.md).
+    placement.radunenu.com/restart-on-switch: deployment/mas
 spec:
   instances: 2
   # A primary that stops answering is only replaced after 5 minutes:

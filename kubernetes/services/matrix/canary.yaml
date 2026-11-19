@@ -6,6 +6,14 @@
 #
 # Its account and token are made once by hand (docs/matrix/runbooks/
 # canary.md) into the matrix-canary Secret; until then it waits.
+#
+# It also says why a send failed (HTTP status and Matrix error), and when
+# Synapse itself answers 500 to ten sends in a row it restarts Synapse, at
+# most once an hour: after a database promotion that lost writes, Synapse
+# fails every send until it restarts, and from 13 to 18 Nov that went on for
+# five days (docs/incidents/2026-11-19-mesh-restart-failovers.md). Only for
+# 500: a 502-504 or no answer means Synapse or the path is down or moving,
+# which a restart doesn't help.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -28,10 +36,13 @@ data:
     # HELP matrix_canary_last_success_timestamp_seconds When it last worked.
     # TYPE matrix_canary_last_success_timestamp_seconds gauge
     matrix_canary_last_success_timestamp_seconds ${last_ok:-0}
+    # HELP matrix_canary_synapse_restarts_total Synapse restarts the canary made.
+    # TYPE matrix_canary_synapse_restarts_total counter
+    matrix_canary_synapse_restarts_total ${restarts:-0}
     EOF
       mv $out.tmp $out
     }
-    n=0
+    n=0; fails500=0; restarts=0; restarted_at=0
     while :; do
       if [ ! -s /secret/token ] || [ ! -s /secret/room ]; then
         echo "no matrix-canary secret yet, waiting"; sleep 60; continue
@@ -46,18 +57,35 @@ data:
         -d "{\"msgtype\":\"m.notice\",\"body\":\"canary $(date -u +%FT%TZ)\"}" \
         "$base/_matrix/client/v3/rooms/$room/send/m.room.message/$txn" 2>/dev/null) || sent=
       event=$(echo "$sent" | sed '$d' | jq -r '.event_id // empty' 2>/dev/null)
+      code=$(echo "$sent" | tail -n 1 | awk '{print $1}')
       t1=$(echo "$sent" | tail -n 1 | awk '{print $2 + 0}')
+      why=
+      if [ -z "$event" ]; then
+        err=$(echo "$sent" | sed '$d' | jq -r '[.errcode, .error] | map(select(. != null)) | join(": ")' 2>/dev/null | head -c 200)
+        why="send: HTTP ${code:-none}${err:+ ($err)}"
+        if [ "$code" = 500 ]; then fails500=$((fails500 + 1)); else fails500=0; fi
+      else
+        fails500=0
+      fi
       if [ -n "$event" ]; then
         read=$(curl -sS -m 20 -o /dev/null -H "$auth" -w '%{http_code} %{time_total}' \
           "$base/_matrix/client/v3/rooms/$room/event/$event" 2>/dev/null) || read=
         set -- $read
+        [ "${1:-}" = 200 ] || why="read back: HTTP ${1:-none}"
         if [ "${1:-}" = 200 ]; then
           ok=1; last_ok=$(date +%s)
           took=$(echo "$t1 ${2:-0}" | awk '{printf "%.3f", $1 + $2}')
         fi
       fi
       write $ok $took
-      [ $ok = 1 ] || echo "$(date -u +%FT%TZ) send-and-read-back failed"
+      [ $ok = 1 ] || echo "$(date -u +%FT%TZ) send-and-read-back failed: $why"
+      now=$(date +%s)
+      if [ $fails500 -ge 10 ] && [ $((now - restarted_at)) -ge 3600 ]; then
+        echo "$(date -u +%FT%TZ) Synapse answered 500 to $fails500 sends in a row: restarting it"
+        if kubectl -n matrix rollout restart deployment/synapse; then
+          restarts=$((restarts + 1)); restarted_at=$now; fails500=0
+        fi
+      fi
       sleep 60
     done
 ---
@@ -75,13 +103,15 @@ spec:
     metadata:
       labels: {app: canary}
       annotations:
-        config-hash: "df36119a9b7a"
+        config-hash: "b7e7b529c561"
         monitoring.radunenu.com/scrape: "true"
         monitoring.radunenu.com/port: "8080"
         monitoring.radunenu.com/path: /
     spec:
       priorityClassName: service
-      automountServiceAccountToken: false
+      # Only to restart Synapse (the Role below: deployment/synapse, nothing else).
+      serviceAccountName: canary
+      automountServiceAccountToken: true
       # Not on fuji or the thinkcentre if it can help it: it should see
       # Matrix the way users do while those two fail over.
       affinity:
@@ -174,3 +204,36 @@ data:
         default_type "text/plain; version=0.0.4";
       }
     }
+---
+# The canary may restart Synapse and do nothing else (see the top).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: canary
+  namespace: matrix
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: canary-restart-synapse
+  namespace: matrix
+rules:
+  - apiGroups: [apps]
+    resources: [deployments]
+    resourceNames: [synapse]
+    verbs: [get, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: canary-restart-synapse
+  namespace: matrix
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: canary-restart-synapse
+subjects:
+  - kind: ServiceAccount
+    name: canary
+    namespace: matrix
