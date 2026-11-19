@@ -30,6 +30,8 @@ spec:
         - ipBlock: {cidr: 10.42.3.1/32}
         - ipBlock: {cidr: 10.42.4.0/32}  # edge
         - ipBlock: {cidr: 10.42.4.1/32}
+        - ipBlock: {cidr: 10.42.5.0/32}  # dell
+        - ipBlock: {cidr: 10.42.5.1/32}
 ---
 # What PlantUML may connect to: DNS, and the public internet on 80 and 443
 # (diagrams can !include a URL). Nothing in the cluster, the LAN or the
