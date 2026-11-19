@@ -45,14 +45,6 @@ metadata:
   name: baikal
   namespace: baikal
   annotations:
-    gethomepage.dev/enabled: "true"
-    gethomepage.dev/external: "true"
-    gethomepage.dev/group: Apps
-    gethomepage.dev/name: Baïkal
-    gethomepage.dev/icon: baikal.png
-    gethomepage.dev/description: Calendars and contacts
-    gethomepage.dev/weight: "800"
-    gethomepage.dev/siteMonitor: http://baikal.baikal.svc.cluster.local
     traefik.ingress.kubernetes.io/router.middlewares: baikal-no-user@kubernetescrd
 spec:
   ingressClassName: traefik
@@ -66,6 +58,45 @@ spec:
         paths:
           - path: /
             pathType: Prefix
+            backend:
+              service:
+                name: baikal
+                port:
+                  number: 80
+---
+# What the status page and Hub probe from outside (the status-ingress job
+# takes scheme, host and path from the Ingress that has the homepage
+# annotations): since the start page is 403 (baikal-admin-blocked below),
+# CalDAV discovery, which Baïkal's own nginx answers with a redirect (302,
+# no PHP). The homepage tile still links to the site itself.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: baikal-status
+  namespace: baikal
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/group: Apps
+    gethomepage.dev/name: Baïkal
+    gethomepage.dev/icon: baikal.png
+    gethomepage.dev/description: Calendars and contacts
+    gethomepage.dev/weight: "800"
+    gethomepage.dev/href: https://cal.yeetus.net
+    gethomepage.dev/siteMonitor: http://baikal.baikal.svc.cluster.local
+    traefik.ingress.kubernetes.io/router.middlewares: baikal-no-user@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - cal.yeetus.net
+      secretName: cal-radunenu-com-tls
+  rules:
+    - host: cal.yeetus.net
+      http:
+        paths:
+          - path: /.well-known/caldav
+            pathType: Exact
             backend:
               service:
                 name: baikal
