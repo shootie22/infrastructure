@@ -107,6 +107,7 @@
         "digest"
       ],
       "groupName": "rebuilt images (same versions)",
+      "addLabels": ["many-restarts"],
       "commitMessageExtra": ""
     },
     {
@@ -306,6 +307,7 @@
         "!docker.io/phalcode/gamevault-backend"
       ],
       "groupName": "service patches",
+      "addLabels": ["many-restarts"],
       "groupSlug": "service-patches"
     },
     {
