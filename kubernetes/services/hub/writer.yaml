@@ -50,7 +50,7 @@ spec:
           # Pinned, unlike the rest of Hub: this is the copy with the GitHub App
           # key, so a new build reaches it only through a pull request (Renovate,
           # its own PR) and not by being pushed to main. hub-updater leaves it alone.
-          image: git.radunenu.com/radu/infra-hub:main@sha256:a4555e9515ddfd25f28ab08ccf75b6870e0a64d917b712f2a6cc46895dcb2cff
+          image: git.radunenu.com/radu/infra-hub:main@sha256:322ecdbcb86fe63dbd68d8932864445365de099d8f501b3a6d40bb6a3a566181
           imagePullPolicy: Always
           args: [writer]
           env:
