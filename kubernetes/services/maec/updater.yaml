@@ -117,7 +117,14 @@ spec:
                   # Tell the game (it reads the ConfigMap within a minute or two),
                   # then restart only when it says so.
                   note "$latest"
-                  ok=$(curl -fsS --max-time 5 http://maec.maec.svc.cluster.local/status | jq -r '.restart_ok // false' || echo false)
+                  # No answer means the game is down (crash loop, broken build):
+                  # nobody can be playing, and the new build may be its fix.
+                  if status=$(curl -fsS --max-time 5 http://maec.maec.svc.cluster.local/status); then
+                    ok=$(printf '%s' "$status" | jq -r '.restart_ok // false')
+                  else
+                    echo "the game doesn't answer"
+                    ok=true
+                  fi
                   if [ "$ok" != "true" ]; then
                     echo "new build waiting for the game to allow a restart"
                     exit 0
