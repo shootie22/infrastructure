@@ -68,6 +68,9 @@ spec:
             - --allowed-role=maec:access
             - --email-domain=*
             - --redirect-url=https://maec.yeetus.net/oauth2/callback
+            # Behind Traefik the return address comes from X-Forwarded-*, which
+            # oauth2-proxy only follows to domains listed here.
+            - --whitelist-domain=maec.yeetus.net
             - --reverse-proxy=true
             - --upstream=static://202
             - --skip-provider-button=true
