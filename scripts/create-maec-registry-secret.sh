@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Makes the pull secret for the private maec image (organization maec on
+# Makes the pull secret for the private maec image (organization mentalasylum on
 # Gitea): kubernetes/services/maec/registry-secret.sops.yaml, a
 # kubernetes.io/dockerconfigjson secret "maec-registry" used by the
 # Deployment and the updater. Asks for a Gitea token with read:package only
-# (Settings > Applications on git.radunenu.com), made by the user named below.
+# (Settings > Applications on git.yeetus.net), made by the user named below.
 # Run with: nix shell nixpkgs#sops -c bash scripts/create-maec-registry-secret.sh
 set -euo pipefail
 repo_root=$(git rev-parse --show-toplevel)
@@ -20,7 +20,9 @@ printf '\n' >&2
 
 umask 077
 auth=$(printf '%s:%s' "$user" "$token" | base64 -w0)
-config=$(printf '{"auths":{"git.radunenu.com":{"auth":"%s"}}}' "$auth")
+# Both names of the one Gitea: the nodes pull through git.radunenu.com (pinned
+# to the mesh), people know it as git.yeetus.net.
+config=$(printf '{"auths":{"git.radunenu.com":{"auth":"%s"},"git.yeetus.net":{"auth":"%s"}}}' "$auth" "$auth")
 cat <<YAML | sops --encrypt --filename-override "$target" /dev/stdin > "$target"
 apiVersion: isindir.github.com/v1alpha3
 kind: SopsSecret

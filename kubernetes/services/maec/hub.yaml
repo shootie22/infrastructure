@@ -8,6 +8,7 @@ keep:
 - namespace.yaml
 - networkpolicy.yaml
 - oauth2-proxy.yaml
+- registry-secret.sops.yaml
 - secret.sops.yaml
 - service.yaml
 - updater.yaml
