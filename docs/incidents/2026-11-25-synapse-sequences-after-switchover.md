@@ -39,5 +39,5 @@ The other streams (events, receipts, to_device, presence, device lists) were fin
 
 ## Follow-ups
 
-- Synapse moves sequences that are behind up to their stream position before every start (this change). Its list of streams is Synapse 1.165's; check it when Synapse adds a stream.
+- Synapse moves sequences that are behind up to their stream position before every start (this change). Its list of streams has to match the Synapse it runs with: `scripts/check-synapse-sequences` reads that release's source in CI and fails the pull request (a Renovate bump too) when Synapse has a stream the list doesn't.
 - The Matrix databases keep following Synapse ([decision](../ha/decisions.md), 2026-11-25).

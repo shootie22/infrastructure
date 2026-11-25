@@ -40,6 +40,10 @@ jobs:
           python3 scripts/check-restarts "origin/${{ github.base_ref }}"
       - name: Pods carry the hash of the config they read
         run: python3 scripts/check-config-hash
+      # Synapse's pod fixes the sequences of the streams it knows; a Synapse with
+      # a stream it doesn't know could crash-loop after a database move.
+      - name: Synapse's sequence fix knows every stream of its Synapse
+        run: python3 scripts/check-synapse-sequences
       - name: Every Job is an Argo hook Argo can make again
         run: python3 scripts/check-jobs
       - name: The outage page's ConfigMap matches page.html

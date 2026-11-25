@@ -133,8 +133,9 @@ data:
     DECLARE r record; lv bigint; called bool; pos bigint;
     BEGIN
       -- Synapse 1.165's streams and their sequences (MultiWriterIdGenerator in
-      -- synapse/storage). backfill counts down and is left out. One that isn't
-      -- in the database yet is skipped.
+      -- synapse/storage); scripts/check-synapse-sequences fails CI when the
+      -- image's Synapse has others. backfill counts down and is left out.
+      -- One that isn't in the database yet is skipped.
       FOR r IN SELECT * FROM (VALUES
         ('account_data', 'account_data_sequence'),
         ('caches', 'cache_invalidation_stream_seq'),
@@ -183,7 +184,7 @@ spec:
       labels: {app: synapse}
       annotations:
         # Bump after changing the ConfigMap, so the pod picks it up.
-        config-hash: "ce5c1def8cb8"
+        config-hash: "8a7d0a4b0647"
         # Prometheus scrapes it with its own job, synapse-yeetus
         # (monitoring/prometheus-configmap.yaml).
     spec:
