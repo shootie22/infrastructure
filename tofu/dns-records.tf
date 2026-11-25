@@ -324,6 +324,14 @@ locals {
       zone    = "yeetus.net", name = "games-inbox", type = "CNAME"
       content = "ro.radunenu.com"
     }
+    # The Mental Asylum site, browser game and downloads
+    # (kubernetes/services/maec). DNS only like games: launcher downloads
+    # through the proxy break Cloudflare's terms, and it cuts long game
+    # WebSockets.
+    "yeetus.net/maec/CNAME" = {
+      zone    = "yeetus.net", name = "maec", type = "CNAME"
+      content = "ro.radunenu.com"
+    }
     "yeetus.net/cal/CNAME" = {
       zone    = "yeetus.net", name = "cal", type = "CNAME"
       content = "beacon.radunenu.com"
@@ -510,6 +518,12 @@ locals {
     }
     "yeetus.net/bopl/CNAME" = {
       zone    = "yeetus.net", name = "bopl", type = "CNAME"
+      content = "games.radunenu.com"
+    }
+    # Mental Asylum game servers for the native game (UDP 24600-24615,
+    # dotfiles modules/nixos/game-relay.nix).
+    "yeetus.net/maec-udp/CNAME" = {
+      zone    = "yeetus.net", name = "maec-udp", type = "CNAME"
       content = "games.radunenu.com"
     }
 

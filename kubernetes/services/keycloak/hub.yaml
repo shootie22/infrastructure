@@ -13,6 +13,7 @@ keep:
 - ingress.yaml
 - keycloak.yaml
 - legacy-client.sops.yaml
+- maec-client.sops.yaml
 - mealie-client.sops.yaml
 - namespace.yaml
 - networkpolicy.yaml

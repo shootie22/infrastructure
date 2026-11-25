@@ -99,6 +99,9 @@ spec:
                 # (games-inbox-client.sops.yaml).
                 - secretRef:
                     name: keycloak-config-cli-games-inbox
+                # MAEC_OAUTH2_SECRET, the same way (maec-client.sops.yaml).
+                - secretRef:
+                    name: keycloak-config-cli-maec
               resources:
                 requests:
                   cpu: 100m
