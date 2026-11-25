@@ -1341,6 +1341,24 @@ data:
             annotations:
               summary: "Scheduled job {{ $labels.namespace }}/{{ $labels.cronjob }} failed its last run"
               description: Its latest run didn't succeed and nothing is running now. The failed Job's pod log says why (kubectl -n {{ $labels.namespace }} get jobs, then logs of the newest one).
+          # A CronJob that keeps failing while one of its runs is nearly always
+          # in progress (long runs with retries, like keycloak-config-cli: 5
+          # minutes per try, every 10 minutes) never trips CronJobFailed, which
+          # waits for nothing to be running. This one ignores that: the latest
+          # run hasn't succeeded and the last success is over 6 hours old.
+          # keycloak-config-cli failed this way for six days unnoticed
+          # (2026-11-19 to 11-25).
+          - alert: CronJobStuckFailing
+            expr: |
+              (kube_cronjob_status_last_schedule_time > kube_cronjob_status_last_successful_time)
+              and on (namespace, cronjob)
+              (time() - kube_cronjob_status_last_successful_time > 6 * 3600)
+            for: 30m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Scheduled job {{ $labels.namespace }}/{{ $labels.cronjob }} hasn't succeeded in over 6 hours"
+              description: Every run since its last success has failed, even if one is running now. The newest failed Job's pod log says why (kubectl -n {{ $labels.namespace }} get jobs).
           # Jobs started by hand or by other tools, not by a CronJob.
           - alert: JobFailed
             expr: kube_job_status_failed > 0 unless on (namespace, job_name) kube_job_owner{owner_kind="CronJob"}
