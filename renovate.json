@@ -272,7 +272,9 @@
         "!git.radunenu.com/radu/spigotmc-docker",
         "!git.radunenu.com/radu/steamhappy",
         "!indifferentbroccoli/hytale-server-docker",
-        "!docker.io/phalcode/gamevault-backend"
+        "!docker.io/phalcode/gamevault-backend",
+        "!ghcr.io/element-hq/synapse",
+        "!ghcr.io/element-hq/matrix-authentication-service"
       ],
       "automerge": true
     },
@@ -304,7 +306,9 @@
         "!git.radunenu.com/radu/spigotmc-docker",
         "!git.radunenu.com/radu/steamhappy",
         "!indifferentbroccoli/hytale-server-docker",
-        "!docker.io/phalcode/gamevault-backend"
+        "!docker.io/phalcode/gamevault-backend",
+        "!ghcr.io/element-hq/synapse",
+        "!ghcr.io/element-hq/matrix-authentication-service"
       ],
       "groupName": "service patches",
       "addLabels": ["many-restarts"],
