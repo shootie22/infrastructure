@@ -30,4 +30,4 @@ Every incident gets two plain sentences, here and at the top of its write-up: **
   **Fix:** Nebula restarts in place on a deploy, and a primary is only replaced after 5 minutes without answering; next, switchovers only to a replica that's caught up, Synapse restarted after a database switch, and a canary that reports and repairs.
 - [2026-11-25: Synapse wouldn't start after its database moved back to fuji](2026-11-25-synapse-sequences-after-switchover.md).
   **What went wrong:** a replica sees Postgres sequences up to 32 values ahead of the primary, so after synapse-db's primary moved to the thinkcentre and back, two of Synapse's sequences were behind the stream positions it had recorded, and Synapse refused to start for 12 hours (and twice on 24 Nov).
-  **Fix:** Synapse's pod moves any sequence that's behind up to its stream position before Synapse starts; whether the Matrix databases keep moving at night is still to decide.
+  **Fix:** Synapse's pod moves any sequence that's behind up to its stream position before Synapse starts, and the Matrix databases keep following Synapse.

@@ -2,7 +2,7 @@
 
 **What went wrong:** Postgres logs a sequence up to 32 values ahead of what it has handed out, and a replica only ever sees the logged value, so synapse-db's two instances disagreed on some of Synapse's counters. While the primary was on the thinkcentre, Synapse recorded stream positions in that gap. When the quiet-hours move switched the primary back to fuji, fuji's lower counters were behind those positions, and Synapse refused to start: `Postgres sequence 'account_data_sequence' is inconsistent with associated stream position of 'account_data'`.
 
-**Fix:** Synapse's pod moves any sequence that's behind its stream position up to it before Synapse starts (a `sequences` init container, `synapse.yaml`). Whether the Matrix databases keep moving every night is open (below).
+**Fix:** Synapse's pod moves any sequence that's behind its stream position up to it before Synapse starts (a `sequences` init container, `synapse.yaml`). The databases keep following Synapse between sites (decision 2026-11-25).
 
 **Resolved.** yeetus.net was down on 25 Nov from 01:04 to 13:19 UTC, and on 24 Nov from 01:59 to 02:03 and from 02:32 to 03:46 UTC. No data was lost: the switchovers were clean, the counters only disagreed.
 
@@ -40,4 +40,4 @@ The other streams (events, receipts, to_device, presence, device lists) were fin
 ## Follow-ups
 
 - Synapse moves sequences that are behind up to their stream position before every start (this change). Its list of streams is Synapse 1.165's; check it when Synapse adds a stream.
-- Open for Radu: keep moving the Matrix databases between sites at night (with the fix above), or keep the primary where it is and only fail over when a site is really down.
+- The Matrix databases keep following Synapse ([decision](../ha/decisions.md), 2026-11-25).
