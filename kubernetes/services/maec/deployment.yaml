@@ -1,0 +1,101 @@
+# The Asylum's servers and site in one container (radu/maec,
+# deploy/Dockerfile): the hub server, which starts one server per game, and
+# Caddy serving the site, the browser build, the game pack and the launchers.
+# One image, so the site and the servers are always the same build.
+#
+# Native players reach the game servers over UDP 24600-24615 on the node
+# (hostPort), relayed by the edge (dotfiles modules/nixos/game-relay.nix);
+# browsers reach them as WebSockets through the site (Caddy proxies
+# /ws/<port> inside the pod). Ports are given out at run time from that
+# range, so a new game needs no change here.
+#
+# Fast lane: :dev, restarted onto each new build by updater.yaml, but only
+# once nobody is playing (or after 30 minutes). Nothing on disk, so it just
+# moves with site-failover (ha.radunenu.com/maec).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: maec
+  namespace: maec
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: maec
+  template:
+    metadata:
+      labels:
+        app: maec
+    spec:
+      priorityClassName: background
+      automountServiceAccountToken: false
+      # The image is private (organization maec): registry-secret.sops.yaml.
+      imagePullSecrets:
+        - name: maec-registry
+      nodeSelector:
+        ha.radunenu.com/maec: active
+      tolerations:
+        - {key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+        - {key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30}
+      # The entrypoint asks the hub to stop its game servers on SIGTERM.
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: maec
+          image: git.radunenu.com/maec/maec:dev
+          imagePullPolicy: Always
+          ports:
+            - {name: http, containerPort: 8080, protocol: TCP}
+            - {name: udp-24600, containerPort: 24600, hostPort: 24600, protocol: UDP}
+            - {name: udp-24601, containerPort: 24601, hostPort: 24601, protocol: UDP}
+            - {name: udp-24602, containerPort: 24602, hostPort: 24602, protocol: UDP}
+            - {name: udp-24603, containerPort: 24603, hostPort: 24603, protocol: UDP}
+            - {name: udp-24604, containerPort: 24604, hostPort: 24604, protocol: UDP}
+            - {name: udp-24605, containerPort: 24605, hostPort: 24605, protocol: UDP}
+            - {name: udp-24606, containerPort: 24606, hostPort: 24606, protocol: UDP}
+            - {name: udp-24607, containerPort: 24607, hostPort: 24607, protocol: UDP}
+            - {name: udp-24608, containerPort: 24608, hostPort: 24608, protocol: UDP}
+            - {name: udp-24609, containerPort: 24609, hostPort: 24609, protocol: UDP}
+            - {name: udp-24610, containerPort: 24610, hostPort: 24610, protocol: UDP}
+            - {name: udp-24611, containerPort: 24611, hostPort: 24611, protocol: UDP}
+            - {name: udp-24612, containerPort: 24612, hostPort: 24612, protocol: UDP}
+            - {name: udp-24613, containerPort: 24613, hostPort: 24613, protocol: UDP}
+            - {name: udp-24614, containerPort: 24614, hostPort: 24614, protocol: UDP}
+            - {name: udp-24615, containerPort: 24615, hostPort: 24615, protocol: UDP}
+          env:
+            # Players' tokens are checked with Keycloak (token introspection,
+            # client maec, its access role).
+            - name: MAEC_INTROSPECT_URL
+              value: https://auth.yeetus.net/realms/network-yeetus/protocol/openid-connect/token/introspect
+            - name: MAEC_CLIENT_ID
+              value: maec
+            - name: MAEC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef: {name: maec-secrets, key: OAUTH2_PROXY_CLIENT_SECRET}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

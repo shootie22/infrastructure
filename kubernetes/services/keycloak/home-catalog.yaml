@@ -27,4 +27,5 @@ data:
       - {id: cook, name: Recipes, description: Our shared cookbook, icon: cook, url: "https://cook.yeetus.net", group: cook}
       - {id: games, name: Games, description: Our game library, icon: games, url: "https://games.yeetus.net", group: games}
       - {id: pastebin, name: Pastebin, description: Encrypted pastes, icon: paste, url: "https://pbin.yeetus.net", access: everyone}
+      - {id: maec, name: Mental Asylum, description: Minigames we make for each other, icon: games, url: "https://maec.yeetus.net", group: maec}
       - {id: minecraft, name: Minecraft, description: Our server, icon: mc, address: play.yeetus.net, access: members}

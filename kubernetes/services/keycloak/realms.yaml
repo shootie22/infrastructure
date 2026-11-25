@@ -525,6 +525,61 @@ data:
               access.token.claim: "true"
         authenticationFlowBindingOverrides:
           browser: gate gamevault
+      # maec.yeetus.net (kubernetes/services/maec): oauth2-proxy in front of
+      # the Mental Asylum site and browser game, and the client the game
+      # servers check players' tokens with (token introspection). Confidential,
+      # PKCE. The secret is in maec-client.sops.yaml and, same value,
+      # maec/secret.sops.yaml (scripts/create-maec-secrets.sh).
+      - clientId: maec
+        name: Mental Asylum
+        description: maec.yeetus.net
+        enabled: true
+        publicClient: false
+        secret: $(env:MAEC_OAUTH2_SECRET)
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        redirectUris: ["https://maec.yeetus.net/oauth2/callback"]
+        webOrigins: ["https://maec.yeetus.net"]
+        attributes:
+          pkce.code.challenge.method: S256
+          post.logout.redirect.uris: "https://maec.yeetus.net/*"
+        protocolMappers:
+          # oauth2-proxy rejects tokens without its own client in aud.
+          - name: audience
+            protocol: openid-connect
+            protocolMapper: oidc-audience-mapper
+            config:
+              included.client.audience: maec
+              id.token.claim: "false"
+              access.token.claim: "true"
+        authenticationFlowBindingOverrides:
+          browser: gate maec
+      # The Mental Asylum launcher (radu/maec) signs in as a native app
+      # (RFC 8252): public, PKCE, a loopback redirect (Keycloak ignores the
+      # port for 127.0.0.1), offline access so friends sign in once. Its
+      # tokens carry the maec audience: the launcher downloads updates from
+      # maec.yeetus.net with them, and the game servers check them.
+      - clientId: maec-launcher
+        name: Mental Asylum
+        description: The Mental Asylum game
+        enabled: true
+        publicClient: true
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        redirectUris: ["http://127.0.0.1/*"]
+        attributes:
+          pkce.code.challenge.method: S256
+        optionalClientScopes: [offline_access]
+        protocolMappers:
+          - name: audience
+            protocol: openid-connect
+            protocolMapper: oidc-audience-mapper
+            config:
+              included.client.audience: maec
+              id.token.claim: "false"
+              access.token.claim: "true"
+        authenticationFlowBindingOverrides:
+          browser: gate maec
     roles:
       client:
         audiobookshelf:
@@ -551,6 +606,9 @@ data:
         games:
           - name: access
             description: May use Games (the new GameVault)
+        maec:
+          - name: access
+            description: May play in the Mental Asylum
     authenticatorConfig:
       - alias: audiobookshelf no access
         config: {condUserRole: audiobookshelf.access, negate: "true"}
@@ -579,6 +637,10 @@ data:
       - alias: gamevault no access
         config: {condUserRole: gamevault.access, negate: "true"}
       - alias: gamevault deny
+        config: {denyErrorMessage: yeetusNoAccess}
+      - alias: maec no access
+        config: {condUserRole: maec.access, negate: "true"}
+      - alias: maec deny
         config: {denyErrorMessage: yeetusNoAccess}
     # Each gated app: Keycloak's browser flow, then "no access role, no entry"
     # (docs/ha/keycloak-sso.md, "Who gets into which app").
@@ -835,6 +897,42 @@ data:
         authenticationExecutions:
           - {authenticator: conditional-user-role, authenticatorConfig: gamevault no access, requirement: REQUIRED, priority: 10}
           - {authenticator: deny-access-authenticator, authenticatorConfig: gamevault deny, requirement: REQUIRED, priority: 20}
+      - alias: gate maec
+        description: Sign in, then only with maec's access role
+        providerId: basic-flow
+        topLevel: true
+        builtIn: false
+        authenticationExecutions:
+          - {flowAlias: gate maec sign in, requirement: REQUIRED, priority: 10, autheticatorFlow: true}
+          - {flowAlias: gate maec check, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+      - alias: gate maec sign in
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: auth-cookie, requirement: ALTERNATIVE, priority: 10}
+          - {flowAlias: gate maec forms, requirement: ALTERNATIVE, priority: 20, autheticatorFlow: true}
+      - alias: gate maec forms
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: auth-username-password-form, requirement: REQUIRED, priority: 10}
+          - {flowAlias: gate maec 2fa, requirement: CONDITIONAL, priority: 20, autheticatorFlow: true}
+      - alias: gate maec 2fa
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: conditional-user-configured, requirement: REQUIRED, priority: 10}
+          - {authenticator: auth-otp-form, requirement: ALTERNATIVE, priority: 20}
+      - alias: gate maec check
+        providerId: basic-flow
+        topLevel: false
+        builtIn: false
+        authenticationExecutions:
+          - {authenticator: conditional-user-role, authenticatorConfig: maec no access, requirement: REQUIRED, priority: 10}
+          - {authenticator: deny-access-authenticator, authenticatorConfig: maec deny, requirement: REQUIRED, priority: 20}
     users:
       - username: service-account-yeetus-api
         serviceAccountClientId: yeetus-api
@@ -881,5 +979,9 @@ data:
         clientRoles:
           gamevault: [access]
           games: [access]
+      - name: maec
+        attributes: {description: [Mental Asylum Entertainment Center]}
+        clientRoles:
+          maec: [access]
       - name: calendar
         attributes: {description: [Baïkal, with app passwords]}
