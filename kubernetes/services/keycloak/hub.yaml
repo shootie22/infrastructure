@@ -15,6 +15,8 @@ keep:
 - legacy-client.sops.yaml
 - maec-client.sops.yaml
 - mealie-client.sops.yaml
+- members.sops.yaml
+- members.yaml
 - namespace.yaml
 - networkpolicy.yaml
 - realms.yaml

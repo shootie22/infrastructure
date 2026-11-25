@@ -44,7 +44,9 @@ Keycloak lets anyone in the realm sign in to any client, and some apps create an
 - a group per app (`audiobooks`, `notes`, `passwords`, `git`, `calendar`) that has that role, in `realms.yaml`;
 - the client's browser flow overridden with a copy of Keycloak's browser flow plus a last step: if the user doesn't have the role, Deny access.
 
-The gate also applies when someone is already signed in elsewhere (the cookie path), which a test on a Keycloak copy checked. A refused person gets the login theme's "Not yet" page with a ready mail asking for access (message key `yeetusNoAccess`). Adding someone to an app is adding them to its group in the admin UI. Home uses the same groups.
+The gate also applies when someone is already signed in elsewhere (the cookie path), which a test on a Keycloak copy checked. A refused person gets the login theme's "Not yet" page with a ready mail asking for access (message key `yeetusNoAccess`). Adding someone to an app is adding them to its group. Home uses the same groups.
+
+Groups listed in [`keycloak/members.sops.yaml`](../../kubernetes/services/keycloak/members.sops.yaml) are kept to exactly that list by a job every 10 minutes ([`members.yaml`](../../kubernetes/services/keycloak/members.yaml)): each key is a group, its value the usernames, or `everyone` for every account (new ones join on the next run). Edit it with `sops kubernetes/services/keycloak/members.sops.yaml`; the usernames are encrypted, the group names readable. A list with a name that isn't an account leaves that group as it is and fails the job, so a typo never takes someone out. Groups not listed there are still managed by hand in the admin UI.
 
 The blocks for an app (here `audiobooks`, client `audiobookshelf`), in network-yeetus's file:
 

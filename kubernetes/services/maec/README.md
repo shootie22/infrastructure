@@ -25,7 +25,8 @@ game pack and the launchers. Everything is behind the yeetus sign-in
 - **Secrets**: `secret.sops.yaml` (client and cookie secrets) and
   `../keycloak/maec-client.sops.yaml` hold the same client secret
   (scripts/create-maec-secrets.sh).
-- **Giving a friend access**: add them to the `maec` group in Keycloak
-  (realm network-yeetus).
+- **Who can play**: the `maec` group, which `keycloak/members.sops.yaml`
+  sets to everyone with a network-yeetus account. Admins are the
+  `maec-admins` list in the same file.
 - **Admins** (kick, restart servers, start an update; `/help` in the game's
   chat): the `maec-admins` group.
