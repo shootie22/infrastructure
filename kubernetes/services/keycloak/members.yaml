@@ -31,6 +31,15 @@ data:
     REALM=${REALM:-network-yeetus}
     DIR=${MEMBERS_DIR:-/members}
 
+    # Wait for Keycloak like keycloak-config-cli does: a new pod can be
+    # refused for a moment until the network policy knows its address, and
+    # Keycloak may be moving to the other site.
+    for i in $(seq 1 30); do
+      curl -fsS -o /dev/null -m 5 "$KC/realms/master" && break
+      if [ "$i" = 30 ]; then echo "Keycloak doesn't answer at $KC"; exit 1; fi
+      sleep 4
+    done
+
     TOKEN=$(curl -fsS "$KC/realms/master/protocol/openid-connect/token" \
       -d grant_type=client_credentials -d client_id="${KEYCLOAK_CLIENTID:-config-cli}" \
       --data-urlencode client_secret="$KEYCLOAK_CLIENTSECRET" | jq -r .access_token)
