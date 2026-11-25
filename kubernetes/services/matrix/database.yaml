@@ -30,6 +30,15 @@ spec:
   # 2026-11-19-mesh-restart-failovers.md). A site that's really gone
   # still fails over, 5 minutes later.
   failoverDelay: 300
+  # The isolation check (probes below) stops a primary that can reach
+  # neither the API nor the other instance. With the default 30 s, every
+  # k3s restart on fuji or the thinkcentre killed the healthy primary on
+  # fuji, and 5 minutes later CNPG failed over to the other site: that
+  # started each Matrix database incident from 13 to 25 Nov
+  # (docs/matrix/failure-modes.md). 240 s rides out a k3s restart (most
+  # losses last under 3 minutes) and still stops a primary that's really
+  # cut off a minute before the other site may promote (failoverDelay).
+  livenessProbeTimeout: 240
   imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
   # The hourly dump reads the replica. Without this the primary vacuums away
   # rows the dump is still reading, and the replica cancels it ("conflict
@@ -107,6 +116,15 @@ spec:
   # 2026-11-19-mesh-restart-failovers.md). A site that's really gone
   # still fails over, 5 minutes later.
   failoverDelay: 300
+  # The isolation check (probes below) stops a primary that can reach
+  # neither the API nor the other instance. With the default 30 s, every
+  # k3s restart on fuji or the thinkcentre killed the healthy primary on
+  # fuji, and 5 minutes later CNPG failed over to the other site: that
+  # started each Matrix database incident from 13 to 25 Nov
+  # (docs/matrix/failure-modes.md). 240 s rides out a k3s restart (most
+  # losses last under 3 minutes) and still stops a primary that's really
+  # cut off a minute before the other site may promote (failoverDelay).
+  livenessProbeTimeout: 240
   imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
   # The hourly dump reads the replica. Without this the primary vacuums away
   # rows the dump is still reading, and the replica cancels it ("conflict
