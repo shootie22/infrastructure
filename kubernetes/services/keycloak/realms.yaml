@@ -178,6 +178,17 @@ data:
     realm: network-yeetus
     displayName: Yeetus Network
     enabled: true
+    # Every account here gets these roles, new ones too. The Mental Asylum is
+    # for everyone (Radu, 2026-11-25), so maec's access role is one of them:
+    # no group to fill in by hand. Listing the composites replaces Keycloak's
+    # defaults, so the first four are its usual ones.
+    defaultRole:
+      name: default-roles-network-yeetus
+      composites:
+        realm: [offline_access, uma_authorization]
+        client:
+          account: [view-profile, manage-account]
+          maec: [access]
     # Everyone has a short username (the same as on Gitea) and can sign in
     # with it or their email. Apps go by the username, so it isn't the email.
     registrationEmailAsUsername: false
@@ -991,6 +1002,8 @@ data:
         clientRoles:
           gamevault: [access]
           games: [access]
+      # Not needed to play any more (everyone has maec.access, defaultRole
+      # above); kept so existing memberships stay harmless.
       - name: maec
         attributes: {description: [Mental Asylum Entertainment Center]}
         clientRoles:
