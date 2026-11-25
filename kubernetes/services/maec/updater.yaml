@@ -1,10 +1,11 @@
-# Every 2 minutes: compare the registry's :dev digest with what the pod runs
-# and restart onto a new build, but only once nobody is playing, or after
-# the new build has waited 30 minutes (players are then sent through the
-# game's own update and straight back in). While it waits, the Deployment
-# carries the annotation maec.radunenu.com/update-waiting-since.
-# The image is private (organization maec): the registry is asked with the
-# pull secret's credentials (registry-secret.sops.yaml).
+# Every 2 minutes: compare the registry's :dev digest with what the pod runs.
+# A new build is written to the ConfigMap maec-update (key "pending"), which
+# the pod reads: the game tells its players an update is waiting. The game
+# decides when it may restart (/status "restart_ok": nobody online, or an
+# admin asked and no match is on; radu/maec docs/architecture.md), and only
+# then does this restart the Deployment. Players come back on the new build.
+# The image is private (organization mentalasylum): the registry is asked
+# with the pull secret's credentials (registry-secret.sops.yaml).
 # Run by hand: kubectl -n maec create job --from=cronjob/maec-updater manual-1
 apiVersion: v1
 kind: ServiceAccount
@@ -33,6 +34,14 @@ rules:
   - apiGroups: ["apps"]
     resources: ["deployments"]
     verbs: ["list", "watch"]
+  # The "a build is waiting" note for the game (created here, not in git).
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["maec-update"]
+    verbs: ["get", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -73,7 +82,7 @@ spec:
               command: ["/bin/sh", "-euc"]
               args:
                 - |
-                  repo=maec/maec
+                  repo=mentalasylum/maec
                   auth=$(jq -r '.auths["git.radunenu.com"].auth' /etc/registry/.dockerconfigjson)
                   token=$(curl -fsS -H "Authorization: Basic $auth" \
                     "https://git.radunenu.com/v2/token?service=container_registry&scope=repository:$repo:pull" | jq -r .token)
@@ -96,29 +105,26 @@ spec:
                     echo "no running pod, nothing to compare"
                     exit 0
                   fi
+                  note() {
+                    kubectl create configmap maec-update --from-literal=pending="$1" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+                  }
                   if [ "$running" = "$latest" ]; then
-                    kubectl annotate deployment/maec maec.radunenu.com/update-waiting-since- >/dev/null 2>&1 || true
+                    note ""
                     echo "up to date"
                     exit 0
                   fi
 
-                  # Who is playing (the hub's summary, served by the site).
-                  online=$(curl -fsS --max-time 5 http://maec.maec.svc.cluster.local/status | jq -r '.online // 0' || echo 0)
-                  now=$(date +%s)
-                  since=$(kubectl get deployment/maec -o jsonpath='{.metadata.annotations.maec\.radunenu\.com/update-waiting-since}')
-                  if [ "$online" -gt 0 ]; then
-                    if [ -z "$since" ]; then
-                      kubectl annotate deployment/maec maec.radunenu.com/update-waiting-since="$now" --overwrite
-                      since=$now
-                    fi
-                    if [ $((now - since)) -lt 1800 ]; then
-                      echo "new build waiting: $online playing, $(( (now - since) / 60 )) of 30 minutes"
-                      exit 0
-                    fi
-                    echo "waited 30 minutes; restarting with $online playing"
+                  # Tell the game (it reads the ConfigMap within a minute or two),
+                  # then restart only when it says so.
+                  note "$latest"
+                  ok=$(curl -fsS --max-time 5 http://maec.maec.svc.cluster.local/status | jq -r '.restart_ok // false' || echo false)
+                  if [ "$ok" != "true" ]; then
+                    echo "new build waiting for the game to allow a restart"
+                    exit 0
                   fi
-                  echo "new build, restarting"
-                  kubectl annotate deployment/maec maec.radunenu.com/update-waiting-since- >/dev/null 2>&1 || true
+                  echo "new build, the game allows it: restarting"
+                  # Cleared first, so the new pod doesn't announce an update it already has.
+                  note ""
                   kubectl rollout restart deployment/maec
                   kubectl rollout status deployment/maec --timeout=5m
               volumeMounts:

@@ -9,9 +9,10 @@
 # /ws/<port> inside the pod). Ports are given out at run time from that
 # range, so a new game needs no change here.
 #
-# Fast lane: :dev, restarted onto each new build by updater.yaml, but only
-# once nobody is playing (or after 30 minutes). Nothing on disk, so it just
-# moves with site-failover (ha.radunenu.com/maec).
+# Fast lane: :dev. updater.yaml tells the game a new build is ready (the
+# maec-update ConfigMap, mounted below) and restarts onto it when the game
+# says it may: nobody online, or an admin asked and no match is on. Nothing
+# on disk, so it just moves with site-failover (ha.radunenu.com/maec).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -31,7 +32,7 @@ spec:
     spec:
       priorityClassName: background
       automountServiceAccountToken: false
-      # The image is private (organization maec): registry-secret.sops.yaml.
+      # The image is private (organization mentalasylum): registry-secret.sops.yaml.
       imagePullSecrets:
         - name: maec-registry
       nodeSelector:
@@ -49,7 +50,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: maec
-          image: git.radunenu.com/maec/maec:dev
+          image: git.radunenu.com/mentalasylum/maec:dev
           imagePullPolicy: Always
           ports:
             - {name: http, containerPort: 8080, protocol: TCP}
@@ -96,6 +97,15 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            # "pending" holds the digest of a waiting build (updater.yaml).
+            - name: update
+              mountPath: /etc/maec-update
+              readOnly: true
       volumes:
         - name: tmp
           emptyDir: {}
+        # Made and changed by the updater, not by Argo CD (so not in git).
+        - name: update
+          configMap:
+            name: maec-update
+            optional: true

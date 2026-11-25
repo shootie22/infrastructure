@@ -13,11 +13,13 @@ game pack and the launchers. Everything is behind the yeetus sign-in
 | Browser game servers | WebSockets at `/ws/<port>`, proxied inside the pod |
 | Who's playing | `/status` (the updater reads it in-cluster) |
 
-- **Image**: `git.radunenu.com/maec/maec:dev`, private (organization
-  `maec`), pulled with `maec-registry` (scripts/create-maec-registry-secret.sh).
-- **Updates**: fast lane. Every merge to main in radu/maec publishes `:dev`;
-  `updater.yaml` restarts onto it once nobody is playing, or after 30
-  minutes. Clients update themselves when they reconnect.
+- **Image**: `git.radunenu.com/mentalasylum/maec:dev`, private (organization
+  `mentalasylum`), pulled with `maec-registry` (scripts/create-maec-registry-secret.sh).
+- **Updates**: fast lane. Every merge to main in radu/maec publishes `:dev`.
+  `updater.yaml` tells the game (ConfigMap `maec-update`), and restarts onto
+  the new build only when the game allows it (`/status` `restart_ok`): nobody
+  online, or an admin asked and no match is on. Clients update themselves
+  when they reconnect.
 - **Placement**: nothing on disk; it moves with site-failover
   (`ha.radunenu.com/maec`, dotfiles).
 - **Secrets**: `secret.sops.yaml` (client and cookie secrets) and
@@ -25,3 +27,5 @@ game pack and the launchers. Everything is behind the yeetus sign-in
   (scripts/create-maec-secrets.sh).
 - **Giving a friend access**: add them to the `maec` group in Keycloak
   (realm network-yeetus).
+- **Admins** (kick, restart servers, start an update; `/help` in the game's
+  chat): the `maec-admins` group.

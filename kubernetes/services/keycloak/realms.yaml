@@ -609,6 +609,8 @@ data:
         maec:
           - name: access
             description: May play in the Mental Asylum
+          - name: admin
+            description: May kick players, restart servers and start updates in the Mental Asylum
     authenticatorConfig:
       - alias: audiobookshelf no access
         config: {condUserRole: audiobookshelf.access, negate: "true"}
@@ -983,5 +985,11 @@ data:
         attributes: {description: [Mental Asylum Entertainment Center]}
         clientRoles:
           maec: [access]
+      # Mental Asylum admins (kick, restart servers, start updates); they can
+      # play too, so no need to be in maec as well.
+      - name: maec-admins
+        attributes: {description: [Mental Asylum admins]}
+        clientRoles:
+          maec: [access, admin]
       - name: calendar
         attributes: {description: [Baïkal, with app passwords]}
