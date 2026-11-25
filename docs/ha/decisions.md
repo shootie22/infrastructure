@@ -305,3 +305,9 @@ Also on the table: making uploaders GameVault admins (far more than uploading), 
 Everyone in `games` may now upload into GameVault's library from the games inbox, not only into their own inbox for radu to look at first. They can't delete, rename or overwrite anything already there (copyparty saves a second upload under a new name; deleting is GameVault's), so the worst case is something unwanted in the library until radu deletes it in GameVault. The inboxes stay, for anything someone wants looked at first. If it doesn't work out, `rw: @acct` comes off the library in games-inbox/deployment.yaml and it's back to inbox only.
 
 Also on the table: a separate `games-uploaders` group for library uploads (another group to keep up for the same people), and keeping inbox only (the earlier decision above).
+
+## 2026-11-25: The Matrix databases keep following Synapse
+
+After Synapse wouldn't start for 12 hours because two of its sequences were behind after synapse-db's primary moved over and back ([incident](../incidents/2026-11-25-synapse-sequences-after-switchover.md)), synapse-db and mas-db still switch over to whichever site runs Synapse. Why: Synapse makes many queries one after another, so a database in the other site makes every request 13-55 ms slower per query, and Synapse now moves lagging sequences up before every start, so a move can't keep it from starting.
+
+Also on the table: keeping the primary where it is and failing over only when a site is really gone (fewer switches, but Synapse slow whenever it runs in the other site, until someone moves the primary by hand; it also needed the `cnpg` option taken out of the dotfiles hosts).

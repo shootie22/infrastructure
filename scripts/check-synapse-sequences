@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+"""Synapse's sequence fix knows every stream of the Synapse it runs with.
+
+Before every start, Synapse's pod moves any sequence that's behind its stream
+position up to it (the `sequences` init container and fix-sequences.sql in
+kubernetes/services/matrix/synapse.yaml; docs/incidents/
+2026-11-25-synapse-sequences-after-switchover.md). The SQL has to name each
+stream and its sequence, and a stream it doesn't name isn't fixed: Synapse
+would refuse to start on it after a database move, as it did for 12 hours.
+
+This reads the Synapse version from synapse.yaml, takes that release's source
+from GitHub, finds every MultiWriterIdGenerator (stream_name, sequence_name)
+and fails when the SQL's list differs, so an upgrade that adds a stream
+(a Renovate pull request too) can't merge until the list has it.
+
+    scripts/check-synapse-sequences
+"""
+
+import ast
+import io
+import pathlib
+import re
+import sys
+import tarfile
+import urllib.request
+
+import yaml
+
+SYNAPSE = pathlib.Path(__file__).resolve().parent.parent / "kubernetes/services/matrix/synapse.yaml"
+
+docs = [d for d in yaml.safe_load_all(SYNAPSE.read_text()) if d]
+config = next(d for d in docs if d["kind"] == "ConfigMap" and d["metadata"]["name"] == "synapse")
+deploy = next(d for d in docs if d["kind"] == "Deployment")
+image = next(c["image"] for c in deploy["spec"]["template"]["spec"]["containers"] if c["name"] == "synapse")
+version = re.match(r"ghcr\.io/element-hq/synapse:(v[0-9][^@]*)", image).group(1)
+in_sql = set(re.findall(r"\('([a-z0-9_]+)', '([a-z0-9_]+)'\)", config["data"]["fix-sequences.sql"]))
+
+url = f"https://codeload.github.com/element-hq/synapse/tar.gz/refs/tags/{version}"
+with urllib.request.urlopen(url, timeout=60) as r:
+    archive = tarfile.open(fileobj=io.BytesIO(r.read()), mode="r:gz")
+sources = {}
+for m in archive.getmembers():
+    parts = m.name.split("/", 1)
+    if m.isfile() and len(parts) == 2 and parts[1].startswith("synapse/") and parts[1].endswith(".py"):
+        sources[parts[1]] = ast.parse(archive.extractfile(m).read(), parts[1])
+
+# Stream classes' NAME, for stream_name=SomeStream.NAME.
+names = {}
+for tree in sources.values():
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef):
+            for s in node.body:
+                if (isinstance(s, ast.Assign) and len(s.targets) == 1 and isinstance(s.targets[0], ast.Name)
+                        and s.targets[0].id == "NAME" and isinstance(s.value, ast.Constant)):
+                    names[node.name] = s.value.value
+
+in_synapse, problems = set(), []
+for path, tree in sources.items():
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        f = node.func
+        if (f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", None)) != "MultiWriterIdGenerator":
+            continue
+        kw = {k.arg: k.value for k in node.keywords}
+        if isinstance(kw.get("positive"), ast.Constant) and kw["positive"].value is False:
+            continue  # backfill counts down; the SQL leaves it out
+        stream, seq = kw.get("stream_name"), kw.get("sequence_name")
+        if isinstance(stream, ast.Attribute) and stream.attr == "NAME" and isinstance(stream.value, ast.Name):
+            stream = ast.Constant(names.get(stream.value.id))
+        if not (isinstance(stream, ast.Constant) and isinstance(seq, ast.Constant)
+                and isinstance(stream.value, str) and isinstance(seq.value, str)):
+            problems.append(f"{path}:{node.lineno}: can't read stream_name/sequence_name, look by hand")
+            continue
+        in_synapse.add((stream.value, seq.value))
+
+if not in_synapse:
+    problems.append(f"found no MultiWriterIdGenerator in Synapse {version}'s source; has it been renamed?")
+for stream, seq in sorted(in_synapse - in_sql):
+    problems.append(f"Synapse {version} has stream {stream!r} ({seq}), fix-sequences.sql doesn't: add ('{stream}', '{seq}')")
+for stream, seq in sorted(in_sql - in_synapse):
+    problems.append(f"fix-sequences.sql has ('{stream}', '{seq}'), Synapse {version} doesn't: take it out")
+if problems:
+    print("\n".join(problems))
+    sys.exit(1)
+print(f"fix-sequences.sql has all {len(in_synapse)} streams of Synapse {version}")

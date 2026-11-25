@@ -126,6 +126,45 @@ data:
       level: INFO
       handlers: [console]
     disable_existing_loggers: false
+
+  # Run by the sequences init container before every start (below).
+  fix-sequences.sql: |
+    DO $$
+    DECLARE r record; lv bigint; called bool; pos bigint;
+    BEGIN
+      -- Synapse 1.165's streams and their sequences (MultiWriterIdGenerator in
+      -- synapse/storage); scripts/check-synapse-sequences fails CI when the
+      -- image's Synapse has others. backfill counts down and is left out.
+      -- One that isn't in the database yet is skipped.
+      FOR r IN SELECT * FROM (VALUES
+        ('account_data', 'account_data_sequence'),
+        ('caches', 'cache_invalidation_stream_seq'),
+        ('device_lists_stream', 'device_lists_sequence'),
+        ('e2e_cross_signing_keys', 'e2e_cross_signing_keys_sequence'),
+        ('events', 'events_stream_seq'),
+        ('presence_stream', 'presence_stream_sequence'),
+        ('profile_updates', 'profile_updates_sequence'),
+        ('push_rules_stream', 'push_rules_stream_sequence'),
+        ('pushers', 'pushers_sequence'),
+        ('quarantined_media', 'quarantined_media_id_seq'),
+        ('receipts', 'receipts_sequence'),
+        ('sticky_events', 'sticky_events_sequence'),
+        ('thread_subscriptions', 'thread_subscriptions_sequence'),
+        ('to_device', 'device_inbox_sequence'),
+        ('un_partial_stated_event_stream', 'un_partial_stated_event_stream_sequence'),
+        ('un_partial_stated_room_stream', 'un_partial_stated_room_stream_sequence')
+      ) v(stream, seq) LOOP
+        CONTINUE WHEN to_regclass(r.seq) IS NULL;
+        SELECT max(stream_id) INTO pos FROM stream_positions WHERE stream_name = r.stream;
+        CONTINUE WHEN pos IS NULL;
+        EXECUTE format('SELECT last_value, is_called FROM %I', r.seq) INTO lv, called;
+        IF NOT called THEN lv := lv - 1; END IF;
+        IF pos > lv THEN
+          PERFORM setval(r.seq, pos);
+          RAISE NOTICE '% was behind stream %: % -> %', r.seq, r.stream, lv, pos;
+        END IF;
+      END LOOP;
+    END $$;
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -145,7 +184,7 @@ spec:
       labels: {app: synapse}
       annotations:
         # Bump after changing the ConfigMap, so the pod picks it up.
-        config-hash: "33b8d89b294a"
+        config-hash: "8a7d0a4b0647"
         # Prometheus scrapes it with its own job, synapse-yeetus
         # (monitoring/prometheus-configmap.yaml).
     spec:
@@ -186,6 +225,28 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: {drop: [ALL]}
+        # Postgres logs a sequence up to 32 values ahead of what it has handed
+        # out, and a replica only sees the logged value, so the two instances
+        # disagree on it. After the primary has moved over and back, its
+        # sequence can be behind the stream positions Synapse wrote, and
+        # Synapse then refuses to start ("sequence ... is inconsistent with
+        # associated stream position"): 12 hours on 2026-11-25
+        # (docs/incidents/2026-11-25-synapse-sequences-after-switchover.md).
+        # This moves such a sequence up to the position, as Synapse itself
+        # does for a sequence behind its table. Nothing is deleted.
+        - name: sequences
+          image: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
+          command: ["psql", "-X", "-q", "-v", "ON_ERROR_STOP=1", "-f", "/config/fix-sequences.sql"]
+          env:
+            - {name: PGHOST, value: synapse-db-rw}
+            - {name: PGDATABASE, value: synapse}
+            - {name: PGUSER, valueFrom: {secretKeyRef: {name: synapse-db-credentials, key: username}}}
+            - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: synapse-db-credentials, key: password}}}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: config, mountPath: /config, readOnly: true}
       containers:
         - name: synapse
           image: ghcr.io/element-hq/synapse:v1.165.0@sha256:673b4223c81a7634fd07d832b939a58f97081cfdaae7cdd2d1664cdcf7611b62
