@@ -12,6 +12,7 @@ Matrix is the service with the most users (about 10 a day) and the one that matt
 ## Where things are
 
 - [architecture.md](architecture.md): the design, what runs where, how it fails over, and why
+- [failure-modes.md](failure-modes.md): every way we know Matrix can fail, what notices it, what repairs it, and what is still open
 - [migration.md](migration.md): how nuke.zip moves in and how its users switch
 - [questions.md](questions.md): the questions asked while planning, with the answers
 - [../ha/decisions.md](../ha/decisions.md): the decisions, dated 2026-10-14
