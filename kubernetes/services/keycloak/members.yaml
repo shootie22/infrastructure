@@ -1,0 +1,164 @@
+# Who is in which network-yeetus group, from members.sops.yaml: each key is
+# a group, its value the usernames in it (spaces or new lines between), or
+# `everyone` for every account (new ones join on the next run). Every 10
+# minutes this job makes each listed group hold exactly those people, so
+# giving a whole list of friends an app is one edit:
+#
+#   sops kubernetes/services/keycloak/members.sops.yaml
+#
+# Group names stay readable in the file; the usernames are encrypted, and the
+# job logs counts only. A group not in the file is left alone (people added
+# by hand stay). A list with a name that isn't an account, or an empty list,
+# leaves that group as it is and fails the job (CronJobStuckFailing alerts).
+# The groups themselves, and what they grant, are in realms.yaml.
+#
+# It signs in as the config-cli client in master, like keycloak-config-cli.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-members
+  namespace: keycloak
+data:
+  sync-members.sh: |
+    #!/bin/bash
+    # Makes each listed network-yeetus group hold exactly the people in
+    # members.sops.yaml: one file per group in $MEMBERS_DIR, with usernames
+    # separated by spaces or new lines, or the word "everyone" (every account,
+    # new ones within a run). Groups that aren't listed are left alone.
+    # Logs counts only: the names stay in the encrypted file.
+    set -euo pipefail
+    KC=${KEYCLOAK_URL:-http://keycloak:8080}
+    REALM=${REALM:-network-yeetus}
+    DIR=${MEMBERS_DIR:-/members}
+
+    TOKEN=$(curl -fsS "$KC/realms/master/protocol/openid-connect/token" \
+      -d grant_type=client_credentials -d client_id="${KEYCLOAK_CLIENTID:-config-cli}" \
+      --data-urlencode client_secret="$KEYCLOAK_CLIENTSECRET" | jq -r .access_token)
+    api() { curl -fsS -H "Authorization: Bearer $TOKEN" "$@"; }
+    A="$KC/admin/realms/$REALM"
+
+    # Every account: "id username" lines (Keycloak keeps usernames lowercase).
+    users=$(api "$A/users?max=100000&briefRepresentation=true" | jq -r '.[] | "\(.id) \(.username)"')
+    problems=0
+
+    for f in "$DIR"/*; do
+      [ -f "$f" ] || continue
+      group=$(basename "$f")
+      gid=$(api -G "$A/groups" --data-urlencode "search=$group" -d exact=true -d briefRepresentation=true |
+        jq -r --arg g "$group" '.[] | select(.name == $g) | .id' | head -n 1)
+      if [ -z "$gid" ]; then
+        echo "$group: no such group (groups are made in realms.yaml)"
+        problems=1
+        continue
+      fi
+
+      names=$(tr '[:upper:]' '[:lower:]' < "$f" | tr -s ' \t\r\n' '\n' | sed '/^$/d' | sort -u)
+      if [ -z "$names" ]; then
+        # Never empty a group by accident; remove its line to stop managing it.
+        echo "$group: the list is empty, leaving it as it is"
+        problems=1
+        continue
+      fi
+      everyone=0
+      if [ "$names" = everyone ]; then
+        everyone=1
+        want=$(cut -d' ' -f1 <<< "$users" | sort -u)
+      else
+        want=""
+        n=0
+        unknown=0
+        while read -r name; do
+          [ -n "$name" ] || continue
+          n=$((n + 1))
+          id=$(awk -v u="$name" '$2 == u {print $1}' <<< "$users")
+          if [ -z "$id" ]; then
+            echo "$group: entry $n (alphabetical) is not an account"
+            unknown=1
+            continue
+          fi
+          want+="$id"$'\n'
+        done <<< "$names"
+        if [ "$unknown" = 1 ]; then
+          # Probably a typo: changing the group now could take someone out.
+          echo "$group: left as it is until the list is fixed"
+          problems=1
+          continue
+        fi
+        want=$(sed '/^$/d' <<< "$want" | sort -u)
+      fi
+
+      have=$(api "$A/groups/$gid/members?max=100000&briefRepresentation=true" | jq -r '.[].id' | sort -u)
+      add=$(comm -13 <(echo "$have") <(echo "$want") | sed '/^$/d')
+      # "everyone" only adds: nobody can be in it without an account anyway.
+      remove=""
+      [ "$everyone" = 1 ] || remove=$(comm -23 <(echo "$have") <(echo "$want") | sed '/^$/d')
+
+      for id in $add; do api -X PUT "$A/users/$id/groups/$gid" -o /dev/null; done
+      for id in $remove; do api -X DELETE "$A/users/$id/groups/$gid" -o /dev/null; done
+      echo "$group: $(wc -w <<< "$want") wanted, $(wc -w <<< "$add") added, $(wc -w <<< "$remove") removed"
+    done
+
+    exit "$problems"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: keycloak-members
+  namespace: keycloak
+spec:
+  # Five minutes after keycloak-config-cli, which makes new groups.
+  schedule: "5-59/10 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 300
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: sync
+              # curl, jq and bash (the same image as the game updaters).
+              image: docker.io/alpine/k8s:1.37.2@sha256:7a82aeefea3d554a43a8676b137f2b88bae6c1fe11c13862b191b3a086cc28c0
+              command: [bash, /scripts/sync-members.sh]
+              env:
+                - name: KEYCLOAK_CLIENTSECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: keycloak-config-cli
+                      key: KEYCLOAK_CLIENTSECRET
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+                - name: members
+                  mountPath: /members
+                  readOnly: true
+          volumes:
+            - name: scripts
+              configMap:
+                name: keycloak-members
+            - name: members
+              secret:
+                secretName: keycloak-members

@@ -1,0 +1,35 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: keycloak-members
+    namespace: keycloak
+spec:
+    secretTemplates:
+        - name: ENC[AES256_GCM,data:Y5kOtsmWj9R/ek+qHpH4OQ==,iv:FUT6/+pGF9BQjxDXyaCM7vslVD/S+OPLT4oWp4xWScY=,tag:tBad1SFFPlwy9wPj+trevw==,type:str]
+          stringData:
+            maec: ENC[AES256_GCM,data:UlyddBZAFFc=,iv:VIlYjxwNqeHt4uv+k3jEXtOksVtN8Qj7q44/GfXPQSc=,tag:PeOeZYo689yRef57G3RLjQ==,type:str]
+            maec-admins: ENC[AES256_GCM,data:jTypyg==,iv:nMcr1GR2+3zjepxxzwZrrtpezTjHfwqyzGfw622rOdQ=,tag:QsfRo1+uSSEZT8S5oEMIGQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSByQjlLeE1NeUkvd2FGVjBZ
+            N1ZaU3lPeWQvYkpQdnVxcnVNTkZGRUJpLzJzCkJHd0dCa3Y5SmNydTJEbjBjZU8x
+            ekN2MzYzVVMxcWtBOWxDTENDNkJxcDAKLS0tIFFIWFRkNjBUOGJLVGQ4c0tKdW9F
+            VitZcXkwdXc0KzhHTTRxeHdsajl3ME0K231GKngS/r+JQzYu6bQU0nRAznC0k8St
+            6fE2j9HZ28cJRX8dx+19GQKK5/NnYJmJqDTq7X4Q1D9z3gFolX8zcw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1qwuleu9k2gzgex43tyhhy80vgg9kym5dcdne32x4f0lw4xzsxy3spau58l
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBBbnRpeDJBbStXdDVleU8z
+            c0JEV3p1cHNmdEw2aFRGcENSMnQxeGdmSmhnCjRtUUpVQmtSREdzZGRsckwyOUxi
+            ZkVZbW9WU3Evem80ZkMvWnJjMzBxMjAKLS0tIFY0dVNkTUJrMXdRbUcwalJnOVZ0
+            czJsSHIyTnFqLzZkWkF5VWEwZEl2SzQKVEDzwLIhb+azXjcjJQuRw+jIQECcfo9c
+            +AVGnDnIz+bs83yTaXV+uYB3jwjLSVsloXbRfPCDKJQkaLMoJUHdCQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1a4pmutcnee2nflw6t70lt4cq3u08sp5d60andp5hm7wmu9hwsp6qlcp659
+    encrypted_suffix: Templates
+    lastmodified: "2026-11-25T19:22:28Z"
+    mac: ENC[AES256_GCM,data:Ty9MJnsxNB4rJJT/eykJP1OR4CBmU852WFSg+i7ZUKRPDkr9xYTZ/rPu2CsKJwMkRsHI5uvWoJ6W6XeuRTkYYfFWhOdH2xQ4jVPneV3wInf52oVRfXoDSfhSN371mWAzUTbpIxWLMZcFeLxZiSJJkIgcPaeczOMyBdoqizV1YfM=,iv:wJGo2nMROHb5d6HH71EOzWI8V9kkuSUqhS3tZJAOMWw=,tag:a9+/nGd6PchNbk8g5xgUsA==,type:str]
+    version: 3.13.3
