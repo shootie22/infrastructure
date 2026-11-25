@@ -21,6 +21,7 @@ provider "registry.opentofu.org/cloudflare/cloudflare" {
     "zh:a182f4aec86c74e9db4affa22323c5a21f5d92c1fcf91b934570753d04f4daf8",
     "zh:a39bb8624fb6c714e38bc0e632aae117a9fede5a18a248ab15dd1b60013c0324",
     "zh:bef2ffbdb68569549fe432b550592e07456759a7288f84f7c37c9d933a493f54",
+    "zh:f809ab383cca0a5f83072981c64208cbd7fa67e986a86ee02dd2c82333221e32",
   ]
 }
 
@@ -144,6 +145,7 @@ provider "registry.opentofu.org/uptimerobot/uptimerobot" {
     "h1:vGC34ov/1R3jAU4GIwPl9zeQnnxALOrZzd6Wgq9wh7s=",
     "zh:2fbb93c9c649b8337a6341c2c5632978759950119d8934b508aa84dd8a13007d",
     "zh:43863d54b3d088b7f625578c26edb3ca16042d5ad6cfcc30395cbddf6a967660",
+    "zh:890df766e9b839623b1f0437355032a3c006226a6c200cd911e15ee1a9014e9f",
     "zh:8da67444c5e0bef6fbdbbcdd1226cb7273921e4cfbc8bbf7685ae536a81bf467",
     "zh:ae6f0061f98175421c114fdf6c32f2368ba20d0c001231c121ae0a8e8e46edf0",
     "zh:c5d0ce564e8422760d84d2403685e9b299cca779d80c25f3d45481559c037eb1",
