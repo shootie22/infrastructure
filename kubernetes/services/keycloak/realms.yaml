@@ -579,6 +579,11 @@ data:
         redirectUris: ["http://127.0.0.1/*"]
         attributes:
           pkce.code.challenge.method: S256
+        # Created with only the optional scope listed, it got no default
+        # scopes at all: Keycloak refused "profile" ("Invalid scopes"), and
+        # tokens would lack the roles the game servers check. So the usual
+        # ones are listed, as for yeetus-api.
+        defaultClientScopes: [web-origins, acr, roles, profile, basic, email]
         optionalClientScopes: [offline_access]
         protocolMappers:
           - name: audience
