@@ -20,6 +20,10 @@ spec:
   # 2026-11-19-mesh-restart-failovers.md). A site that's really gone
   # still fails over, 5 minutes later.
   failoverDelay: 300
+  # Rides out a k3s restart instead of the isolation check killing a
+  # healthy primary after 30 s; still stops one really cut off before the
+  # other site may promote (matrix/database.yaml, docs/matrix/failure-modes.md).
+  livenessProbeTimeout: 240
   imageName: ghcr.io/cloudnative-pg/postgresql:18.6@sha256:899d3ed526b659d77935dde0e6bf2d69dbbf17d3d8c6486ca8cfd04bd3c18533
   # The hourly dump reads the replica. Without this the primary vacuums away
   # rows the dump is still reading, and the replica cancels it ("conflict
