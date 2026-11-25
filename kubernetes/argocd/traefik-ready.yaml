@@ -9,6 +9,13 @@
 #
 # Synced with the Middlewares (wave -1), before Traefik's config that moves
 # its ports behind the front doors.
+# Each Traefik must answer for itself. Traefik normally picks the Service's
+# pods on its own, so fuji's check also landed on the thinkcentre's Traefik:
+# when that one went away, half of fuji's checks failed, and the edge
+# (fall 2 at 1 s) marked both sites down at once, for 15 s to 2 minutes, on
+# 16, 18, 19 and 24 Nov (docs/matrix/failure-modes.md). nativelb makes
+# Traefik go through the Service's cluster IP, and internalTrafficPolicy
+# Local keeps that on the node it came in on.
 apiVersion: v1
 kind: Service
 metadata:
@@ -16,7 +23,9 @@ metadata:
   namespace: kube-system
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
+    traefik.ingress.kubernetes.io/service.nativelb: "true"
 spec:
+  internalTrafficPolicy: Local
   selector:
     app.kubernetes.io/name: traefik
   ports:
