@@ -17,7 +17,9 @@
 | 25 Nov 01:00 | Quiet-hours move of Matrix home to fuji: Synapse starts there at 01:00:57 and works. |
 | 25 Nov 01:03:51 | site-failover switches synapse-db's primary from synapse-db-2 to synapse-db-1 to follow it. Clean switchover (the old primary needed no rewind past its shutdown checkpoint). mas-db moved the same way at 01:01:57. |
 | 25 Nov 01:04:36 | site-failover restarts Synapse after the switch (`restart-on-switch`). It fails the sequence check and crash-loops from here on. |
-| 25 Nov 01:04:49 | MatrixCanaryFailing and MatrixSynapseDown page. The canary only restarts Synapse after HTTP 500s; here it got 502/503, and a restart couldn't have helped anyway. |
+| 25 Nov 01:09:34 | MatrixSynapseDown pages, MatrixCanaryFailing at 01:10:19 (Pushover emergency, silent at night, repeats for an hour). The canary only restarts Synapse after HTTP 500s; here it got 503, and a restart couldn't have helped anyway. |
+| 25 Nov 01:24 | Neither page acknowledged: the relay sends one email for each. Nothing more until Alertmanager repeats them. |
+| 25 Nov 13:09:34 | Alertmanager's 12-hour repeat pages again; Radu sees it. |
 | 25 Nov 13:17 | Radu runs a script on fuji: read-only look at both instances, then `setval` on the two sequences that were behind, then a restart. |
 | 25 Nov 13:19 | Synapse starts; the canary's next send works at about 13:21. |
 
@@ -36,6 +38,7 @@ The other streams (events, receipts, to_device, presence, device lists) were fin
 - **The primary moves back and forth.** After a switch to the replica, Synapse sees the higher value and records stream positions up to it. After a switch back, the old instance still has the lower value, and Synapse's startup check fails. Each failover and each quiet-hours move home is a switch, so this can come back any night the primary changes twice.
 - **The restart after a switch is what hit it.** `restart-on-switch` (added after 2026-11-19) restarts Synapse right after every promotion; a running Synapse never checks again, a starting one does.
 - **The canary can't help with a Synapse that doesn't start.** It only restarts on 500s, and a restart doesn't change the database.
+- **The page went quiet for 12 hours.** Pages repeat on Pushover for an hour, then one email, then nothing until Alertmanager's `repeat_interval: 12h`. The same thing let 13-18 Nov run for five days. Being fixed separately (Matrix failure-mode review).
 
 ## Follow-ups
 
