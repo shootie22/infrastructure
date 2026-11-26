@@ -12,7 +12,8 @@
 # Fast lane: :dev. updater.yaml tells the game a new build is ready (the
 # maec-update ConfigMap, mounted below) and restarts onto it when the game
 # says it may: nobody online, or an admin asked and no match is on. Nothing
-# on disk, so it just moves with site-failover (ha.radunenu.com/maec).
+# on disk, so it just moves with site-failover (ha.radunenu.com/maec); the
+# stats it records live in maec-db (database.yaml), which follows it.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -101,6 +102,29 @@ spec:
             - name: update
               mountPath: /etc/maec-update
               readOnly: true
+        # The stats service (radu/maec stats/, docs/stats.md): the game
+        # servers send it what happens and ask it for leaderboards, Caddy
+        # passes the website's reads to it. Listens on 127.0.0.1 only. While
+        # it's down the servers keep their events and send them later.
+        - name: stats
+          image: git.radunenu.com/mentalasylum/maec:dev
+          imagePullPolicy: Always
+          command: ["/opt/maec/maec-stats", "serve", "-listen", "127.0.0.1:24690"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: maec-db-app, key: uri}
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
       volumes:
         - name: tmp
           emptyDir: {}

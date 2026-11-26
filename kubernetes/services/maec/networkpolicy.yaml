@@ -26,3 +26,34 @@ spec:
         # cert-manager's HTTP-01 solver pod (certificate renewals): this
         # policy covers every pod here, the temporary solver included.
         - {protocol: TCP, port: 8089}
+---
+# The stats database (database.yaml): maec-stats and the hourly dump (this
+# namespace), the other instance, CloudNativePG's operator, monitoring, and
+# the nodes (the kubelet's health checks) through their flannel and cni0
+# addresses, as in joplin/networkpolicy.yaml; a new node needs its two here.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: stats-database
+  namespace: maec
+spec:
+  podSelector:
+    matchLabels: {cnpg.io/cluster: maec-db}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: cnpg-system}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: monitoring}}
+        - ipBlock: {cidr: 10.42.0.0/32}  # fuji
+        - ipBlock: {cidr: 10.42.0.1/32}
+        - ipBlock: {cidr: 10.42.1.0/32}  # thinkcentre
+        - ipBlock: {cidr: 10.42.1.1/32}
+        - ipBlock: {cidr: 10.42.2.0/32}  # mixi
+        - ipBlock: {cidr: 10.42.2.1/32}
+        - ipBlock: {cidr: 10.42.3.0/32}  # minima-vm
+        - ipBlock: {cidr: 10.42.3.1/32}
+        - ipBlock: {cidr: 10.42.4.0/32}  # edge
+        - ipBlock: {cidr: 10.42.4.1/32}
+        - ipBlock: {cidr: 10.42.5.0/32}  # dell
+        - ipBlock: {cidr: 10.42.5.1/32}

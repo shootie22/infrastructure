@@ -3,6 +3,7 @@
 # fails `hub render --check`.
 keep:
 - README.md
+- database.yaml
 - deployment.yaml
 - ingress.yaml
 - namespace.yaml
