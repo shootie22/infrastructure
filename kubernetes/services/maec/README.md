@@ -12,6 +12,7 @@ game pack and the launchers. Everything is behind the yeetus sign-in
 | Native game servers | UDP 24600-24615 on the node (hostPort), `maec-udp.yeetus.net` via the edge relay |
 | Browser game servers | WebSockets at `/ws/<port>`, proxied inside the pod |
 | Who's playing | `/status` (the updater reads it in-cluster) |
+| Stats (plays, wins, ratings, points) | maec-stats, a second container on 127.0.0.1:24690; the website reads it at `/api/stats/` |
 
 - **Image**: `git.radunenu.com/mentalasylum/maec:dev`, private (organization
   `mentalasylum`), pulled with `maec-registry` (scripts/create-maec-registry-secret.sh).
@@ -22,6 +23,11 @@ game pack and the launchers. Everything is behind the yeetus sign-in
   when they reconnect.
 - **Placement**: nothing on disk; it moves with site-failover
   (`ha.radunenu.com/maec`, dotfiles).
+- **Stats database**: `maec-db` (database.yaml), CNPG with an instance in
+  each site; its primary follows the game (`placement.radunenu.com/follows`).
+  Dumped hourly to fuji's `/var/lib/pg-dumps/maec.dump`. The stats service
+  can work every total out again from the stored events
+  (`maec-stats rebuild`).
 - **Secrets**: `secret.sops.yaml` (client and cookie secrets) and
   `../keycloak/maec-client.sops.yaml` hold the same client secret
   (scripts/create-maec-secrets.sh).
