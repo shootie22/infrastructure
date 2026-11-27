@@ -9,7 +9,7 @@ spec:
   source:
     repoURL: https://cloudnative-pg.github.io/charts
     chart: cloudnative-pg
-    targetRevision: 0.29.1
+    targetRevision: 0.29.2
     helm:
       valuesObject:
         # One operator per site, so a Postgres failover never waits on the
