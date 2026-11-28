@@ -29,7 +29,7 @@ spec:
       terminationGracePeriodSeconds: 90
       containers:
         - name: crosty-hc
-          image: docker.io/itzg/minecraft-server:java25@sha256:eb30f3c5b8b5fad2e05182762bf020abfae130c800ae6572d36aae4cff6b3a12
+          image: docker.io/itzg/minecraft-server:java25@sha256:f4375fbbc3e5f797c394856739ea664442d2b5c647470d2c9c7735a96406f8d3
           # Once this setup (HUB_SETUP) has started here, start it from what's
           # in /data without the download sites: no content or list syncing,
           # and the server jar the last install left (infra-hub #53). A new
