@@ -239,7 +239,7 @@ data:
         # instead, sets up the devices the VM's /dev lacks, mounts the disk,
         # then hands over to the rootless user for good.
         - name: docker
-          image: docker.io/library/docker:29.10.0-dind-rootless@sha256:5a703ad0d72cd5e4fb4beca8024d6eddef6d22a46ed1d9812bf3d24ff43ccbce
+          image: docker.io/library/docker:29.10.1-dind-rootless@sha256:5e9c9ba41ba85de700f2b27e8fca05e85c05c68a5412ac7fd790b07fe039262f
           restartPolicy: Always
           command:
             - sh
@@ -394,7 +394,7 @@ spec:
         # kubectl straight from its official image.
         - name: kubectl
           image:
-            reference: registry.k8s.io/kubectl:v1.37.2@sha256:fe049faa65ae483ac200009a949a68fa4c9985daea12c9cb1195c9c7965301fc
+            reference: registry.k8s.io/kubectl:v1.37.3@sha256:82f06779a0dcd86225ffdb96c005418b9716093a39907a5ecf686d7a22e6b788
         - name: work
           emptyDir: {sizeLimit: 16Mi}
         - name: tmp

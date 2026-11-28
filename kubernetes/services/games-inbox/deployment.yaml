@@ -60,7 +60,7 @@ spec:
             limits: {memory: 32Mi}
       containers:
         - name: copyparty
-          image: docker.io/copyparty/min:1.20.26@sha256:1411895121989318a2a14c8b7b8a2016b917874a508a73bf14e316c64e8ef9e5
+          image: docker.io/copyparty/min:1.20.28@sha256:c65603fdd43208cbf62204209d437d156681df9bc72f28bce40c3236c6cb58aa
           # Not the image's entrypoint, which shares /w with its own
           # defaults: only the settings below.
           command: [python3, -m, copyparty, -c, /etc/copyparty/copyparty.conf]
