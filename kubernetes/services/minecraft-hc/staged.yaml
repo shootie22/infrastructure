@@ -62,7 +62,7 @@ spec:
               mountPath: /server
       containers:
         - name: minecraft
-          image: git.radunenu.com/radu/spigotmc-docker:server-v0.0.9@sha256:dc3ed3ac0e385c24437eec7664edfdf79ab72fff14d0b967edf83c126ce94e10
+          image: git.radunenu.com/radu/spigotmc-docker:server-v0.0.9@sha256:401c88caa2e585fa5a4dc07c093366e5539cfd069e7c0e80b43b231e2e250a92
           stdin: true
           tty: true
           envFrom:
